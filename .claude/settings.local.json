@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__context7__resolve-library-id",
+      "Bash(npm install *)",
+      "Bash(npx shadcn@latest init --yes --defaults)",
+      "Bash(npx shadcn@latest add card table badge input label select dialog alert-dialog dropdown-menu separator sheet toast skeleton form)",
+      "Bash(npx shadcn@latest add sonner)",
+      "Bash(node -e \"const pkg = require\\('./node_modules/next/package.json'\\); console.log\\('Next.js version:', pkg.version\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); exports=d.get\\('exports',{}\\); [print\\(k\\) for k in exports.keys\\(\\) if 'drizzle' in k.lower\\(\\) or 'sqlite' in k.lower\\(\\) or 'client' in k.lower\\(\\)]\")",
+      "Bash(npx tsc *)",
+      "Bash(npx shadcn@latest add card input label select badge table dialog alert-dialog dropdown-menu separator sheet --yes)",
+      "Bash(npm run *)",
+      "Bash(node *)",
+      "Bash(TURSO_CONNECTION_URL=\"libsql://placeholder.turso.io\" TURSO_AUTH_TOKEN=\"placeholder\" npm run db:generate)",
+      "Bash(npx shadcn@latest add form textarea --yes)",
+      "Bash(npx shadcn@latest add form --yes)",
+      "Bash(vercel --version)",
+      "Skill(yimpeccable)",
+      "Bash(ipconfig getifaddr *)"
+    ]
+  }
+}

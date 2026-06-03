@@ -1,0 +1,65 @@
+'use server'
+
+import { headers } from 'next/headers'
+import { revalidatePath } from 'next/cache'
+import { eq, desc } from 'drizzle-orm'
+import { db } from '@/lib/db'
+import { auth } from '@/lib/auth'
+import { penjualan } from '@/lib/db/schema'
+import { z } from 'zod'
+
+async function requireSession() {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) throw new Error('Tidak terautentikasi')
+  return session
+}
+
+async function requireOwner() {
+  const session = await requireSession()
+  if (session.user.role !== 'owner') throw new Error('Hanya owner yang dapat melakukan aksi ini')
+  return session
+}
+
+const penjualanSchema = z.object({
+  tanggal: z.string().min(1, 'Tanggal wajib diisi'),
+  noBast: z.string().optional(),
+  noInvoice: z.string().optional(),
+  statusBayar: z.enum(['belum', 'lunas']).default('belum'),
+  tanggalBayarBga: z.string().optional(),
+  catatan: z.string().optional(),
+})
+
+export async function createPenjualan(formData: FormData) {
+  const session = await requireSession()
+
+  const data = penjualanSchema.parse({
+    tanggal: formData.get('tanggal'),
+    noBast: formData.get('noBast') || undefined,
+    noInvoice: formData.get('noInvoice') || undefined,
+    statusBayar: formData.get('statusBayar'),
+    tanggalBayarBga: formData.get('tanggalBayarBga') || undefined,
+    catatan: formData.get('catatan') || undefined,
+  })
+
+  await db.insert(penjualan).values({
+    ...data,
+    createdBy: session.user.id,
+  })
+
+  revalidatePath('/penjualan')
+  return { success: true }
+}
+
+export async function deletePenjualan(id: string) {
+  await requireOwner()
+  await db.delete(penjualan).where(eq(penjualan.id, id))
+  revalidatePath('/penjualan')
+  return { success: true }
+}
+
+export async function getPenjualanList() {
+  return db
+    .select()
+    .from(penjualan)
+    .orderBy(desc(penjualan.tanggal), desc(penjualan.createdAt))
+}
