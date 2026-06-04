@@ -11,43 +11,44 @@ type Props = {
   highlight?: boolean
 }
 
-export function MetricCard({ title, value, subtitle, icon, iconBg, borderColor, highlight }: Props) {
+export function MetricCard({ title, value, subtitle, icon, iconBg, highlight }: Props) {
   return (
     <div
       className={cn(
-        'flex items-center justify-between rounded-xl bg-white p-5 shadow-sm transition-shadow hover:shadow-md',
-        borderColor
-          ? `border border-stone-200 border-l-4 ${borderColor}`
-          : 'border border-stone-200',
-        highlight && 'ring-1 ring-orange-100'
+        'rounded-xl border p-5 transition-all duration-200',
+        'hover:shadow-sm hover:-translate-y-px',
+        highlight
+          ? 'bg-gradient-to-br from-orange-50 to-white border-orange-100 shadow-sm shadow-orange-100/50'
+          : 'bg-white border-stone-200/80'
       )}
     >
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-2 leading-none">
+      <div className="flex items-start justify-between mb-3">
+        <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 leading-none">
           {title}
         </p>
-        <p
-          className={cn(
-            'font-bold tracking-tight num text-stone-900',
-            highlight ? 'text-3xl' : 'text-2xl'
-          )}
-        >
-          {value}
-        </p>
-        {subtitle && (
-          <p className="text-xs text-stone-400 mt-1.5">{subtitle}</p>
+        {icon && (
+          <div
+            className={cn(
+              'flex items-center justify-center h-8 w-8 rounded-lg shrink-0',
+              iconBg ?? 'bg-stone-100'
+            )}
+          >
+            {icon}
+          </div>
         )}
       </div>
 
-      {icon && (
-        <div
-          className={cn(
-            'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ml-4',
-            iconBg ?? 'bg-stone-100'
-          )}
-        >
-          {icon}
-        </div>
+      <p
+        className={cn(
+          'font-bold tracking-tight num leading-none',
+          highlight ? 'text-2xl text-stone-900' : 'text-xl text-stone-800'
+        )}
+      >
+        {value}
+      </p>
+
+      {subtitle && (
+        <p className="text-xs text-stone-400 mt-2">{subtitle}</p>
       )}
     </div>
   )

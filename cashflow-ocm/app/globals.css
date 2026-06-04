@@ -83,6 +83,11 @@
 
   --radius: 0.625rem;
 
+  /* Custom easing curves (Emil Kowalski) */
+  --ease-out-expo: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-expo: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+
   /* Sidebar dark (stone-900) */
   --sidebar: #1C1917;
   --sidebar-foreground: #D6D3D1; /* stone-300 */
@@ -102,9 +107,22 @@
     background-color: #FAFAF9;
     color: #1C1917;
     @apply min-h-screen;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   html {
     @apply font-sans;
+  }
+  /* Smooth focus rings */
+  :focus-visible {
+    outline-offset: 2px;
+  }
+  /* Prevent hover states on touch */
+  @media (hover: none) {
+    .hover\:bg-stone-800\/50:hover,
+    .hover\:bg-stone-800:hover {
+      background-color: transparent;
+    }
   }
 }
 

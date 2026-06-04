@@ -268,18 +268,19 @@ export default async function DashboardPage() {
       </div>
 
       {/* Ringkasan Hari Ini */}
-      <div className="rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
-        <div className="px-5 py-3 border-b border-stone-100">
+      <div className="rounded-xl border border-stone-200/80 bg-white overflow-hidden">
+        <div className="px-5 py-3 border-b border-stone-100 flex items-center gap-2">
+          <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
           <p className="text-xs font-semibold uppercase tracking-wider text-stone-400">Hari Ini</p>
         </div>
         <div className="grid grid-cols-3 divide-x divide-stone-100">
           {todayItems.map((item) => (
-            <div key={item.label} className="px-5 py-4">
-              <div className="flex items-center gap-1.5 mb-2">
+            <div key={item.label} className="px-5 py-5">
+              <div className="flex items-center gap-1.5 mb-2.5">
                 <item.icon className={`h-3.5 w-3.5 ${item.color} shrink-0`} />
-                <p className="text-xs text-stone-500 leading-tight">{item.label}</p>
+                <p className="text-xs text-stone-500 leading-tight font-medium">{item.label}</p>
               </div>
-              <p className={`text-xl font-bold num ${item.color}`}>{item.value}</p>
+              <p className={`text-2xl font-bold num tracking-tight ${item.color}`}>{item.value}</p>
             </div>
           ))}
         </div>
@@ -289,18 +290,23 @@ export default async function DashboardPage() {
       <div>
         <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-3">Saldo Rekening &amp; Kas</p>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-          {metrics.akunSaldo.map((a, i) => {
-            const colors = ['border-l-green-500', 'border-l-blue-500', 'border-l-violet-500', 'border-l-amber-500', 'border-l-stone-400']
-            return (
-              <div key={a.id} className={`rounded-xl border border-stone-200 bg-white p-4 shadow-sm border-l-4 ${colors[i % colors.length]}`}>
-                <p className="text-xs font-semibold text-stone-400 mb-1.5 truncate">{a.nama}</p>
-                <p className={`text-lg font-bold num ${a.saldo >= 0 ? 'text-stone-900' : 'text-red-600'}`}>
-                  {formatRupiah(a.saldo)}
-                </p>
-                <p className="text-xs text-stone-400 mt-0.5">{a.tipe === 'bank' ? 'Bank' : 'Tunai'}</p>
+          {metrics.akunSaldo.map((a) => (
+            <div key={a.id} className="rounded-xl border border-stone-200/80 bg-white p-4 transition-all duration-200 hover:border-stone-300 hover:shadow-sm hover:-translate-y-px">
+              <div className="flex items-center justify-between mb-2.5">
+                <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+                  a.tipe === 'bank'
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'bg-stone-100 text-stone-500'
+                }`}>
+                  {a.tipe === 'bank' ? 'Bank' : 'Tunai'}
+                </span>
               </div>
-            )
-          })}
+              <p className="text-xs font-medium text-stone-400 mb-1 truncate">{a.nama}</p>
+              <p className={`text-lg font-bold num tracking-tight ${a.saldo >= 0 ? 'text-stone-900' : 'text-red-600'}`}>
+                {formatRupiah(a.saldo)}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -322,10 +328,10 @@ export default async function DashboardPage() {
       {/* Charts */}
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <div className="rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
-            <div className="px-5 py-3 border-b border-stone-100">
+          <div className="rounded-xl border border-stone-200/80 bg-white overflow-hidden">
+            <div className="px-5 py-3.5 border-b border-stone-100">
               <p className="text-sm font-semibold text-stone-800">Cashflow Harian</p>
-              <p className="text-xs text-stone-400">Masuk vs keluar — 14 hari terakhir</p>
+              <p className="text-xs text-stone-400 mt-0.5">Masuk vs keluar — 14 hari terakhir</p>
             </div>
             <div className="p-4">
               <CashflowChart data={charts.daily} />
@@ -334,10 +340,10 @@ export default async function DashboardPage() {
         </div>
 
         <div>
-          <div className="rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
-            <div className="px-5 py-3 border-b border-stone-100">
+          <div className="rounded-xl border border-stone-200/80 bg-white overflow-hidden">
+            <div className="px-5 py-3.5 border-b border-stone-100">
               <p className="text-sm font-semibold text-stone-800">Komposisi Modal</p>
-              <p className="text-xs text-stone-400">Bank, Tunai, DP Peron, Piutang</p>
+              <p className="text-xs text-stone-400 mt-0.5">Bank, Tunai, DP Peron, Piutang</p>
             </div>
             <div className="p-4">
               <CompositionChart data={charts.composition} />
@@ -346,10 +352,10 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
-        <div className="px-5 py-3 border-b border-stone-100">
+      <div className="rounded-xl border border-stone-200/80 bg-white overflow-hidden">
+        <div className="px-5 py-3.5 border-b border-stone-100">
           <p className="text-sm font-semibold text-stone-800">Tren Modal Berputar</p>
-          <p className="text-xs text-stone-400">Perkembangan modal selama 14 hari terakhir</p>
+          <p className="text-xs text-stone-400 mt-0.5">Perkembangan modal selama 14 hari terakhir</p>
         </div>
         <div className="p-4">
           <TrendChart data={charts.trend} />
