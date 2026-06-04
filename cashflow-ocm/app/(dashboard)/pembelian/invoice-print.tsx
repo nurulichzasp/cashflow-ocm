@@ -493,7 +493,7 @@ function buildThermerURL(p: PembelianRow): string {
     txt('Cashflow CV OCM', 0, 1, 4),
   ]
 
-  return `thermer://print?data=${encodeURIComponent(JSON.stringify(entries))}`
+  return `thermer://?data=${encodeURIComponent(JSON.stringify(entries))}`
 }
 
 // ── Komponen Tombol ──────────────────────────────────────────────────────────
