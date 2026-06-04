@@ -68,7 +68,7 @@ export function PenjualanFormDialog({ children }: Props) {
               <Label>Status Bayar</Label>
               <Select value={statusBayar} onValueChange={(value) => setStatusBayar(value as 'belum' | 'lunas')}>
                 <SelectTrigger>
-                  <SelectValue>{(v: string) => ({ belum: 'Belum', lunas: 'Lunas' })[v] ?? v}</SelectValue>
+                  <SelectValue placeholder="Pilih status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="belum">Belum</SelectItem>

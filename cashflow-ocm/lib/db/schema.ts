@@ -93,27 +93,44 @@ export const hargaAcuan = sqliteTable('harga_acuan', {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
 })
 
-// Satu baris = satu tiket timbang (TID) dari satu peron
+// Header transaksi pembelian (bisa punya banyak detail / line item)
 export const pembelian = sqliteTable('pembelian', {
   id: text('id').primaryKey().default(sql`(lower(hex(randomblob(8))))`),
   tanggal: text('tanggal').notNull(),
+  // legacy single-TID fields (nullable, untuk data lama)
   noTid: text('no_tid'),
-  kategori: text('kategori', { enum: ['RING 1', 'RING 2', 'BRDL'] }).notNull().default('RING 1'),
-  peronId: text('peron_id').notNull().references(() => peron.id),
   nopol: text('nopol'),
   supir: text('supir'),
-  tonase: real('tonase').notNull(),
-  hargaJual: real('harga_jual').notNull(),
-  hargaBeli: real('harga_beli').notNull(),
-  totalJual: real('total_jual').notNull(),
-  totalBeli: real('total_beli').notNull(),
-  keuntungan: real('keuntungan').notNull(),
+  hargaJual: real('harga_jual').notNull().default(0),
+  hargaBeli: real('harga_beli').notNull().default(0),
+  // aggregate fields
+  kategori: text('kategori', { enum: ['OCM R1', 'OCM R2', 'OCMP SAGU', 'OCM BRDL'] }).notNull().default('OCM R1'),
+  peronId: text('peron_id').notNull().references(() => peron.id),
+  tonase: real('tonase').notNull().default(0),
+  totalJual: real('total_jual').notNull().default(0),
+  totalBeli: real('total_beli').notNull().default(0),
+  keuntungan: real('keuntungan').notNull().default(0),
   statusBayarPeron: text('status_bayar_peron', { enum: ['belum', 'lunas'] }).notNull().default('belum'),
   tanggalBayar: text('tanggal_bayar'),
   sumberBayarId: text('sumber_bayar_id').references(() => akunKas.id),
   catatan: text('catatan'),
   createdBy: text('created_by').notNull().references(() => user.id),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+})
+
+// Detail per line item (satu TID = satu baris)
+export const pembelianDetail = sqliteTable('pembelian_detail', {
+  id: text('id').primaryKey().default(sql`(lower(hex(randomblob(8))))`),
+  pembelianId: text('pembelian_id').notNull().references(() => pembelian.id, { onDelete: 'cascade' }),
+  noTid: text('no_tid'),
+  nopol: text('nopol'),
+  supir: text('supir'),
+  tonase: real('tonase').notNull(),
+  hargaLapangan: real('harga_lapangan').notNull(), // harga bayar ke peron
+  subtotalBeli: real('subtotal_beli').notNull(),
+  subtotalJual: real('subtotal_jual').notNull(),
+  keuntungan: real('keuntungan').notNull(),
+  urutan: integer('urutan').notNull().default(0),
 })
 
 export const penjualan = sqliteTable('penjualan', {
@@ -226,6 +243,11 @@ export const pembelianRelations = relations(pembelian, ({ one, many }) => ({
   sumberBayar: one(akunKas, { fields: [pembelian.sumberBayarId], references: [akunKas.id] }),
   createdByUser: one(user, { fields: [pembelian.createdBy], references: [user.id] }),
   fotos: many(pembelianFoto),
+  details: many(pembelianDetail),
+}))
+
+export const pembelianDetailRelations = relations(pembelianDetail, ({ one }) => ({
+  pembelian: one(pembelian, { fields: [pembelianDetail.pembelianId], references: [pembelian.id] }),
 }))
 
 export const pembelianFotoRelations = relations(pembelianFoto, ({ one }) => ({
@@ -265,6 +287,7 @@ export type Peron = typeof peron.$inferSelect
 export type ModalPeron = typeof modalPeron.$inferSelect
 export type HargaAcuan = typeof hargaAcuan.$inferSelect
 export type Pembelian = typeof pembelian.$inferSelect
+export type PembelianDetail = typeof pembelianDetail.$inferSelect
 export type Penjualan = typeof penjualan.$inferSelect
 export type PenjualanDetail = typeof penjualanDetail.$inferSelect
 export type BiayaOperasional = typeof biayaOperasional.$inferSelect

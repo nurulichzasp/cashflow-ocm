@@ -434,10 +434,8 @@ export function PrintNotaButton({ pembelian }: { pembelian: PembelianRow }) {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger>
-        <Button variant="ghost" size="icon" className="h-7 w-7 text-stone-500 hover:text-orange-600 hover:bg-orange-50" title="Cetak Nota" type="button">
-          <Printer className="h-3.5 w-3.5" />
-        </Button>
+      <DropdownMenuTrigger className="inline-flex items-center justify-center h-7 w-7 rounded-md text-stone-500 hover:text-orange-600 hover:bg-orange-50 transition-colors focus:outline-none" title="Cetak Nota">
+        <Printer className="h-3.5 w-3.5" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44">
         <DropdownMenuItem onClick={handlePrintLengkap} className="gap-2 cursor-pointer">

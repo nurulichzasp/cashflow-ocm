@@ -8,12 +8,21 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { FotoBuktiUploader } from '@/components/foto-bukti-uploader'
-import { createPembelian, updatePembelian } from './actions'
+import { createPembelian, updatePembelian, type KategoriPembelian, type DetailInput } from './actions'
 import { savePembelianFotos, replacePembelianFotos } from './foto-actions'
 import { formatRupiah, todayString } from '@/lib/format'
+import { Plus, Trash2 } from 'lucide-react'
 
 type PeronOption = { id: string; nama: string; keuntunganPerKg: number }
 type AkunOption = { id: string; nama: string; tipe: string }
+
+interface DetailRow {
+  noTid: string
+  nopol: string
+  supir: string
+  tonase: string
+  hargaLapangan: string
+}
 
 interface Props {
   children: React.ReactNode
@@ -22,106 +31,124 @@ interface Props {
   initialData?: {
     id: string
     tanggal: string
-    noTid?: string
-    kategori: 'RING 1' | 'RING 2' | 'BRDL'
+    kategori: KategoriPembelian
     peronId: string
-    nopol?: string
-    supir?: string
-    tonase: number
-    hargaJual: number
     statusBayarPeron: 'belum' | 'lunas'
     sumberBayarId?: string
     catatan?: string
     fotoUrls?: string[]
+    details: Array<{ noTid?: string; nopol?: string; supir?: string; tonase: number; hargaLapangan: number }>
   }
   onOpenChange?: (open: boolean) => void
 }
+
+const EMPTY_DETAIL: DetailRow = { noTid: '', nopol: '', supir: '', tonase: '', hargaLapangan: '' }
 
 export function PembelianFormDialog({ children, peronOptions, akunOptions, initialData, onOpenChange }: Props) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
 
   const [tanggal, setTanggal] = useState(todayString())
-  const [noTid, setNoTid] = useState('')
-  const [kategori, setKategori] = useState<'RING 1' | 'RING 2' | 'BRDL'>('RING 1')
+  const [kategori, setKategori] = useState<KategoriPembelian>('OCM R1')
   const [peronId, setPeronId] = useState(peronOptions?.[0]?.id ?? '')
-  const [nopol, setNopol] = useState('')
-  const [supir, setSupir] = useState('')
-  const [tonase, setTonase] = useState('')
-  const [hargaJual, setHargaJual] = useState('')
   const [statusBayar, setStatusBayar] = useState<'belum' | 'lunas'>('belum')
   const [sumberBayarId, setSumberBayarId] = useState('')
   const [catatan, setCatatan] = useState('')
   const [fotos, setFotos] = useState<string[]>([])
+  const [details, setDetails] = useState<DetailRow[]>([{ ...EMPTY_DETAIL }])
 
   useEffect(() => {
     if (initialData && open) {
       setTanggal(initialData.tanggal)
-      setNoTid(initialData.noTid ?? '')
       setKategori(initialData.kategori)
       setPeronId(initialData.peronId)
-      setNopol(initialData.nopol ?? '')
-      setSupir(initialData.supir ?? '')
-      setTonase(String(initialData.tonase))
-      setHargaJual(String(initialData.hargaJual))
       setStatusBayar(initialData.statusBayarPeron)
       setSumberBayarId(initialData.sumberBayarId ?? '')
       setCatatan(initialData.catatan ?? '')
       setFotos(initialData.fotoUrls ?? [])
+      setDetails(
+        initialData.details.length > 0
+          ? initialData.details.map((d) => ({
+              noTid: d.noTid ?? '',
+              nopol: d.nopol ?? '',
+              supir: d.supir ?? '',
+              tonase: String(d.tonase),
+              hargaLapangan: String(d.hargaLapangan),
+            }))
+          : [{ ...EMPTY_DETAIL }]
+      )
     }
   }, [initialData, open])
 
   const selectedPeron = peronOptions.find((p) => p.id === peronId)
   const keuntunganPerKg = selectedPeron?.keuntunganPerKg ?? 0
-  const tonaseNum = parseFloat(tonase) || 0
-  const hargaJualNum = parseFloat(hargaJual) || 0
-  const hargaBeli = hargaJualNum - keuntunganPerKg
-  const totalJual = tonaseNum * hargaJualNum
-  const totalBeli = tonaseNum * hargaBeli
-  const keuntungan = totalJual - totalBeli
+
+  function updateDetail(idx: number, field: keyof DetailRow, value: string) {
+    setDetails((prev) => prev.map((d, i) => i === idx ? { ...d, [field]: value } : d))
+  }
+
+  function addDetail() {
+    setDetails((prev) => [...prev, { ...EMPTY_DETAIL }])
+  }
+
+  function removeDetail(idx: number) {
+    setDetails((prev) => prev.filter((_, i) => i !== idx))
+  }
+
+  // Computed totals
+  const parsedDetails = details.map((d) => ({
+    tonase: parseFloat(d.tonase) || 0,
+    hargaLapangan: parseFloat(d.hargaLapangan) || 0,
+  }))
+  const totalTonase = parsedDetails.reduce((s, d) => s + d.tonase, 0)
+  const totalBeli = parsedDetails.reduce((s, d) => s + d.tonase * d.hargaLapangan, 0)
+  const totalJual = parsedDetails.reduce((s, d) => s + d.tonase * (d.hargaLapangan + keuntunganPerKg), 0)
+  const totalKeuntungan = totalJual - totalBeli
 
   function resetForm() {
     setTanggal(todayString())
-    setNoTid('')
-    setKategori('RING 1')
+    setKategori('OCM R1')
     setPeronId(peronOptions?.[0]?.id ?? '')
-    setNopol('')
-    setSupir('')
-    setTonase('')
-    setHargaJual('')
     setStatusBayar('belum')
     setSumberBayarId('')
     setCatatan('')
     setFotos([])
+    setDetails([{ ...EMPTY_DETAIL }])
   }
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (tonaseNum <= 0 || hargaJualNum <= 0) {
-      toast.error('Tonase dan harga jual harus diisi')
+    const validDetails = details.filter((d) => parseFloat(d.tonase) > 0 && parseFloat(d.hargaLapangan) > 0)
+    if (validDetails.length === 0) {
+      toast.error('Minimal 1 baris dengan tonase dan harga yang valid')
       return
     }
     setLoading(true)
     try {
-      const fd = new FormData()
-      fd.set('tanggal', tanggal)
-      if (noTid) fd.set('noTid', noTid)
-      fd.set('kategori', kategori)
-      fd.set('peronId', peronId)
-      if (nopol) fd.set('nopol', nopol)
-      if (supir) fd.set('supir', supir)
-      fd.set('tonase', String(tonaseNum))
-      fd.set('hargaJual', String(hargaJualNum))
-      fd.set('statusBayarPeron', statusBayar)
-      if (sumberBayarId) fd.set('sumberBayarId', sumberBayarId)
-      if (catatan) fd.set('catatan', catatan)
+      const detailInputs: DetailInput[] = validDetails.map((d) => ({
+        noTid: d.noTid || undefined,
+        nopol: d.nopol || undefined,
+        supir: d.supir || undefined,
+        tonase: parseFloat(d.tonase),
+        hargaLapangan: parseFloat(d.hargaLapangan),
+      }))
+
+      const payload = {
+        tanggal,
+        kategori,
+        peronId,
+        statusBayarPeron: statusBayar,
+        sumberBayarId: sumberBayarId || undefined,
+        catatan: catatan || undefined,
+        details: detailInputs,
+      }
 
       if (initialData?.id) {
-        await updatePembelian(initialData.id, fd)
+        await updatePembelian(initialData.id, payload)
         await replacePembelianFotos(initialData.id, fotos)
         toast.success('Pembelian berhasil diperbarui')
       } else {
-        const result = await createPembelian(fd)
+        const result = await createPembelian(payload)
         if (result.id && fotos.length > 0) {
           await savePembelianFotos(result.id, fotos)
         }
@@ -139,38 +166,36 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, initi
   }
 
   return (
-    <Dialog open={open} onOpenChange={(v) => {
-      setOpen(v)
-      onOpenChange?.(v)
-    }}>
+    <Dialog open={open} onOpenChange={(v) => { setOpen(v); onOpenChange?.(v) }}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{initialData ? 'Edit Tiket Pembelian' : 'Tambah Tiket Pembelian'}</DialogTitle>
+          <DialogTitle>{initialData ? 'Edit Pembelian' : 'Tambah Tiket Pembelian'}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
           {/* Baris 1: Tanggal, Kategori, Peron */}
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="tanggal">Tanggal *</Label>
-              <Input id="tanggal" type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} required />
+              <Label>Tanggal *</Label>
+              <Input type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} required />
             </div>
             <div className="space-y-1.5">
               <Label>Kategori *</Label>
-              <Select value={kategori} onValueChange={(v) => setKategori(v as typeof kategori)}>
-                <SelectTrigger><SelectValue>{(v: string) => v}</SelectValue></SelectTrigger>
+              <Select value={kategori} onValueChange={(v) => setKategori(v as KategoriPembelian)}>
+                <SelectTrigger><SelectValue placeholder="Pilih kategori" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="RING 1">RING 1</SelectItem>
-                  <SelectItem value="RING 2">RING 2</SelectItem>
-                  <SelectItem value="BRDL">BRDL</SelectItem>
+                  <SelectItem value="OCM R1">OCM R1</SelectItem>
+                  <SelectItem value="OCM R2">OCM R2</SelectItem>
+                  <SelectItem value="OCMP SAGU">OCMP SAGU</SelectItem>
+                  <SelectItem value="OCM BRDL">OCM BRDL</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
               <Label>Peron *</Label>
               <Select value={peronId} onValueChange={(v) => { if (v) setPeronId(v) }}>
-                <SelectTrigger><SelectValue>{(v: string) => peronOptions.find(p => p.id === v)?.nama ?? 'Pilih peron'}</SelectValue></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Pilih peron" /></SelectTrigger>
                 <SelectContent>
                   {peronOptions.map((p) => (
                     <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
@@ -180,80 +205,104 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, initi
             </div>
           </div>
 
-          {/* Baris 2: No TID, Nopol, Supir */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="noTid">No. TID</Label>
-              <Input id="noTid" value={noTid} onChange={(e) => setNoTid(e.target.value)} placeholder="GR0600023053" />
+          {/* Tabel Detail */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>Rincian Tonase & Harga *</Label>
+              {keuntunganPerKg > 0 && (
+                <span className="text-xs text-stone-400">Margin peron: Rp {keuntunganPerKg.toLocaleString('id-ID')}/kg</span>
+              )}
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="nopol">Plat Truk</Label>
-              <Input id="nopol" value={nopol} onChange={(e) => setNopol(e.target.value)} placeholder="KB 1234 AB" />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="supir">Supir</Label>
-              <Input id="supir" value={supir} onChange={(e) => setSupir(e.target.value)} placeholder="Nama supir" />
-            </div>
-          </div>
 
-          {/* Baris 3: Tonase + Harga Jual */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="tonase">Tonase (kg) *</Label>
-              <Input
-                id="tonase"
-                type="number"
-                step="0.01"
-                value={tonase}
-                onChange={(e) => setTonase(e.target.value)}
-                placeholder="0"
-                required
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="hargaJual">Harga Jual BGA (Rp/kg) *</Label>
-              <Input
-                id="hargaJual"
-                type="number"
-                value={hargaJual}
-                onChange={(e) => setHargaJual(e.target.value)}
-                placeholder="0"
-                required
-              />
-            </div>
-          </div>
+            <div className="rounded-lg border border-stone-200 overflow-hidden">
+              {/* Header */}
+              <div className="grid grid-cols-[2fr_2fr_2fr_2fr_2fr_auto] gap-0 bg-stone-50 border-b border-stone-200 text-xs font-semibold uppercase text-stone-500 tracking-wide">
+                <div className="px-3 py-2">No. TID</div>
+                <div className="px-3 py-2">Plat Truk</div>
+                <div className="px-3 py-2">Supir</div>
+                <div className="px-3 py-2">Tonase (kg) *</div>
+                <div className="px-3 py-2">Harga (Rp/kg) *</div>
+                <div className="px-3 py-2 w-10" />
+              </div>
 
-          {/* Kalkulasi otomatis */}
-          {hargaJualNum > 0 && (
-            <div className="rounded-xl border border-stone-200 bg-stone-50 p-4 space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-3">Kalkulasi Otomatis</p>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+              {/* Rows */}
+              {details.map((d, idx) => {
+                const ton = parseFloat(d.tonase) || 0
+                const harga = parseFloat(d.hargaLapangan) || 0
+                const subtotal = ton * harga
+                return (
+                  <div key={idx} className="border-b border-stone-100 last:border-b-0">
+                    <div className="grid grid-cols-[2fr_2fr_2fr_2fr_2fr_auto] gap-0 items-center">
+                      <div className="px-2 py-1.5">
+                        <Input value={d.noTid} onChange={(e) => updateDetail(idx, 'noTid', e.target.value)} placeholder="GR0600…" className="h-8 text-sm" />
+                      </div>
+                      <div className="px-2 py-1.5">
+                        <Input value={d.nopol} onChange={(e) => updateDetail(idx, 'nopol', e.target.value)} placeholder="KB 1234" className="h-8 text-sm" />
+                      </div>
+                      <div className="px-2 py-1.5">
+                        <Input value={d.supir} onChange={(e) => updateDetail(idx, 'supir', e.target.value)} placeholder="Nama" className="h-8 text-sm" />
+                      </div>
+                      <div className="px-2 py-1.5">
+                        <Input type="number" step="0.01" value={d.tonase} onChange={(e) => updateDetail(idx, 'tonase', e.target.value)} placeholder="0" className="h-8 text-sm" />
+                      </div>
+                      <div className="px-2 py-1.5">
+                        <Input type="number" value={d.hargaLapangan} onChange={(e) => updateDetail(idx, 'hargaLapangan', e.target.value)} placeholder="0" className="h-8 text-sm" />
+                      </div>
+                      <div className="px-2 py-1.5 w-10 flex justify-center">
+                        {details.length > 1 && (
+                          <button type="button" onClick={() => removeDetail(idx)} className="h-7 w-7 flex items-center justify-center rounded text-stone-400 hover:text-red-500 hover:bg-red-50">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    {/* Subtotal row */}
+                    {subtotal > 0 && (
+                      <div className="px-3 pb-1.5 text-xs text-stone-500 flex gap-4">
+                        <span>Subtotal: <span className="font-semibold text-stone-800">{formatRupiah(subtotal)}</span></span>
+                        {keuntunganPerKg > 0 && <span>H. BGA: <span className="font-medium">{(harga + keuntunganPerKg).toLocaleString('id-ID')}/kg</span></span>}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+
+              {/* Add row button */}
+              <button
+                type="button"
+                onClick={addDetail}
+                className="w-full px-3 py-2 text-xs text-orange-600 hover:text-orange-700 hover:bg-orange-50 flex items-center gap-1.5 transition-colors"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Tambah baris
+              </button>
+            </div>
+
+            {/* Summary */}
+            {totalTonase > 0 && (
+              <div className="rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 flex flex-wrap gap-6 text-sm">
                 <div>
-                  <p className="text-xs text-stone-400 mb-0.5">Untung/kg Peron</p>
-                  <p className="font-medium text-stone-700 num">Rp {keuntunganPerKg.toLocaleString('id-ID')}</p>
+                  <p className="text-xs text-stone-400 mb-0.5">Total Tonase</p>
+                  <p className="font-semibold num">{totalTonase.toLocaleString('id-ID')} kg</p>
                 </div>
                 <div>
-                  <p className="text-xs text-stone-400 mb-0.5">Harga Beli</p>
-                  <p className="font-semibold text-stone-900 num">Rp {hargaBeli.toLocaleString('id-ID')}/kg</p>
+                  <p className="text-xs text-stone-400 mb-0.5">Total Bayar Peron</p>
+                  <p className="font-bold text-stone-900 num">{formatRupiah(totalBeli)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-stone-400 mb-0.5">Total Beli (dibayar)</p>
-                  <p className="font-semibold text-red-600 num">{formatRupiah(totalBeli)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-stone-400 mb-0.5">Keuntungan</p>
-                  <p className="font-bold text-green-600 num">{formatRupiah(keuntungan)}</p>
+                  <p className="text-xs text-stone-400 mb-0.5">Keuntungan CV OCM</p>
+                  <p className="font-bold text-green-600 num">{formatRupiah(totalKeuntungan)}</p>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Status bayar + Sumber bayar */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Status Bayar Peron</Label>
               <Select value={statusBayar} onValueChange={(v) => setStatusBayar(v as 'belum' | 'lunas')}>
-                <SelectTrigger><SelectValue>{(v: string) => ({ belum: 'Belum Dibayar', lunas: 'Lunas' })[v] ?? v}</SelectValue></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Pilih status" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="belum">Belum Dibayar</SelectItem>
                   <SelectItem value="lunas">Lunas</SelectItem>
@@ -263,7 +312,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, initi
             <div className="space-y-1.5">
               <Label>Sumber Bayar</Label>
               <Select value={sumberBayarId} onValueChange={(v) => { if (v) setSumberBayarId(v) }}>
-                <SelectTrigger><SelectValue>{(v: string) => v ? akunOptions.find(a => a.id === v)?.nama ?? v : '— Pilih akun —'}</SelectValue></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="— Pilih akun —" /></SelectTrigger>
                 <SelectContent>
                   {akunOptions.map((a) => (
                     <SelectItem key={a.id} value={a.id}>{a.nama}</SelectItem>
@@ -275,9 +324,8 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, initi
 
           {/* Catatan */}
           <div className="space-y-1.5">
-            <Label htmlFor="catatan">Catatan</Label>
+            <Label>Catatan</Label>
             <textarea
-              id="catatan"
               rows={2}
               value={catatan}
               onChange={(e) => setCatatan(e.target.value)}

@@ -18,12 +18,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { formatTanggal, formatRupiah } from '@/lib/format'
 import { deletePembelian } from './actions'
 import { PembelianFormDialog } from './pembelian-form-dialog'
-import { PrintRekapButton } from './invoice-print'
+import { PrintRekapButton, PrintNotaButton } from './invoice-print'
 import { FotoBuktiGallery } from '@/components/foto-bukti-gallery'
-import { Edit3, Trash2, ShoppingCart, Printer, ImageIcon } from 'lucide-react'
-import type { Pembelian, Peron, AkunKas, PembelianFoto } from '@/lib/db/schema'
+import { Edit3, Trash2, ShoppingCart, ImageIcon } from 'lucide-react'
+import type { Pembelian, Peron, AkunKas, PembelianFoto, PembelianDetail } from '@/lib/db/schema'
 
-type PembelianRow = Pembelian & { peron: Peron | null; sumberBayar: AkunKas | null; fotos: PembelianFoto[] }
+type PembelianRow = Pembelian & { peron: Peron | null; sumberBayar: AkunKas | null; fotos: PembelianFoto[]; details: PembelianDetail[] }
 
 interface Props {
   pembelianList: PembelianRow[]
@@ -33,9 +33,10 @@ interface Props {
 }
 
 const kategoriBadge: Record<string, string> = {
-  'RING 1': 'bg-blue-50 text-blue-700 border border-blue-200',
-  'RING 2': 'bg-violet-50 text-violet-700 border border-violet-200',
-  'BRDL':   'bg-amber-50 text-amber-700 border border-amber-200',
+  'OCM R1':    'bg-blue-50 text-blue-700 border border-blue-200',
+  'OCM R2':    'bg-violet-50 text-violet-700 border border-violet-200',
+  'OCMP SAGU': 'bg-green-50 text-green-700 border border-green-200',
+  'OCM BRDL':  'bg-amber-50 text-amber-700 border border-amber-200',
 }
 
 function StatusBayar({ status }: { status: 'lunas' | 'belum' }) {
@@ -112,17 +113,15 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
         initialData={editTarget ? {
           id: editTarget.id,
           tanggal: editTarget.tanggal,
-          noTid: editTarget.noTid ?? undefined,
-          kategori: editTarget.kategori,
+          kategori: editTarget.kategori as import('./actions').KategoriPembelian,
           peronId: editTarget.peronId,
-          nopol: editTarget.nopol ?? undefined,
-          supir: editTarget.supir ?? undefined,
-          tonase: editTarget.tonase,
-          hargaJual: editTarget.hargaJual,
           statusBayarPeron: editTarget.statusBayarPeron,
           sumberBayarId: editTarget.sumberBayarId ?? undefined,
           catatan: editTarget.catatan ?? undefined,
           fotoUrls: editTarget.fotos.map((f) => f.url),
+          details: editTarget.details.length > 0
+            ? editTarget.details.map((d) => ({ noTid: d.noTid ?? undefined, nopol: d.nopol ?? undefined, supir: d.supir ?? undefined, tonase: d.tonase, hargaLapangan: d.hargaLapangan }))
+            : [{ tonase: editTarget.tonase, hargaLapangan: editTarget.hargaBeli }],
         } : undefined}
         onOpenChange={(open) => { if (!open) setEditTarget(null) }}
       >
@@ -142,7 +141,7 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
         <div className="space-y-1">
           <p className="text-xs text-stone-500">Peron</p>
           <Select value={filterPeronId} onValueChange={(v) => { if (v) setFilterPeronId(v) }}>
-            <SelectTrigger className="w-36 h-8 text-sm"><SelectValue>{(v: string) => v === 'all' ? 'Semua Peron' : peronOptions.find(p => p.id === v)?.nama ?? v}</SelectValue></SelectTrigger>
+            <SelectTrigger className="w-36 h-8 text-sm"><SelectValue placeholder="Semua Peron" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Semua Peron</SelectItem>
               {peronOptions.map((p) => <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>)}
@@ -222,6 +221,7 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
                   {isOwner && (
                     <td className="px-3 py-2.5">
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <PrintNotaButton pembelian={p} />
                         <Button
                           variant="ghost" size="icon"
                           className="h-7 w-7 text-stone-500 hover:text-stone-900 hover:bg-stone-100"
@@ -327,6 +327,7 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
 
             {isOwner && (
               <div className="flex items-center gap-2 pt-2 border-t border-stone-100">
+                <PrintNotaButton pembelian={p} />
                 <Button
                   variant="outline" size="sm"
                   className="gap-1.5 border-stone-200 text-stone-700 hover:bg-stone-50"

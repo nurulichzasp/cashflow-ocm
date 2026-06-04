@@ -71,7 +71,7 @@ export function PeronFormDialog({ mode, peron, children }: Props) {
               <Label>Status</Label>
               <Select value={status} onValueChange={(v) => setStatus(v as 'aktif' | 'nonaktif')}>
                 <SelectTrigger>
-                  <SelectValue>{(v: string) => ({ aktif: 'Aktif', nonaktif: 'Nonaktif' })[v] ?? v}</SelectValue>
+                  <SelectValue placeholder="Pilih status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="aktif">Aktif</SelectItem>

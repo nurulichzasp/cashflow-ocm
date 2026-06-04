@@ -2,10 +2,10 @@
 
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
-import { eq, desc, and, sum } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { auth } from '@/lib/auth'
-import { pembelian, transaksiKas, akunKas, peron } from '@/lib/db/schema'
+import { pembelian, pembelianDetail, transaksiKas, akunKas, peron } from '@/lib/db/schema'
 import { z } from 'zod'
 
 async function requireSession() {
@@ -20,78 +20,109 @@ async function requireOwner() {
   return session
 }
 
+export type KategoriPembelian = 'OCM R1' | 'OCM R2' | 'OCMP SAGU' | 'OCM BRDL'
+
+export interface DetailInput {
+  noTid?: string
+  nopol?: string
+  supir?: string
+  tonase: number
+  hargaLapangan: number // harga yang dibayar ke peron
+}
+
 const pembelianSchema = z.object({
-  tanggal: z.string().min(1, 'Tanggal wajib diisi'),
-  noTid: z.string().optional(),
-  kategori: z.enum(['RING 1', 'RING 2', 'BRDL']),
-  peronId: z.string().min(1, 'Peron wajib diisi'),
-  nopol: z.string().optional(),
-  supir: z.string().optional(),
-  tonase: z.coerce.number().positive('Tonase harus > 0'),
-  hargaJual: z.coerce.number().positive('Harga jual harus > 0'),
+  tanggal: z.string().min(1),
+  kategori: z.enum(['OCM R1', 'OCM R2', 'OCMP SAGU', 'OCM BRDL']),
+  peronId: z.string().min(1),
   statusBayarPeron: z.enum(['belum', 'lunas']).default('belum'),
   sumberBayarId: z.string().optional(),
   catatan: z.string().optional(),
+  details: z.array(z.object({
+    noTid: z.string().optional(),
+    nopol: z.string().optional(),
+    supir: z.string().optional(),
+    tonase: z.number().positive(),
+    hargaLapangan: z.number().positive(),
+  })).min(1, 'Minimal 1 baris detail'),
 })
 
-export async function createPembelian(formData: FormData) {
-  const session = await requireSession()
-
-  const data = pembelianSchema.parse({
-    tanggal: formData.get('tanggal'),
-    noTid: formData.get('noTid') || undefined,
-    kategori: formData.get('kategori'),
-    peronId: formData.get('peronId'),
-    nopol: formData.get('nopol') || undefined,
-    supir: formData.get('supir') || undefined,
-    tonase: formData.get('tonase'),
-    hargaJual: formData.get('hargaJual'),
-    statusBayarPeron: (formData.get('statusBayarPeron') as string) || 'belum',
-    sumberBayarId: formData.get('sumberBayarId') || undefined,
-    catatan: formData.get('catatan') || undefined,
+function computeTotals(details: DetailInput[], keuntunganPerKg: number) {
+  let totalTonase = 0, totalBeli = 0, totalJual = 0, totalKeuntungan = 0
+  const computed = details.map((d, i) => {
+    const hargaJual = d.hargaLapangan + keuntunganPerKg
+    const subtotalBeli = d.tonase * d.hargaLapangan
+    const subtotalJual = d.tonase * hargaJual
+    const keuntungan = subtotalJual - subtotalBeli
+    totalTonase += d.tonase
+    totalBeli += subtotalBeli
+    totalJual += subtotalJual
+    totalKeuntungan += keuntungan
+    return { ...d, hargaJual, subtotalBeli, subtotalJual, keuntungan, urutan: i }
   })
+  return { computed, totalTonase, totalBeli, totalJual, totalKeuntungan }
+}
 
-  // Ambil keuntungan_per_kg dari peron
-  const peronData = await db.query.peron.findFirst({ where: (t, { eq }) => eq(t.id, data.peronId) })
+export async function createPembelian(data: {
+  tanggal: string
+  kategori: KategoriPembelian
+  peronId: string
+  statusBayarPeron: 'belum' | 'lunas'
+  sumberBayarId?: string
+  catatan?: string
+  details: DetailInput[]
+}) {
+  const session = await requireSession()
+  const parsed = pembelianSchema.parse(data)
+
+  const peronData = await db.query.peron.findFirst({ where: (t, { eq }) => eq(t.id, parsed.peronId) })
   if (!peronData) throw new Error('Peron tidak ditemukan')
 
-  const keuntunganPerKg = peronData.keuntunganPerKg
-  const hargaBeli = data.hargaJual - keuntunganPerKg
-  const totalJual = data.tonase * data.hargaJual
-  const totalBeli = data.tonase * hargaBeli
-  const keuntungan = totalJual - totalBeli
+  const { computed, totalTonase, totalBeli, totalJual, totalKeuntungan } = computeTotals(parsed.details, peronData.keuntunganPerKg)
+  const firstDetail = computed[0]
 
   const inserted = await db.insert(pembelian).values({
-    tanggal: data.tanggal,
-    noTid: data.noTid,
-    kategori: data.kategori,
-    peronId: data.peronId,
-    nopol: data.nopol,
-    supir: data.supir,
-    tonase: data.tonase,
-    hargaJual: data.hargaJual,
-    hargaBeli,
-    totalJual,
+    tanggal: parsed.tanggal,
+    kategori: parsed.kategori,
+    peronId: parsed.peronId,
+    tonase: totalTonase,
+    hargaBeli: firstDetail.hargaLapangan,
+    hargaJual: firstDetail.hargaJual,
     totalBeli,
-    keuntungan,
-    statusBayarPeron: data.statusBayarPeron,
-    sumberBayarId: data.sumberBayarId,
-    catatan: data.catatan,
+    totalJual,
+    keuntungan: totalKeuntungan,
+    statusBayarPeron: parsed.statusBayarPeron,
+    sumberBayarId: parsed.sumberBayarId,
+    catatan: parsed.catatan,
     createdBy: session.user.id,
   }).returning()
   const pembelianId = inserted[0].id
 
-  // Buat transaksi kas jika sudah lunas
-  if (data.statusBayarPeron === 'lunas' && data.sumberBayarId) {
+  await db.insert(pembelianDetail).values(
+    computed.map((d) => ({
+      pembelianId,
+      noTid: d.noTid || null,
+      nopol: d.nopol || null,
+      supir: d.supir || null,
+      tonase: d.tonase,
+      hargaLapangan: d.hargaLapangan,
+      subtotalBeli: d.subtotalBeli,
+      subtotalJual: d.subtotalJual,
+      keuntungan: d.keuntungan,
+      urutan: d.urutan,
+    }))
+  )
+
+  if (parsed.statusBayarPeron === 'lunas' && parsed.sumberBayarId) {
+    const tids = computed.map((d) => d.noTid).filter(Boolean).join(', ')
     await db.insert(transaksiKas).values({
-      tanggal: data.tanggal,
-      akunId: data.sumberBayarId,
+      tanggal: parsed.tanggal,
+      akunId: parsed.sumberBayarId,
       arah: 'keluar',
       jumlah: totalBeli,
       kategori: 'bayar_peron',
       refTabel: 'pembelian',
       refId: pembelianId,
-      catatan: `Bayar peron ${peronData.nama}${data.noTid ? ` TID ${data.noTid}` : ''}`,
+      catatan: `Bayar peron ${peronData.nama}${tids ? ` TID ${tids}` : ''}`,
       createdBy: session.user.id,
     })
   }
@@ -100,62 +131,68 @@ export async function createPembelian(formData: FormData) {
   return { success: true, id: pembelianId }
 }
 
-export async function updatePembelian(id: string, formData: FormData) {
+export async function updatePembelian(id: string, data: {
+  tanggal: string
+  kategori: KategoriPembelian
+  peronId: string
+  statusBayarPeron: 'belum' | 'lunas'
+  sumberBayarId?: string
+  catatan?: string
+  details: DetailInput[]
+}) {
   const session = await requireSession()
+  const parsed = pembelianSchema.parse(data)
 
-  const data = pembelianSchema.parse({
-    tanggal: formData.get('tanggal'),
-    noTid: formData.get('noTid') || undefined,
-    kategori: formData.get('kategori'),
-    peronId: formData.get('peronId'),
-    nopol: formData.get('nopol') || undefined,
-    supir: formData.get('supir') || undefined,
-    tonase: formData.get('tonase'),
-    hargaJual: formData.get('hargaJual'),
-    statusBayarPeron: (formData.get('statusBayarPeron') as string) || 'belum',
-    sumberBayarId: formData.get('sumberBayarId') || undefined,
-    catatan: formData.get('catatan') || undefined,
-  })
-
-  const peronData = await db.query.peron.findFirst({ where: (t, { eq }) => eq(t.id, data.peronId) })
+  const peronData = await db.query.peron.findFirst({ where: (t, { eq }) => eq(t.id, parsed.peronId) })
   if (!peronData) throw new Error('Peron tidak ditemukan')
 
-  const keuntunganPerKg = peronData.keuntunganPerKg
-  const hargaBeli = data.hargaJual - keuntunganPerKg
-  const totalJual = data.tonase * data.hargaJual
-  const totalBeli = data.tonase * hargaBeli
-  const keuntungan = totalJual - totalBeli
+  const { computed, totalTonase, totalBeli, totalJual, totalKeuntungan } = computeTotals(parsed.details, peronData.keuntunganPerKg)
+  const firstDetail = computed[0]
 
   await db.update(pembelian).set({
-    tanggal: data.tanggal,
-    noTid: data.noTid,
-    kategori: data.kategori,
-    peronId: data.peronId,
-    nopol: data.nopol,
-    supir: data.supir,
-    tonase: data.tonase,
-    hargaJual: data.hargaJual,
-    hargaBeli,
-    totalJual,
+    tanggal: parsed.tanggal,
+    kategori: parsed.kategori,
+    peronId: parsed.peronId,
+    tonase: totalTonase,
+    hargaBeli: firstDetail.hargaLapangan,
+    hargaJual: firstDetail.hargaJual,
     totalBeli,
-    keuntungan,
-    statusBayarPeron: data.statusBayarPeron,
-    sumberBayarId: data.sumberBayarId,
-    catatan: data.catatan,
+    totalJual,
+    keuntungan: totalKeuntungan,
+    statusBayarPeron: parsed.statusBayarPeron,
+    sumberBayarId: parsed.sumberBayarId,
+    catatan: parsed.catatan,
   }).where(eq(pembelian.id, id))
 
-  // Ganti transaksi kas
+  // Replace all details
+  await db.delete(pembelianDetail).where(eq(pembelianDetail.pembelianId, id))
+  await db.insert(pembelianDetail).values(
+    computed.map((d) => ({
+      pembelianId: id,
+      noTid: d.noTid || null,
+      nopol: d.nopol || null,
+      supir: d.supir || null,
+      tonase: d.tonase,
+      hargaLapangan: d.hargaLapangan,
+      subtotalBeli: d.subtotalBeli,
+      subtotalJual: d.subtotalJual,
+      keuntungan: d.keuntungan,
+      urutan: d.urutan,
+    }))
+  )
+
   await db.delete(transaksiKas).where(and(eq(transaksiKas.refTabel, 'pembelian'), eq(transaksiKas.refId, id)))
-  if (data.statusBayarPeron === 'lunas' && data.sumberBayarId) {
+  if (parsed.statusBayarPeron === 'lunas' && parsed.sumberBayarId) {
+    const tids = computed.map((d) => d.noTid).filter(Boolean).join(', ')
     await db.insert(transaksiKas).values({
-      tanggal: data.tanggal,
-      akunId: data.sumberBayarId,
+      tanggal: parsed.tanggal,
+      akunId: parsed.sumberBayarId,
       arah: 'keluar',
       jumlah: totalBeli,
       kategori: 'bayar_peron',
       refTabel: 'pembelian',
       refId: id,
-      catatan: `Bayar peron ${peronData.nama}${data.noTid ? ` TID ${data.noTid}` : ''}`,
+      catatan: `Bayar peron ${peronData.nama}${tids ? ` TID ${tids}` : ''}`,
       createdBy: session.user.id,
     })
   }
@@ -175,14 +212,7 @@ export async function deletePembelian(id: string) {
 export async function getPembelianList() {
   return db.query.pembelian.findMany({
     orderBy: (p, { desc }) => [desc(p.tanggal), desc(p.createdAt)],
-    with: { peron: true, sumberBayar: true, fotos: true },
-  })
-}
-
-export async function getPembelianById(id: string) {
-  return db.query.pembelian.findFirst({
-    where: (t, { eq }) => eq(t.id, id),
-    with: { peron: true, sumberBayar: true },
+    with: { peron: true, sumberBayar: true, fotos: true, details: { orderBy: (d, { asc }) => [asc(d.urutan)] } },
   })
 }
 
@@ -190,7 +220,6 @@ export async function getAkunKasList() {
   return db.select().from(akunKas).orderBy(akunKas.urutan)
 }
 
-// Dipakai form: hitung harga beli otomatis berdasarkan peron
 export async function getKeuntunganPerKg(peronId: string): Promise<number> {
   const p = await db.query.peron.findFirst({ where: (t, { eq }) => eq(t.id, peronId) })
   return p?.keuntunganPerKg ?? 0

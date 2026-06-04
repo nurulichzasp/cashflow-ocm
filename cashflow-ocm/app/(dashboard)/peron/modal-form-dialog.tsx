@@ -70,7 +70,7 @@ export function ModalFormDialog({ peronId, peronNama, children }: Props) {
             <Label>Jenis Mutasi</Label>
             <Select value={jenis} onValueChange={(v) => setJenis(v as typeof jenis)}>
               <SelectTrigger>
-                <SelectValue>{(v: string) => ({ tambah: 'Tambah DP / Modal Baru', kurang: 'Kurang Modal', kembali: 'Modal Dikembalikan' })[v] ?? v}</SelectValue>
+                <SelectValue placeholder="Pilih jenis" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="tambah">Tambah DP / Modal Baru</SelectItem>
