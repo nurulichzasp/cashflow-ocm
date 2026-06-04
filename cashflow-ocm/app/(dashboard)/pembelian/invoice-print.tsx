@@ -494,7 +494,7 @@ function buildThermerURL(p: PembelianRow): string {
   ]
 
   const dict: Record<string, ThermerEntry> = {}
-  entries.forEach((e, i) => { dict[String(i)] = e })
+  entries.forEach((e, i) => { dict[String(i).padStart(3, '0')] = e })
   return `thermer://?data=${encodeURIComponent(JSON.stringify(dict))}`
 }
 
