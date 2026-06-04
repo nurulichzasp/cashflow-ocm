@@ -488,10 +488,8 @@ function buildThermerURL(p: PembelianRow): string {
     ...(sumberLabel ? [txt(`Bayar   : ${sumberLabel}`)] : []),
     ...(p.catatan ? [txt(div, 0, 1), txt('Catatan:', 0, 0, 4), txt(p.catatan)] : []),
     txt(equ, 0, 1),
-    txt(new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }), 0, 1, 4),
     txt('CV Omanda Cerli Mandiri', 0, 1, 4),
-    txt(div, 0, 1),
-    txt('Terima kasih atas kepercayaan Anda!', 0, 1, 0),
+    txt('Terima kasih!', 1, 1, 0),
   ]
 
   const dict: Record<string, ThermerEntry> = {}
