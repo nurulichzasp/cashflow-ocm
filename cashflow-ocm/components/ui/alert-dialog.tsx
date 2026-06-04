@@ -16,9 +16,20 @@ type AlertDialogTriggerProps = React.ComponentPropsWithoutRef<
   asChild?: boolean
 }
 
-function AlertDialogTrigger({ ...props }: AlertDialogTriggerProps) {
+function AlertDialogTrigger({ asChild, children, ...props }: AlertDialogTriggerProps) {
+  if (asChild && React.isValidElement(children)) {
+    return (
+      <AlertDialogPrimitive.Trigger
+        data-slot="alert-dialog-trigger"
+        render={children as React.ReactElement}
+        {...props}
+      />
+    )
+  }
   return (
-    <AlertDialogPrimitive.Trigger data-slot="alert-dialog-trigger" {...props} />
+    <AlertDialogPrimitive.Trigger data-slot="alert-dialog-trigger" {...props}>
+      {children}
+    </AlertDialogPrimitive.Trigger>
   )
 }
 

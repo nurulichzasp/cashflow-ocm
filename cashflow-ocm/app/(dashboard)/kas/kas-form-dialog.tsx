@@ -74,7 +74,7 @@ export function KasFormDialog({ children, akunOptions }: Props) {
             <div className="space-y-1.5">
               <Label>Akun</Label>
               <Select value={akunId} onValueChange={(v) => { if (v) setAkunId(v) }}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger><SelectValue>{(v: string) => akunOptions.find(a => a.id === v)?.nama ?? 'Pilih akun'}</SelectValue></SelectTrigger>
                 <SelectContent>
                   {akunOptions.map((a) => (
                     <SelectItem key={a.id} value={a.id}>{a.nama}</SelectItem>
@@ -88,7 +88,7 @@ export function KasFormDialog({ children, akunOptions }: Props) {
             <div className="space-y-1.5">
               <Label>Arah</Label>
               <Select value={arah} onValueChange={(v) => setArah(v as 'masuk' | 'keluar')}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger><SelectValue>{(v: string) => ({ masuk: 'Masuk', keluar: 'Keluar' })[v] ?? v}</SelectValue></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="masuk">Masuk</SelectItem>
                   <SelectItem value="keluar">Keluar</SelectItem>
@@ -98,7 +98,7 @@ export function KasFormDialog({ children, akunOptions }: Props) {
             <div className="space-y-1.5">
               <Label>Kategori</Label>
               <Select value={kategori} onValueChange={(v) => setKategori(v as KasKategori)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger><SelectValue>{(v: string) => ({ penerimaan_bga: 'Penerimaan BGA', tarik_bri: 'Tarik / Transfer', bayar_peron: 'Bayar Peron', modal_peron: 'Modal Peron', kembali_modal: 'Kembali Modal', biaya_operasional: 'Biaya Operasional', penyesuaian: 'Penyesuaian', lainnya: 'Lainnya' })[v] ?? v}</SelectValue></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="penerimaan_bga">Penerimaan BGA</SelectItem>
                   <SelectItem value="tarik_bri">Tarik / Transfer</SelectItem>

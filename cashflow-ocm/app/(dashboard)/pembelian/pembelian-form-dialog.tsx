@@ -159,7 +159,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, initi
             <div className="space-y-1.5">
               <Label>Kategori *</Label>
               <Select value={kategori} onValueChange={(v) => setKategori(v as typeof kategori)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger><SelectValue>{(v: string) => v}</SelectValue></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="RING 1">RING 1</SelectItem>
                   <SelectItem value="RING 2">RING 2</SelectItem>
@@ -170,7 +170,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, initi
             <div className="space-y-1.5">
               <Label>Peron *</Label>
               <Select value={peronId} onValueChange={(v) => { if (v) setPeronId(v) }}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger><SelectValue>{(v: string) => peronOptions.find(p => p.id === v)?.nama ?? 'Pilih peron'}</SelectValue></SelectTrigger>
                 <SelectContent>
                   {peronOptions.map((p) => (
                     <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
@@ -253,7 +253,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, initi
             <div className="space-y-1.5">
               <Label>Status Bayar Peron</Label>
               <Select value={statusBayar} onValueChange={(v) => setStatusBayar(v as 'belum' | 'lunas')}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger><SelectValue>{(v: string) => ({ belum: 'Belum Dibayar', lunas: 'Lunas' })[v] ?? v}</SelectValue></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="belum">Belum Dibayar</SelectItem>
                   <SelectItem value="lunas">Lunas</SelectItem>
@@ -263,7 +263,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, initi
             <div className="space-y-1.5">
               <Label>Sumber Bayar</Label>
               <Select value={sumberBayarId} onValueChange={(v) => { if (v) setSumberBayarId(v) }}>
-                <SelectTrigger><SelectValue placeholder="— Pilih akun —" /></SelectTrigger>
+                <SelectTrigger><SelectValue>{(v: string) => v ? akunOptions.find(a => a.id === v)?.nama ?? v : '— Pilih akun —'}</SelectValue></SelectTrigger>
                 <SelectContent>
                   {akunOptions.map((a) => (
                     <SelectItem key={a.id} value={a.id}>{a.nama}</SelectItem>

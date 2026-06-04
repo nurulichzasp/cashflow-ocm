@@ -142,7 +142,7 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
         <div className="space-y-1">
           <p className="text-xs text-stone-500">Peron</p>
           <Select value={filterPeronId} onValueChange={(v) => { if (v) setFilterPeronId(v) }}>
-            <SelectTrigger className="w-36 h-8 text-sm"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-36 h-8 text-sm"><SelectValue>{(v: string) => v === 'all' ? 'Semua Peron' : peronOptions.find(p => p.id === v)?.nama ?? v}</SelectValue></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Semua Peron</SelectItem>
               {peronOptions.map((p) => <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>)}

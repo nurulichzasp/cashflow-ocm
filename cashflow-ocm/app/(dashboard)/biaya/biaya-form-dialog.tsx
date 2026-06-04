@@ -79,7 +79,7 @@ export function BiayaFormDialog({ children, akunOptions }: Props) {
             <div className="space-y-1.5">
               <Label>Kategori</Label>
               <Select value={kategori} onValueChange={(v) => setKategori(v as BiayaKategori)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger><SelectValue>{(v: string) => ({ gaji: 'Gaji', solar: 'Solar', transport: 'Transport', lainnya: 'Lainnya' })[v] ?? v}</SelectValue></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="gaji">Gaji</SelectItem>
                   <SelectItem value="solar">Solar</SelectItem>
@@ -94,7 +94,7 @@ export function BiayaFormDialog({ children, akunOptions }: Props) {
             <div className="space-y-1.5">
               <Label>Akun Sumber</Label>
               <Select value={akunSumberId} onValueChange={(v) => { if (v) setAkunSumberId(v) }}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger><SelectValue>{(v: string) => akunOptions.find(a => a.id === v)?.nama ?? 'Pilih akun'}</SelectValue></SelectTrigger>
                 <SelectContent>
                   {akunOptions.map((a) => (
                     <SelectItem key={a.id} value={a.id}>{a.nama}</SelectItem>
