@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
@@ -11,6 +11,19 @@ const geistSans = Geist({
 export const metadata: Metadata = {
   title: "Cashflow CV OCM",
   description: "Sistem manajemen cashflow dan pembelian/penjualan buah sawit CV OCM",
+  appleWebApp: {
+    capable: true,
+    title: "CV OCM",
+    statusBarStyle: "black-translucent",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: "cover",
+  themeColor: "#1c1917",
 };
 
 export default function RootLayout({

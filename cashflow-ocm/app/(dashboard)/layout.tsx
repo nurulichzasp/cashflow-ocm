@@ -19,7 +19,7 @@ export default async function DashboardLayout({
   const isOwner = session.user.role === 'owner'
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-[100dvh] overflow-hidden">
       {/* Sidebar desktop */}
       <div className="hidden md:flex">
         <Sidebar userName={session.user.name} isOwner={isOwner} />
