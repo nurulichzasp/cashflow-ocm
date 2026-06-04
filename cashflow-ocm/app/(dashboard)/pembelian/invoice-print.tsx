@@ -493,7 +493,9 @@ function buildThermerURL(p: PembelianRow): string {
     txt('Cashflow CV OCM', 0, 1, 4),
   ]
 
-  return `thermer://?data=${encodeURIComponent(JSON.stringify(entries))}`
+  const dict: Record<string, ThermerEntry> = {}
+  entries.forEach((e, i) => { dict[String(i)] = e })
+  return `thermer://?data=${encodeURIComponent(JSON.stringify(dict))}`
 }
 
 // ── Komponen Tombol ──────────────────────────────────────────────────────────
