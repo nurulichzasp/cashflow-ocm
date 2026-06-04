@@ -205,31 +205,34 @@ function buildThermalHTML(p: PembelianRow, paperWidthMm: number): string {
 <html lang="id">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Nota Thermal - ${p.peron?.nama ?? ''}</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:'Courier New',Courier,monospace;font-size:${paperWidthMm === 80 ? '9.5' : '8.5'}pt;color:#000;background:#fff;width:${paperWidthMm - 8}mm}
-  .wrap{padding:3mm 2mm}
+  body{font-family:'Courier New',Courier,monospace;font-size:11pt;color:#000;background:#f2f2f2;min-height:100vh}
+  .wrap{max-width:400px;margin:0 auto;background:#fff;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.12)}
   .center{text-align:center}
   .right{text-align:right}
   .bold{font-weight:bold}
-  .divider{border-top:1px dashed #000;margin:3px 0}
-  .solid{border-top:1.5px solid #000;margin:3px 0}
-  .row{display:flex;justify-content:space-between;align-items:baseline;gap:4px}
+  .divider{border-top:1px dashed #000;margin:5px 0}
+  .solid{border-top:1.5px solid #000;margin:5px 0}
+  .row{display:flex;justify-content:space-between;align-items:baseline;gap:4px;line-height:1.6}
   .row .l{flex:1;white-space:nowrap;overflow:hidden;text-overflow:clip}
   .row .r{text-align:right;white-space:nowrap;font-weight:bold}
-  .small{font-size:7.5pt;color:#444}
-  .items{margin:4px 0}
-  .item{margin:3px 0}
-  .item-sub{font-size:7pt;color:#555;padding-left:2mm}
+  .small{font-size:9pt;color:#444}
+  .items{margin:6px 0}
+  .item{margin:5px 0}
+  .item-sub{font-size:8.5pt;color:#555;padding-left:4px}
   .status-lunas{font-weight:bold}
   .status-belum{font-weight:bold}
-  .no-print{margin-bottom:8px}
-  .print-btn{background:#000;color:#fff;border:none;padding:4px 12px;border-radius:4px;font-size:10pt;cursor:pointer;font-family:Arial,sans-serif}
+  .no-print{margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap}
+  .print-btn{background:#1c1917;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-size:12pt;cursor:pointer;font-family:Arial,sans-serif;flex:1}
+  .share-btn{background:#ea580c;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-size:12pt;cursor:pointer;font-family:Arial,sans-serif;flex:1}
   @media print{
     .no-print{display:none}
+    body{background:#fff;font-size:${paperWidthMm === 80 ? '9.5' : '8.5'}pt}
+    .wrap{max-width:none;box-shadow:none;padding:1mm}
     @page{size:${paperWidthMm}mm auto;margin:2mm}
-    body{width:${paperWidthMm - 4}mm}
   }
 </style>
 </head>
@@ -237,7 +240,30 @@ function buildThermalHTML(p: PembelianRow, paperWidthMm: number): string {
 <div class="wrap">
   <div class="no-print">
     <button class="print-btn" onclick="window.print()">&#128438; Cetak</button>
+    <button class="share-btn" onclick="bagikanNota()">&#8679; Bagikan</button>
   </div>
+  <script>
+  function bagikanNota(){
+    var btns=document.querySelector('.no-print');
+    btns.style.display='none';
+    var html='<!DOCTYPE html>'+document.documentElement.outerHTML;
+    btns.style.display='';
+    var blob=new Blob([html],{type:'text/html'});
+    var file=new File([blob],'nota-pembelian-${p.peron?.nama?.replace(/\s/g,'-') ?? 'ocm'}.html',{type:'text/html'});
+    if(navigator.share){
+      var shareData={title:'Nota Pembelian CV OCM - ${p.peron?.nama ?? ''}',text:'Nota pembelian ${formatTanggal(p.tanggal)} - ${formatRupiah(p.totalBeli)}'};
+      if(navigator.canShare&&navigator.canShare({files:[file]})){
+        shareData.files=[file];
+      }
+      navigator.share(shareData).catch(function(){});
+    } else {
+      var a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);
+      a.download='nota-pembelian.html';
+      a.click();
+    }
+  }
+  </script>
 
   <div class="center bold" style="font-size:11pt;letter-spacing:1px">CV OCM</div>
   <div class="center small">Supplier TBS &amp; BRDL</div>
