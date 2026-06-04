@@ -273,14 +273,14 @@ export default async function DashboardPage() {
           <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
           <p className="text-xs font-semibold uppercase tracking-wider text-stone-400">Hari Ini</p>
         </div>
-        <div className="grid grid-cols-3 divide-x divide-stone-100">
+        <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-stone-100">
           {todayItems.map((item) => (
-            <div key={item.label} className="px-5 py-5">
-              <div className="flex items-center gap-1.5 mb-2.5">
+            <div key={item.label} className="flex items-center justify-between px-5 py-4 sm:flex-col sm:items-start sm:py-5">
+              <div className="flex items-center gap-1.5">
                 <item.icon className={`h-3.5 w-3.5 ${item.color} shrink-0`} />
-                <p className="text-xs text-stone-500 leading-tight font-medium">{item.label}</p>
+                <p className="text-xs text-stone-500 font-medium">{item.label}</p>
               </div>
-              <p className={`text-2xl font-bold num tracking-tight ${item.color}`}>{item.value}</p>
+              <p className={`text-xl font-bold num tracking-tight ${item.color} sm:mt-2.5`}>{item.value}</p>
             </div>
           ))}
         </div>
@@ -311,7 +311,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Metric Cards */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {metricCards.map((card) => (
           <MetricCard
             key={card.title}

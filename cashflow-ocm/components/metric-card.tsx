@@ -41,7 +41,7 @@ export function MetricCard({ title, value, subtitle, icon, iconBg, highlight }: 
       <p
         className={cn(
           'font-bold tracking-tight num leading-none',
-          highlight ? 'text-2xl text-stone-900' : 'text-xl text-stone-800'
+          highlight ? 'text-lg sm:text-2xl text-stone-900' : 'text-base sm:text-xl text-stone-800'
         )}
       >
         {value}

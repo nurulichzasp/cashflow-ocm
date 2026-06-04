@@ -167,7 +167,7 @@ export function MobileSidebar({ userName, isOwner }: { userName?: string; isOwne
 
       {/* Always rendered — CSS transition in/out */}
       <div
-        className={cn('fixed inset-0 z-50 md:hidden', !open && 'pointer-events-none')}
+        className={cn('fixed inset-0 z-50 md:hidden overflow-hidden', !open && 'pointer-events-none')}
         aria-hidden={!open}
       >
         {/* Backdrop */}
