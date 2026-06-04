@@ -463,8 +463,7 @@ function buildThermerURL(p: PembelianRow): string {
 
   const entries: ThermerEntry[] = [
     txt('CV OCM', 1, 1, 2),
-    txt('Supplier TBS & BRDL', 0, 1, 4),
-    txt('PKS PT. BGA', 0, 1, 4),
+    txt('Omanda Cerli Mandiri', 0, 1, 4),
     txt(equ, 0, 1),
     txt('NOTA PEMBELIAN', 1, 1),
     txt(div, 0, 1),
@@ -490,7 +489,9 @@ function buildThermerURL(p: PembelianRow): string {
     ...(p.catatan ? [txt(div, 0, 1), txt('Catatan:', 0, 0, 4), txt(p.catatan)] : []),
     txt(equ, 0, 1),
     txt(new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }), 0, 1, 4),
-    txt('Cashflow CV OCM', 0, 1, 4),
+    txt('CV Omanda Cerli Mandiri', 0, 1, 4),
+    txt(div, 0, 1),
+    txt('Terima kasih atas kepercayaan Anda!', 0, 1, 0),
   ]
 
   const dict: Record<string, ThermerEntry> = {}
