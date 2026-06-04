@@ -7,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Printer, FileText, Thermometer } from 'lucide-react'
+import { Printer, FileText, Thermometer, Zap } from 'lucide-react'
 import { formatRupiah, formatTanggal } from '@/lib/format'
 import { fotoUrl } from '@/lib/foto-url'
 import type { Pembelian, Peron, AkunKas, PembelianFoto, PembelianDetail } from '@/lib/db/schema'
@@ -441,6 +441,61 @@ function buildRekapHTML(list: PembelianRow[]): string {
 </html>`
 }
 
+// ── Thermer URL (thermer:// custom scheme) ───────────────────────────────────
+
+type ThermerEntry =
+  | { type: 0; content: string; bold: 0 | 1; align: 0 | 1 | 2; format: 0 | 1 | 2 | 3 | 4 }
+  | { type: 1; path: string; align: 0 | 1 | 2 }
+  | { type: 2; value: string; height: number; align: 0 | 1 | 2 }
+  | { type: 3; value: string; size: number; align: 0 | 1 | 2 }
+
+function txt(content: string, bold: 0 | 1 = 0, align: 0 | 1 | 2 = 0, format: 0 | 1 | 2 | 3 | 4 = 0): ThermerEntry {
+  return { type: 0, content, bold, align, format }
+}
+
+function buildThermerURL(p: PembelianRow): string {
+  const details = getDetails(p)
+  const paperWidthMm = getThermalWidth()
+  const div = '-'.repeat(paperWidthMm === 80 ? 42 : 32)
+  const equ = '='.repeat(paperWidthMm === 80 ? 42 : 32)
+  const waktu = formatWaktu(p.createdAt)
+  const sumberLabel = p.sumberBayar ? (p.sumberBayar.tipe === 'bank' ? 'Transfer' : 'Tunai') : null
+
+  const entries: ThermerEntry[] = [
+    txt('CV OCM', 1, 1, 2),
+    txt('Supplier TBS & BRDL', 0, 1, 4),
+    txt('PKS PT. BGA', 0, 1, 4),
+    txt(equ, 0, 1),
+    txt('NOTA PEMBELIAN', 1, 1),
+    txt(div, 0, 1),
+    txt(`Tanggal : ${formatTanggal(p.tanggal)}${waktu ? '  ' + waktu : ''}`),
+    txt(`Peron   : ${p.peron?.nama ?? p.peronId}`),
+    txt(`Kategori: ${p.kategori}`),
+    txt(div, 0, 1),
+    txt('RINCIAN TONASE', 0, 0, 4),
+    ...details.flatMap((d): ThermerEntry[] => {
+      const nopolSupir = [d.nopol, d.supir].filter(Boolean).join(' / ')
+      return [
+        txt(`${d.tonase.toLocaleString('id-ID')} kg x Rp ${d.hargaLapangan.toLocaleString('id-ID')}`),
+        txt(`= ${formatRupiah(d.subtotalBeli)}`, 0, 2),
+        ...(nopolSupir ? [txt(nopolSupir, 0, 0, 4)] : []),
+        txt(div, 0, 1),
+      ]
+    }),
+    txt('TOTAL', 1, 0),
+    txt(formatRupiah(p.totalBeli), 1, 2, 1),
+    txt(equ, 0, 1),
+    txt(`Status  : ${p.statusBayarPeron === 'lunas' ? 'LUNAS' : 'BELUM DIBAYAR'}`, 1),
+    ...(sumberLabel ? [txt(`Bayar   : ${sumberLabel}`)] : []),
+    ...(p.catatan ? [txt(div, 0, 1), txt('Catatan:', 0, 0, 4), txt(p.catatan)] : []),
+    txt(equ, 0, 1),
+    txt(new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }), 0, 1, 4),
+    txt('Cashflow CV OCM', 0, 1, 4),
+  ]
+
+  return `thermer://print?data=${encodeURIComponent(JSON.stringify(entries))}`
+}
+
 // ── Komponen Tombol ──────────────────────────────────────────────────────────
 
 export function PrintNotaButton({ pembelian }: { pembelian: PembelianRow }) {
@@ -459,19 +514,27 @@ export function PrintNotaButton({ pembelian }: { pembelian: PembelianRow }) {
     win.document.open(); win.document.write(html); win.document.close()
   }
 
+  function handlePrintThermer() {
+    window.location.href = buildThermerURL(pembelian)
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="inline-flex items-center justify-center h-7 w-7 rounded-md text-stone-500 hover:text-orange-600 hover:bg-orange-50 transition-colors focus:outline-none" title="Cetak Nota">
         <Printer className="h-3.5 w-3.5" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-44">
+      <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuItem onClick={handlePrintLengkap} className="gap-2 cursor-pointer">
           <FileText className="h-3.5 w-3.5" />
           Print Lengkap (A5)
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handlePrintThermal} className="gap-2 cursor-pointer">
           <Thermometer className="h-3.5 w-3.5" />
-          Print Thermal
+          Print Thermal (preview)
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handlePrintThermer} className="gap-2 cursor-pointer text-orange-600 focus:text-orange-600 focus:bg-orange-50">
+          <Zap className="h-3.5 w-3.5" />
+          Thermer (langsung)
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
