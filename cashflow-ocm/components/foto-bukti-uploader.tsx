@@ -73,8 +73,10 @@ export function FotoBuktiUploader({ urls, onUrlsChange, disabled }: Props) {
         try {
           const url = await uploadFoto(file)
           newUrls.push(url)
-        } catch {
-          toast.error(`Gagal upload ${file.name}`)
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : 'Error tidak diketahui'
+          toast.error(`Gagal upload: ${msg}`)
+          console.error('[upload-foto]', err)
         }
       }
       if (newUrls.length > 0) {
@@ -96,7 +98,6 @@ export function FotoBuktiUploader({ urls, onUrlsChange, disabled }: Props) {
         ref={inputRef}
         type="file"
         accept="image/*"
-        capture="environment"
         multiple
         className="hidden"
         onChange={handleFiles}

@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ThermalPrinterSettings } from './thermal-printer-settings'
 
 export default async function PengaturanPage() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -57,6 +58,8 @@ export default async function PengaturanPage() {
           </p>
         </CardContent>
       </Card>
+
+      <ThermalPrinterSettings />
     </div>
   )
 }
