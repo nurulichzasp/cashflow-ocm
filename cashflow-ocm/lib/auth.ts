@@ -3,6 +3,15 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { db } from '@/lib/db'
 import * as schema from '@/lib/db/schema'
 
+// Kumpulkan semua origin yang dipercaya
+// VERCEL_URL & VERCEL_BRANCH_URL otomatis tersedia di setiap deployment Vercel
+const trustedOrigins = [
+  process.env.BETTER_AUTH_URL,
+  process.env.NEXT_PUBLIC_APP_URL,
+  process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined,
+  process.env.VERCEL_BRANCH_URL ? `https://${process.env.VERCEL_BRANCH_URL}` : undefined,
+].filter(Boolean) as string[]
+
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: 'sqlite',
@@ -16,6 +25,7 @@ export const auth = betterAuth({
   }),
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL: process.env.BETTER_AUTH_URL,
+  trustedOrigins,
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false,
