@@ -4,6 +4,7 @@ import { useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Camera, X, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { fotoUrl } from '@/lib/foto-url'
 
 interface Props {
   urls: string[]
@@ -124,7 +125,7 @@ export function FotoBuktiUploader({ urls, onUrlsChange, disabled }: Props) {
           {urls.map((url) => (
             <div key={url} className="relative group">
               <img
-                src={url}
+                src={fotoUrl(url)}
                 alt="Foto bukti"
                 className="h-20 w-20 rounded-lg object-cover border border-stone-200"
               />

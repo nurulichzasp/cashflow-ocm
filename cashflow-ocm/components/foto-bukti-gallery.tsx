@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { X, ChevronLeft, ChevronRight, ImageOff } from 'lucide-react'
+import { fotoUrl } from '@/lib/foto-url'
 
 interface Props {
   urls: string[]
@@ -31,7 +32,7 @@ export function FotoBuktiGallery({ urls, maxThumbnails = 4 }: Props) {
             onClick={() => openLightbox(i)}
             className="relative h-14 w-14 rounded-md overflow-hidden border border-stone-200 hover:border-orange-400 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-400"
           >
-            <img src={url} alt={`Foto ${i + 1}`} className="h-full w-full object-cover" />
+            <img src={fotoUrl(url)} alt={`Foto ${i + 1}`} className="h-full w-full object-cover" />
           </button>
         ))}
         {rest > 0 && (
@@ -55,7 +56,7 @@ export function FotoBuktiGallery({ urls, maxThumbnails = 4 }: Props) {
             onClick={(e) => e.stopPropagation()}
           >
             <img
-              src={urls[lightboxIdx]}
+              src={fotoUrl(urls[lightboxIdx])}
               alt={`Foto ${lightboxIdx + 1}`}
               className="max-w-[90vw] max-h-[85vh] object-contain rounded-lg"
             />

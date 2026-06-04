@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Printer, FileText, Thermometer } from 'lucide-react'
 import { formatRupiah, formatTanggal } from '@/lib/format'
+import { fotoUrl } from '@/lib/foto-url'
 import type { Pembelian, Peron, AkunKas, PembelianFoto, PembelianDetail } from '@/lib/db/schema'
 
 type PembelianRow = Pembelian & { peron: Peron | null; sumberBayar: AkunKas | null; fotos: PembelianFoto[]; details: PembelianDetail[] }
@@ -57,7 +58,7 @@ function buildNotaHTML(p: PembelianRow): string {
   `).join('')
 
   const fotoHtml = p.fotos && p.fotos.length > 0
-    ? `<div class="foto-section"><p class="section-label">Foto Bukti</p><div class="foto-strip">${p.fotos.map((f) => `<img src="${f.url}" alt="Foto" class="foto-thumb" />`).join('')}</div></div>`
+    ? `<div class="foto-section"><p class="section-label">Foto Bukti</p><div class="foto-strip">${p.fotos.map((f) => `<img src="${fotoUrl(f.url, { absolute: true })}" alt="Foto" class="foto-thumb" />`).join('')}</div></div>`
     : ''
 
   return `<!DOCTYPE html>
@@ -302,7 +303,7 @@ function buildRekapHTML(list: PembelianRow[]): string {
   const rows = list.map((p) => {
     const details = getDetails(p)
     const fotoHtml = p.fotos && p.fotos.length > 0
-      ? `<tr class="foto-row"><td colspan="8"><div class="foto-strip">${p.fotos.map((f) => `<img src="${f.url}" alt="Foto" class="foto-thumb" />`).join('')}</div></td></tr>`
+      ? `<tr class="foto-row"><td colspan="8"><div class="foto-strip">${p.fotos.map((f) => `<img src="${fotoUrl(f.url, { absolute: true })}" alt="Foto" class="foto-thumb" />`).join('')}</div></td></tr>`
       : ''
     const detailsHtml = details.map((d, i) => `
       <tr class="${i > 0 ? 'detail-extra' : ''}">

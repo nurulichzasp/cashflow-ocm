@@ -31,7 +31,7 @@ export async function POST(request: Request) {
 
   try {
     const blob = await put(filename, file, {
-      access: 'public',
+      access: 'private',
       contentType: file.type || 'image/jpeg',
     })
     return Response.json({ url: blob.url })
