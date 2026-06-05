@@ -62,6 +62,7 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
   const [filterTanggalDari, setFilterTanggalDari] = useState('')
   const [filterTanggalSampai, setFilterTanggalSampai] = useState('')
   const [filterPeronId, setFilterPeronId] = useState('all')
+  const [filterBulan, setFilterBulan] = useState('')
   const [expandedFotoId, setExpandedFotoId] = useState<string | null>(null)
   const [sortBy, setSortBy] = useState<'tanggal' | 'peron' | 'tonase' | 'totalBeli' | 'keuntungan'>('tanggal')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
@@ -85,6 +86,7 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
 
   const filtered = useMemo(() => {
     const list = pembelianList.filter((p) => {
+      if (filterBulan && !p.tanggal.startsWith(filterBulan)) return false
       if (filterTanggalDari && p.tanggal < filterTanggalDari) return false
       if (filterTanggalSampai && p.tanggal > filterTanggalSampai) return false
       if (filterPeronId !== 'all' && p.peronId !== filterPeronId) return false
@@ -99,7 +101,7 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
       else if (sortBy === 'keuntungan') cmp = a.keuntungan - b.keuntungan
       return sortDir === 'asc' ? cmp : -cmp
     })
-  }, [pembelianList, filterTanggalDari, filterTanggalSampai, filterPeronId, sortBy, sortDir])
+  }, [pembelianList, filterBulan, filterTanggalDari, filterTanggalSampai, filterPeronId, sortBy, sortDir])
 
   const nomorUrutMap = useMemo(() => {
     const map = new Map<string, number>()
@@ -121,6 +123,14 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
   const totalBeli = filtered.reduce((s, p) => s + p.totalBeli, 0)
   const totalJual = filtered.reduce((s, p) => s + p.totalJual, 0)
   const totalUntung = filtered.reduce((s, p) => s + p.keuntungan, 0)
+  const jumlahBelum = filtered.filter((p) => p.statusBayarPeron === 'belum').length
+
+  const summaryCards = [
+    { label: 'Total Tiket', value: filtered.length.toString(), sub: `${jumlahBelum} belum dibayar` },
+    { label: 'Total Tonase', value: `${totalTonase.toLocaleString('id-ID')} kg`, sub: 'Netto II' },
+    { label: 'Total Beli', value: formatRupiah(totalBeli), sub: 'Dibayar ke peron', accent: true },
+    { label: 'Belum Dibayar', value: jumlahBelum.toString(), sub: 'Tiket pending' },
+  ]
 
   if (pembelianList.length === 0) {
     return (
@@ -160,8 +170,23 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
         <Button variant="outline" size="sm" className="hidden" />
       </PembelianFormDialog>
 
+      {/* Summary cards — ikut filter (termasuk bulan) */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {summaryCards.map((c) => (
+          <div key={c.label} className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">{c.label}</p>
+            <p className={`text-2xl font-bold num ${c.accent ? 'text-orange-600 dark:text-[#D97757]' : 'text-stone-900'}`}>{c.value}</p>
+            <p className="text-xs text-stone-400 mt-1">{c.sub}</p>
+          </div>
+        ))}
+      </div>
+
       {/* Filter */}
       <div className="flex flex-wrap gap-2 items-end">
+        <div className="space-y-1">
+          <p className="text-xs text-stone-500">Bulan</p>
+          <Input type="month" value={filterBulan} onChange={(e) => setFilterBulan(e.target.value)} className="w-36 h-8 text-sm" />
+        </div>
         <div className="space-y-1">
           <p className="text-xs text-stone-500">Dari</p>
           <Input type="date" value={filterTanggalDari} onChange={(e) => setFilterTanggalDari(e.target.value)} className="w-36 h-8 text-sm" />
@@ -180,12 +205,12 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
             </SelectContent>
           </Select>
         </div>
-        {(filterTanggalDari || filterTanggalSampai || filterPeronId !== 'all') && (
+        {(filterBulan || filterTanggalDari || filterTanggalSampai || filterPeronId !== 'all') && (
           <Button
             variant="ghost"
             size="sm"
             className="h-8 text-stone-500"
-            onClick={() => { setFilterTanggalDari(''); setFilterTanggalSampai(''); setFilterPeronId('all') }}
+            onClick={() => { setFilterBulan(''); setFilterTanggalDari(''); setFilterTanggalSampai(''); setFilterPeronId('all') }}
           >
             Reset Filter
           </Button>
