@@ -99,13 +99,52 @@
   --sidebar-ring: #EA580C;
 }
 
+/* ─── Dark mode ─── */
+html.dark {
+  color-scheme: dark;
+
+  --background: #0F0E0D;
+  --foreground: #F5F5F4;
+  --card: #1A1816;
+  --card-foreground: #F5F5F4;
+  --popover: #1A1816;
+  --popover-foreground: #F5F5F4;
+  --primary: #EA580C;
+  --primary-foreground: #FFFFFF;
+  --secondary: #292524;
+  --secondary-foreground: #D6D3D1;
+  --muted: #242220;
+  --muted-foreground: #A8A29E;
+  --accent: #431407;
+  --accent-foreground: #FDBA74;
+  --destructive: #EF4444;
+  --border: #2C2926;
+  --input: #2C2926;
+  --ring: #EA580C;
+
+  --chart-1: #22C55E;
+  --chart-2: #EF4444;
+  --chart-3: #EA580C;
+  --chart-4: #A8A29E;
+  --chart-5: #F59E0B;
+
+  --sidebar: #0A0908;
+  --sidebar-foreground: #D6D3D1;
+  --sidebar-primary: #EA580C;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #1A1816;
+  --sidebar-accent-foreground: #E7E5E4;
+  --sidebar-border: #1A1816;
+  --sidebar-ring: #EA580C;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
-    background-color: #FAFAF9;
-    color: #1C1917;
+    background-color: var(--background);
+    color: var(--foreground);
     min-height: 100dvh;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;

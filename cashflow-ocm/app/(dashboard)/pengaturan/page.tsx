@@ -5,21 +5,37 @@ import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ThermalPrinterSettings } from './thermal-printer-settings'
+import { ThemeSelector } from '@/components/theme-selector'
 
 export default async function PengaturanPage() {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session) redirect('/login')
-  if (session.user.role !== 'owner') redirect('/dashboard')
+
+  const isOwner = session.user.role === 'owner'
 
   return (
     <div className="space-y-5">
       <div className="space-y-2">
         <h1 className="text-2xl font-bold tracking-tight">Pengaturan</h1>
         <p className="text-muted-foreground text-sm">
-          Kelola profil dan akses akun CV OCM. Hanya owner yang dapat mengakses halaman ini.
+          Kelola preferensi dan konfigurasi akun.
         </p>
       </div>
 
+      {/* Tampilan */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Tampilan</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Pilih tema tampilan aplikasi. Mode otomatis mengikuti pengaturan HP kamu.
+          </p>
+          <ThemeSelector />
+        </CardContent>
+      </Card>
+
+      {/* Akun */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Akun Saya</CardTitle>
@@ -44,22 +60,27 @@ export default async function PengaturanPage() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Kontrol Akses</CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm text-muted-foreground space-y-2">
-          <p>
-            Owner memiliki akses penuh untuk menghapus data dan mengelola konfigurasi sistem.
-            Admin hanya dapat menambah dan mengedit data, tanpa akses hapus.
-          </p>
-          <p>
-            Untuk menambah pengguna baru, gunakan endpoint seeding atau hubungi administrator sistem.
-          </p>
-        </CardContent>
-      </Card>
+      {/* Owner-only sections */}
+      {isOwner && (
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Kontrol Akses</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground space-y-2">
+              <p>
+                Owner memiliki akses penuh untuk menghapus data dan mengelola konfigurasi sistem.
+                Admin hanya dapat menambah dan mengedit data, tanpa akses hapus.
+              </p>
+              <p>
+                Untuk menambah pengguna baru, gunakan endpoint seeding atau hubungi administrator sistem.
+              </p>
+            </CardContent>
+          </Card>
 
-      <ThermalPrinterSettings />
+          <ThermalPrinterSettings />
+        </>
+      )}
     </div>
   )
 }

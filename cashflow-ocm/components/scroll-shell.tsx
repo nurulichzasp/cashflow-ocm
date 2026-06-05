@@ -31,7 +31,7 @@ export function ScrollShell({ children }: { children: React.ReactNode }) {
 
       <main
         onScroll={onScroll}
-        className="flex-1 overflow-y-auto bg-stone-50 px-4 pt-[72px] pb-24 md:p-6"
+        className="flex-1 overflow-y-auto bg-background px-4 pt-[72px] pb-24 md:p-6"
       >
         <div className="app-container">
           {children}

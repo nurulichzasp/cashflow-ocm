@@ -272,15 +272,15 @@ export default async function DashboardPage() {
     <div className="space-y-6 pt-1 md:pt-0">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-semibold text-stone-900 tracking-tight">Dashboard</h1>
-        <p className="text-sm text-stone-500 mt-0.5">
+        <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-100 tracking-tight">Dashboard</h1>
+        <p className="text-sm text-stone-500 dark:text-stone-400 mt-0.5">
           {tanggal} &mdash; Selamat datang, {session?.user.name}
         </p>
       </div>
 
       {/* Ringkasan Hari Ini */}
-      <div className="rounded-xl border border-stone-100 bg-white overflow-hidden shadow-sm shadow-stone-100/80">
-        <div className="px-5 py-3 border-b border-stone-50 flex items-center gap-2">
+      <div className="rounded-xl border border-stone-100 dark:border-stone-800 bg-white dark:bg-stone-900 overflow-hidden shadow-sm shadow-stone-100/80 dark:shadow-none">
+        <div className="px-5 py-3 border-b border-stone-50 dark:border-stone-800 flex items-center gap-2">
           <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
           <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400">Hari Ini</p>
         </div>
@@ -299,17 +299,17 @@ export default async function DashboardPage() {
 
       {/* Saldo per akun */}
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 mb-3">Saldo Rekening &amp; Kas</p>
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-stone-500 mb-3">Saldo Rekening &amp; Kas</p>
         <div className="grid gap-3 sm:grid-cols-3">
           {/* Rek BRI CV OCM — utama */}
           {akunCvOcm && (
-            <div className="rounded-xl border border-orange-200 bg-gradient-to-br from-orange-50/80 to-white p-4 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
+            <div className="rounded-xl border border-orange-200 dark:border-orange-900/40 bg-gradient-to-br from-orange-50/80 to-white dark:from-orange-950/20 dark:to-transparent p-4 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
               <div className="flex items-center justify-between mb-3">
                 <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-600 uppercase tracking-wide">
                   Utama
                 </span>
               </div>
-              <p className="text-[11px] font-medium text-stone-400 mb-1.5 truncate">{akunCvOcm.nama}</p>
+              <p className="text-[11px] font-medium text-stone-400 dark:text-stone-500 mb-1.5 truncate">{akunCvOcm.nama}</p>
               <p className={`text-xl font-bold num tracking-tight ${akunCvOcm.saldo >= 0 ? 'text-stone-900' : 'text-red-600'}`}>
                 {formatRupiah(akunCvOcm.saldo)}
               </p>
@@ -317,7 +317,7 @@ export default async function DashboardPage() {
           )}
           {/* Rekening BRI lainnya — digabung */}
           {akunLainnya.length > 0 && (
-            <div className="rounded-xl border border-stone-100 bg-white p-4 transition-all duration-200 hover:border-stone-200 hover:shadow-md hover:-translate-y-0.5">
+            <div className="rounded-xl border border-stone-100 dark:border-stone-800 bg-white dark:bg-stone-900 p-4 transition-all duration-200 hover:border-stone-200 dark:hover:border-stone-700 hover:shadow-md hover:-translate-y-0.5">
               <div className="flex items-center justify-between mb-3">
                 <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-500 uppercase tracking-wide">
                   Bank
@@ -332,13 +332,13 @@ export default async function DashboardPage() {
           )}
           {/* Tunai */}
           {akunTunai.map((a) => (
-            <div key={a.id} className="rounded-xl border border-stone-100 bg-white p-4 transition-all duration-200 hover:border-stone-200 hover:shadow-md hover:-translate-y-0.5">
+            <div key={a.id} className="rounded-xl border border-stone-100 dark:border-stone-800 bg-white dark:bg-stone-900 p-4 transition-all duration-200 hover:border-stone-200 dark:hover:border-stone-700 hover:shadow-md hover:-translate-y-0.5">
               <div className="flex items-center justify-between mb-3">
                 <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-stone-100 text-stone-500 uppercase tracking-wide">
                   Tunai
                 </span>
               </div>
-              <p className="text-[11px] font-medium text-stone-400 mb-1.5 truncate">{a.nama}</p>
+              <p className="text-[11px] font-medium text-stone-400 dark:text-stone-500 mb-1.5 truncate">{a.nama}</p>
               <p className={`text-xl font-bold num tracking-tight ${a.saldo >= 0 ? 'text-stone-900' : 'text-red-600'}`}>
                 {formatRupiah(a.saldo)}
               </p>
@@ -365,10 +365,10 @@ export default async function DashboardPage() {
       {/* Charts */}
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <div className="rounded-xl border border-stone-100 bg-white overflow-hidden shadow-sm shadow-stone-100/80">
-            <div className="px-5 py-4 border-b border-stone-50">
-              <p className="text-sm font-semibold text-stone-800">Cashflow Harian</p>
-              <p className="text-xs text-stone-400 mt-0.5">Masuk vs keluar — 14 hari terakhir</p>
+          <div className="rounded-xl border border-stone-100 dark:border-stone-800 bg-white dark:bg-stone-900 overflow-hidden shadow-sm shadow-stone-100/80 dark:shadow-none">
+            <div className="px-5 py-4 border-b border-stone-50 dark:border-stone-800">
+              <p className="text-sm font-semibold text-stone-800 dark:text-stone-200">Cashflow Harian</p>
+              <p className="text-xs text-stone-400 dark:text-stone-500 mt-0.5">Masuk vs keluar — 14 hari terakhir</p>
             </div>
             <div className="p-4">
               <CashflowChart data={charts.daily} />
@@ -377,10 +377,10 @@ export default async function DashboardPage() {
         </div>
 
         <div>
-          <div className="rounded-xl border border-stone-100 bg-white overflow-hidden shadow-sm shadow-stone-100/80">
-            <div className="px-5 py-4 border-b border-stone-50">
-              <p className="text-sm font-semibold text-stone-800">Komposisi Modal</p>
-              <p className="text-xs text-stone-400 mt-0.5">Bank, Tunai, DP Peron, Piutang</p>
+          <div className="rounded-xl border border-stone-100 dark:border-stone-800 bg-white dark:bg-stone-900 overflow-hidden shadow-sm shadow-stone-100/80 dark:shadow-none">
+            <div className="px-5 py-4 border-b border-stone-50 dark:border-stone-800">
+              <p className="text-sm font-semibold text-stone-800 dark:text-stone-200">Komposisi Modal</p>
+              <p className="text-xs text-stone-400 dark:text-stone-500 mt-0.5">Bank, Tunai, DP Peron, Piutang</p>
             </div>
             <div className="p-4">
               <CompositionChart data={charts.composition} />
@@ -389,10 +389,10 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-stone-100 bg-white overflow-hidden shadow-sm shadow-stone-100/80">
-        <div className="px-5 py-4 border-b border-stone-50">
-          <p className="text-sm font-semibold text-stone-800">Tren Modal Berputar</p>
-          <p className="text-xs text-stone-400 mt-0.5">Perkembangan modal selama 14 hari terakhir</p>
+      <div className="rounded-xl border border-stone-100 dark:border-stone-800 bg-white dark:bg-stone-900 overflow-hidden shadow-sm shadow-stone-100/80 dark:shadow-none">
+        <div className="px-5 py-4 border-b border-stone-50 dark:border-stone-800">
+          <p className="text-sm font-semibold text-stone-800 dark:text-stone-200">Tren Modal Berputar</p>
+          <p className="text-xs text-stone-400 dark:text-stone-500 mt-0.5">Perkembangan modal selama 14 hari terakhir</p>
         </div>
         <div className="p-4">
           <TrendChart data={charts.trend} />

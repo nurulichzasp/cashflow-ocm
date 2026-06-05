@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
+import { ThemeToggle } from '@/components/theme-selector'
 
 const navItems = [
   { href: '/dashboard',   label: 'Dashboard',    icon: LayoutDashboard },
@@ -82,10 +83,7 @@ export function Sidebar({ userName, isOwner }: { userName?: string; isOwner?: bo
     router.refresh()
   }
 
-  const visibleNavItems = navItems.filter((item) => {
-    if (item.href === '/pengaturan') return isOwner
-    return true
-  })
+  const visibleNavItems = navItems.filter(() => true)
 
   return (
     <aside className="flex h-full w-60 flex-col bg-stone-900 border-r border-stone-800/60">
@@ -124,6 +122,7 @@ export function Sidebar({ userName, isOwner }: { userName?: string; isOwner?: bo
               <p className="text-xs font-semibold text-stone-200 truncate">{userName}</p>
               <p className="text-[11px] text-stone-500">{isOwner ? 'Owner' : 'Admin'}</p>
             </div>
+            <ThemeToggle />
           </div>
         )}
         <button

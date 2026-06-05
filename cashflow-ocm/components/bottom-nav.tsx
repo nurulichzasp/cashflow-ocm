@@ -20,6 +20,7 @@ import {
   Settings,
   LogOut,
 } from 'lucide-react'
+import { ThemeToggle } from '@/components/theme-selector'
 
 const primaryNav = [
   { href: '/dashboard',  label: 'Dashboard',  icon: LayoutDashboard },
@@ -33,7 +34,7 @@ const moreNav = [
   { href: '/peron',      label: 'Peron',       icon: Users },
   { href: '/harga',      label: 'Harga',       icon: DollarSign },
   { href: '/laporan',    label: 'Laporan',     icon: BarChart3 },
-  { href: '/pengaturan', label: 'Pengaturan',  icon: Settings, ownerOnly: true },
+  { href: '/pengaturan', label: 'Pengaturan',  icon: Settings, ownerOnly: false },
 ]
 
 function getInitials(name?: string) {
@@ -62,7 +63,7 @@ export function BottomNav({ isOwner, userName }: { isOwner?: boolean; userName?:
   return (
     <>
       {/* Bottom tab bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-sm border-t border-stone-200/80 flex items-stretch"
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-stone-950/95 backdrop-blur-sm border-t border-stone-200/80 dark:border-stone-800/60 flex items-stretch"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         {primaryNav.map((item) => {
@@ -122,7 +123,7 @@ export function BottomNav({ isOwner, userName }: { isOwner?: boolean; userName?:
         {/* Sheet dari bawah */}
         <div
           className={cn(
-            'absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl flex flex-col',
+            'absolute bottom-0 left-0 right-0 bg-white dark:bg-stone-950 rounded-t-2xl flex flex-col',
             'transition-transform',
             drawerOpen ? 'translate-y-0' : 'translate-y-full'
           )}
@@ -134,24 +135,27 @@ export function BottomNav({ isOwner, userName }: { isOwner?: boolean; userName?:
         >
           {/* Handle */}
           <div className="flex justify-center pt-3 pb-1">
-            <div className="h-1 w-10 rounded-full bg-stone-200" />
+            <div className="h-1 w-10 rounded-full bg-stone-200 dark:bg-stone-700" />
           </div>
 
           {/* User info */}
-          <div className="flex items-center gap-3 px-5 py-3 border-b border-stone-100">
+          <div className="flex items-center gap-3 px-5 py-3 border-b border-stone-100 dark:border-stone-800">
             <div className="h-9 w-9 rounded-full bg-orange-600 flex items-center justify-center text-sm font-bold text-white shrink-0">
               {getInitials(userName)}
             </div>
             <div>
-              <p className="text-sm font-semibold text-stone-900">{userName}</p>
-              <p className="text-xs text-stone-400">{isOwner ? 'Owner' : 'Admin'}</p>
+              <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">{userName}</p>
+              <p className="text-xs text-stone-400 dark:text-stone-500">{isOwner ? 'Owner' : 'Admin'}</p>
             </div>
-            <button
-              onClick={() => setDrawerOpen(false)}
-              className="ml-auto p-2 rounded-lg text-stone-400 hover:bg-stone-100 transition-colors"
-            >
-              <X className="h-4 w-4" />
-            </button>
+            <div className="ml-auto flex items-center gap-2">
+              <ThemeToggle />
+              <button
+                onClick={() => setDrawerOpen(false)}
+                className="p-2 rounded-lg text-stone-400 dark:text-stone-500 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
           </div>
 
           {/* Nav items */}
@@ -166,11 +170,11 @@ export function BottomNav({ isOwner, userName }: { isOwner?: boolean; userName?:
                   className={cn(
                     'flex items-center gap-3 px-3 py-3 rounded-xl transition-colors duration-150',
                     active
-                      ? 'bg-orange-50 text-orange-600'
-                      : 'text-stone-700 hover:bg-stone-50'
+                      ? 'bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400'
+                      : 'text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-900'
                   )}
                 >
-                  <item.icon className={cn('h-5 w-5 shrink-0', active ? 'text-orange-600' : 'text-stone-400')} />
+                  <item.icon className={cn('h-5 w-5 shrink-0', active ? 'text-orange-600 dark:text-orange-400' : 'text-stone-400 dark:text-stone-500')} />
                   <span className={cn('text-sm', active ? 'font-semibold' : 'font-medium')}>{item.label}</span>
                 </Link>
               )
@@ -178,10 +182,10 @@ export function BottomNav({ isOwner, userName }: { isOwner?: boolean; userName?:
           </div>
 
           {/* Logout */}
-          <div className="px-3 pb-3 pt-1 border-t border-stone-100 mt-1">
+          <div className="px-3 pb-3 pt-1 border-t border-stone-100 dark:border-stone-800 mt-1">
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-red-500 hover:bg-red-50 transition-colors duration-150"
+              className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors duration-150"
             >
               <LogOut className="h-5 w-5 shrink-0" />
               <span className="text-sm font-medium">Keluar</span>

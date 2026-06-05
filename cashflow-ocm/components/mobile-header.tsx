@@ -28,11 +28,11 @@ export function MobileHeader() {
   const title = getPageTitle(pathname)
 
   return (
-    <header className="flex items-center h-14 px-4 gap-3 bg-white/60 backdrop-blur-xl border-b border-white/40">
+    <header className="flex items-center h-14 px-4 gap-3 bg-white/70 dark:bg-stone-950/80 backdrop-blur-xl border-b border-stone-200/30 dark:border-stone-800/40">
       <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-orange-600 text-white text-[10px] font-bold shrink-0 shadow-sm shadow-orange-600/25">
         OCM
       </div>
-      <span className="flex-1 text-base font-semibold text-stone-900 tracking-tight truncate">
+      <span className="flex-1 text-base font-semibold text-stone-900 dark:text-stone-100 tracking-tight truncate">
         {title}
       </span>
     </header>
