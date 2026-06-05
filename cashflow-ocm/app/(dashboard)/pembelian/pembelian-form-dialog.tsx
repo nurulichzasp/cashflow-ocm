@@ -209,8 +209,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, initi
 
             <div className="rounded-lg border border-stone-200 overflow-hidden">
               {/* Header */}
-              <div className="grid grid-cols-[1.5fr_2fr_2fr_2fr_auto] gap-0 bg-stone-50 border-b border-stone-200 text-xs font-semibold uppercase text-stone-500 tracking-wide">
-                <div className="px-3 py-2">No. TID</div>
+              <div className="grid grid-cols-[2fr_2fr_2fr_auto] gap-0 bg-stone-50 border-b border-stone-200 text-xs font-semibold uppercase text-stone-500 tracking-wide">
                 <div className="px-3 py-2">Tonase (kg) *</div>
                 <div className="px-3 py-2">Harga (Rp/kg) *</div>
                 <div className="px-3 py-2 flex items-center gap-1">
@@ -227,10 +226,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, initi
                 const subtotal = ton * harga
                 return (
                   <div key={idx} className="border-b border-stone-100 last:border-b-0">
-                    <div className="grid grid-cols-[1.5fr_2fr_2fr_2fr_auto] gap-0 items-center">
-                      <div className="px-2 py-1.5">
-                        <Input value={d.noTid} onChange={(e) => updateDetail(idx, 'noTid', e.target.value)} placeholder="GR0600…" className="h-8 text-sm" />
-                      </div>
+                    <div className="grid grid-cols-[2fr_2fr_2fr_auto] gap-0 items-center">
                       <div className="px-2 py-1.5">
                         <Input type="number" step="0.01" value={d.tonase} onChange={(e) => updateDetail(idx, 'tonase', e.target.value)} placeholder="0" className="h-8 text-sm" />
                       </div>

@@ -101,6 +101,22 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
     })
   }, [pembelianList, filterTanggalDari, filterTanggalSampai, filterPeronId, sortBy, sortDir])
 
+  const nomorUrutMap = useMemo(() => {
+    const map = new Map<string, number>()
+    const groups: Record<string, PembelianRow[]> = {}
+    for (const p of pembelianList) {
+      const bulan = p.tanggal.slice(0, 7)
+      const key = `${p.peronId}|${bulan}`
+      if (!groups[key]) groups[key] = []
+      groups[key].push(p)
+    }
+    for (const rows of Object.values(groups)) {
+      rows.sort((a, b) => a.tanggal.localeCompare(b.tanggal) || a.id.localeCompare(b.id))
+      rows.forEach((p, i) => map.set(p.id, i + 1))
+    }
+    return map
+  }, [pembelianList])
+
   const totalTonase = filtered.reduce((s, p) => s + p.tonase, 0)
   const totalBeli = filtered.reduce((s, p) => s + p.totalBeli, 0)
   const totalJual = filtered.reduce((s, p) => s + p.totalJual, 0)
@@ -199,7 +215,6 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
                 )
               })}
               <th className="text-right px-3 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">H.Beli</th>
-              <th className="text-left px-3 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">TID</th>
               <th className="text-left px-3 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Kat</th>
               <th className="text-left px-3 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
               <th className="text-left px-3 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Foto</th>
@@ -218,7 +233,6 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
                   <td className="px-3 py-2.5 text-right num text-stone-500 text-xs">
                     Rp {p.hargaBeli.toLocaleString('id-ID')}
                   </td>
-                  <td className="px-3 py-2.5 text-stone-500 font-mono text-xs">{p.noTid ?? <span className="text-stone-300">—</span>}</td>
                   <td className="px-3 py-2.5">
                     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${kategoriBadge[p.kategori] ?? ''}`}>
                       {p.kategori}
@@ -242,7 +256,7 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
                   {isOwner && (
                     <td className="px-3 py-2.5">
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <PrintNotaButton pembelian={p} />
+                        <PrintNotaButton pembelian={p} nomorUrut={nomorUrutMap.get(p.id) ?? 1} />
                         <Button
                           variant="ghost" size="icon"
                           className="h-7 w-7 text-stone-500 hover:text-stone-900 hover:bg-stone-100"
@@ -278,7 +292,7 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
                 </tr>
                 {expandedFotoId === p.id && p.fotos.length > 0 && (
                   <tr className="bg-orange-50/30">
-                    <td colSpan={isOwner ? 12 : 11} className="px-4 py-3">
+                    <td colSpan={isOwner ? 11 : 10} className="px-4 py-3">
                       <FotoBuktiGallery urls={p.fotos.map((f) => f.url)} />
                     </td>
                   </tr>
@@ -297,7 +311,7 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
               </td>
               <td className="px-3 py-2.5 text-right num text-stone-900">{formatRupiah(totalBeli)}</td>
               <td className="px-3 py-2.5 text-right num text-green-700">{formatRupiah(totalUntung)}</td>
-              <td colSpan={isOwner ? 6 : 5} />
+              <td colSpan={isOwner ? 5 : 4} />
             </tr>
           </tfoot>
         </table>
@@ -310,7 +324,7 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
             <div className="flex items-start justify-between gap-2 mb-2">
               <div>
                 <p className="font-semibold text-stone-900">{p.peron?.nama ?? p.peronId}</p>
-                <p className="text-xs text-stone-500 mt-0.5">{formatTanggal(p.tanggal)}{p.noTid ? ` · ${p.noTid}` : ''}</p>
+                <p className="text-xs text-stone-500 mt-0.5">{formatTanggal(p.tanggal)}</p>
               </div>
               <div className="flex gap-1.5 shrink-0">
                 <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${kategoriBadge[p.kategori] ?? ''}`}>{p.kategori}</span>
@@ -347,7 +361,7 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
 
             {isOwner && (
               <div className="flex items-center gap-2 pt-2 border-t border-stone-100">
-                <PrintNotaButton pembelian={p} />
+                <PrintNotaButton pembelian={p} nomorUrut={nomorUrutMap.get(p.id) ?? 1} />
                 <Button
                   variant="outline" size="sm"
                   className="gap-1.5 border-stone-200 text-stone-700 hover:bg-stone-50"

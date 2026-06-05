@@ -36,12 +36,14 @@ function getDetails(p: PembelianRow) {
 }
 
 // ── Nomor Invoice otomatis ────────────────────────────────────────────────────
-// Format: NP/[YYYYMMDD]/[4-CHAR-ID]
-// Contoh: NP/20260605/A3F2
-function generateNoPembelian(tanggal: string, id: string): string {
-  const dateStr = tanggal.replace(/-/g, '')          // "2026-06-05" → "20260605"
-  const idSuffix = id.slice(-4).toUpperCase()         // last 4 chars of UUID
-  return `NP/${dateStr}/${idSuffix}`
+// Format: NP/[Kode Peron]/[Bulan]/[Tahun]/[No Urut 3 digit per bulan per peron]
+// Contoh: NP/1/06/2026/001
+function generateNoPembelian(tanggal: string, peronKode: number | null | undefined, nomorUrut: number): string {
+  const bulan = tanggal.slice(5, 7)
+  const tahun = tanggal.slice(0, 4)
+  const kode = peronKode !== null && peronKode !== undefined ? String(peronKode) : '0'
+  const urut = String(nomorUrut).padStart(3, '0')
+  return `NP/${kode}/${bulan}/${tahun}/${urut}`
 }
 
 function getThermalWidth(): number {
@@ -52,11 +54,11 @@ function getThermalWidth(): number {
 
 // ── Nota Lengkap (A5) ────────────────────────────────────────────────────────
 
-function buildNotaHTML(p: PembelianRow): string {
+function buildNotaHTML(p: PembelianRow, nomorUrut: number): string {
   const details = getDetails(p)
   const waktu = formatWaktu(p.createdAt)
   const sumberLabel = sumberBayarLabel(p.sumberBayar)
-  const noInvoice = generateNoPembelian(p.tanggal, p.id)
+  const noInvoice = generateNoPembelian(p.tanggal, p.peron?.kode, nomorUrut)
 
   const detailRows = details.map((d) => `
     <tr>
@@ -189,11 +191,11 @@ function buildNotaHTML(p: PembelianRow): string {
 
 // ── Nota Thermal ─────────────────────────────────────────────────────────────
 
-function buildThermalHTML(p: PembelianRow, paperWidthMm: number): string {
+function buildThermalHTML(p: PembelianRow, paperWidthMm: number, nomorUrut: number): string {
   const details = getDetails(p)
   const waktu = formatWaktu(p.createdAt)
   const sumberLabel = sumberBayarLabel(p.sumberBayar)
-  const noInvoice = generateNoPembelian(p.tanggal, p.id)
+  const noInvoice = generateNoPembelian(p.tanggal, p.peron?.kode, nomorUrut)
   const charWidth = paperWidthMm === 80 ? 42 : 32
   const divider = '-'.repeat(charWidth)
   const doubleDivider = '='.repeat(charWidth)
@@ -211,12 +213,6 @@ function buildThermalHTML(p: PembelianRow, paperWidthMm: number): string {
     const nopolSupir = [d.nopol, d.supir].filter(Boolean).join(' / ')
     return `<div>${line1}</div><div style="text-align:right">${sub}</div>${nopolSupir ? `<div style="color:#666;font-size:8pt">${nopolSupir}</div>` : ''}`
   }).join('<div style="border-top:1px dashed #ccc;margin:2px 0"></div>')
-
-  // Kumpulkan semua No. TID yang ada
-  const noTidList = details.map(d => d.noTid).filter(Boolean)
-  const noTidDisplay = noTidList.length === 1
-    ? noTidList[0]
-    : noTidList.length > 1 ? noTidList.join(', ') : ''
 
   return `<!DOCTYPE html>
 <html lang="id">
@@ -288,7 +284,6 @@ function buildThermalHTML(p: PembelianRow, paperWidthMm: number): string {
   <div class="solid"></div>
   <div class="center bold" style="letter-spacing:1px">NOTA PEMBELIAN</div>
   <div class="center" style="font-size:8.5pt;margin-top:2px;letter-spacing:0.5px;color:#444">${noInvoice}</div>
-  ${noTidDisplay ? `<div class="center" style="font-size:7.5pt;margin-top:1px;color:#666">TID: ${noTidDisplay}</div>` : ''}
   <div class="divider"></div>
 
   <div class="row"><span class="l">Tanggal</span><span class="r">${formatTanggal(p.tanggal)}</span></div>
@@ -472,19 +467,21 @@ function txt(content: string, bold: 0 | 1 = 0, align: 0 | 1 | 2 = 0, format: 0 |
   return { type: 0, content, bold, align, format }
 }
 
-function buildThermerURL(p: PembelianRow): string {
+function buildThermerURL(p: PembelianRow, nomorUrut: number): string {
   const details = getDetails(p)
   const paperWidthMm = getThermalWidth()
   const div = '-'.repeat(paperWidthMm === 80 ? 42 : 32)
   const equ = '='.repeat(paperWidthMm === 80 ? 42 : 32)
   const waktu = formatWaktu(p.createdAt)
   const sumberLabel = p.sumberBayar ? (p.sumberBayar.tipe === 'bank' ? 'Transfer' : 'Tunai') : null
+  const noInvoice = generateNoPembelian(p.tanggal, p.peron?.kode, nomorUrut)
 
   const entries: ThermerEntry[] = [
     txt('CV OCM', 1, 1, 2),
     txt('Omanda Cerli Mandiri', 0, 1, 4),
     txt(equ, 0, 1),
     txt('NOTA PEMBELIAN', 1, 1),
+    txt(noInvoice, 0, 1, 4),
     txt(div, 0, 1),
     txt(`Tanggal : ${formatTanggal(p.tanggal)}${waktu ? '  ' + waktu : ''}`),
     txt(`Peron   : ${p.peron?.nama ?? p.peronId}`),
@@ -518,9 +515,9 @@ function buildThermerURL(p: PembelianRow): string {
 
 // ── Komponen Tombol ──────────────────────────────────────────────────────────
 
-export function PrintNotaButton({ pembelian }: { pembelian: PembelianRow }) {
+export function PrintNotaButton({ pembelian, nomorUrut }: { pembelian: PembelianRow; nomorUrut: number }) {
   function handlePrintLengkap() {
-    const html = buildNotaHTML(pembelian)
+    const html = buildNotaHTML(pembelian, nomorUrut)
     const win = window.open('', '_blank', 'width=600,height=750')
     if (!win) { alert('Pop-up diblokir. Izinkan pop-up untuk halaman ini.'); return }
     win.document.open(); win.document.write(html); win.document.close()
@@ -528,14 +525,14 @@ export function PrintNotaButton({ pembelian }: { pembelian: PembelianRow }) {
 
   function handlePrintThermal() {
     const width = getThermalWidth()
-    const html = buildThermalHTML(pembelian, width)
+    const html = buildThermalHTML(pembelian, width, nomorUrut)
     const win = window.open('', '_blank', `width=${width === 80 ? 400 : 320},height=600`)
     if (!win) { alert('Pop-up diblokir. Izinkan pop-up untuk halaman ini.'); return }
     win.document.open(); win.document.write(html); win.document.close()
   }
 
   function handlePrintThermer() {
-    window.location.href = buildThermerURL(pembelian)
+    window.location.href = buildThermerURL(pembelian, nomorUrut)
   }
 
   return (
