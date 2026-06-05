@@ -7,12 +7,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
-import { Leaf } from 'lucide-react'
+import { Leaf, Eye, EyeOff } from 'lucide-react'
 
 export default function LoginPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState({ email: '', password: '' })
+  const [showPassword, setShowPassword] = useState(false)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -40,71 +41,73 @@ export default function LoginPage() {
       {/* Left panel — brand */}
       <div
         className="hidden lg:flex lg:w-[45%] flex-col justify-between p-12 relative overflow-hidden"
-        style={{ background: 'linear-gradient(145deg, #C2410C 0%, #EA580C 45%, #D97706 100%)' }}
+        style={{
+          background: 'linear-gradient(150deg, #7C2D12 0%, #C2410C 40%, #EA580C 70%, #D97706 100%)',
+        }}
       >
-        {/* Subtle geometric overlay */}
-        <div
-          className="absolute inset-0 opacity-[0.06]"
-          style={{
-            backgroundImage:
-              'radial-gradient(circle at 20% 80%, #fff 1px, transparent 1px), radial-gradient(circle at 80% 20%, #fff 1px, transparent 1px)',
-            backgroundSize: '40px 40px',
-          }}
-        />
+        {/* Decorative circles */}
+        <div className="absolute -right-32 -top-32 w-96 h-96 rounded-full border border-white/10" />
+        <div className="absolute -right-20 -top-20 w-72 h-72 rounded-full border border-white/[0.06]" />
+        <div className="absolute -left-24 -bottom-24 w-80 h-80 rounded-full bg-white/[0.04]" />
+        <div className="absolute left-8 bottom-32 w-2 h-2 rounded-full bg-white/20" />
+        <div className="absolute right-24 top-40 w-1.5 h-1.5 rounded-full bg-white/20" />
 
         {/* Logo */}
         <div className="relative flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 text-white font-bold text-sm backdrop-blur-sm">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 text-white font-bold text-xs backdrop-blur-sm border border-white/20">
             OCM
           </div>
-          <span className="font-semibold text-white text-sm tracking-wide">
+          <span className="font-medium text-white/75 text-sm tracking-wide">
             CV OCM Cashflow
           </span>
         </div>
 
         {/* Hero text */}
         <div className="relative">
-          <div className="flex items-center gap-2 mb-6">
-            <Leaf className="h-5 w-5 text-orange-200" />
-            <span className="text-orange-200 text-sm font-medium">Sistem Manajemen Keuangan</span>
+          <div className="inline-flex items-center gap-2 mb-6 px-3 py-1.5 rounded-full bg-white/10 border border-white/15">
+            <Leaf className="h-3.5 w-3.5 text-orange-200" />
+            <span className="text-orange-100/90 text-xs font-medium">Sistem Manajemen Keuangan</span>
           </div>
-          <h1 className="text-4xl font-bold text-white leading-tight tracking-tight">
+          <h1 className="text-[2.75rem] font-bold text-white leading-[1.15] tracking-tight">
             Cashflow sawit
             <br />
             dalam genggaman.
           </h1>
-          <p className="text-orange-100 mt-4 text-base leading-relaxed max-w-xs">
+          <p className="text-orange-100/60 mt-5 text-sm leading-relaxed max-w-xs">
             Catat pembelian dari peron, penjualan ke BGA, dan pantau kas CV OCM — semua terpusat dan real-time.
           </p>
         </div>
 
         {/* Footer */}
-        <div className="relative text-orange-300 text-xs">
+        <div className="relative text-white/35 text-xs font-medium">
           Supplier TBS &amp; BRDL ke PKS PT. BGA
         </div>
       </div>
 
       {/* Right panel — form */}
-      <div className="flex-1 flex items-center justify-center bg-stone-50 p-6 lg:p-12">
-        <div className="w-full max-w-sm">
+      <div className="flex-1 flex items-center justify-center bg-stone-50 p-6 lg:p-16">
+        <div className="w-full max-w-[360px]">
+
           {/* Mobile logo */}
-          <div className="lg:hidden mb-8 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-600 text-white font-bold text-sm">
+          <div className="lg:hidden mb-10 flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-600 text-white font-bold text-xs shadow-sm shadow-orange-600/30">
               OCM
             </div>
-            <span className="font-semibold text-stone-900">CV OCM Cashflow</span>
+            <span className="font-semibold text-stone-800 text-sm">CV OCM Cashflow</span>
           </div>
 
-          <h2 className="text-2xl font-bold text-stone-900 tracking-tight">Selamat datang</h2>
-          <p className="text-stone-500 text-sm mt-1 mb-8">
+          <h2 className="text-[1.75rem] font-bold text-stone-900 tracking-tight leading-none">
+            Selamat datang
+          </h2>
+          <p className="text-stone-400 text-sm mt-2.5 mb-9 leading-relaxed">
             Masuk untuk melanjutkan ke dashboard.
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label
                 htmlFor="email"
-                className="text-sm font-medium text-stone-700"
+                className="text-xs font-semibold text-stone-400 uppercase tracking-widest"
               >
                 Email
               </Label>
@@ -118,38 +121,59 @@ export default function LoginPage() {
                 }
                 required
                 autoComplete="email"
-                className="h-10 border-stone-300 bg-white focus:border-orange-500 focus:ring-orange-100 text-stone-900 placeholder:text-stone-400"
+                className="h-11 border-stone-200 bg-white focus:border-orange-400 text-stone-900 placeholder:text-stone-300 rounded-xl"
               />
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <Label
                 htmlFor="password"
-                className="text-sm font-medium text-stone-700"
+                className="text-xs font-semibold text-stone-400 uppercase tracking-widest"
               >
                 Password
               </Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={form.password}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setForm((f) => ({ ...f, password: e.target.value }))
-                }
-                required
-                autoComplete="current-password"
-                className="h-10 border-stone-300 bg-white focus:border-orange-500 focus:ring-orange-100 text-stone-900 placeholder:text-stone-400"
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={form.password}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setForm((f) => ({ ...f, password: e.target.value }))
+                  }
+                  required
+                  autoComplete="current-password"
+                  className="h-11 border-stone-200 bg-white focus:border-orange-400 text-stone-900 placeholder:text-stone-300 rounded-xl pr-11"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-stone-300 hover:text-stone-500 transition-colors rounded-md"
+                  tabIndex={-1}
+                  aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                >
+                  {showPassword
+                    ? <EyeOff className="h-4 w-4" />
+                    : <Eye className="h-4 w-4" />
+                  }
+                </button>
+              </div>
             </div>
 
-            <Button
-              type="submit"
-              className="w-full h-10 bg-orange-600 hover:bg-orange-700 text-white font-medium"
-              disabled={loading}
-            >
-              {loading ? 'Memproses...' : 'Masuk'}
-            </Button>
+            <div className="pt-2">
+              <Button
+                type="submit"
+                className="w-full h-11 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white font-semibold rounded-xl text-sm shadow-sm shadow-orange-600/20 transition-all"
+                disabled={loading}
+              >
+                {loading ? (
+                  <span className="flex items-center gap-2.5">
+                    <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                    Memproses...
+                  </span>
+                ) : 'Masuk'}
+              </Button>
+            </div>
           </form>
         </div>
       </div>

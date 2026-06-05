@@ -112,10 +112,26 @@
   }
   html {
     @apply font-sans;
+    scroll-behavior: smooth;
   }
   /* Smooth focus rings */
   :focus-visible {
     outline-offset: 2px;
+  }
+  /* Thin elegant scrollbar */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #D6D3D1;
+    border-radius: 99px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #A8A29E;
   }
   /* Prevent hover states on touch */
   @media (hover: none) {

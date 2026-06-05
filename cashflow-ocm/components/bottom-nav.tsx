@@ -72,10 +72,13 @@ export function BottomNav({ isOwner, userName }: { isOwner?: boolean; userName?:
               key={item.href}
               href={item.href}
               className={cn(
-                'flex flex-1 flex-col items-center justify-center gap-1 py-2.5 min-h-[56px] transition-colors duration-150',
+                'relative flex flex-1 flex-col items-center justify-center gap-1 py-2.5 min-h-[56px] transition-colors duration-150',
                 active ? 'text-orange-600' : 'text-stone-400'
               )}
             >
+              {active && (
+                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-orange-500" />
+              )}
               <item.icon className={cn('h-5 w-5 shrink-0', active && 'stroke-[2.2px]')} />
               <span className={cn('text-[10px] font-medium leading-none', active && 'font-semibold')}>
                 {item.label}
@@ -88,10 +91,13 @@ export function BottomNav({ isOwner, userName }: { isOwner?: boolean; userName?:
         <button
           onClick={() => setDrawerOpen(true)}
           className={cn(
-            'flex flex-1 flex-col items-center justify-center gap-1 py-2.5 min-h-[56px] transition-colors duration-150',
+            'relative flex flex-1 flex-col items-center justify-center gap-1 py-2.5 min-h-[56px] transition-colors duration-150',
             isMoreActive ? 'text-orange-600' : 'text-stone-400'
           )}
         >
+          {isMoreActive && (
+            <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-orange-500" />
+          )}
           <Menu className={cn('h-5 w-5 shrink-0', isMoreActive && 'stroke-[2.2px]')} />
           <span className={cn('text-[10px] font-medium leading-none', isMoreActive && 'font-semibold')}>
             Menu
