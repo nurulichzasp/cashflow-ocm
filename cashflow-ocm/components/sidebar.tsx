@@ -53,16 +53,16 @@ function NavLink({
       href={href}
       onClick={onClick}
       className={cn(
-        'relative flex items-center gap-3 mx-2 rounded-lg px-3 py-2.5 text-sm transition-colors duration-150',
+        'relative flex items-center gap-3 mx-2 rounded-lg px-3 py-2.5 text-sm transition-all duration-150',
         active
-          ? 'bg-orange-500/10 text-orange-400 font-semibold'
-          : 'text-stone-400 font-medium hover:bg-stone-800/60 hover:text-stone-200'
+          ? 'bg-orange-500/12 text-orange-400 font-semibold'
+          : 'text-stone-400 font-medium hover:bg-stone-800/50 hover:text-stone-200'
       )}
     >
       {active && (
-        <span className="absolute left-0 top-2.5 bottom-2.5 w-[3px] rounded-full bg-orange-500" />
+        <span className="absolute left-0 top-[7px] bottom-[7px] w-[3px] rounded-full bg-orange-500" style={{ boxShadow: '0 0 6px oklch(0.65 0.2 41 / 0.5)' }} />
       )}
-      <Icon className={cn('h-[18px] w-[18px] shrink-0', active && 'text-orange-400')} />
+      <Icon className={cn('h-[17px] w-[17px] shrink-0 transition-colors', active ? 'text-orange-400' : '')} />
       {label}
     </Link>
   )

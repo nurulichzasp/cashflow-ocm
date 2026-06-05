@@ -83,10 +83,15 @@
 
   --radius: 0.625rem;
 
-  /* Custom easing curves (Emil Kowalski) */
+  /* Custom easing curves */
   --ease-out-expo: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out-expo: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* Brand shadows */
+  --shadow-brand-sm: 0 2px 8px oklch(0.57 0.2 41 / 0.22);
+  --shadow-brand-md: 0 4px 14px oklch(0.57 0.2 41 / 0.28);
+  --shadow-card: 0 1px 3px oklch(0.2 0 0 / 0.08), 0 1px 2px oklch(0.2 0 0 / 0.05);
 
   /* Sidebar dark (stone-900) */
   --sidebar: #1C1917;
@@ -179,6 +184,17 @@ html.dark {
       background-color: transparent;
     }
   }
+  /* Balanced headings */
+  h1, h2, h3 {
+    text-wrap: balance;
+  }
+  /* Subtle scrollbar */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #d6d3d1; border-radius: 99px; }
+  ::-webkit-scrollbar-thumb:hover { background: #a8a29e; }
+  /* Smooth scroll */
+  html { scroll-behavior: smooth; }
 }
 
 @layer utilities {

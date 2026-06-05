@@ -277,6 +277,10 @@ export default async function DashboardPage() {
           {tanggal} &mdash; Selamat datang, {session?.user.name}
         </p>
       </div>
+      {/* Mobile greeting */}
+      <div className="md:hidden">
+        <p className="text-sm text-stone-500">{tanggal}</p>
+      </div>
 
       {/* Ringkasan Hari Ini */}
       <div className="rounded-xl border border-stone-100 dark:border-stone-800 bg-white dark:bg-stone-900 overflow-hidden shadow-sm shadow-stone-100/80 dark:shadow-none">
@@ -313,6 +317,7 @@ export default async function DashboardPage() {
               <p className={`text-xl font-bold num tracking-tight ${akunCvOcm.saldo >= 0 ? 'text-stone-900' : 'text-red-600'}`}>
                 {formatRupiah(akunCvOcm.saldo)}
               </p>
+              <p className="text-[11px] text-orange-200 mt-2">Rekening Utama</p>
             </div>
           )}
           {/* Rekening BRI lainnya — digabung */}
@@ -327,7 +332,7 @@ export default async function DashboardPage() {
               <p className={`text-xl font-bold num tracking-tight ${saldoLainnya >= 0 ? 'text-stone-900' : 'text-red-600'}`}>
                 {formatRupiah(saldoLainnya)}
               </p>
-              <p className="text-[10px] text-stone-300 mt-1">{akunLainnya.map((a) => a.nama).join(' · ')}</p>
+              <p className="text-[10px] text-stone-300 mt-2 truncate">{akunLainnya.map((a) => a.nama).join(' · ')}</p>
             </div>
           )}
           {/* Tunai */}
@@ -342,6 +347,7 @@ export default async function DashboardPage() {
               <p className={`text-xl font-bold num tracking-tight ${a.saldo >= 0 ? 'text-stone-900' : 'text-red-600'}`}>
                 {formatRupiah(a.saldo)}
               </p>
+              <p className="text-[11px] text-stone-400 mt-2">Tunai</p>
             </div>
           ))}
         </div>

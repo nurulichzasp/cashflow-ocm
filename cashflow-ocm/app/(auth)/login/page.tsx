@@ -277,6 +277,10 @@ export default function LoginPage() {
               </button>
             </div>
           </form>
+
+          <p className="text-center text-[11px] text-stone-300 mt-8 lg:mt-10">
+            Supplier TBS &amp; BRDL &mdash; PKS PT. BGA
+          </p>
         </div>
       </div>
     </div>
