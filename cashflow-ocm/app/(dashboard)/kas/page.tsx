@@ -79,7 +79,7 @@ export default async function KasPage() {
         </div>
         <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">Total Keluar</p>
-          <p className="text-2xl font-bold text-red-600 num">{formatRupiah(totalKeluar)}</p>
+          <p className="text-2xl font-bold text-orange-600 dark:text-[#D97757] num">{formatRupiah(totalKeluar)}</p>
           <p className="text-xs text-stone-400 mt-1">Seluruh pengeluaran tercatat</p>
         </div>
       </div>

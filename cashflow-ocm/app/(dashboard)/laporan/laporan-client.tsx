@@ -89,12 +89,12 @@ function LabaRugiTab({ data, dari, sampai }: { data: LaporanData; dari: string; 
         <table className="w-full text-sm">
           <tbody>
             {[
-              { label: 'Pendapatan Penjualan (lunas)', value: totalPenjualan, cls: 'text-[#2563EB] dark:text-[#60A5FA] font-medium' },
+              { label: 'Pendapatan Penjualan (lunas)', value: totalPenjualan, cls: 'text-foreground' },
               { label: 'HPP – Pembelian (lunas)', value: totalPembelian, cls: 'text-muted-foreground' },
               { label: 'Laba Kotor', value: labaKotor, cls: 'font-semibold text-foreground', bg: 'bg-muted/30', sep: true },
               { label: 'Biaya Operasional', value: totalBiaya, cls: 'text-muted-foreground' },
               { label: 'Laba Bersih', value: labaBersih, cls: 'font-semibold text-foreground', bg: 'bg-muted/30', sep: true },
-              { label: 'Estimasi Laba Pembelian', value: totalKeuntungan, cls: 'text-[#D97757] font-semibold text-xs' },
+              { label: 'Estimasi Laba Pembelian', value: totalKeuntungan, cls: 'text-foreground font-semibold' },
             ].map((row, i) => (
               <tr key={i} className={cn('border-b last:border-0', row.sep ? 'border-t-2 border-t-border' : '', row.bg ?? '')}>
                 <td className={cn('px-4 py-3', row.cls)}>{row.label}</td>
@@ -332,7 +332,7 @@ export function LaporanClient({
             <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">Pembelian Lunas</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xl font-semibold text-[#2563EB] dark:text-[#60A5FA]">{formatRupiah(data.labaRugi.totalPembelian)}</p>
+            <p className="text-xl font-semibold text-orange-600 dark:text-[#D97757]">{formatRupiah(data.labaRugi.totalPembelian)}</p>
           </CardContent>
         </Card>
         <Card>
@@ -348,7 +348,7 @@ export function LaporanClient({
             <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">Estimasi Laba</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xl font-semibold text-[#D97757]">
+            <p className="text-xl font-semibold text-stone-900 dark:text-stone-100">
               {formatRupiah(data.labaRugi.totalKeuntungan)}
             </p>
           </CardContent>
