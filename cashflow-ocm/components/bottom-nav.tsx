@@ -63,7 +63,7 @@ export function BottomNav({ isOwner, userName }: { isOwner?: boolean; userName?:
   return (
     <>
       {/* Bottom tab bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-stone-950/95 backdrop-blur-sm border-t border-stone-200/80 dark:border-stone-800/60 flex items-stretch"
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#161616]/98 backdrop-blur-sm border-t border-stone-200/80 dark:border-[#1e1e1e] flex items-stretch"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         {primaryNav.map((item) => {
@@ -123,7 +123,7 @@ export function BottomNav({ isOwner, userName }: { isOwner?: boolean; userName?:
         {/* Sheet dari bawah */}
         <div
           className={cn(
-            'absolute bottom-0 left-0 right-0 bg-white dark:bg-[#1B1B1B] rounded-t-2xl flex flex-col',
+            'absolute bottom-0 left-0 right-0 bg-white dark:bg-[#1a1a1a] rounded-t-2xl flex flex-col',
             'transition-transform',
             drawerOpen ? 'translate-y-0' : 'translate-y-full'
           )}

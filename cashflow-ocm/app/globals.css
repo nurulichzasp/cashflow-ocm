@@ -104,42 +104,43 @@
   --sidebar-ring: #EA580C;
 }
 
-/* ─── Dark mode — Palette: #1B1B1B · #323232 · #FFE7D0 · #FC6E20 ─── */
+/* ─── Dark mode — Claude palette + orange accent ─── */
+/* #1a1a1a · #242424 · #f5f5f5 · #FC6E20                */
 html.dark {
   color-scheme: dark;
 
-  --background: #1B1B1B;         /* base bg */
-  --foreground: #FFE7D0;         /* warm cream text */
-  --card: #272727;               /* elevated surface */
-  --card-foreground: #FFE7D0;
-  --popover: #2E2E2E;
-  --popover-foreground: #FFE7D0;
+  --background: #1a1a1a;         /* page bg — dark charcoal */
+  --foreground: #f5f5f5;         /* primary text — near white */
+  --card: #242424;               /* card surface */
+  --card-foreground: #f5f5f5;
+  --popover: #2a2a2a;
+  --popover-foreground: #f5f5f5;
   --primary: #FC6E20;
-  --primary-foreground: #FFFFFF;
-  --secondary: #323232;          /* higher surface */
-  --secondary-foreground: #FFE7D0;
-  --muted: #222222;
-  --muted-foreground: #8A7060;   /* warm muted text */
-  --accent: #323232;
+  --primary-foreground: #ffffff;
+  --secondary: #2a2a2a;
+  --secondary-foreground: #f5f5f5;
+  --muted: #1e1e1e;
+  --muted-foreground: #9b9b9b;   /* secondary text */
+  --accent: #2a2a2a;
   --accent-foreground: #FC6E20;
-  --destructive: #F87171;
-  --border: #303030;
-  --input: #323232;
+  --destructive: #ef4444;
+  --border: #2c2c2c;             /* ultra-subtle border */
+  --input: #2a2a2a;
   --ring: #FC6E20;
 
-  --chart-1: #4ADE80;
-  --chart-2: #F87171;
+  --chart-1: #4ade80;
+  --chart-2: #f87171;
   --chart-3: #FC6E20;
-  --chart-4: #8A7060;
-  --chart-5: #FBBF24;
+  --chart-4: #737373;
+  --chart-5: #fbbf24;
 
-  --sidebar: #141414;
-  --sidebar-foreground: #C9B09A;
+  --sidebar: #161616;
+  --sidebar-foreground: #9b9b9b;
   --sidebar-primary: #FC6E20;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #272727;
-  --sidebar-accent-foreground: #FFE7D0;
-  --sidebar-border: #1E1E1E;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #242424;
+  --sidebar-accent-foreground: #f5f5f5;
+  --sidebar-border: #1e1e1e;
   --sidebar-ring: #FC6E20;
 }
 
@@ -197,60 +198,81 @@ html.dark {
   html { scroll-behavior: smooth; }
 }
 
-/* ─── Dark mode catch-all — fix komponen yang belum pakai dark: variant ─── */
-/* Ditempatkan di luar @layer agar menang terhadap Tailwind utilities */
-html.dark [class~="bg-white"] {
-  background-color: var(--card) !important;
-}
-html.dark [class~="bg-stone-50"] {
-  background-color: var(--background) !important;
-}
-html.dark [class~="border-stone-200"] {
-  border-color: var(--border) !important;
-}
-html.dark [class~="text-stone-900"] {
-  color: var(--foreground) !important;
-}
-html.dark [class~="text-stone-800"] {
-  color: #EDE5DA !important;
-}
-html.dark [class~="text-stone-700"] {
-  color: #C9B8A8 !important;
-}
-html.dark [class~="shadow-sm"] {
-  box-shadow: none !important;
-}
-html.dark [class~="bg-orange-50"] {
-  background-color: rgba(252, 110, 32, 0.08) !important;
-}
-html.dark [class~="text-stone-500"] {
-  color: #8A7060 !important;
-}
-html.dark [class~="text-stone-400"] {
-  color: #6A5A50 !important;
-}
-html.dark [class~="text-stone-300"] {
-  color: #4A3A30 !important;
-}
-html.dark [class~="bg-stone-100"] {
-  background-color: rgba(255, 255, 255, 0.05) !important;
-}
-html.dark [class~="divide-stone-100"] > * + * {
-  border-color: #303030 !important;
-}
-html.dark [class~="divide-stone-200"] > * + * {
-  border-color: #303030 !important;
-}
-html.dark [class~="divide-y"] > * + * {
-  border-color: #303030 !important;
-}
-/* Scrollbar dark */
-html.dark ::-webkit-scrollbar-thumb {
-  background: #323232;
-}
-html.dark ::-webkit-scrollbar-thumb:hover {
-  background: #404040;
-}
+/* ─────────────────────────────────────────────────────────────────────────
+   DARK MODE CATCH-ALL
+   Ditempatkan di luar @layer → specificity lebih tinggi dari utilities
+   Mengkonversi semua class light-mode ke Claude palette secara otomatis
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* ── Backgrounds ── */
+html.dark [class~="bg-white"]       { background-color: #242424 !important; }
+html.dark [class~="bg-stone-50"]    { background-color: #1a1a1a !important; }
+html.dark [class~="bg-stone-100"]   { background-color: rgba(255,255,255,0.05) !important; }
+html.dark [class~="bg-orange-50"]   { background-color: rgba(252,110,32,0.07) !important; }
+html.dark [class~="bg-green-50"]    { background-color: rgba(255,255,255,0.04) !important; }
+html.dark [class~="bg-red-50"]      { background-color: rgba(255,255,255,0.04) !important; }
+html.dark [class~="bg-amber-50"]    { background-color: rgba(255,255,255,0.04) !important; }
+html.dark [class~="bg-blue-50"]     { background-color: rgba(255,255,255,0.04) !important; }
+html.dark [class~="bg-violet-50"]   { background-color: rgba(255,255,255,0.04) !important; }
+html.dark [class~="bg-emerald-50"]  { background-color: rgba(255,255,255,0.04) !important; }
+
+/* ── Borders ── */
+html.dark [class~="border-stone-200"]  { border-color: #2c2c2c !important; }
+html.dark [class~="border-stone-100"]  { border-color: #282828 !important; }
+html.dark [class~="border-green-200"]  { border-color: #333333 !important; }
+html.dark [class~="border-red-200"]    { border-color: #333333 !important; }
+html.dark [class~="border-amber-200"]  { border-color: #333333 !important; }
+html.dark [class~="border-blue-200"]   { border-color: #333333 !important; }
+
+/* ── Colored left-border strips → hapus warna, pakai border biasa ── */
+html.dark [class~="border-l-green-500"],
+html.dark [class~="border-l-green-400"],
+html.dark [class~="border-l-blue-500"],
+html.dark [class~="border-l-violet-500"],
+html.dark [class~="border-l-amber-500"],
+html.dark [class~="border-l-orange-500"],
+html.dark [class~="border-l-orange-600"],
+html.dark [class~="border-l-red-500"],
+html.dark [class~="border-l-stone-400"] { border-left-color: #2c2c2c !important; }
+
+/* ── Text — primary hierarchy ── */
+html.dark [class~="text-stone-900"]  { color: #f5f5f5 !important; }
+html.dark [class~="text-stone-800"]  { color: #e5e5e5 !important; }
+html.dark [class~="text-stone-700"]  { color: #c5c5c5 !important; }
+
+/* ── Text — secondary/muted ── */
+html.dark [class~="text-stone-500"]  { color: #9b9b9b !important; }
+html.dark [class~="text-stone-400"]  { color: #6b6b6b !important; }
+html.dark [class~="text-stone-300"]  { color: #525252 !important; }
+
+/* ── Text — warna semantik: ubah ke netral atau orange ── */
+/* green → putih (masuk amounts, icon) */
+html.dark [class~="text-green-600"]  { color: #f5f5f5 !important; }
+html.dark [class~="text-green-400"]  { color: #f5f5f5 !important; }
+html.dark [class~="text-green-700"]  { color: #9b9b9b !important; }  /* badge label */
+html.dark [class~="text-emerald-600"]{ color: #f5f5f5 !important; }
+/* amber → orange (brand) */
+html.dark [class~="text-amber-600"]  { color: #FC6E20 !important; }
+html.dark [class~="text-amber-400"]  { color: #FC6E20 !important; }
+html.dark [class~="text-amber-700"]  { color: #FC6E20 !important; }
+/* violet / blue → abu */
+html.dark [class~="text-violet-600"] { color: #9b9b9b !important; }
+html.dark [class~="text-blue-500"]   { color: #9b9b9b !important; }
+/* red-700 badge label → abu (bukan nilai uang) */
+html.dark [class~="text-red-700"]    { color: #9b9b9b !important; }
+/* text-red-600: TETAP MERAH — untuk angka negatif/keluar (intentional) */
+
+/* ── Shadow → hapus di dark mode ── */
+html.dark [class~="shadow-sm"]  { box-shadow: none !important; }
+
+/* ── Dividers ── */
+html.dark [class~="divide-stone-100"] > * + * { border-color: #282828 !important; }
+html.dark [class~="divide-stone-200"] > * + * { border-color: #2c2c2c !important; }
+html.dark [class~="divide-y"]         > * + * { border-color: #282828 !important; }
+
+/* ── Scrollbar ── */
+html.dark ::-webkit-scrollbar-thumb       { background: #2c2c2c; }
+html.dark ::-webkit-scrollbar-thumb:hover { background: #3a3a3a; }
 
 @layer utilities {
   /* App container: no max-width, just padding */
