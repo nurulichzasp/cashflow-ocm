@@ -10,19 +10,20 @@ export function ScrollShell({ children }: { children: React.ReactNode }) {
   const onScroll = useCallback((e: React.UIEvent<HTMLElement>) => {
     const y = e.currentTarget.scrollTop
     const dy = y - lastY.current
-    if (dy > 6 && y > 60) setHeaderVisible(false)
-    else if (dy < -6 || y < 10) setHeaderVisible(true)
+    if (dy > 8 && y > 56) setHeaderVisible(false)
+    else if (dy < -5 || y < 10) setHeaderVisible(true)
     lastY.current = y
   }, [])
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
-      {/* Mobile header — hides on scroll down, shows on scroll up */}
+      {/* Fixed glass header — animates with transform+opacity, no layout shift */}
       <div
-        className="md:hidden shrink-0 overflow-hidden transition-[height] duration-300"
+        className="md:hidden fixed top-0 left-0 right-0 z-30"
         style={{
-          height: headerVisible ? '56px' : '0px',
-          transitionTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)',
+          transform: headerVisible ? 'translateY(0)' : 'translateY(-100%)',
+          opacity: headerVisible ? 1 : 0,
+          transition: 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease',
         }}
       >
         <MobileHeader />
@@ -30,7 +31,7 @@ export function ScrollShell({ children }: { children: React.ReactNode }) {
 
       <main
         onScroll={onScroll}
-        className="flex-1 overflow-y-auto bg-stone-50 p-4 pb-24 md:pb-6 md:p-6"
+        className="flex-1 overflow-y-auto bg-stone-50 px-4 pt-[72px] pb-24 md:p-6"
       >
         <div className="app-container">
           {children}

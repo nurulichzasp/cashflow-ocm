@@ -6,13 +6,12 @@ import { signIn } from '@/lib/auth-client'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
-import { Leaf, Eye, EyeOff, Check } from 'lucide-react'
+import { Leaf, Eye, EyeOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export default function LoginPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [form, setForm] = useState({ email: '', password: '' })
   const [showPassword, setShowPassword] = useState(false)
@@ -44,11 +43,8 @@ export default function LoginPage() {
         toast.error(result.error.message ?? 'Email atau password salah')
         setLoading(false)
       } else {
-        setSuccess(true)
-        setTimeout(() => {
-          router.push('/dashboard')
-          router.refresh()
-        }, 750)
+        router.push('/dashboard')
+        router.refresh()
       }
     } catch {
       toast.error('Terjadi kesalahan. Coba lagi.')
@@ -269,29 +265,15 @@ export default function LoginPage() {
             <div {...fadeUp(340)} className={cn('pt-2', fadeUp(340).className)}>
               <button
                 type="submit"
-                disabled={loading || success}
-                className={cn(
-                  'w-full h-11 rounded-xl font-semibold text-sm transition-all duration-300',
-                  'flex items-center justify-center gap-2.5 shadow-sm',
-                  'disabled:pointer-events-none',
-                  success
-                    ? 'bg-green-500 text-white shadow-green-500/20 scale-[0.99]'
-                    : 'bg-orange-600 hover:bg-orange-700 active:scale-[0.97] text-white shadow-orange-600/20'
-                )}
+                disabled={loading}
+                className="w-full h-11 rounded-xl font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2.5 shadow-sm disabled:pointer-events-none bg-orange-600 hover:bg-orange-700 active:scale-[0.97] text-white shadow-orange-600/20"
               >
-                {success ? (
-                  <span className="flex items-center gap-2 login-check-pop">
-                    <Check className="h-5 w-5" strokeWidth={2.5} />
-                    Berhasil!
-                  </span>
-                ) : loading ? (
+                {loading ? (
                   <>
                     <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
                     Memproses...
                   </>
-                ) : (
-                  'Masuk'
-                )}
+                ) : 'Masuk'}
               </button>
             </div>
           </form>

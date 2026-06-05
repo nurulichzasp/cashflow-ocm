@@ -28,7 +28,7 @@ export function MobileHeader() {
   const title = getPageTitle(pathname)
 
   return (
-    <header className="md:hidden flex items-center h-14 px-4 gap-3 shrink-0 bg-stone-50/95 backdrop-blur-md border-b border-stone-200/50">
+    <header className="flex items-center h-14 px-4 gap-3 bg-white/60 backdrop-blur-xl border-b border-white/40">
       <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-orange-600 text-white text-[10px] font-bold shrink-0 shadow-sm shadow-orange-600/25">
         OCM
       </div>
