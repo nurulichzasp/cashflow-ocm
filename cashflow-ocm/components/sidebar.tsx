@@ -56,7 +56,7 @@ function NavLink({
         'relative flex items-center gap-3 mx-2 rounded-lg px-3 py-2.5 text-sm transition-all duration-150',
         active
           ? 'bg-orange-500/12 text-orange-400 font-semibold'
-          : 'text-stone-400 font-medium hover:bg-stone-800/50 hover:text-stone-200'
+          : 'text-[#8A7060] font-medium hover:bg-white/[0.06] hover:text-[#FFE7D0]'
       )}
     >
       {active && (
@@ -86,13 +86,13 @@ export function Sidebar({ userName, isOwner }: { userName?: string; isOwner?: bo
   const visibleNavItems = navItems.filter(() => true)
 
   return (
-    <aside className="flex h-full w-60 flex-col bg-stone-900 border-r border-stone-800/60">
+    <aside className="flex h-full w-60 flex-col bg-[#141414] border-r border-[#1E1E1E]">
       {/* Brand */}
-      <div className="flex h-14 items-center border-b border-stone-800/60 px-4 gap-3 shrink-0">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-600 text-white text-[11px] font-bold shrink-0 shadow-sm shadow-orange-900/60 ring-1 ring-orange-500/30">
+      <div className="flex h-14 items-center border-b border-[#1E1E1E] px-4 gap-3 shrink-0">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FC6E20] text-white text-[11px] font-bold shrink-0">
           OCM
         </div>
-        <span className="font-semibold text-sm text-stone-100 truncate tracking-wide">CV OCM Cashflow</span>
+        <span className="font-semibold text-sm text-[#FFE7D0] truncate tracking-wide">CV OCM Cashflow</span>
       </div>
 
       {/* Nav */}
@@ -112,22 +112,22 @@ export function Sidebar({ userName, isOwner }: { userName?: string; isOwner?: bo
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-stone-800/60 p-3 space-y-1 shrink-0">
+      <div className="border-t border-[#1E1E1E] p-3 space-y-1 shrink-0">
         {userName && (
-          <div className="flex items-center gap-2.5 px-3 py-2 mb-0.5 rounded-lg bg-stone-800/40">
-            <div className="h-7 w-7 rounded-full bg-orange-600 flex items-center justify-center text-[11px] font-bold text-white shrink-0 ring-1 ring-orange-500/30">
+          <div className="flex items-center gap-2.5 px-3 py-2 mb-0.5 rounded-lg bg-white/[0.05]">
+            <div className="h-7 w-7 rounded-full bg-[#FC6E20] flex items-center justify-center text-[11px] font-bold text-white shrink-0">
               {getInitials(userName)}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-stone-200 truncate">{userName}</p>
-              <p className="text-[11px] text-stone-500">{isOwner ? 'Owner' : 'Admin'}</p>
+              <p className="text-xs font-semibold text-[#FFE7D0] truncate">{userName}</p>
+              <p className="text-[11px] text-[#8A7060]">{isOwner ? 'Owner' : 'Admin'}</p>
             </div>
             <ThemeToggle />
           </div>
         )}
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-stone-500 hover:text-red-400 hover:bg-red-950/30 transition-colors duration-150 font-medium"
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-[#8A7060] hover:text-red-400 hover:bg-red-500/10 transition-colors duration-150 font-medium"
         >
           <LogOut className="h-4 w-4 shrink-0" />
           Keluar
@@ -182,7 +182,7 @@ export function MobileSidebar({ userName, isOwner }: { userName?: string; isOwne
         {/* Drawer panel */}
         <div
           className={cn(
-            'absolute left-0 top-0 h-full w-[280px] bg-stone-900 shadow-2xl flex flex-col',
+            'absolute left-0 top-0 h-full w-[280px] bg-[#141414] shadow-2xl flex flex-col',
             'transition-transform',
             open ? 'translate-x-0' : '-translate-x-full'
           )}

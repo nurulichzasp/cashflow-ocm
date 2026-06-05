@@ -123,7 +123,7 @@ export function BottomNav({ isOwner, userName }: { isOwner?: boolean; userName?:
         {/* Sheet dari bawah */}
         <div
           className={cn(
-            'absolute bottom-0 left-0 right-0 bg-white dark:bg-stone-950 rounded-t-2xl flex flex-col',
+            'absolute bottom-0 left-0 right-0 bg-white dark:bg-[#1B1B1B] rounded-t-2xl flex flex-col',
             'transition-transform',
             drawerOpen ? 'translate-y-0' : 'translate-y-full'
           )}

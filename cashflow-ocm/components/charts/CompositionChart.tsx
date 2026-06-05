@@ -24,8 +24,8 @@ function CustomTooltip({ active, payload }: any) {
   if (!active || !payload?.length) return null
   const entry = payload[0]
   return (
-    <div className="rounded-lg bg-stone-900 border border-stone-700 px-3 py-2.5 shadow-xl text-xs">
-      <p className="text-stone-400 mb-1">{entry.name}</p>
+    <div className="rounded-lg bg-[#272727] border border-[#383838] px-3 py-2.5 shadow-xl text-xs">
+      <p className="text-[#8A7060] mb-1">{entry.name}</p>
       <p className="font-semibold num" style={{ color: entry.payload.fill }}>
         {fmtFull(Number(entry.value ?? 0))}
       </p>

@@ -33,8 +33,8 @@ const fmtFull = (v: number) =>
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null
   return (
-    <div className="rounded-lg bg-stone-900 border border-stone-700 px-3 py-2.5 shadow-xl text-xs">
-      <p className="text-stone-400 mb-1.5 font-medium">{label}</p>
+    <div className="rounded-lg bg-[#272727] border border-[#383838] px-3 py-2.5 shadow-xl text-xs">
+      <p className="text-[#8A7060] mb-1.5 font-medium">{label}</p>
       <p className="font-semibold text-orange-400 num">
         {fmtFull(Number(payload[0]?.value ?? 0))}
       </p>
