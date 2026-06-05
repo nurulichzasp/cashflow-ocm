@@ -28,6 +28,7 @@ interface Props {
   children: React.ReactNode
   peronOptions: PeronOption[]
   akunOptions: AkunOption[]
+  open?: boolean
   initialData?: {
     id: string
     tanggal: string
@@ -44,8 +45,10 @@ interface Props {
 
 const EMPTY_DETAIL: DetailRow = { noTid: '', tonase: '', hargaLapangan: '', tanggalReplas: '' }
 
-export function PembelianFormDialog({ children, peronOptions, akunOptions, initialData, onOpenChange }: Props) {
-  const [open, setOpen] = useState(false)
+export function PembelianFormDialog({ children, peronOptions, akunOptions, open: openProp, initialData, onOpenChange }: Props) {
+  const [openInternal, setOpenInternal] = useState(false)
+  const open = openProp ?? openInternal
+  const setOpen = (v: boolean) => { onOpenChange ? onOpenChange(v) : setOpenInternal(v) }
   const [loading, setLoading] = useState(false)
 
   const [tanggal, setTanggal] = useState(todayString())

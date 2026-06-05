@@ -201,6 +201,7 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
       <PembelianFormDialog
         peronOptions={peronOptions}
         akunOptions={akunOptions}
+        open={!!editTarget}
         initialData={editTarget ? {
           id: editTarget.id,
           tanggal: editTarget.tanggal,
