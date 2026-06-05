@@ -141,6 +141,7 @@ export const penjualan = sqliteTable('penjualan', {
   noInvoice: text('no_invoice'),
   statusBayar: text('status_bayar', { enum: ['belum', 'lunas'] }).notNull().default('belum'),
   tanggalBayarBga: text('tanggal_bayar_bga'),
+  totalNilai: real('total_nilai'),
   catatan: text('catatan'),
   createdBy: text('created_by').notNull().references(() => user.id),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),

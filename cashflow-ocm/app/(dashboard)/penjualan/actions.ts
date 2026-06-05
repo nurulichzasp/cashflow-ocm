@@ -26,18 +26,21 @@ const penjualanSchema = z.object({
   noInvoice: z.string().optional(),
   statusBayar: z.enum(['belum', 'lunas']).default('belum'),
   tanggalBayarBga: z.string().optional(),
+  totalNilai: z.coerce.number().optional(),
   catatan: z.string().optional(),
 })
 
 export async function createPenjualan(formData: FormData) {
   const session = await requireSession()
 
+  const rawTotal = formData.get('totalNilai')
   const data = penjualanSchema.parse({
     tanggal: formData.get('tanggal'),
     noBast: formData.get('noBast') || undefined,
     noInvoice: formData.get('noInvoice') || undefined,
     statusBayar: formData.get('statusBayar'),
     tanggalBayarBga: formData.get('tanggalBayarBga') || undefined,
+    totalNilai: rawTotal ? Number(String(rawTotal).replace(/\./g, '').replace(',', '.')) : undefined,
     catatan: formData.get('catatan') || undefined,
   })
 

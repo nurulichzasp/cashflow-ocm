@@ -15,7 +15,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { deletePenjualan } from './actions'
-import { formatTanggal } from '@/lib/format'
+import { formatTanggal, formatRupiah } from '@/lib/format'
 import { Trash2, FileText } from 'lucide-react'
 import type { Penjualan } from '@/lib/db/schema'
 
@@ -77,7 +77,7 @@ export function PenjualanTable({ penjualanList, isOwner }: Props) {
             <tr className="bg-stone-50 border-b border-stone-200">
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Tanggal</th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">No. Invoice</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">No. BAST</th>
+              <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Total Dibayar</th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Tgl Bayar BGA</th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Catatan</th>
@@ -88,8 +88,14 @@ export function PenjualanTable({ penjualanList, isOwner }: Props) {
             {penjualanList.map((item) => (
               <tr key={item.id} className="bg-white hover:bg-orange-50/30 transition-colors">
                 <td className="px-4 py-3 text-stone-900">{formatTanggal(item.tanggal)}</td>
-                <td className="px-4 py-3 font-medium text-stone-900">{item.noInvoice || <span className="text-stone-400">—</span>}</td>
-                <td className="px-4 py-3 text-stone-600">{item.noBast || <span className="text-stone-400">—</span>}</td>
+                <td className="px-4 py-3 font-medium text-stone-900 max-w-[200px]">
+                  <div className="whitespace-pre-line leading-tight">{item.noInvoice || <span className="text-stone-400">—</span>}</div>
+                </td>
+                <td className="px-4 py-3 text-right font-semibold num">
+                  {item.totalNilai ? (
+                    <span className="text-stone-900">{formatRupiah(item.totalNilai)}</span>
+                  ) : <span className="text-stone-400">—</span>}
+                </td>
                 <td className="px-4 py-3"><StatusBadge status={item.statusBayar} /></td>
                 <td className="px-4 py-3 text-stone-600">{item.tanggalBayarBga ? formatTanggal(item.tanggalBayarBga) : <span className="text-stone-400">—</span>}</td>
                 <td className="px-4 py-3 text-stone-500 max-w-[180px] truncate">{item.catatan ?? <span className="text-stone-400">—</span>}</td>
@@ -133,12 +139,18 @@ export function PenjualanTable({ penjualanList, isOwner }: Props) {
         {penjualanList.map((item) => (
           <div key={item.id} className="rounded-xl border border-stone-200 bg-white shadow-sm p-4">
             <div className="flex items-start justify-between gap-2 mb-3">
-              <div>
-                <p className="font-semibold text-stone-900">{item.noInvoice || 'Tanpa nomor invoice'}</p>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-stone-900 whitespace-pre-line text-sm leading-snug">{item.noInvoice || 'Tanpa nomor invoice'}</p>
                 <p className="text-xs text-stone-500 mt-0.5">{formatTanggal(item.tanggal)}</p>
               </div>
               <StatusBadge status={item.statusBayar} />
             </div>
+            {item.totalNilai && item.totalNilai > 0 && (
+              <div className="mb-3 rounded-lg bg-green-50 border border-green-100 px-3 py-2">
+                <p className="text-xs text-green-600 mb-0.5">Total Dibayar BGA</p>
+                <p className="text-base font-bold text-green-700 num">{formatRupiah(item.totalNilai)}</p>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
                 <p className="text-xs text-stone-400 mb-0.5">Tgl Bayar BGA</p>
@@ -147,7 +159,7 @@ export function PenjualanTable({ penjualanList, isOwner }: Props) {
               {item.catatan && (
                 <div>
                   <p className="text-xs text-stone-400 mb-0.5">Catatan</p>
-                  <p className="text-stone-700">{item.catatan}</p>
+                  <p className="text-stone-700 whitespace-pre-line">{item.catatan}</p>
                 </div>
               )}
             </div>

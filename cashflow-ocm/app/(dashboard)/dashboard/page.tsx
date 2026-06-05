@@ -30,7 +30,7 @@ import TrendChart from '@/components/charts/TrendChart'
 import CompositionChart from '@/components/charts/CompositionChart'
 
 async function getMetrics() {
-  const [akunList, transaksiRows, modalRows, piutangBgaRaw, penjualanList, pembelianKeuntungan] =
+  const [akunList, transaksiRows, modalRows, piutangBelumRaw, penjualanLunasRaw, pembelianKeuntungan] =
     await Promise.all([
       db.select().from(akunKas).orderBy(akunKas.urutan),
 
@@ -43,12 +43,13 @@ async function getMetrics() {
         .innerJoin(peron, and(eq(modalPeron.peronId, peron.id), eq(peron.status, 'aktif')))
         .groupBy(modalPeron.jenis),
 
-      db.select({ total: sum(transaksiKas.jumlah) })
-        .from(transaksiKas)
-        .where(and(eq(transaksiKas.kategori, 'penerimaan_bga'), eq(transaksiKas.arah, 'masuk'))),
+      db.select({ total: sum(penjualan.totalNilai) })
+        .from(penjualan)
+        .where(eq(penjualan.statusBayar, 'belum')),
 
-      db.select({ statusBayar: penjualan.statusBayar })
-        .from(penjualan),
+      db.select({ total: sum(penjualan.totalNilai) })
+        .from(penjualan)
+        .where(eq(penjualan.statusBayar, 'lunas')),
 
       db.select({ total: sum(pembelian.keuntungan) })
         .from(pembelian),
@@ -75,12 +76,13 @@ async function getMetrics() {
   const dpKembali = Number(modalRows.find((r) => r.jenis === 'kembali')?.total ?? 0)
   const totalDpPeron = dpTambah - dpKurang - dpKembali
 
-  const piutangBga = Number(piutangBgaRaw?.[0]?.total ?? 0)
+  const piutangBga = Number(piutangBelumRaw?.[0]?.total ?? 0)
+  const totalPenjualanLunas = Number(penjualanLunasRaw?.[0]?.total ?? 0)
   const totalModalBerputar = totalSaldo + totalDpPeron + piutangBga
 
   const estimasiLaba = Number(pembelianKeuntungan?.[0]?.total ?? 0)
 
-  return { akunSaldo, totalSaldo, totalDpPeron, piutangBga, totalModalBerputar, estimasiLaba }
+  return { akunSaldo, totalSaldo, totalDpPeron, piutangBga, totalPenjualanLunas, totalModalBerputar, estimasiLaba }
 }
 
 async function getTodayStats() {
@@ -93,13 +95,9 @@ async function getTodayStats() {
         eq(transaksiKas.kategori, 'bayar_peron'),
         eq(transaksiKas.arah, 'keluar'),
       )),
-    db.select({ total: sum(transaksiKas.jumlah) })
-      .from(transaksiKas)
-      .where(and(
-        eq(transaksiKas.tanggal, today),
-        eq(transaksiKas.kategori, 'penerimaan_bga'),
-        eq(transaksiKas.arah, 'masuk'),
-      )),
+    db.select({ total: sum(penjualan.totalNilai) })
+      .from(penjualan)
+      .where(eq(penjualan.tanggal, today)),
     db.select({ total: sum(biayaOperasional.jumlah) })
       .from(biayaOperasional)
       .where(eq(biayaOperasional.tanggal, today)),
@@ -210,6 +208,13 @@ export default async function DashboardPage() {
       icon: <TrendingUp className="h-5 w-5 text-violet-600" />,
       iconBg: 'bg-violet-50',
       borderColor: 'border-l-violet-500',
+    },
+    {
+      title: 'Total Penjualan Lunas',
+      value: formatRupiah(metrics.totalPenjualanLunas),
+      icon: <Receipt className="h-5 w-5 text-emerald-600" />,
+      iconBg: 'bg-emerald-50',
+      borderColor: 'border-l-emerald-500',
     },
     {
       title: 'Total Modal Berputar',

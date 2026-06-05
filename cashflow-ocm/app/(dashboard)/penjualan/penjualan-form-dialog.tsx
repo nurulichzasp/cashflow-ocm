@@ -21,6 +21,7 @@ export function PenjualanFormDialog({ children }: Props) {
   const [tanggal, setTanggal] = useState(todayString())
   const [noBast, setNoBast] = useState('')
   const [noInvoice, setNoInvoice] = useState('')
+  const [totalNilai, setTotalNilai] = useState('')
   const [catatan, setCatatan] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -38,6 +39,7 @@ export function PenjualanFormDialog({ children }: Props) {
       if (data.tanggal) setTanggal(data.tanggal)
       if (data.noBast) setNoBast(data.noBast)
       if (data.noInvoice) setNoInvoice(data.noInvoice)
+      if (data.totalNilai) setTotalNilai(data.totalNilai)
       if (data.catatan) {
         setCatatan(data.catatan)
       } else if (data.totalNilai || data.totalTonase) {
@@ -72,6 +74,7 @@ export function PenjualanFormDialog({ children }: Props) {
       formData.set('tanggal', tanggal)
       formData.set('noBast', noBast)
       formData.set('noInvoice', noInvoice)
+      formData.set('totalNilai', totalNilai)
       formData.set('catatan', catatan)
       await createPenjualan(formData)
       toast.success('Penjualan berhasil ditambahkan')
@@ -88,6 +91,7 @@ export function PenjualanFormDialog({ children }: Props) {
     setTanggal(todayString())
     setNoBast('')
     setNoInvoice('')
+    setTotalNilai('')
     setCatatan('')
     setStatusBayar('belum')
   }
@@ -163,6 +167,21 @@ export function PenjualanFormDialog({ children }: Props) {
               <Label>Tanggal Bayar BGA</Label>
               <Input name="tanggalBayarBga" type="date" disabled={statusBayar === 'belum'} />
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Total Dibayar BGA <span className="text-stone-400 font-normal">(Rp)</span></Label>
+            <Input
+              type="number"
+              value={totalNilai}
+              onChange={(e) => setTotalNilai(e.target.value)}
+              placeholder="0 — auto-isi dari upload"
+            />
+            {totalNilai && Number(totalNilai) > 0 && (
+              <p className="text-xs text-green-700 font-medium">
+                = Rp {Number(totalNilai).toLocaleString('id-ID')}
+              </p>
+            )}
           </div>
 
           <div className="space-y-1.5">
