@@ -7,6 +7,7 @@ import { db } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { pembelian, pembelianDetail, transaksiKas, akunKas, peron } from '@/lib/db/schema'
 import { z } from 'zod'
+import { notifyNewPembelian } from '@/lib/notification'
 
 async function requireSession() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -122,6 +123,22 @@ export async function createPembelian(data: {
       catatan: `Bayar peron ${peronData.nama}${tids ? ` TID ${tids}` : ''}`,
       createdBy: session.user.id,
     })
+  }
+
+  // Trigger Telegram Notification (handled asynchronously so it doesn't block the UI response)
+  try {
+    notifyNewPembelian({
+      tanggal: parsed.tanggal,
+      kategori: parsed.kategori,
+      peronId: parsed.peronId,
+      tonase: totalTonase,
+      totalBeli,
+      keuntungan: totalKeuntungan,
+      statusBayarPeron: parsed.statusBayarPeron,
+      catatan: parsed.catatan,
+    })
+  } catch (err) {
+    console.error('Failed to trigger Telegram notification for Pembelian:', err)
   }
 
   revalidatePath('/pembelian')

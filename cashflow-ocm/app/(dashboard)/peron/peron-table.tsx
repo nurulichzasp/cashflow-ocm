@@ -177,7 +177,7 @@ export function PeronTable({ peronList, isOwner }: Props) {
           </thead>
           <tbody className="divide-y divide-stone-100">
             {sorted.map((p) => (
-              <tr key={p.id} className="bg-white hover:bg-orange-50/30 transition-colors group">
+              <tr key={p.id} className="bg-white hover:bg-stone-50 dark:hover:bg-white/[0.03] transition-colors group">
                 <td className="px-4 py-3 text-stone-500 num">{p.kode ?? <span className="text-stone-300">—</span>}</td>
                 <td className="px-4 py-3 font-semibold text-stone-900 dark:text-stone-100">{p.nama}</td>
                 <td className="px-4 py-3 text-stone-500">{p.kontak ?? <span className="text-stone-300">—</span>}</td>

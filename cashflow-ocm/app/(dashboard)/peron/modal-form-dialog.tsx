@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { NumberInput } from '@/components/number-input'
 import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
 import { addModalPeron } from './actions'
 import { todayString } from '@/lib/format'
 
@@ -87,12 +88,11 @@ export function ModalFormDialog({ peronId, peronNama, children, open: openProp, 
 
           <div className="space-y-1.5">
             <Label>Tanggal</Label>
-            <input
+            <Input
               type="date"
               name="tanggal"
               defaultValue={todayString()}
               required
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             />
           </div>
 

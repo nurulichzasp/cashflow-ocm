@@ -27,7 +27,7 @@ interface Props {
 function StatusBadge({ status, onToggle, loading }: { status: 'lunas' | 'belum'; onToggle?: () => void; loading?: boolean }) {
   if (status === 'lunas') {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-[#3B82F6]/10 px-2.5 py-0.5 text-xs font-medium text-[#2563EB] dark:text-[#60A5FA] border border-[#3B82F6]/25">
+      <span className="inline-flex items-center gap-1 rounded-full bg-[#3B82F6]/10 px-2.5 py-0.5 text-xs font-medium text-[#3B82F6] dark:text-[#3B82F6] border border-[#3B82F6]/25">
         <CheckCircle2 className="h-3 w-3" />
         Lunas
       </span>
@@ -118,7 +118,7 @@ export function PenjualanTable({ penjualanList, isOwner }: Props) {
           </thead>
           <tbody className="divide-y divide-stone-100">
             {penjualanList.map((item) => (
-              <tr key={item.id} className="bg-white hover:bg-orange-50/30 transition-colors">
+              <tr key={item.id} className="bg-white hover:bg-stone-50 dark:hover:bg-white/[0.03] transition-colors">
                 <td className="px-4 py-3 text-stone-900">{formatTanggal(item.tanggal)}</td>
                 <td className="px-4 py-3 font-medium text-stone-900 max-w-[200px]">
                   <div className="whitespace-pre-line leading-tight">{item.noInvoice || <span className="text-stone-400">—</span>}</div>

@@ -55,7 +55,7 @@ export default async function PenjualanPage() {
         </div>
         <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">Total Penjualan</p>
-          <p className="text-2xl font-bold text-[#2563EB] dark:text-[#60A5FA] num">{formatRupiah(totalPenjualan)}</p>
+          <p className="text-2xl font-bold text-stone-900 dark:text-stone-100 num">{formatRupiah(totalPenjualan)}</p>
           <p className="text-xs text-stone-400 mt-1">Nilai bersih (tanpa pajak)</p>
         </div>
         <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">

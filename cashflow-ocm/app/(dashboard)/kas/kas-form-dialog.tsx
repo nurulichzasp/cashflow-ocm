@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { NumberInput } from '@/components/number-input'
+import { Textarea } from '@/components/ui/textarea'
 import { createTransaksiKas } from './actions'
 import { todayString } from '@/lib/format'
 
@@ -120,10 +121,9 @@ export function KasFormDialog({ children, akunOptions }: Props) {
 
           <div className="space-y-1.5">
             <Label>Catatan</Label>
-            <textarea
+            <Textarea
               name="catatan"
               rows={3}
-              className="min-h-[5rem] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring"
               placeholder="Opsional: tujuan atau keterangan singkat"
             />
           </div>

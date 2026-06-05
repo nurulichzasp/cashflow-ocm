@@ -198,7 +198,7 @@ export default async function DashboardPage() {
       label: 'Penjualan Hari Ini',
       value: formatRupiah(today.penjualanHariIni),
       icon: TrendingUp,
-      color: 'text-[#2563EB] dark:text-[#60A5FA]',
+      color: 'text-[#3B82F6] dark:text-[#3B82F6]',
     },
     {
       label: 'Biaya Hari Ini',

@@ -48,7 +48,7 @@ const kategoriBadge: Record<string, string> = {
 
 function StatusBayar({ status }: { status: 'lunas' | 'belum' }) {
   if (status === 'lunas') {
-    return <span className="inline-flex rounded-full bg-[#3B82F6]/10 px-2.5 py-0.5 text-xs font-medium text-[#2563EB] dark:text-[#60A5FA] border border-[#3B82F6]/25">Lunas</span>
+    return <span className="inline-flex rounded-full bg-[#3B82F6]/10 px-2.5 py-0.5 text-xs font-medium text-[#3B82F6] dark:text-[#3B82F6] border border-[#3B82F6]/25">Lunas</span>
   }
   return <span className="inline-flex rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 border border-amber-200">Belum</span>
 }
@@ -298,7 +298,7 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
           <tbody className="divide-y divide-stone-100">
             {filtered.map((p) => (
               <React.Fragment key={p.id}>
-                <tr className="bg-white hover:bg-orange-50/30 transition-colors group">
+                <tr className="bg-white hover:bg-stone-50 dark:hover:bg-white/[0.03] transition-colors group">
                   <td className="px-3 py-2.5 text-stone-700 whitespace-nowrap">{formatTanggal(p.tanggal)}</td>
                   <td className="px-3 py-2.5 font-semibold text-stone-900">{p.peron?.nama ?? p.peronId}</td>
                   <td className="px-3 py-2.5 text-right num text-stone-700">{p.tonase.toLocaleString('id-ID')} kg</td>
@@ -342,7 +342,7 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
                   )}
                 </tr>
                 {expandedFotoId === p.id && p.fotos.length > 0 && (
-                  <tr className="bg-orange-50/30">
+                  <tr className="bg-stone-50/50 dark:bg-white/[0.02]">
                     <td colSpan={isOwner ? 11 : 10} className="px-4 py-3">
                       <FotoBuktiGallery urls={p.fotos.map((f) => f.url)} />
                     </td>

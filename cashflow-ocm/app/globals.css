@@ -109,7 +109,7 @@
 html.dark {
   color-scheme: dark;
 
-  --background: #1E1E1E;         /* page bg — Claude charcoal */
+  --background: #191919;         /* page bg — Claude charcoal */
   --foreground: #F3F4F6;         /* primary text — bone white */
   --card: #28282B;               /* card surface — uniform */
   --card-foreground: #F3F4F6;
@@ -137,7 +137,7 @@ html.dark {
   --chart-grid: rgba(255,255,255,0.06);
   --chart-axis: #6B7280;
 
-  --sidebar: #1E1E1E;            /* menyatu dengan background */
+  --sidebar: #191919;            /* menyatu dengan background */
   --sidebar-foreground: #9CA3AF;
   --sidebar-primary: #D97757;
   --sidebar-primary-foreground: #ffffff;

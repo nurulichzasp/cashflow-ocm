@@ -30,10 +30,10 @@ const kategoriLabels: Record<BiayaOperasional['kategori'], string> = {
 }
 
 const kategoriColors: Record<BiayaOperasional['kategori'], string> = {
-  gaji: 'bg-violet-50 text-violet-700 border border-violet-200',
-  solar: 'bg-stone-100 text-stone-600 dark:text-stone-300',
-  transport: 'bg-blue-50 text-blue-700 border border-blue-200',
-  lainnya: 'bg-stone-100 text-stone-600',
+  gaji: 'bg-stone-100 text-stone-600 dark:text-stone-300 border border-transparent',
+  solar: 'bg-stone-100 text-stone-600 dark:text-stone-300 border border-transparent',
+  transport: 'bg-stone-100 text-stone-600 dark:text-stone-300 border border-transparent',
+  lainnya: 'bg-stone-100 text-stone-600 dark:text-stone-300 border border-transparent',
 }
 
 interface Props {
@@ -117,7 +117,7 @@ export function BiayaTable({ biayaList, isOwner }: Props) {
           <tbody className="divide-y divide-stone-100">
             {sorted.map((item) => (
               <React.Fragment key={item.id}>
-                <tr className="bg-white hover:bg-orange-50/30 transition-colors">
+                <tr className="bg-white hover:bg-stone-50 dark:hover:bg-white/[0.03] transition-colors">
                   <td className="px-4 py-3 text-stone-900 dark:text-stone-100">{formatTanggal(item.tanggal)}</td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${kategoriColors[item.kategori]}`}>
@@ -178,7 +178,7 @@ export function BiayaTable({ biayaList, isOwner }: Props) {
                   )}
                 </tr>
                 {expandedFotoId === item.id && item.fotos.length > 0 && (
-                  <tr className="bg-orange-50/30">
+                  <tr className="bg-stone-50/50 dark:bg-white/[0.02]">
                     <td colSpan={isOwner ? 7 : 6} className="px-5 py-3">
                       <FotoBuktiGallery urls={item.fotos.map((f) => f.url)} />
                     </td>

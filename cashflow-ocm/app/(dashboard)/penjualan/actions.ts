@@ -7,6 +7,7 @@ import { db } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { penjualan } from '@/lib/db/schema'
 import { z } from 'zod'
+import { notifyNewPenjualan } from '@/lib/notification'
 
 async function requireSession() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -55,6 +56,21 @@ export async function createPenjualan(formData: FormData) {
     ...data,
     createdBy: session.user.id,
   })
+
+  // Trigger Telegram Notification
+  try {
+    notifyNewPenjualan({
+      tanggal: data.tanggal,
+      noInvoice: data.noInvoice,
+      noBast: data.noBast,
+      totalBersih: data.totalBersih,
+      totalNilai: data.totalNilai,
+      statusBayar: data.statusBayar,
+      catatan: data.catatan,
+    })
+  } catch (err) {
+    console.error('Failed to trigger Telegram notification for Penjualan:', err)
+  }
 
   revalidatePath('/penjualan')
   return { success: true }

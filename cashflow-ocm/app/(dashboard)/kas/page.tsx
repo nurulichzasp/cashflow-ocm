@@ -74,7 +74,7 @@ export default async function KasPage() {
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">Total Masuk</p>
-          <p className="text-2xl font-bold text-[#2563EB] dark:text-[#60A5FA] num">{formatRupiah(totalMasuk)}</p>
+          <p className="text-2xl font-bold text-[#3B82F6] dark:text-[#3B82F6] num">{formatRupiah(totalMasuk)}</p>
           <p className="text-xs text-stone-400 mt-1">Seluruh penerimaan tercatat</p>
         </div>
         <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">

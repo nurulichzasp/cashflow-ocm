@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { FotoBuktiUploader } from '@/components/foto-bukti-uploader'
+import { Textarea } from '@/components/ui/textarea'
 import { createPembelian, updatePembelian, type KategoriPembelian, type DetailInput } from './actions'
 import { savePembelianFotos, replacePembelianFotos } from './foto-actions'
 import { formatRupiah, todayString } from '@/lib/format'
@@ -310,11 +311,10 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, initi
           {/* Catatan */}
           <div className="space-y-1.5">
             <Label>Catatan</Label>
-            <textarea
+            <Textarea
               rows={2}
               value={catatan}
               onChange={(e) => setCatatan(e.target.value)}
-              className="min-h-[3rem] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
               placeholder="Opsional"
             />
           </div>
