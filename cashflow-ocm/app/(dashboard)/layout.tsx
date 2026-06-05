@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
-import { Sidebar } from '@/components/sidebar'
+import { DesktopSidebar } from '@/components/desktop-sidebar'
 import { BottomNav } from '@/components/bottom-nav'
 import { ScrollShell } from '@/components/scroll-shell'
 
@@ -22,10 +22,8 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex h-[100dvh] overflow-hidden">
-      {/* Sidebar — desktop only */}
-      <div className="hidden md:flex">
-        <Sidebar userName={session.user.name} isOwner={isOwner} />
-      </div>
+      {/* Sidebar — desktop only, collapsible */}
+      <DesktopSidebar userName={session.user.name} isOwner={isOwner} />
 
       {/* Main content + mobile header */}
       <ScrollShell>{children}</ScrollShell>

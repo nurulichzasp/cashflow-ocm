@@ -18,6 +18,7 @@ import {
   LogOut,
   Menu,
   X,
+  PanelLeftClose,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
@@ -73,7 +74,7 @@ function getInitials(name?: string): string {
   return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
 }
 
-export function Sidebar({ userName, isOwner }: { userName?: string; isOwner?: boolean }) {
+export function Sidebar({ userName, isOwner, onToggle }: { userName?: string; isOwner?: boolean; onToggle?: () => void }) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -93,6 +94,16 @@ export function Sidebar({ userName, isOwner }: { userName?: string; isOwner?: bo
           OCM
         </div>
         <span className="font-semibold text-sm text-[#F3F4F6] truncate tracking-wide">CV OCM Cashflow</span>
+        {onToggle && (
+          <button
+            onClick={onToggle}
+            className="ml-auto -mr-1 p-1.5 rounded-lg text-[#9CA3AF] hover:text-[#F3F4F6] hover:bg-white/[0.06] transition-colors shrink-0"
+            title="Sembunyikan sidebar"
+            aria-label="Sembunyikan sidebar"
+          >
+            <PanelLeftClose className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
       {/* Nav */}

@@ -15,16 +15,10 @@ import {
 import { eq, sum, and, gte } from 'drizzle-orm'
 import { formatRupiah } from '@/lib/format'
 import {
-  Wallet,
   TrendingUp,
-  TrendingDown,
-  AlertCircle,
-  Banknote,
-  BarChart3,
   ShoppingCart,
   Receipt,
 } from 'lucide-react'
-import { MetricCard } from '@/components/metric-card'
 import CashflowChart from '@/components/charts/CashflowChart'
 import TrendChart from '@/components/charts/TrendChart'
 import CompositionChart from '@/components/charts/CompositionChart'
@@ -187,51 +181,10 @@ export default async function DashboardPage() {
     getChartSeries(14),
   ])
 
-  const metricCards = [
-    {
-      title: 'Total Saldo Kas',
-      value: formatRupiah(metrics.totalSaldo),
-      icon: <Banknote className="h-5 w-5 text-green-600 dark:text-[#9CA3AF]" />,
-      iconBg: 'bg-green-50 dark:bg-white/[0.04]',
-      borderColor: 'border-l-green-500',
-    },
-    {
-      title: 'Total DP Peron',
-      value: formatRupiah(metrics.totalDpPeron),
-      icon: <TrendingDown className="h-5 w-5 text-amber-600 dark:text-[#9CA3AF]" />,
-      iconBg: 'bg-amber-50 dark:bg-white/[0.04]',
-      borderColor: 'border-l-amber-500',
-    },
-    {
-      title: 'Piutang BGA',
-      value: formatRupiah(metrics.piutangBga),
-      icon: <TrendingUp className="h-5 w-5 text-violet-600 dark:text-[#9CA3AF]" />,
-      iconBg: 'bg-violet-50 dark:bg-white/[0.04]',
-      borderColor: 'border-l-violet-500',
-    },
-    {
-      title: 'Total Penjualan Lunas',
-      value: formatRupiah(metrics.totalPenjualanLunas),
-      icon: <Receipt className="h-5 w-5 text-emerald-600 dark:text-[#9CA3AF]" />,
-      iconBg: 'bg-emerald-50 dark:bg-white/[0.04]',
-      borderColor: 'border-l-emerald-500',
-    },
-    {
-      title: 'Total Modal Berputar',
-      value: formatRupiah(metrics.totalModalBerputar),
-      icon: <BarChart3 className="h-5 w-5 text-orange-600 dark:text-[#D97757]" />,
-      iconBg: 'bg-orange-100 dark:bg-[#D97757]/12',
-      borderColor: 'border-l-orange-600',
-      highlight: true,
-    },
-    {
-      title: 'Estimasi Laba',
-      value: formatRupiah(metrics.estimasiLaba),
-      icon: <TrendingUp className="h-5 w-5 text-green-600 dark:text-[#D97757]" />,
-      iconBg: 'bg-green-50 dark:bg-[#D97757]/12',
-      borderColor: 'border-l-green-400',
-      highlight: true,
-    },
+  const modalBreakdown = [
+    { label: 'Saldo Kas', value: formatRupiah(metrics.totalSaldo) },
+    { label: 'DP Peron', value: formatRupiah(metrics.totalDpPeron) },
+    { label: 'Piutang BGA', value: formatRupiah(metrics.piutangBga) },
   ]
 
   const todayItems = [
@@ -301,6 +254,36 @@ export default async function DashboardPage() {
         </div>
       </div>
 
+      {/* Hero — Modal Berputar + breakdown + ringkasan */}
+      <div className="grid gap-3 lg:grid-cols-3">
+        {/* Modal berputar — kartu utama */}
+        <div className="lg:col-span-2 rounded-xl border border-orange-200/60 dark:border-[#D97757]/20 bg-orange-50/40 dark:bg-card p-5">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Total Modal Berputar</p>
+          <p className="text-3xl font-bold num tracking-tight text-orange-700 dark:text-[#D97757] mt-1.5">
+            {formatRupiah(metrics.totalModalBerputar)}
+          </p>
+          <div className="grid grid-cols-3 gap-3 mt-5 pt-4 border-t border-orange-200/50 dark:border-border">
+            {modalBreakdown.map((b) => (
+              <div key={b.label}>
+                <p className="text-[10px] uppercase tracking-wider text-stone-400 dark:text-[#6B7280] mb-1">{b.label}</p>
+                <p className="text-sm font-semibold num text-stone-900 dark:text-[#F3F4F6]">{b.value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Secondary — penjualan & laba */}
+        <div className="grid grid-cols-2 lg:grid-cols-1 gap-3">
+          <div className="rounded-xl border border-stone-100 dark:border-border bg-white dark:bg-card p-4 flex flex-col justify-center">
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Penjualan Lunas</p>
+            <p className="text-xl font-bold num tracking-tight text-stone-900 dark:text-[#F3F4F6] mt-1">{formatRupiah(metrics.totalPenjualanLunas)}</p>
+          </div>
+          <div className="rounded-xl border border-stone-100 dark:border-border bg-white dark:bg-card p-4 flex flex-col justify-center">
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Estimasi Laba</p>
+            <p className="text-xl font-bold num tracking-tight text-orange-700 dark:text-[#D97757] mt-1">{formatRupiah(metrics.estimasiLaba)}</p>
+          </div>
+        </div>
+      </div>
+
       {/* Saldo per akun */}
       <div>
         <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280] mb-3">Saldo Rekening &amp; Kas</p>
@@ -337,21 +320,6 @@ export default async function DashboardPage() {
             </div>
           ))}
         </div>
-      </div>
-
-      {/* Metric Cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {metricCards.map((card) => (
-          <MetricCard
-            key={card.title}
-            title={card.title}
-            value={card.value}
-            icon={card.icon}
-            iconBg={card.iconBg}
-            borderColor={card.borderColor}
-            highlight={card.highlight}
-          />
-        ))}
       </div>
 
       {/* Charts */}
