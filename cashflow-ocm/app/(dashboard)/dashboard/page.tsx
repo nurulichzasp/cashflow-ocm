@@ -191,44 +191,44 @@ export default async function DashboardPage() {
     {
       title: 'Total Saldo Kas',
       value: formatRupiah(metrics.totalSaldo),
-      icon: <Banknote className="h-5 w-5 text-green-600 dark:text-[#6b6b6b]" />,
-      iconBg: 'bg-green-50 dark:bg-white/[0.05]',
+      icon: <Banknote className="h-5 w-5 text-green-600 dark:text-[#9CA3AF]" />,
+      iconBg: 'bg-green-50 dark:bg-white/[0.04]',
       borderColor: 'border-l-green-500',
     },
     {
       title: 'Total DP Peron',
       value: formatRupiah(metrics.totalDpPeron),
-      icon: <TrendingDown className="h-5 w-5 text-amber-600 dark:text-[#6b6b6b]" />,
-      iconBg: 'bg-amber-50 dark:bg-white/[0.05]',
+      icon: <TrendingDown className="h-5 w-5 text-amber-600 dark:text-[#9CA3AF]" />,
+      iconBg: 'bg-amber-50 dark:bg-white/[0.04]',
       borderColor: 'border-l-amber-500',
     },
     {
       title: 'Piutang BGA',
       value: formatRupiah(metrics.piutangBga),
-      icon: <TrendingUp className="h-5 w-5 text-violet-600 dark:text-[#6b6b6b]" />,
-      iconBg: 'bg-violet-50 dark:bg-white/[0.05]',
+      icon: <TrendingUp className="h-5 w-5 text-violet-600 dark:text-[#9CA3AF]" />,
+      iconBg: 'bg-violet-50 dark:bg-white/[0.04]',
       borderColor: 'border-l-violet-500',
     },
     {
       title: 'Total Penjualan Lunas',
       value: formatRupiah(metrics.totalPenjualanLunas),
-      icon: <Receipt className="h-5 w-5 text-emerald-600 dark:text-[#6b6b6b]" />,
-      iconBg: 'bg-emerald-50 dark:bg-white/[0.05]',
+      icon: <Receipt className="h-5 w-5 text-emerald-600 dark:text-[#9CA3AF]" />,
+      iconBg: 'bg-emerald-50 dark:bg-white/[0.04]',
       borderColor: 'border-l-emerald-500',
     },
     {
       title: 'Total Modal Berputar',
       value: formatRupiah(metrics.totalModalBerputar),
-      icon: <BarChart3 className="h-5 w-5 text-orange-600 dark:text-orange-500" />,
-      iconBg: 'bg-orange-100 dark:bg-orange-500/10',
+      icon: <BarChart3 className="h-5 w-5 text-orange-600 dark:text-[#D97757]" />,
+      iconBg: 'bg-orange-100 dark:bg-[#D97757]/12',
       borderColor: 'border-l-orange-600',
       highlight: true,
     },
     {
       title: 'Estimasi Laba',
       value: formatRupiah(metrics.estimasiLaba),
-      icon: <TrendingUp className="h-5 w-5 text-green-600 dark:text-orange-500" />,
-      iconBg: 'bg-green-50 dark:bg-orange-500/10',
+      icon: <TrendingUp className="h-5 w-5 text-green-600 dark:text-[#D97757]" />,
+      iconBg: 'bg-green-50 dark:bg-[#D97757]/12',
       borderColor: 'border-l-green-400',
       highlight: true,
     },
@@ -239,19 +239,19 @@ export default async function DashboardPage() {
       label: 'Pembelian Hari Ini',
       value: formatRupiah(today.pembelianHariIni),
       icon: ShoppingCart,
-      color: 'text-red-600 dark:text-red-400',
+      color: 'text-red-600 dark:text-[#9CA3AF]',
     },
     {
       label: 'Penjualan Hari Ini',
       value: formatRupiah(today.penjualanHariIni),
       icon: TrendingUp,
-      color: 'text-green-600 dark:text-green-400',
+      color: 'text-green-600 dark:text-[#F3F4F6]',
     },
     {
       label: 'Biaya Hari Ini',
       value: formatRupiah(today.biayaHariIni),
       icon: Receipt,
-      color: 'text-amber-600 dark:text-amber-400',
+      color: 'text-amber-600 dark:text-[#D97757]',
     },
   ]
 
@@ -285,15 +285,15 @@ export default async function DashboardPage() {
       {/* Ringkasan Hari Ini */}
       <div className="rounded-xl border border-stone-100 dark:border-border bg-white dark:bg-card overflow-hidden">
         <div className="px-5 py-3 border-b border-stone-50 dark:border-border flex items-center gap-2">
-          <span className="h-1.5 w-1.5 rounded-full bg-green-500 dark:bg-[#3a3a3a]" />
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6b6b6b]">Hari Ini</p>
+          <span className="h-1.5 w-1.5 rounded-full bg-green-500 dark:bg-[#4B5563]" />
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Hari Ini</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-stone-50 dark:divide-border">
           {todayItems.map((item) => (
             <div key={item.label} className="flex items-center justify-between px-5 py-4 sm:flex-col sm:items-start sm:py-5">
               <div className="flex items-center gap-1.5">
                 <item.icon className={`h-3.5 w-3.5 ${item.color} shrink-0`} />
-                <p className="text-xs text-stone-400 dark:text-[#6b6b6b] font-medium">{item.label}</p>
+                <p className="text-xs text-stone-400 dark:text-[#6B7280] font-medium">{item.label}</p>
               </div>
               <p className={`text-xl font-bold num tracking-tight ${item.color} sm:mt-2.5`}>{item.value}</p>
             </div>
@@ -303,13 +303,13 @@ export default async function DashboardPage() {
 
       {/* Saldo per akun */}
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6b6b6b] mb-3">Saldo Rekening &amp; Kas</p>
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280] mb-3">Saldo Rekening &amp; Kas</p>
         <div className="grid gap-3 sm:grid-cols-3">
           {/* Rek BRI CV OCM — utama */}
           {akunCvOcm && (
             <div className="rounded-xl border border-orange-200/80 dark:border-border bg-gradient-to-br from-orange-50/80 to-white dark:bg-card p-4">
-              <p className="text-[10px] font-semibold text-orange-500 dark:text-[#6b6b6b] uppercase tracking-widest mb-2">Rekening Utama</p>
-              <p className="text-[11px] text-stone-400 dark:text-[#6b6b6b] mb-1.5 truncate">{akunCvOcm.nama}</p>
+              <p className="text-[10px] font-semibold text-orange-500 dark:text-[#D97757] uppercase tracking-widest mb-2">Rekening Utama</p>
+              <p className="text-[11px] text-stone-400 dark:text-[#6B7280] mb-1.5 truncate">{akunCvOcm.nama}</p>
               <p className={`text-xl font-bold num tracking-tight ${akunCvOcm.saldo >= 0 ? 'text-stone-900 dark:text-stone-100' : 'text-red-600 dark:text-red-400'}`}>
                 {formatRupiah(akunCvOcm.saldo)}
               </p>
@@ -318,19 +318,19 @@ export default async function DashboardPage() {
           {/* Rekening BRI lainnya — digabung */}
           {akunLainnya.length > 0 && (
             <div className="rounded-xl border border-stone-100 dark:border-border bg-white dark:bg-card p-4">
-              <p className="text-[10px] font-semibold text-stone-400 dark:text-[#6b6b6b] uppercase tracking-widest mb-2">Bank</p>
-              <p className="text-[11px] text-stone-400 dark:text-[#6b6b6b] mb-1.5">Rek BRI Lainnya</p>
+              <p className="text-[10px] font-semibold text-stone-400 dark:text-[#6B7280] uppercase tracking-widest mb-2">Bank</p>
+              <p className="text-[11px] text-stone-400 dark:text-[#6B7280] mb-1.5">Rek BRI Lainnya</p>
               <p className={`text-xl font-bold num tracking-tight ${saldoLainnya >= 0 ? 'text-stone-900 dark:text-stone-100' : 'text-red-600 dark:text-red-400'}`}>
                 {formatRupiah(saldoLainnya)}
               </p>
-              <p className="text-[10px] text-stone-300 dark:text-[#525252] mt-2 truncate">{akunLainnya.map((a) => a.nama).join(' · ')}</p>
+              <p className="text-[10px] text-stone-300 dark:text-[#4B5563] mt-2 truncate">{akunLainnya.map((a) => a.nama).join(' · ')}</p>
             </div>
           )}
           {/* Tunai */}
           {akunTunai.map((a) => (
             <div key={a.id} className="rounded-xl border border-stone-100 dark:border-border bg-white dark:bg-card p-4">
-              <p className="text-[10px] font-semibold text-stone-400 dark:text-[#6b6b6b] uppercase tracking-widest mb-2">Tunai</p>
-              <p className="text-[11px] text-stone-400 dark:text-[#6b6b6b] mb-1.5 truncate">{a.nama}</p>
+              <p className="text-[10px] font-semibold text-stone-400 dark:text-[#6B7280] uppercase tracking-widest mb-2">Tunai</p>
+              <p className="text-[11px] text-stone-400 dark:text-[#6B7280] mb-1.5 truncate">{a.nama}</p>
               <p className={`text-xl font-bold num tracking-tight ${a.saldo >= 0 ? 'text-stone-900 dark:text-stone-100' : 'text-red-600 dark:text-red-400'}`}>
                 {formatRupiah(a.saldo)}
               </p>
@@ -360,7 +360,7 @@ export default async function DashboardPage() {
           <div className="rounded-xl border border-stone-100 dark:border-border bg-white dark:bg-card overflow-hidden">
             <div className="px-5 py-4 border-b border-stone-50 dark:border-border">
               <p className="text-sm font-semibold text-stone-800 dark:text-stone-200">Cashflow Harian</p>
-              <p className="text-xs text-stone-400 dark:text-[#6b6b6b] mt-0.5">Masuk vs keluar — 14 hari terakhir</p>
+              <p className="text-xs text-stone-400 dark:text-[#6B7280] mt-0.5">Masuk vs keluar — 14 hari terakhir</p>
             </div>
             <div className="p-4">
               <CashflowChart data={charts.daily} />
@@ -372,7 +372,7 @@ export default async function DashboardPage() {
           <div className="rounded-xl border border-stone-100 dark:border-border bg-white dark:bg-card overflow-hidden">
             <div className="px-5 py-4 border-b border-stone-50 dark:border-border">
               <p className="text-sm font-semibold text-stone-800 dark:text-stone-200">Komposisi Modal</p>
-              <p className="text-xs text-stone-400 dark:text-[#6b6b6b] mt-0.5">Bank, Tunai, DP Peron, Piutang</p>
+              <p className="text-xs text-stone-400 dark:text-[#6B7280] mt-0.5">Bank, Tunai, DP Peron, Piutang</p>
             </div>
             <div className="p-4">
               <CompositionChart data={charts.composition} />
@@ -384,7 +384,7 @@ export default async function DashboardPage() {
       <div className="rounded-xl border border-stone-100 dark:border-border bg-white dark:bg-card overflow-hidden">
         <div className="px-5 py-4 border-b border-stone-50 dark:border-border">
           <p className="text-sm font-semibold text-stone-800 dark:text-stone-200">Tren Modal Berputar</p>
-          <p className="text-xs text-stone-400 dark:text-[#6b6b6b] mt-0.5">Perkembangan modal selama 14 hari terakhir</p>
+          <p className="text-xs text-stone-400 dark:text-[#6B7280] mt-0.5">Perkembangan modal selama 14 hari terakhir</p>
         </div>
         <div className="p-4">
           <TrendChart data={charts.trend} />

@@ -30,179 +30,140 @@ export default function LoginPage() {
     }
   }
 
-  /* Reusable inline style helpers */
   const inputStyle = {
-    background: '#242424',
-    border: '1px solid #2c2c2c',
-    color: '#f5f5f5',
+    background: '#1E1E1E',
+    border: '1px solid rgba(255,255,255,0.08)',
+    color: '#F3F4F6',
   } as React.CSSProperties
 
   function focusIn(e: React.FocusEvent<HTMLInputElement>) {
-    e.currentTarget.style.borderColor = '#FC6E20'
+    e.currentTarget.style.borderColor = '#D97757'
   }
   function focusOut(e: React.FocusEvent<HTMLInputElement>) {
-    e.currentTarget.style.borderColor = '#2c2c2c'
+    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
   }
 
   return (
-    <div className="min-h-[100dvh] flex" style={{ background: '#1a1a1a' }}>
-
-      {/* ── Left — brand panel (desktop only) ── */}
+    <div
+      className="min-h-[100dvh] flex items-center justify-center p-6"
+      style={{ background: '#1E1E1E' }}
+    >
+      {/* Centered card */}
       <div
-        className="hidden lg:flex lg:w-[42%] flex-col justify-between p-12 shrink-0"
-        style={{ background: '#FC6E20' }}
+        className="w-full max-w-[380px] rounded-2xl p-8 sm:p-10"
+        style={{
+          background: '#28282B',
+          border: '1px solid rgba(255,255,255,0.06)',
+        }}
       >
-        {/* Logo */}
-        <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-lg bg-black/15 flex items-center justify-center text-white font-bold text-[11px] tracking-wide">
+        {/* Brand mark */}
+        <div className="flex items-center gap-2.5 mb-8">
+          <div
+            className="h-9 w-9 rounded-xl flex items-center justify-center text-white font-bold text-xs tracking-wide"
+            style={{ background: '#D97757' }}
+          >
             OCM
           </div>
-          <span className="text-white/70 text-sm font-medium tracking-wide">CV OCM Cashflow</span>
+          <span className="font-semibold text-sm" style={{ color: '#F3F4F6' }}>
+            CV OCM Cashflow
+          </span>
         </div>
 
-        {/* Hero copy */}
-        <div>
-          <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest mb-5">
-            Sistem Manajemen Keuangan
-          </p>
-          <h1 className="text-4xl font-bold text-white leading-[1.2] tracking-tight">
-            Cashflow sawit<br />dalam genggaman.
-          </h1>
-          <p className="text-white/50 mt-4 text-sm leading-relaxed max-w-xs">
-            Catat pembelian dari peron, penjualan ke BGA, dan pantau kas CV OCM — terpusat dan real-time.
-          </p>
+        {/* Heading */}
+        <h2 className="text-2xl font-bold leading-tight tracking-tight" style={{ color: '#F3F4F6' }}>
+          Selamat datang
+        </h2>
+        <p className="text-sm mt-1.5 mb-8" style={{ color: '#9CA3AF' }}>
+          Masuk untuk melanjutkan ke dashboard.
+        </p>
 
-          {/* Stats strip */}
-          <div className="flex items-center gap-8 mt-10 pt-8 border-t border-white/15">
-            {[
-              { v: '16+', l: 'Peron' },
-              { v: '8',   l: 'Modul' },
-              { v: '✓',   l: 'Real-time' },
-            ].map((s) => (
-              <div key={s.l}>
-                <p className="text-2xl font-bold text-white leading-none">{s.v}</p>
-                <p className="text-xs text-white/40 mt-1">{s.l}</p>
-              </div>
-            ))}
-          </div>
-        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
 
-        <p className="text-white/25 text-xs">Supplier TBS &amp; BRDL — PKS PT. BGA</p>
-      </div>
-
-      {/* ── Right — form ── */}
-      <div className="flex-1 flex items-center justify-center p-8 lg:p-16">
-        <div className="w-full max-w-[320px]">
-
-          {/* Mobile logo */}
-          <div className="lg:hidden flex items-center gap-2.5 mb-12">
-            <div
-              className="h-8 w-8 rounded-lg flex items-center justify-center text-white font-bold text-[11px] tracking-wide"
-              style={{ background: '#FC6E20' }}
+          {/* Email */}
+          <div className="space-y-1.5">
+            <label
+              htmlFor="email"
+              className="text-[11px] font-semibold uppercase tracking-widest block"
+              style={{ color: '#9CA3AF' }}
             >
-              OCM
-            </div>
-            <span className="font-semibold text-sm" style={{ color: '#f5f5f5' }}>
-              CV OCM Cashflow
-            </span>
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              placeholder="nama@email.com"
+              value={form.email}
+              onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+              required
+              autoComplete="email"
+              className="w-full h-11 rounded-xl px-4 text-sm outline-none transition-colors duration-150 placeholder:text-[#5b5b5b]"
+              style={inputStyle}
+              onFocus={focusIn}
+              onBlur={focusOut}
+            />
           </div>
 
-          {/* Heading */}
-          <h2 className="text-[1.625rem] font-bold leading-tight tracking-tight" style={{ color: '#f5f5f5' }}>
-            Selamat datang
-          </h2>
-          <p className="text-sm mt-1.5 mb-8" style={{ color: '#6b6b6b' }}>
-            Masuk untuk melanjutkan ke dashboard.
-          </p>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-
-            {/* Email */}
-            <div className="space-y-1.5">
-              <label
-                htmlFor="email"
-                className="text-[10px] font-bold uppercase tracking-widest block"
-                style={{ color: '#6b6b6b' }}
-              >
-                Email
-              </label>
+          {/* Password */}
+          <div className="space-y-1.5">
+            <label
+              htmlFor="password"
+              className="text-[11px] font-semibold uppercase tracking-widest block"
+              style={{ color: '#9CA3AF' }}
+            >
+              Password
+            </label>
+            <div className="relative">
               <input
-                id="email"
-                type="email"
-                placeholder="nama@email.com"
-                value={form.email}
-                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="••••••••"
+                value={form.password}
+                onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
                 required
-                autoComplete="email"
-                className="w-full h-11 rounded-xl px-4 text-sm outline-none transition-colors duration-150 placeholder:text-[#3a3a3a]"
+                autoComplete="current-password"
+                className="w-full h-11 rounded-xl px-4 pr-11 text-sm outline-none transition-colors duration-150 placeholder:text-[#5b5b5b]"
                 style={inputStyle}
                 onFocus={focusIn}
                 onBlur={focusOut}
               />
-            </div>
-
-            {/* Password */}
-            <div className="space-y-1.5">
-              <label
-                htmlFor="password"
-                className="text-[10px] font-bold uppercase tracking-widest block"
-                style={{ color: '#6b6b6b' }}
-              >
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  value={form.password}
-                  onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-                  required
-                  autoComplete="current-password"
-                  className="w-full h-11 rounded-xl px-4 pr-11 text-sm outline-none transition-colors duration-150 placeholder:text-[#3a3a3a]"
-                  style={inputStyle}
-                  onFocus={focusIn}
-                  onBlur={focusOut}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  tabIndex={-1}
-                  aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md transition-colors duration-150"
-                  style={{ color: '#525252' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.color = '#9b9b9b' }}
-                  onMouseLeave={(e) => { e.currentTarget.style.color = '#525252' }}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
-
-            {/* Submit */}
-            <div className="pt-2">
               <button
-                type="submit"
-                disabled={loading}
-                className="w-full h-11 rounded-xl font-semibold text-sm text-white transition-all duration-150 flex items-center justify-center gap-2.5 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
-                style={{ background: '#FC6E20' }}
-                onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = '#e05d10' }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = '#FC6E20' }}
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                tabIndex={-1}
+                aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md transition-colors duration-150"
+                style={{ color: '#6B7280' }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = '#9CA3AF' }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = '#6B7280' }}
               >
-                {loading ? (
-                  <>
-                    <span className="h-4 w-4 rounded-full border-2 border-white/25 border-t-white animate-spin" />
-                    Memproses...
-                  </>
-                ) : 'Masuk'}
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
-          </form>
+          </div>
 
-          <p className="text-center text-[11px] mt-10" style={{ color: '#3a3a3a' }}>
-            Supplier TBS &amp; BRDL — PKS PT. BGA
-          </p>
-        </div>
+          {/* Submit */}
+          <div className="pt-2">
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full h-11 rounded-xl font-semibold text-sm text-white transition-all duration-150 flex items-center justify-center gap-2.5 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
+              style={{ background: '#D97757' }}
+              onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = '#c8654a' }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = '#D97757' }}
+            >
+              {loading ? (
+                <>
+                  <span className="h-4 w-4 rounded-full border-2 border-white/25 border-t-white animate-spin" />
+                  Memproses...
+                </>
+              ) : 'Masuk'}
+            </button>
+          </div>
+        </form>
+
+        <p className="text-center text-[11px] mt-8" style={{ color: '#5b5b5b' }}>
+          Supplier TBS &amp; BRDL — PKS PT. BGA
+        </p>
       </div>
     </div>
   )

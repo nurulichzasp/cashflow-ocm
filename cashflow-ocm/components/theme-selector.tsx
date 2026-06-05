@@ -54,7 +54,7 @@ export function ThemeToggle() {
   if (!mounted) return null
 
   return (
-    <div className="flex items-center gap-0.5 p-1 rounded-lg bg-stone-800/50">
+    <div className="flex items-center gap-0.5 p-1 rounded-lg bg-white/[0.05]">
       {([['light', Sun], ['system', Monitor], ['dark', Moon]] as const).map(([val, Icon]) => (
         <button
           key={val}

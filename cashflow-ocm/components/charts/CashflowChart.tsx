@@ -29,11 +29,17 @@ const fmtFull = (v: number) =>
     maximumFractionDigits: 0,
   }).format(v)
 
+/* Palette — masuk biru, keluar oranye Claude */
+const C_MASUK = '#3B82F6'
+const C_KELUAR = '#D97757'
+const C_GRID = 'rgba(255,255,255,0.06)'
+const C_AXIS = '#6B7280'
+
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null
   return (
-    <div className="rounded-lg bg-[#272727] border border-[#383838] px-3 py-2.5 shadow-xl text-xs">
-      <p className="text-[#8A7060] mb-2 font-medium">{label}</p>
+    <div className="rounded-lg bg-[#28282B] border border-white/10 px-3 py-2.5 shadow-xl text-xs">
+      <p className="text-[#9CA3AF] mb-2 font-medium">{label}</p>
       {payload.map((entry: any, i: number) => (
         <p
           key={i}
@@ -54,23 +60,23 @@ export function CashflowChart({ data }: { data: Point[] }) {
         <AreaChart data={data} margin={{ top: 6, right: 8, left: -8, bottom: 0 }}>
           <defs>
             <linearGradient id="gradMasuk" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#16A34A" stopOpacity={0.15} />
-              <stop offset="95%" stopColor="#16A34A" stopOpacity={0} />
+              <stop offset="5%" stopColor={C_MASUK} stopOpacity={0.18} />
+              <stop offset="95%" stopColor={C_MASUK} stopOpacity={0} />
             </linearGradient>
             <linearGradient id="gradKeluar" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#DC2626" stopOpacity={0.12} />
-              <stop offset="95%" stopColor="#DC2626" stopOpacity={0} />
+              <stop offset="5%" stopColor={C_KELUAR} stopOpacity={0.18} />
+              <stop offset="95%" stopColor={C_KELUAR} stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid stroke="#E7E5E4" strokeDasharray="3 3" vertical={false} />
+          <CartesianGrid stroke={C_GRID} strokeDasharray="3 3" vertical={false} />
           <XAxis
             dataKey="date"
-            tick={{ fontSize: 11, fill: '#A8A29E' }}
+            tick={{ fontSize: 11, fill: C_AXIS }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis
-            tick={{ fontSize: 11, fill: '#A8A29E' }}
+            tick={{ fontSize: 11, fill: C_AXIS }}
             tickFormatter={fmt}
             axisLine={false}
             tickLine={false}
@@ -80,22 +86,22 @@ export function CashflowChart({ data }: { data: Point[] }) {
           <Area
             type="monotone"
             dataKey="masuk"
-            stroke="#16A34A"
+            stroke={C_MASUK}
             strokeWidth={2}
             fill="url(#gradMasuk)"
             name="Masuk"
             dot={false}
-            activeDot={{ r: 4, fill: '#16A34A' }}
+            activeDot={{ r: 4, fill: C_MASUK }}
           />
           <Area
             type="monotone"
             dataKey="keluar"
-            stroke="#DC2626"
+            stroke={C_KELUAR}
             strokeWidth={2}
             fill="url(#gradKeluar)"
             name="Keluar"
             dot={false}
-            activeDot={{ r: 4, fill: '#DC2626' }}
+            activeDot={{ r: 4, fill: C_KELUAR }}
           />
         </AreaChart>
       </ResponsiveContainer>

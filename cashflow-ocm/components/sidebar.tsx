@@ -55,14 +55,14 @@ function NavLink({
       className={cn(
         'relative flex items-center gap-3 mx-2 rounded-lg px-3 py-2.5 text-sm transition-all duration-150',
         active
-          ? 'bg-orange-500/12 text-orange-400 font-semibold'
-          : 'text-[#9b9b9b] font-medium hover:bg-white/[0.06] hover:text-[#f5f5f5]'
+          ? 'bg-[#D97757]/12 text-[#D97757] font-semibold'
+          : 'text-[#9CA3AF] font-medium hover:bg-white/[0.06] hover:text-[#F3F4F6]'
       )}
     >
       {active && (
-        <span className="absolute left-0 top-[7px] bottom-[7px] w-[3px] rounded-full bg-orange-500" style={{ boxShadow: '0 0 6px oklch(0.65 0.2 41 / 0.5)' }} />
+        <span className="absolute left-0 top-[7px] bottom-[7px] w-[3px] rounded-full bg-[#D97757]" style={{ boxShadow: '0 0 6px oklch(0.65 0.2 41 / 0.5)' }} />
       )}
-      <Icon className={cn('h-[17px] w-[17px] shrink-0 transition-colors', active ? 'text-orange-400' : '')} />
+      <Icon className={cn('h-[17px] w-[17px] shrink-0 transition-colors', active ? 'text-[#D97757]' : '')} />
       {label}
     </Link>
   )
@@ -86,13 +86,13 @@ export function Sidebar({ userName, isOwner }: { userName?: string; isOwner?: bo
   const visibleNavItems = navItems.filter(() => true)
 
   return (
-    <aside className="flex h-full w-60 flex-col bg-[#161616] border-r border-[#1e1e1e]">
+    <aside className="flex h-full w-60 flex-col bg-[#1E1E1E] border-r border-white/[0.06]">
       {/* Brand */}
-      <div className="flex h-14 items-center border-b border-[#1e1e1e] px-4 gap-3 shrink-0">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FC6E20] text-white text-[11px] font-bold shrink-0">
+      <div className="flex h-14 items-center border-b border-white/[0.06] px-4 gap-3 shrink-0">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#D97757] text-white text-[11px] font-bold shrink-0">
           OCM
         </div>
-        <span className="font-semibold text-sm text-[#f5f5f5] truncate tracking-wide">CV OCM Cashflow</span>
+        <span className="font-semibold text-sm text-[#F3F4F6] truncate tracking-wide">CV OCM Cashflow</span>
       </div>
 
       {/* Nav */}
@@ -112,22 +112,22 @@ export function Sidebar({ userName, isOwner }: { userName?: string; isOwner?: bo
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-[#1e1e1e] p-3 space-y-1 shrink-0">
+      <div className="border-t border-white/[0.06] p-3 space-y-1 shrink-0">
         {userName && (
           <div className="flex items-center gap-2.5 px-3 py-2 mb-0.5 rounded-lg bg-white/[0.05]">
-            <div className="h-7 w-7 rounded-full bg-[#FC6E20] flex items-center justify-center text-[11px] font-bold text-white shrink-0">
+            <div className="h-7 w-7 rounded-full bg-[#D97757] flex items-center justify-center text-[11px] font-bold text-white shrink-0">
               {getInitials(userName)}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-[#f5f5f5] truncate">{userName}</p>
-              <p className="text-[11px] text-[#6b6b6b]">{isOwner ? 'Owner' : 'Admin'}</p>
+              <p className="text-xs font-semibold text-[#F3F4F6] truncate">{userName}</p>
+              <p className="text-[11px] text-[#9CA3AF]">{isOwner ? 'Owner' : 'Admin'}</p>
             </div>
             <ThemeToggle />
           </div>
         )}
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-[#6b6b6b] hover:text-red-400 hover:bg-red-500/8 transition-colors duration-150 font-medium"
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-[#9CA3AF] hover:text-red-400 hover:bg-red-500/8 transition-colors duration-150 font-medium"
         >
           <LogOut className="h-4 w-4 shrink-0" />
           Keluar
@@ -182,7 +182,7 @@ export function MobileSidebar({ userName, isOwner }: { userName?: string; isOwne
         {/* Drawer panel */}
         <div
           className={cn(
-            'absolute left-0 top-0 h-full w-[280px] bg-[#161616] shadow-2xl flex flex-col',
+            'absolute left-0 top-0 h-full w-[280px] bg-[#1E1E1E] shadow-2xl flex flex-col',
             'transition-transform',
             open ? 'translate-x-0' : '-translate-x-full'
           )}
@@ -192,9 +192,9 @@ export function MobileSidebar({ userName, isOwner }: { userName?: string; isOwne
           }}
         >
           {/* Brand */}
-          <div className="flex h-14 items-center justify-between border-b border-stone-800/80 px-4 shrink-0">
+          <div className="flex h-14 items-center justify-between border-b border-white/[0.06] px-4 shrink-0">
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-600 text-white text-[11px] font-bold shrink-0">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#D97757] text-white text-[11px] font-bold shrink-0">
                 OCM
               </div>
               <span className="font-semibold text-sm text-stone-100">CV OCM Cashflow</span>
@@ -225,10 +225,10 @@ export function MobileSidebar({ userName, isOwner }: { userName?: string; isOwne
           </nav>
 
           {/* Footer */}
-          <div className="border-t border-stone-800/80 p-3 space-y-1 shrink-0">
+          <div className="border-t border-white/[0.06] p-3 space-y-1 shrink-0">
             {userName && (
               <div className="flex items-center gap-2.5 px-3 py-1.5 mb-1">
-                <div className="h-7 w-7 rounded-full bg-orange-600 flex items-center justify-center text-[11px] font-bold text-white shrink-0">
+                <div className="h-7 w-7 rounded-full bg-[#D97757] flex items-center justify-center text-[11px] font-bold text-white shrink-0">
                   {getInitials(userName)}
                 </div>
                 <div className="flex-1 min-w-0">

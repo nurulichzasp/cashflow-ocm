@@ -31,7 +31,7 @@ export default async function PeronPage() {
         <PeronFormDialog mode="create">
           <Button size="sm" className="gap-2 bg-orange-600 hover:bg-orange-700 text-white">
             <Plus className="h-4 w-4" />
-            Tambah Peron
+            Tambah
           </Button>
         </PeronFormDialog>
       </div>

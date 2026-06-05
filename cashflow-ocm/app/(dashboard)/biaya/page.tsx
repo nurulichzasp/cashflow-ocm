@@ -47,7 +47,7 @@ export default async function BiayaPage() {
         <BiayaFormDialog akunOptions={akunOptions}>
           <Button size="sm" className="gap-2 bg-orange-600 hover:bg-orange-700 text-white">
             <Plus className="h-4 w-4" />
-            Tambah Biaya
+            Tambah
           </Button>
         </BiayaFormDialog>
       </div>

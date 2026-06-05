@@ -11,7 +11,8 @@ import {
 
 type Slice = { name: string; value: number }
 
-const COLORS = ['#16A34A', '#EA580C', '#D97706', '#78716C']
+/* Palette Claude — biru, oranye, abu, abu gelap */
+const COLORS = ['#3B82F6', '#D97757', '#9CA3AF', '#6B7280']
 
 const fmtFull = (v: number) =>
   new Intl.NumberFormat('id-ID', {
@@ -24,8 +25,8 @@ function CustomTooltip({ active, payload }: any) {
   if (!active || !payload?.length) return null
   const entry = payload[0]
   return (
-    <div className="rounded-lg bg-[#272727] border border-[#383838] px-3 py-2.5 shadow-xl text-xs">
-      <p className="text-[#8A7060] mb-1">{entry.name}</p>
+    <div className="rounded-lg bg-[#28282B] border border-white/10 px-3 py-2.5 shadow-xl text-xs">
+      <p className="text-[#9CA3AF] mb-1">{entry.name}</p>
       <p className="font-semibold num" style={{ color: entry.payload.fill }}>
         {fmtFull(Number(entry.value ?? 0))}
       </p>

@@ -32,7 +32,7 @@ export default async function HargaPage() {
         <HargaFormDialog>
           <Button size="sm" className="gap-2 bg-orange-600 hover:bg-orange-700 text-white">
             <Plus className="h-4 w-4" />
-            Tambah Harga
+            Tambah
           </Button>
         </HargaFormDialog>
       </div>

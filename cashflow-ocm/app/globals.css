@@ -104,44 +104,53 @@
   --sidebar-ring: #EA580C;
 }
 
-/* ─── Dark mode — Claude palette + orange accent ─── */
-/* #1a1a1a · #242424 · #f5f5f5 · #FC6E20                */
+/* ─── Dark mode — Claude palette + orange/blue accent ─── */
+/* #1E1E1E · #28282B · #F3F4F6 · #D97757 · #3B82F6        */
 html.dark {
   color-scheme: dark;
 
-  --background: #1a1a1a;         /* page bg — dark charcoal */
-  --foreground: #f5f5f5;         /* primary text — near white */
-  --card: #242424;               /* card surface */
-  --card-foreground: #f5f5f5;
-  --popover: #2a2a2a;
-  --popover-foreground: #f5f5f5;
-  --primary: #FC6E20;
+  --background: #1E1E1E;         /* page bg — Claude charcoal */
+  --foreground: #F3F4F6;         /* primary text — bone white */
+  --card: #28282B;               /* card surface — uniform */
+  --card-foreground: #F3F4F6;
+  --popover: #28282B;
+  --popover-foreground: #F3F4F6;
+  --primary: #D97757;            /* Claude terracotta orange */
   --primary-foreground: #ffffff;
-  --secondary: #2a2a2a;
-  --secondary-foreground: #f5f5f5;
-  --muted: #1e1e1e;
-  --muted-foreground: #9b9b9b;   /* secondary text */
-  --accent: #2a2a2a;
-  --accent-foreground: #FC6E20;
-  --destructive: #ef4444;
-  --border: #2c2c2c;             /* ultra-subtle border */
-  --input: #2a2a2a;
-  --ring: #FC6E20;
+  --secondary: #28282B;
+  --secondary-foreground: #F3F4F6;
+  --muted: #232325;
+  --muted-foreground: #9CA3AF;   /* secondary text — gray */
+  --accent: #28282B;
+  --accent-foreground: #D97757;
+  --destructive: #9CA3AF;        /* netral — bukan merah mencolok */
+  --border: rgba(255,255,255,0.07);  /* near-invisible */
+  --input: #28282B;
+  --ring: #D97757;
 
-  --chart-1: #4ade80;
-  --chart-2: #f87171;
-  --chart-3: #FC6E20;
-  --chart-4: #737373;
-  --chart-5: #fbbf24;
+  /* Charts: blue masuk / orange keluar / gray netral */
+  --chart-1: #3B82F6;
+  --chart-2: #D97757;
+  --chart-3: #9CA3AF;
+  --chart-4: #6B7280;
+  --chart-5: #D97757;
+  --chart-grid: rgba(255,255,255,0.06);
+  --chart-axis: #6B7280;
 
-  --sidebar: #161616;
-  --sidebar-foreground: #9b9b9b;
-  --sidebar-primary: #FC6E20;
+  --sidebar: #1E1E1E;            /* menyatu dengan background */
+  --sidebar-foreground: #9CA3AF;
+  --sidebar-primary: #D97757;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #242424;
-  --sidebar-accent-foreground: #f5f5f5;
-  --sidebar-border: #1e1e1e;
-  --sidebar-ring: #FC6E20;
+  --sidebar-accent: #28282B;
+  --sidebar-accent-foreground: #F3F4F6;
+  --sidebar-border: rgba(255,255,255,0.06);
+  --sidebar-ring: #D97757;
+}
+
+/* Light mode chart helpers (fallback) */
+:root {
+  --chart-grid: #E7E5E4;
+  --chart-axis: #A8A29E;
 }
 
 @layer base {
@@ -156,7 +165,8 @@ html.dark {
     -moz-osx-font-smoothing: grayscale;
   }
   html {
-    @apply font-sans;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
+      Roboto, Helvetica, Arial, sans-serif;
     scroll-behavior: smooth;
   }
   /* Smooth focus rings */
@@ -204,27 +214,37 @@ html.dark {
    Mengkonversi semua class light-mode ke Claude palette secara otomatis
    ───────────────────────────────────────────────────────────────────────── */
 
-/* ── Backgrounds ── */
-html.dark [class~="bg-white"]       { background-color: #242424 !important; }
-html.dark [class~="bg-stone-50"]    { background-color: #1a1a1a !important; }
+/* ── Backgrounds → semua surface seragam #28282B ── */
+html.dark [class~="bg-white"]       { background-color: #28282B !important; }
+html.dark [class~="bg-stone-50"]    { background-color: #1E1E1E !important; }
 html.dark [class~="bg-stone-100"]   { background-color: rgba(255,255,255,0.05) !important; }
-html.dark [class~="bg-orange-50"]   { background-color: rgba(252,110,32,0.07) !important; }
+html.dark [class~="bg-orange-50"]   { background-color: rgba(217,119,87,0.08) !important; }
 html.dark [class~="bg-green-50"]    { background-color: rgba(255,255,255,0.04) !important; }
+html.dark [class~="bg-green-100"]   { background-color: rgba(255,255,255,0.04) !important; }
 html.dark [class~="bg-red-50"]      { background-color: rgba(255,255,255,0.04) !important; }
 html.dark [class~="bg-amber-50"]    { background-color: rgba(255,255,255,0.04) !important; }
 html.dark [class~="bg-blue-50"]     { background-color: rgba(255,255,255,0.04) !important; }
 html.dark [class~="bg-violet-50"]   { background-color: rgba(255,255,255,0.04) !important; }
 html.dark [class~="bg-emerald-50"]  { background-color: rgba(255,255,255,0.04) !important; }
+/* orange brand bg → Claude terracotta */
+html.dark [class~="bg-orange-500"]  { background-color: #D97757 !important; }
+html.dark [class~="bg-orange-600"]  { background-color: #D97757 !important; }
+html.dark [class~="bg-orange-100"]  { background-color: rgba(217,119,87,0.12) !important; }
+html.dark [class~="border-orange-500"] { border-color: #D97757 !important; }
+html.dark [class~="border-orange-200"] { border-color: rgba(217,119,87,0.25) !important; }
 
-/* ── Borders ── */
-html.dark [class~="border-stone-200"]  { border-color: #2c2c2c !important; }
-html.dark [class~="border-stone-100"]  { border-color: #282828 !important; }
-html.dark [class~="border-green-200"]  { border-color: #333333 !important; }
-html.dark [class~="border-red-200"]    { border-color: #333333 !important; }
-html.dark [class~="border-amber-200"]  { border-color: #333333 !important; }
-html.dark [class~="border-blue-200"]   { border-color: #333333 !important; }
+/* ── Borders → near-invisible rgba(255,255,255,0.06) ── */
+html.dark [class~="border-stone-200"]  { border-color: rgba(255,255,255,0.07) !important; }
+html.dark [class~="border-stone-100"]  { border-color: rgba(255,255,255,0.05) !important; }
+html.dark [class~="border-stone-300"]  { border-color: rgba(255,255,255,0.09) !important; }
+html.dark [class~="border-green-200"]  { border-color: rgba(255,255,255,0.10) !important; }
+html.dark [class~="border-green-100"]  { border-color: rgba(255,255,255,0.06) !important; }
+html.dark [class~="border-red-200"]    { border-color: rgba(255,255,255,0.10) !important; }
+html.dark [class~="border-amber-200"]  { border-color: rgba(255,255,255,0.10) !important; }
+html.dark [class~="border-blue-200"]   { border-color: rgba(255,255,255,0.10) !important; }
+html.dark [class~="border-violet-200"] { border-color: rgba(255,255,255,0.10) !important; }
 
-/* ── Colored left-border strips → hapus warna, pakai border biasa ── */
+/* ── Colored left-border strips → hilangkan total ── */
 html.dark [class~="border-l-green-500"],
 html.dark [class~="border-l-green-400"],
 html.dark [class~="border-l-blue-500"],
@@ -233,46 +253,57 @@ html.dark [class~="border-l-amber-500"],
 html.dark [class~="border-l-orange-500"],
 html.dark [class~="border-l-orange-600"],
 html.dark [class~="border-l-red-500"],
-html.dark [class~="border-l-stone-400"] { border-left-color: #2c2c2c !important; }
+html.dark [class~="border-l-stone-400"] { border-left-color: rgba(255,255,255,0.07) !important; }
 
 /* ── Text — primary hierarchy ── */
-html.dark [class~="text-stone-900"]  { color: #f5f5f5 !important; }
-html.dark [class~="text-stone-800"]  { color: #e5e5e5 !important; }
-html.dark [class~="text-stone-700"]  { color: #c5c5c5 !important; }
+html.dark [class~="text-stone-900"]  { color: #F3F4F6 !important; }
+html.dark [class~="text-stone-800"]  { color: #E5E7EB !important; }
+html.dark [class~="text-stone-700"]  { color: #D1D5DB !important; }
 
 /* ── Text — secondary/muted ── */
-html.dark [class~="text-stone-500"]  { color: #9b9b9b !important; }
-html.dark [class~="text-stone-400"]  { color: #6b6b6b !important; }
-html.dark [class~="text-stone-300"]  { color: #525252 !important; }
+html.dark [class~="text-stone-600"]  { color: #9CA3AF !important; }
+html.dark [class~="text-stone-500"]  { color: #9CA3AF !important; }
+html.dark [class~="text-stone-400"]  { color: #6B7280 !important; }
+html.dark [class~="text-stone-300"]  { color: #4B5563 !important; }
 
-/* ── Text — warna semantik: ubah ke netral atau orange ── */
-/* green → putih (masuk amounts, icon) */
-html.dark [class~="text-green-600"]  { color: #f5f5f5 !important; }
-html.dark [class~="text-green-400"]  { color: #f5f5f5 !important; }
-html.dark [class~="text-green-700"]  { color: #9b9b9b !important; }  /* badge label */
-html.dark [class~="text-emerald-600"]{ color: #f5f5f5 !important; }
-/* amber → orange (brand) */
-html.dark [class~="text-amber-600"]  { color: #FC6E20 !important; }
-html.dark [class~="text-amber-400"]  { color: #FC6E20 !important; }
-html.dark [class~="text-amber-700"]  { color: #FC6E20 !important; }
-/* violet / blue → abu */
-html.dark [class~="text-violet-600"] { color: #9b9b9b !important; }
-html.dark [class~="text-blue-500"]   { color: #9b9b9b !important; }
-/* red-700 badge label → abu (bukan nilai uang) */
-html.dark [class~="text-red-700"]    { color: #9b9b9b !important; }
-/* text-red-600: TETAP MERAH — untuk angka negatif/keluar (intentional) */
+/* ── Text semantik → NETRAL (tanpa hijau/merah mencolok) ── */
+/* hijau (nilai masuk, untung) → putih primary */
+html.dark [class~="text-green-600"]  { color: #F3F4F6 !important; }
+html.dark [class~="text-green-500"]  { color: #9CA3AF !important; }
+html.dark [class~="text-green-400"]  { color: #F3F4F6 !important; }
+html.dark [class~="text-green-700"]  { color: #9CA3AF !important; }
+html.dark [class~="text-emerald-600"]{ color: #F3F4F6 !important; }
+/* merah (nilai keluar, negatif, HPP) → abu secondary (bukan merah!) */
+html.dark [class~="text-red-600"]    { color: #9CA3AF !important; }
+html.dark [class~="text-red-500"]    { color: #9CA3AF !important; }
+html.dark [class~="text-red-400"]    { color: #9CA3AF !important; }
+html.dark [class~="text-red-700"]    { color: #9CA3AF !important; }
+/* amber → orange brand */
+html.dark [class~="text-amber-600"]  { color: #D97757 !important; }
+html.dark [class~="text-amber-400"]  { color: #D97757 !important; }
+html.dark [class~="text-amber-700"]  { color: #D97757 !important; }
+/* orange-500/600 → Claude orange */
+html.dark [class~="text-orange-500"] { color: #D97757 !important; }
+html.dark [class~="text-orange-600"] { color: #D97757 !important; }
+html.dark [class~="text-orange-700"] { color: #D97757 !important; }
+html.dark [class~="text-orange-400"] { color: #D97757 !important; }
+/* violet / blue → abu netral */
+html.dark [class~="text-violet-600"] { color: #9CA3AF !important; }
+html.dark [class~="text-violet-700"] { color: #9CA3AF !important; }
+html.dark [class~="text-blue-500"]   { color: #9CA3AF !important; }
+html.dark [class~="text-blue-700"]   { color: #9CA3AF !important; }
 
-/* ── Shadow → hapus di dark mode ── */
+/* ── Shadow → hapus di dark ── */
 html.dark [class~="shadow-sm"]  { box-shadow: none !important; }
 
 /* ── Dividers ── */
-html.dark [class~="divide-stone-100"] > * + * { border-color: #282828 !important; }
-html.dark [class~="divide-stone-200"] > * + * { border-color: #2c2c2c !important; }
-html.dark [class~="divide-y"]         > * + * { border-color: #282828 !important; }
+html.dark [class~="divide-stone-100"] > * + * { border-color: rgba(255,255,255,0.05) !important; }
+html.dark [class~="divide-stone-200"] > * + * { border-color: rgba(255,255,255,0.07) !important; }
+html.dark [class~="divide-y"]         > * + * { border-color: rgba(255,255,255,0.05) !important; }
 
 /* ── Scrollbar ── */
-html.dark ::-webkit-scrollbar-thumb       { background: #2c2c2c; }
-html.dark ::-webkit-scrollbar-thumb:hover { background: #3a3a3a; }
+html.dark ::-webkit-scrollbar-thumb       { background: #3a3a3a; }
+html.dark ::-webkit-scrollbar-thumb:hover { background: #4a4a4a; }
 
 @layer utilities {
   /* App container: no max-width, just padding */

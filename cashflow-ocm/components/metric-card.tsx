@@ -17,12 +17,12 @@ export function MetricCard({ title, value, subtitle, icon, iconBg, highlight }: 
       className={cn(
         'rounded-xl border p-4 transition-colors duration-200',
         highlight
-          ? 'bg-gradient-to-br from-orange-50 via-orange-50/50 to-white dark:bg-card border-orange-200/60 dark:border-[#FC6E20]/15 shadow-sm shadow-orange-100/60 dark:shadow-none'
+          ? 'bg-gradient-to-br from-orange-50 via-orange-50/50 to-white dark:bg-card border-orange-200/60 dark:border-border shadow-sm shadow-orange-100/60 dark:shadow-none'
           : 'bg-white dark:bg-card border-stone-100 dark:border-border'
       )}
     >
       <div className="flex items-start justify-between mb-3.5">
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#525252] leading-none">
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280] leading-none">
           {title}
         </p>
         {icon && (
@@ -41,15 +41,15 @@ export function MetricCard({ title, value, subtitle, icon, iconBg, highlight }: 
         className={cn(
           'font-bold tracking-tight num leading-none',
           highlight
-            ? 'text-xl sm:text-2xl text-orange-700 dark:text-[#FC6E20]'
-            : 'text-lg sm:text-xl text-stone-900 dark:text-[#f5f5f5]'
+            ? 'text-xl sm:text-2xl text-orange-700 dark:text-[#D97757]'
+            : 'text-lg sm:text-xl text-stone-900 dark:text-[#F3F4F6]'
         )}
       >
         {value}
       </p>
 
       {subtitle && (
-        <p className="text-[11px] text-stone-400 dark:text-[#525252] mt-2 leading-relaxed">{subtitle}</p>
+        <p className="text-[11px] text-stone-400 dark:text-[#6B7280] mt-2 leading-relaxed">{subtitle}</p>
       )}
     </div>
   )
