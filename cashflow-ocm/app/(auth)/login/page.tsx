@@ -1,35 +1,16 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { signIn } from '@/lib/auth-client'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
-import { Leaf, Eye, EyeOff } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Eye, EyeOff } from 'lucide-react'
 
 export default function LoginPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const [mounted, setMounted] = useState(false)
   const [form, setForm] = useState({ email: '', password: '' })
   const [showPassword, setShowPassword] = useState(false)
-  const [mouse, setMouse] = useState({ x: 0, y: 0 })
-  const panelRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const t = setTimeout(() => setMounted(true), 40)
-    return () => clearTimeout(t)
-  }, [])
-
-  function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
-    const rect = panelRef.current?.getBoundingClientRect()
-    if (!rect) return
-    const x = (e.clientX - rect.left) / rect.width - 0.5
-    const y = (e.clientY - rect.top) / rect.height - 0.5
-    setMouse({ x, y })
-  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -52,221 +33,161 @@ export default function LoginPage() {
     }
   }
 
-  /* Helper: stagger-in style per elemen */
-  function fadeUp(delay: number) {
-    return {
-      className: cn(
-        'transition-all duration-700',
-        mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
-      ),
-      style: {
-        transitionDelay: mounted ? `${delay}ms` : '0ms',
-        transitionTimingFunction: 'cubic-bezier(0.23, 1, 0.32, 1)',
-      } as React.CSSProperties,
-    }
-  }
-
   return (
-    <div className="min-h-[100dvh] flex overflow-hidden">
+    <div className="min-h-[100dvh] flex" style={{ background: '#1B1B1B' }}>
 
-      {/* ─── Left panel — 3D brand ─── */}
+      {/* ── Left — brand panel ── */}
       <div
-        ref={panelRef}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={() => setMouse({ x: 0, y: 0 })}
-        className={cn(
-          'hidden lg:block lg:w-[45%] relative overflow-hidden select-none',
-          'transition-all duration-1000',
-          mounted ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-16'
-        )}
-        style={{
-          background: 'linear-gradient(150deg, #7C2D12 0%, #C2410C 40%, #EA580C 70%, #D97706 100%)',
-          transitionTimingFunction: 'cubic-bezier(0.23, 1, 0.32, 1)',
-          perspective: '900px',
-        }}
+        className="hidden lg:flex lg:w-[42%] flex-col justify-between p-12 shrink-0"
+        style={{ background: '#FC6E20' }}
       >
-        {/* Inner 3D tilt container */}
-        <div
-          className="absolute inset-0 flex flex-col justify-between p-12"
-          style={{
-            transform: `rotateX(${-mouse.y * 5}deg) rotateY(${mouse.x * 5}deg)`,
-            transition: 'transform 0.18s ease-out',
-            transformStyle: 'preserve-3d',
-          }}
-        >
-          {/* Parallax decorative circles — different depths */}
-          <div
-            className="absolute -right-32 -top-32 w-96 h-96 rounded-full border border-white/10 pointer-events-none"
-            style={{
-              transform: `translate3d(${mouse.x * -35}px, ${mouse.y * -35}px, 40px)`,
-              transition: 'transform 0.22s ease-out',
-            }}
-          />
-          <div
-            className="absolute -right-20 -top-20 w-72 h-72 rounded-full border border-white/[0.06] pointer-events-none"
-            style={{
-              transform: `translate3d(${mouse.x * -22}px, ${mouse.y * -22}px, 20px)`,
-              transition: 'transform 0.22s ease-out',
-            }}
-          />
-          <div
-            className="absolute -left-24 -bottom-24 w-80 h-80 rounded-full bg-white/[0.04] pointer-events-none"
-            style={{
-              transform: `translate3d(${mouse.x * 28}px, ${mouse.y * 28}px, 28px)`,
-              transition: 'transform 0.22s ease-out',
-            }}
-          />
-          <div
-            className="absolute left-8 bottom-32 w-2.5 h-2.5 rounded-full bg-white/25 pointer-events-none"
-            style={{
-              transform: `translate3d(${mouse.x * -50}px, ${mouse.y * -50}px, 55px)`,
-              transition: 'transform 0.28s ease-out',
-            }}
-          />
-          <div
-            className="absolute right-24 top-36 w-2 h-2 rounded-full bg-white/20 pointer-events-none"
-            style={{
-              transform: `translate3d(${mouse.x * 42}px, ${mouse.y * 42}px, 45px)`,
-              transition: 'transform 0.28s ease-out',
-            }}
-          />
-          <div
-            className="absolute right-40 bottom-48 w-1.5 h-1.5 rounded-full bg-white/15 pointer-events-none"
-            style={{
-              transform: `translate3d(${mouse.x * -30}px, ${mouse.y * 30}px, 30px)`,
-              transition: 'transform 0.25s ease-out',
-            }}
-          />
+        {/* Logo */}
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 rounded-lg bg-white/20 flex items-center justify-center text-white font-bold text-[11px] tracking-wide">
+            OCM
+          </div>
+          <span className="text-white/75 text-sm font-medium tracking-wide">CV OCM Cashflow</span>
+        </div>
 
-          {/* Logo — floats forward */}
-          <div
-            className="relative flex items-center gap-3"
-            style={{ transform: 'translateZ(25px)' }}
-          >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 text-white font-bold text-xs backdrop-blur-sm border border-white/20">
+        {/* Hero */}
+        <div>
+          <p className="text-white/50 text-[10px] font-bold uppercase tracking-widest mb-5">
+            Sistem Manajemen Keuangan
+          </p>
+          <h1 className="text-4xl font-bold text-white leading-[1.2] tracking-tight">
+            Cashflow sawit<br />dalam genggaman.
+          </h1>
+          <p className="text-white/55 mt-4 text-sm leading-relaxed max-w-xs">
+            Catat pembelian dari peron, penjualan ke BGA, dan pantau kas CV OCM — terpusat dan real-time.
+          </p>
+
+          <div className="flex items-center gap-8 mt-10 pt-8 border-t border-white/20">
+            {[
+              { v: '16+', l: 'Peron' },
+              { v: '8',   l: 'Modul' },
+              { v: '✓',   l: 'Real-time' },
+            ].map((s) => (
+              <div key={s.l}>
+                <p className="text-2xl font-bold text-white leading-none">{s.v}</p>
+                <p className="text-xs text-white/45 mt-1">{s.l}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <p className="text-white/30 text-xs">Supplier TBS &amp; BRDL — PKS PT. BGA</p>
+      </div>
+
+      {/* ── Right — form ── */}
+      <div className="flex-1 flex items-center justify-center p-8 lg:p-16">
+        <div className="w-full max-w-[320px]">
+
+          {/* Mobile logo */}
+          <div className="lg:hidden flex items-center gap-2.5 mb-12">
+            <div
+              className="h-8 w-8 rounded-lg flex items-center justify-center text-white font-bold text-[11px] tracking-wide"
+              style={{ background: '#FC6E20' }}
+            >
               OCM
             </div>
-            <span className="font-medium text-white/75 text-sm tracking-wide">
+            <span className="font-semibold text-sm" style={{ color: '#FFE7D0' }}>
               CV OCM Cashflow
             </span>
           </div>
 
-          {/* Hero text — floats forward */}
-          <div
-            className="relative"
-            style={{ transform: 'translateZ(18px)' }}
-          >
-            <div className="inline-flex items-center gap-2 mb-6 px-3 py-1.5 rounded-full bg-white/10 border border-white/15">
-              <Leaf className="h-3.5 w-3.5 text-orange-200" />
-              <span className="text-orange-100/90 text-xs font-medium">Sistem Manajemen Keuangan</span>
-            </div>
-            <h1 className="text-[2.75rem] font-bold text-white leading-[1.15] tracking-tight">
-              Cashflow sawit
-              <br />
-              dalam genggaman.
-            </h1>
-            <p className="text-orange-100/60 mt-5 text-sm leading-relaxed max-w-xs">
-              Catat pembelian dari peron, penjualan ke BGA, dan pantau kas CV OCM — semua terpusat dan real-time.
-            </p>
-          </div>
-
-          {/* Footer */}
-          <div
-            className="relative text-white/35 text-xs font-medium"
-            style={{ transform: 'translateZ(10px)' }}
-          >
-            Supplier TBS &amp; BRDL ke PKS PT. BGA
-          </div>
-        </div>
-      </div>
-
-      {/* ─── Right panel — stagger-in form ─── */}
-      <div className="flex-1 flex items-center justify-center bg-stone-50 p-6 lg:p-16 overflow-hidden">
-        <div className="w-full max-w-[360px]">
-
-          {/* Mobile logo */}
-          <div
-            {...fadeUp(0)}
-            className={cn('lg:hidden mb-10 flex items-center gap-2.5', fadeUp(0).className)}
-          >
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-600 text-white font-bold text-xs shadow-sm shadow-orange-600/30">
-              OCM
-            </div>
-            <span className="font-semibold text-stone-800 text-sm">CV OCM Cashflow</span>
-          </div>
-
           {/* Heading */}
-          <div {...fadeUp(80)}>
-            <h2 className="text-[1.75rem] font-bold text-stone-900 tracking-tight leading-none">
-              Selamat datang
-            </h2>
-            <p className="text-stone-400 text-sm mt-2.5 mb-9 leading-relaxed">
-              Masuk untuk melanjutkan ke dashboard.
-            </p>
-          </div>
+          <h2
+            className="text-[1.625rem] font-bold leading-tight tracking-tight"
+            style={{ color: '#FFE7D0' }}
+          >
+            Selamat datang
+          </h2>
+          <p className="text-sm mt-1.5 mb-8" style={{ color: '#6A5A50' }}>
+            Masuk untuk melanjutkan ke dashboard.
+          </p>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
+
             {/* Email */}
-            <div {...fadeUp(180)} className={cn('space-y-2', fadeUp(180).className)}>
-              <Label
+            <div className="space-y-1.5">
+              <label
                 htmlFor="email"
-                className="text-xs font-semibold text-stone-400 uppercase tracking-widest"
+                className="text-[10px] font-bold uppercase tracking-widest block"
+                style={{ color: '#6A5A50' }}
               >
                 Email
-              </Label>
-              <Input
+              </label>
+              <input
                 id="email"
                 type="email"
                 placeholder="nama@email.com"
                 value={form.email}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setForm((f) => ({ ...f, email: e.target.value }))
-                }
+                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                 required
                 autoComplete="email"
-                className="h-11 border-stone-200 bg-white focus:border-orange-400 text-stone-900 placeholder:text-stone-300 rounded-xl"
+                className="w-full h-11 rounded-xl px-4 text-sm outline-none transition-colors duration-150 placeholder:text-[#4A3A30]"
+                style={{
+                  background: '#272727',
+                  border: '1px solid #383838',
+                  color: '#FFE7D0',
+                }}
+                onFocus={(e) => { e.currentTarget.style.borderColor = '#FC6E20' }}
+                onBlur={(e) => { e.currentTarget.style.borderColor = '#383838' }}
               />
             </div>
 
             {/* Password */}
-            <div {...fadeUp(260)} className={cn('space-y-2', fadeUp(260).className)}>
-              <Label
+            <div className="space-y-1.5">
+              <label
                 htmlFor="password"
-                className="text-xs font-semibold text-stone-400 uppercase tracking-widest"
+                className="text-[10px] font-bold uppercase tracking-widest block"
+                style={{ color: '#6A5A50' }}
               >
                 Password
-              </Label>
+              </label>
               <div className="relative">
-                <Input
+                <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   placeholder="••••••••"
                   value={form.password}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    setForm((f) => ({ ...f, password: e.target.value }))
-                  }
+                  onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
                   required
                   autoComplete="current-password"
-                  className="h-11 border-stone-200 bg-white focus:border-orange-400 text-stone-900 placeholder:text-stone-300 rounded-xl pr-11"
+                  className="w-full h-11 rounded-xl px-4 pr-11 text-sm outline-none transition-colors duration-150 placeholder:text-[#4A3A30]"
+                  style={{
+                    background: '#272727',
+                    border: '1px solid #383838',
+                    color: '#FFE7D0',
+                  }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = '#FC6E20' }}
+                  onBlur={(e) => { e.currentTarget.style.borderColor = '#383838' }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-stone-300 hover:text-stone-500 transition-colors rounded-md"
                   tabIndex={-1}
                   aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md transition-colors duration-150"
+                  style={{ color: '#555351' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = '#8A7060' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = '#555351' }}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             </div>
 
-            {/* Submit button */}
-            <div {...fadeUp(340)} className={cn('pt-2', fadeUp(340).className)}>
+            {/* Submit */}
+            <div className="pt-2">
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-11 rounded-xl font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2.5 shadow-sm disabled:pointer-events-none bg-orange-600 hover:bg-orange-700 active:scale-[0.97] text-white shadow-orange-600/20"
+                className="w-full h-11 rounded-xl font-semibold text-sm text-white transition-all duration-150 flex items-center justify-center gap-2.5 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60"
+                style={{ background: '#FC6E20' }}
+                onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = '#e05d10' }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = '#FC6E20' }}
               >
                 {loading ? (
                   <>
@@ -278,8 +199,8 @@ export default function LoginPage() {
             </div>
           </form>
 
-          <p className="text-center text-[11px] text-stone-300 mt-8 lg:mt-10">
-            Supplier TBS &amp; BRDL &mdash; PKS PT. BGA
+          <p className="text-center text-[11px] mt-10" style={{ color: '#4A3A30' }}>
+            Supplier TBS &amp; BRDL — PKS PT. BGA
           </p>
         </div>
       </div>

@@ -223,6 +223,27 @@ html.dark [class~="shadow-sm"] {
 html.dark [class~="bg-orange-50"] {
   background-color: rgba(252, 110, 32, 0.08) !important;
 }
+html.dark [class~="text-stone-500"] {
+  color: #8A7060 !important;
+}
+html.dark [class~="text-stone-400"] {
+  color: #6A5A50 !important;
+}
+html.dark [class~="text-stone-300"] {
+  color: #4A3A30 !important;
+}
+html.dark [class~="bg-stone-100"] {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+html.dark [class~="divide-stone-100"] > * + * {
+  border-color: #303030 !important;
+}
+html.dark [class~="divide-stone-200"] > * + * {
+  border-color: #303030 !important;
+}
+html.dark [class~="divide-y"] > * + * {
+  border-color: #303030 !important;
+}
 /* Scrollbar dark */
 html.dark ::-webkit-scrollbar-thumb {
   background: #323232;

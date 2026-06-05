@@ -40,24 +40,24 @@ export default async function HargaPage() {
       {(tbsTerbaru || brdlTerbaru) && (
         <div className="grid gap-3 sm:grid-cols-2">
           {tbsTerbaru && (
-            <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm border-l-4 border-l-green-500">
-              <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">Harga TBS Terbaru</p>
+            <div className="rounded-xl border border-stone-200 bg-white p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-stone-400 mb-2">TBS — Harga Terbaru</p>
               <p className="text-2xl font-bold text-stone-900 num">
-                {formatRupiah(tbsTerbaru.hargaLapangan + tbsTerbaru.selisihJualBga)}/kg
+                {formatRupiah(tbsTerbaru.hargaLapangan + tbsTerbaru.selisihJualBga)}<span className="text-sm font-normal text-stone-400 ml-1">/kg</span>
               </p>
-              <p className="text-xs text-stone-400 mt-1">
-                Lapangan {formatRupiah(tbsTerbaru.hargaLapangan)}/kg + selisih {formatRupiah(tbsTerbaru.selisihJualBga)}/kg
+              <p className="text-xs text-stone-400 mt-1.5">
+                Lapangan {formatRupiah(tbsTerbaru.hargaLapangan)} + selisih {formatRupiah(tbsTerbaru.selisihJualBga)}
               </p>
             </div>
           )}
           {brdlTerbaru && (
-            <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm border-l-4 border-l-amber-500">
-              <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">Harga BRDL Terbaru</p>
+            <div className="rounded-xl border border-stone-200 bg-white p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-stone-400 mb-2">BRDL — Harga Terbaru</p>
               <p className="text-2xl font-bold text-stone-900 num">
-                {formatRupiah(brdlTerbaru.hargaLapangan + brdlTerbaru.selisihJualBga)}/kg
+                {formatRupiah(brdlTerbaru.hargaLapangan + brdlTerbaru.selisihJualBga)}<span className="text-sm font-normal text-stone-400 ml-1">/kg</span>
               </p>
-              <p className="text-xs text-stone-400 mt-1">
-                Lapangan {formatRupiah(brdlTerbaru.hargaLapangan)}/kg + selisih {formatRupiah(brdlTerbaru.selisihJualBga)}/kg
+              <p className="text-xs text-stone-400 mt-1.5">
+                Lapangan {formatRupiah(brdlTerbaru.hargaLapangan)} + selisih {formatRupiah(brdlTerbaru.selisihJualBga)}
               </p>
             </div>
           )}

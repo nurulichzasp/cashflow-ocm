@@ -76,7 +76,7 @@ export function HargaTable({ hargaList, isOwner }: Props) {
                 <tr key={harga.id} className="bg-white hover:bg-orange-50/30 transition-colors">
                   <td className="px-4 py-3 text-stone-900">{formatTanggal(harga.tanggalBerlaku)}</td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${harga.produk === 'TBS' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
+                    <span className="font-mono text-xs font-semibold text-stone-700 tracking-wide">
                       {harga.produk}
                     </span>
                   </td>
