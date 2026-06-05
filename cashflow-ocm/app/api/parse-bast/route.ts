@@ -29,6 +29,16 @@ export async function POST(req: NextRequest) {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const XLSX = require('xlsx')
         const wb = XLSX.read(buffer, { type: 'buffer' })
+
+        // BGA: cek sheet REKAP dulu
+        const rekapName = (wb.SheetNames as string[]).find((n: string) => n === 'REKAP' || n === 'REKAP 2 HARGA')
+        if (rekapName) {
+          const rekapRows = XLSX.utils.sheet_to_json(wb.Sheets[rekapName], { header: 1, defval: '' }) as (string | number)[][]
+          const bgaResult = parseBgaRekap(rekapRows)
+          if (bgaResult) return NextResponse.json({ success: true, ...bgaResult, info: 'excel-bga-rekap' })
+        }
+
+        // Fallback: sheet pertama
         const ws = wb.Sheets[wb.SheetNames[0]]
         const text = (XLSX.utils.sheet_to_csv(ws) as string)
         const result = extractBastFields(text)
@@ -40,7 +50,6 @@ export async function POST(req: NextRequest) {
     }
 
     if (isPdf) {
-      // Raw PDF text extraction — tanpa library DOM-dependent
       const text = extractRawPdfText(buffer)
       const result = extractBastFields(text)
       return NextResponse.json({ success: true, ...result, info: 'pdf' })
@@ -53,19 +62,122 @@ export async function POST(req: NextRequest) {
   }
 }
 
+// ── BGA REKAP sheet parser ────────────────────────────────────────────────────
+function parseBgaRekap(rows: (string | number)[][]): {
+  tanggal: string; noInvoice: string; noBast: string
+  totalTonase: string; totalNilai: string; catatan: string
+} | null {
+  if (!rows || rows.length < 5) return null
+
+  const titleRow = String(rows[0]?.[0] ?? '').toUpperCase()
+  if (!titleRow.includes('REKAPAN') && !titleRow.includes('INVOICE CV')) return null
+
+  const bulanMap: Record<string, string> = {
+    januari: '01', februari: '02', maret: '03', april: '04', mei: '05', juni: '06',
+    juli: '07', agustus: '08', september: '09', oktober: '10', november: '11', desember: '12',
+  }
+
+  // Tanggal dari baris "Tanggal : DD Bulan YYYY"
+  let tanggal = ''
+  for (let i = 0; i <= 3; i++) {
+    const tglStr = String(rows[i]?.[0] ?? '')
+    const m = tglStr.match(/(\d{1,2})\s+(Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)\s+(\d{4})/i)
+    if (m) { tanggal = `${m[3]}-${bulanMap[m[2].toLowerCase()]}-${m[1].padStart(2, '0')}`; break }
+  }
+
+  // Cari header row (baris dengan "No Invoice" di kolom 0)
+  const headerIdx = rows.findIndex(r => String(r[0]).trim() === 'No Invoice' || String(r[0]).trim() === 'No. Invoice')
+  const dataStart = headerIdx >= 0 ? headerIdx + 1 : 3
+
+  const seenInvoices = new Set<string>()
+  const invoiceList: string[] = []
+  const detailLines: string[] = []
+  let periode = ''
+  let totTotal = 0, totDpp = 0, totPpn = 0, totPph = 0, totDibayar = 0
+
+  for (const row of rows.slice(dataStart)) {
+    const col0 = String(row[0] ?? '').trim()
+    const keterangan = String(row[1] ?? '').trim()
+    const area = String(row[2] ?? '').trim()
+    const periodeStr = String(row[3] ?? '').trim()
+    const totalVal = Number(row[4]) || 0
+    const dppVal = Number(row[5]) || 0
+    const ppnVal = Number(row[6]) || 0
+    const pphVal = Number(row[7]) || 0
+    const dibayarVal = Number(row[8]) || 0
+
+    // Total row
+    if (col0.toLowerCase() === 'total') {
+      totTotal = totalVal; totDpp = dppVal; totPpn = ppnVal; totPph = pphVal; totDibayar = dibayarVal
+      continue
+    }
+
+    // Skip baris kosong
+    if (!col0 || !keterangan) continue
+
+    // Ambil periode (strip teks panjang)
+    if (!periode && periodeStr.includes('Periode')) {
+      periode = periodeStr.replace(/\s+dengan\s+perincian.*/i, '').trim()
+    }
+
+    // Kumpulkan invoice unik (strip "No. " prefix)
+    const noInv = col0.replace(/^No\.\s+/i, '').trim()
+    if (noInv && !seenInvoices.has(noInv)) {
+      seenInvoices.add(noInv)
+      invoiceList.push(noInv)
+    }
+
+    // Baris detail — hanya yang ada nilainya
+    if (dibayarVal > 0 || totalVal > 0) {
+      const areaClean = area.replace(/[()]/g, '').trim()
+      const label = shortKeterangan(keterangan)
+      detailLines.push(`${label} (${areaClean}): Rp ${rpFormat(dibayarVal)}`)
+    }
+  }
+
+  if (invoiceList.length === 0) return null
+
+  // Susun catatan
+  const lines: string[] = []
+  if (periode) lines.push(periode)
+  lines.push(...detailLines)
+  if (totDibayar > 0 || totTotal > 0) {
+    lines.push(`Total: ${rpFormat(totTotal)} | DPP: ${rpFormat(totDpp)} | PPN: ${rpFormat(totPpn)} | PPH: ${rpFormat(totPph)}`)
+    lines.push(`Total Dibayar: Rp ${rpFormat(totDibayar)}`)
+  }
+
+  return {
+    tanggal,
+    noInvoice: invoiceList.join('\n'),
+    noBast: '',
+    totalTonase: '',
+    totalNilai: String(Math.round(totDibayar)),
+    catatan: lines.join('\n'),
+  }
+}
+
+function shortKeterangan(k: string): string {
+  const afterMandiri = k.match(/MANDIRI\s*(.*)/i)?.[1]?.trim() ?? ''
+  const produk = /\bBRONDOLAN\b/i.test(k) ? 'BRDL' : /\bTBS\b/i.test(k) ? 'TBS' : k.split(' ')[0].toUpperCase()
+  const suffix = afterMandiri.replace(/^[-\s]+/, '').trim()
+  return suffix ? `${produk} ${suffix}` : produk
+}
+
+function rpFormat(n: number): string {
+  return Math.round(n).toLocaleString('id-ID')
+}
+
 // ── Raw PDF text extractor (no DOM deps) ──────────────────────────────────────
 function extractRawPdfText(buffer: Buffer): string {
   const str = buffer.toString('binary')
   const texts: string[] = []
 
-  // Decode octal escape sequences in PDF strings
   function decodeOctal(s: string): string {
     return s.replace(/\\(\d{3})/g, (_, oct) => String.fromCharCode(parseInt(oct, 8)))
       .replace(/\\n/g, ' ').replace(/\\r/g, ' ').replace(/\\t/g, ' ')
       .replace(/\\\\/g, '\\').replace(/\\\(/g, '(').replace(/\\\)/g, ')')
   }
 
-  // Method 1: extract from BT...ET text blocks
   const btEt = /BT([\s\S]{0,2000}?)ET/g
   let m: RegExpExecArray | null
   while ((m = btEt.exec(str)) !== null) {
@@ -76,7 +188,6 @@ function extractRawPdfText(buffer: Buffer): string {
       const decoded = decodeOctal(t[1]).trim()
       if (decoded.length > 1) texts.push(decoded)
     }
-    // TJ array format: [(text)(more)] TJ
     const tjArr = /\[([^\]]{1,500})\]\s*TJ/g
     while ((t = tjArr.exec(block)) !== null) {
       const inner = t[1]
@@ -89,7 +200,6 @@ function extractRawPdfText(buffer: Buffer): string {
     }
   }
 
-  // Method 2: fallback — any printable string in parentheses (catches more formats)
   if (texts.length < 5) {
     const fallback = /\(([A-Za-z0-9 \.\-\/\:,_]{3,100})\)/g
     while ((m = fallback.exec(str)) !== null) {
@@ -101,7 +211,7 @@ function extractRawPdfText(buffer: Buffer): string {
   return texts.join(' ')
 }
 
-// ── Field extractor ───────────────────────────────────────────────────────────
+// ── Field extractor (PDF / Excel non-REKAP) ───────────────────────────────────
 function extractBastFields(text: string) {
   const clean = text.replace(/\s+/g, ' ').trim()
 
@@ -147,8 +257,7 @@ function extractBastFields(text: string) {
 
   // === Total Nilai ===
   let totalNilai = ''
-  // BGA format: baris Total di Excel → 5 angka setelah "Total", angka ke-5 = Total dibayar
-  // Contoh CSV: ,Total,,,1124013150,1030345388,123641447,2810033,1244844564
+  // BGA format: baris Total di CSV → 5 angka, terakhir = Total dibayar
   const bgaTotalRow = clean.match(/\bTotal\b[,\s]*([\d.]+)[,\s]*([\d.]+)[,\s]*([\d.]+)[,\s]*([\d.]+)[,\s]*([\d.]+)/i)
   if (bgaTotalRow) {
     totalNilai = bgaTotalRow[5].replace(/\./g, '').replace(',', '.')

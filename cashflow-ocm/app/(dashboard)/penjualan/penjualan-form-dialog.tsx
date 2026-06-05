@@ -38,7 +38,9 @@ export function PenjualanFormDialog({ children }: Props) {
       if (data.tanggal) setTanggal(data.tanggal)
       if (data.noBast) setNoBast(data.noBast)
       if (data.noInvoice) setNoInvoice(data.noInvoice)
-      if (data.totalNilai || data.totalTonase) {
+      if (data.catatan) {
+        setCatatan(data.catatan)
+      } else if (data.totalNilai || data.totalTonase) {
         const notes = [
           data.totalTonase ? `Tonase: ${data.totalTonase} kg` : '',
           data.totalNilai ? `Total: Rp ${Number(data.totalNilai).toLocaleString('id-ID')}` : '',
@@ -46,9 +48,13 @@ export function PenjualanFormDialog({ children }: Props) {
         if (notes) setCatatan(notes)
       }
 
-      const filled = [data.tanggal, data.noBast, data.noInvoice].filter(Boolean).length
-      if (filled > 0) toast.success(`${filled} field terisi dari PDF`)
-      else toast.info('PDF terbaca tapi tidak ada field yang cocok — isi manual ya')
+      const filled = [data.tanggal, data.noBast, data.noInvoice, data.catatan].filter(Boolean).length
+      if (filled > 0) {
+        const src = data.info === 'excel-bga-rekap' ? 'Rekap BGA' : data.info?.includes('excel') ? 'Excel' : 'PDF'
+        toast.success(`Data berhasil diisi dari ${src}`)
+      } else {
+        toast.info('File terbaca tapi tidak ada field yang cocok — isi manual ya')
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Gagal membaca PDF')
     } finally {
@@ -126,15 +132,20 @@ export function PenjualanFormDialog({ children }: Props) {
             <Input type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} required />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label>No. BAST</Label>
-              <Input value={noBast} onChange={(e) => setNoBast(e.target.value)} placeholder="Opsional" />
-            </div>
-            <div className="space-y-1.5">
-              <Label>No. Invoice</Label>
-              <Input value={noInvoice} onChange={(e) => setNoInvoice(e.target.value)} placeholder="Opsional" />
-            </div>
+          <div className="space-y-1.5">
+            <Label>No. BAST</Label>
+            <Input value={noBast} onChange={(e) => setNoBast(e.target.value)} placeholder="Opsional" />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>No. Invoice</Label>
+            <textarea
+              rows={3}
+              value={noInvoice}
+              onChange={(e) => setNoInvoice(e.target.value)}
+              placeholder="Opsional — bisa lebih dari satu, satu baris per invoice"
+              className="min-h-[4rem] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring resize-none"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
