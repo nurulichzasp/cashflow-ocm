@@ -22,7 +22,8 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
-import { ThemeToggle } from '@/components/theme-selector'
+import { ProfileDialog } from '@/components/profile-dialog'
+import { fotoUrl } from '@/lib/foto-url'
 
 const navItems = [
   { href: '/dashboard',   label: 'Dashboard',    icon: LayoutDashboard },
@@ -74,7 +75,7 @@ function getInitials(name?: string): string {
   return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
 }
 
-export function Sidebar({ userName, isOwner, onToggle }: { userName?: string; isOwner?: boolean; onToggle?: () => void }) {
+export function Sidebar({ user, isOwner, onToggle }: { user?: any; isOwner?: boolean; onToggle?: () => void }) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -124,21 +125,26 @@ export function Sidebar({ userName, isOwner, onToggle }: { userName?: string; is
 
       {/* Footer */}
       <div className="border-t border-white/[0.06] p-3 space-y-1 shrink-0">
-        {userName && (
-          <div className="flex items-center gap-2.5 px-3 py-2 mb-0.5 rounded-lg bg-white/[0.05]">
-            <div className="h-7 w-7 rounded-full bg-[#D97757] flex items-center justify-center text-[11px] font-bold text-white shrink-0">
-              {getInitials(userName)}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-[#F3F4F6] truncate">{userName}</p>
-              <p className="text-[11px] text-[#9CA3AF]">{isOwner ? 'Owner' : 'Admin'}</p>
-            </div>
-            <ThemeToggle />
-          </div>
+        {user && (
+          <ProfileDialog user={user}>
+            <button className="w-full flex items-center gap-2.5 px-3 py-2 mb-0.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.08] transition-colors text-left outline-none cursor-pointer">
+              {user.image ? (
+                <img src={fotoUrl(user.image)} className="h-7 w-7 rounded-full object-cover shrink-0" alt="Avatar" />
+              ) : (
+                <div className="h-7 w-7 rounded-full bg-[#D97757] flex items-center justify-center text-[11px] font-bold text-white shrink-0">
+                  {getInitials(isOwner ? 'Owner' : user.name)}
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-[#F3F4F6] truncate">{isOwner ? 'Owner' : 'Admin'}</p>
+                <p className="text-[11px] text-[#9CA3AF]">CV OCM</p>
+              </div>
+            </button>
+          </ProfileDialog>
         )}
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-[#9CA3AF] hover:text-red-400 hover:bg-red-500/8 transition-colors duration-150 font-medium"
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-[#9CA3AF] hover:text-red-400 hover:bg-red-500/8 transition-colors duration-150 font-medium cursor-pointer"
         >
           <LogOut className="h-4 w-4 shrink-0" />
           Keluar
@@ -148,7 +154,7 @@ export function Sidebar({ userName, isOwner, onToggle }: { userName?: string; is
   )
 }
 
-export function MobileSidebar({ userName, isOwner }: { userName?: string; isOwner?: boolean }) {
+export function MobileSidebar({ user, isOwner }: { user?: any; isOwner?: boolean }) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
@@ -237,20 +243,26 @@ export function MobileSidebar({ userName, isOwner }: { userName?: string; isOwne
 
           {/* Footer */}
           <div className="border-t border-white/[0.06] p-3 space-y-1 shrink-0">
-            {userName && (
-              <div className="flex items-center gap-2.5 px-3 py-1.5 mb-1">
-                <div className="h-7 w-7 rounded-full bg-[#D97757] flex items-center justify-center text-[11px] font-bold text-white shrink-0">
-                  {getInitials(userName)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-stone-200 truncate">{userName}</p>
-                  <p className="text-[11px] text-stone-500">{isOwner ? 'Owner' : 'Admin'}</p>
-                </div>
-              </div>
+            {user && (
+              <ProfileDialog user={user}>
+                <button className="w-full flex items-center gap-2.5 px-3 py-1.5 mb-1 text-left outline-none cursor-pointer">
+                  {user.image ? (
+                    <img src={fotoUrl(user.image)} className="h-7 w-7 rounded-full object-cover shrink-0" alt="Avatar" />
+                  ) : (
+                    <div className="h-7 w-7 rounded-full bg-[#D97757] flex items-center justify-center text-[11px] font-bold text-white shrink-0">
+                      {getInitials(isOwner ? 'Owner' : user.name)}
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-stone-200 truncate">{isOwner ? 'Owner' : 'Admin'}</p>
+                    <p className="text-[11px] text-stone-500">CV OCM</p>
+                  </div>
+                </button>
+              </ProfileDialog>
             )}
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-stone-500 hover:text-red-400 hover:bg-stone-800/60 transition-colors duration-150 font-medium"
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-stone-500 hover:text-red-400 hover:bg-stone-800/60 transition-colors duration-150 font-medium cursor-pointer"
             >
               <LogOut className="h-4 w-4 shrink-0" />
               Keluar

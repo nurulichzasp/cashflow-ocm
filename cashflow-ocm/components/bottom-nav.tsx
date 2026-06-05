@@ -20,7 +20,8 @@ import {
   Settings,
   LogOut,
 } from 'lucide-react'
-import { ThemeToggle } from '@/components/theme-selector'
+import { ProfileDialog } from '@/components/profile-dialog'
+import { fotoUrl } from '@/lib/foto-url'
 
 const primaryNav = [
   { href: '/dashboard',  label: 'Dashboard',  icon: LayoutDashboard },
@@ -42,7 +43,7 @@ function getInitials(name?: string) {
   return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
 }
 
-export function BottomNav({ isOwner, userName }: { isOwner?: boolean; userName?: string }) {
+export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) {
   const pathname = usePathname()
   const router = useRouter()
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -59,6 +60,8 @@ export function BottomNav({ isOwner, userName }: { isOwner?: boolean; userName?:
   }
 
   const visibleMore = moreNav.filter((item) => !item.ownerOnly || isOwner)
+
+  const displayName = isOwner ? 'Owner' : (user?.name ?? 'Admin')
 
   return (
     <>
@@ -139,24 +142,33 @@ export function BottomNav({ isOwner, userName }: { isOwner?: boolean; userName?:
           </div>
 
           {/* User info */}
-          <div className="flex items-center gap-3 px-5 py-3 border-b border-stone-100 dark:border-stone-800">
-            <div className="h-9 w-9 rounded-full bg-orange-600 flex items-center justify-center text-sm font-bold text-white shrink-0">
-              {getInitials(userName)}
+          {user && (
+            <div className="flex items-center gap-3 px-5 py-3 border-b border-stone-100 dark:border-stone-800">
+              <ProfileDialog user={user}>
+                <button className="flex items-center gap-3 text-left outline-none cursor-pointer flex-1">
+                  {user.image ? (
+                    <img src={fotoUrl(user.image)} className="h-9 w-9 rounded-full object-cover shrink-0" alt="Avatar" />
+                  ) : (
+                    <div className="h-9 w-9 rounded-full bg-orange-600 flex items-center justify-center text-sm font-bold text-white shrink-0">
+                      {getInitials(displayName)}
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">{displayName}</p>
+                    <p className="text-xs text-stone-400 dark:text-stone-500">CV OCM</p>
+                  </div>
+                </button>
+              </ProfileDialog>
+              <div className="ml-auto flex items-center">
+                <button
+                  onClick={() => setDrawerOpen(false)}
+                  className="p-2 rounded-lg text-stone-400 dark:text-stone-500 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">{userName}</p>
-              <p className="text-xs text-stone-400 dark:text-stone-500">{isOwner ? 'Owner' : 'Admin'}</p>
-            </div>
-            <div className="ml-auto flex items-center gap-2">
-              <ThemeToggle />
-              <button
-                onClick={() => setDrawerOpen(false)}
-                className="p-2 rounded-lg text-stone-400 dark:text-stone-500 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
+          )}
 
           {/* Nav items */}
           <div className="px-3 py-2">

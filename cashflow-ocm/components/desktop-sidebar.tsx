@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Sidebar } from '@/components/sidebar'
 import { PanelLeft } from 'lucide-react'
 
-export function DesktopSidebar({ userName, isOwner }: { userName?: string; isOwner?: boolean }) {
+export function DesktopSidebar({ user, isOwner }: { user?: any; isOwner?: boolean }) {
   const [collapsed, setCollapsed] = useState(false)
   const [mounted, setMounted] = useState(false)
 
@@ -32,7 +32,7 @@ export function DesktopSidebar({ userName, isOwner }: { userName?: string; isOwn
         }}
       >
         <div className="w-60 shrink-0">
-          <Sidebar userName={userName} isOwner={isOwner} onToggle={toggle} />
+          <Sidebar user={user} isOwner={isOwner} onToggle={toggle} />
         </div>
       </div>
 

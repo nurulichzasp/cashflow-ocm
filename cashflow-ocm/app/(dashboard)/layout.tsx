@@ -23,13 +23,13 @@ export default async function DashboardLayout({
   return (
     <div className="flex h-[100dvh] overflow-hidden">
       {/* Sidebar — desktop only, collapsible */}
-      <DesktopSidebar userName={session.user.name} isOwner={isOwner} />
+      <DesktopSidebar user={session.user} isOwner={isOwner} />
 
       {/* Main content + mobile header */}
       <ScrollShell>{children}</ScrollShell>
 
       {/* Bottom nav — mobile only */}
-      <BottomNav isOwner={isOwner} userName={session.user.name} />
+      <BottomNav isOwner={isOwner} user={session.user} />
     </div>
   )
 }
