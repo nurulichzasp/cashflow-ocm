@@ -21,11 +21,15 @@ import { todayString } from '@/lib/format'
 interface Props {
   peronId: string
   peronNama: string
-  children: React.ReactNode
+  children?: React.ReactNode
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
-export function ModalFormDialog({ peronId, peronNama, children }: Props) {
-  const [open, setOpen] = useState(false)
+export function ModalFormDialog({ peronId, peronNama, children, open: openProp, onOpenChange }: Props) {
+  const [openInternal, setOpenInternal] = useState(false)
+  const open = openProp ?? openInternal
+  const setOpen = (v: boolean) => { onOpenChange ? onOpenChange(v) : setOpenInternal(v) }
   const [loading, setLoading] = useState(false)
   const [jenis, setJenis] = useState<'tambah' | 'kurang' | 'kembali'>('tambah')
   const [jumlah, setJumlah] = useState(0)
@@ -59,7 +63,7 @@ export function ModalFormDialog({ peronId, peronNama, children }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle>Kelola Modal — {peronNama}</DialogTitle>

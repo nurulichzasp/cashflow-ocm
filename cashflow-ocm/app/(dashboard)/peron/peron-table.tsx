@@ -17,9 +17,77 @@ import {
 import { formatRupiah } from '@/lib/format'
 import { PeronFormDialog } from './peron-form-dialog'
 import { ModalFormDialog } from './modal-form-dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { deletePeron } from './actions'
-import { Edit, Trash2, Wallet, Users, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { Edit, Trash2, Wallet, Users, ArrowUpDown, ArrowUp, ArrowDown, MoreVertical } from 'lucide-react'
 import type { Peron } from '@/lib/db/schema'
+
+type PeronRow = Peron & { dpAktif: number }
+
+function RowActions({ p, isOwner, onDelete, deleting }: { p: PeronRow; isOwner: boolean; onDelete: (id: string) => void; deleting: string | null }) {
+  const [editOpen, setEditOpen] = useState(false)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-stone-400 hover:text-stone-900 hover:bg-stone-100 dark:hover:bg-white/[0.06] transition-colors outline-none aria-expanded:bg-stone-100 dark:aria-expanded:bg-white/[0.06]"
+          aria-label="Aksi"
+        >
+          <MoreVertical className="h-4 w-4" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="min-w-[160px]">
+          <DropdownMenuItem onClick={() => setModalOpen(true)}>
+            <Wallet className="h-4 w-4" /> Kelola DP/Modal
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setEditOpen(true)}>
+            <Edit className="h-4 w-4" /> Edit
+          </DropdownMenuItem>
+          {isOwner && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem variant="destructive" onClick={() => setDeleteOpen(true)}>
+                <Trash2 className="h-4 w-4" /> Hapus
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {modalOpen && <ModalFormDialog peronId={p.id} peronNama={p.nama} open={modalOpen} onOpenChange={setModalOpen} />}
+      {editOpen && <PeronFormDialog mode="edit" peron={p} open={editOpen} onOpenChange={setEditOpen} />}
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Peron?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Data peron <strong>{p.nama}</strong> beserta seluruh riwayat modal akan dihapus permanen. Aksi ini tidak dapat dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={() => onDelete(p.id)}
+              disabled={deleting === p.id}
+            >
+              {deleting === p.id ? 'Menghapus...' : 'Ya, Hapus'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  )
+}
 
 type PeronWithDp = Peron & { dpAktif: number }
 
@@ -127,44 +195,8 @@ export function PeronTable({ peronList, isOwner }: Props) {
                   )}
                 </td>
                 <td className="px-4 py-3">
-                  <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <ModalFormDialog peronId={p.id} peronNama={p.nama}>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-stone-500 hover:text-orange-600 hover:bg-orange-50" title="Kelola Modal/DP">
-                        <Wallet className="h-3.5 w-3.5" />
-                      </Button>
-                    </ModalFormDialog>
-                    <PeronFormDialog mode="edit" peron={p}>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-stone-500 hover:text-stone-900 hover:bg-stone-100" title="Edit">
-                        <Edit className="h-3.5 w-3.5" />
-                      </Button>
-                    </PeronFormDialog>
-                    {isOwner && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-stone-400 hover:text-red-600 hover:bg-red-50" title="Hapus">
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Hapus Peron?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Data peron <strong>{p.nama}</strong> beserta seluruh riwayat modal akan dihapus permanen. Aksi ini tidak dapat dibatalkan.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Batal</AlertDialogCancel>
-                            <AlertDialogAction
-                              className="bg-red-600 hover:bg-red-700 text-white"
-                              onClick={() => handleDelete(p.id)}
-                              disabled={deleting === p.id}
-                            >
-                              {deleting === p.id ? 'Menghapus...' : 'Ya, Hapus'}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    )}
+                  <div className="flex items-center justify-end">
+                    <RowActions p={p} isOwner={isOwner} onDelete={handleDelete} deleting={deleting} />
                   </div>
                 </td>
               </tr>

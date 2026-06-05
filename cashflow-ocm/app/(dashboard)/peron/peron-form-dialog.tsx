@@ -17,11 +17,15 @@ import type { Peron } from '@/lib/db/schema'
 interface Props {
   mode: 'create' | 'edit'
   peron?: Peron
-  children: React.ReactNode
+  children?: React.ReactNode
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
-export function PeronFormDialog({ mode, peron, children }: Props) {
-  const [open, setOpen] = useState(false)
+export function PeronFormDialog({ mode, peron, children, open: openProp, onOpenChange }: Props) {
+  const [openInternal, setOpenInternal] = useState(false)
+  const open = openProp ?? openInternal
+  const setOpen = (v: boolean) => { onOpenChange ? onOpenChange(v) : setOpenInternal(v) }
   const [loading, setLoading] = useState(false)
   const [status, setStatus] = useState<'aktif' | 'nonaktif'>(peron?.status ?? 'aktif')
   const [keuntunganPerKg, setKeuntunganPerKg] = useState(peron?.keuntunganPerKg ?? 50)
@@ -55,7 +59,7 @@ export function PeronFormDialog({ mode, peron, children }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>{mode === 'create' ? 'Tambah Peron Baru' : 'Edit Data Peron'}</DialogTitle>

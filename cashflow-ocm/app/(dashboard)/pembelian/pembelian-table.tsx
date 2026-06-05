@@ -20,7 +20,14 @@ import { deletePembelian } from './actions'
 import { PembelianFormDialog } from './pembelian-form-dialog'
 import { PrintRekapButton, PrintNotaButton } from './invoice-print'
 import { FotoBuktiGallery } from '@/components/foto-bukti-gallery'
-import { Edit3, Trash2, ShoppingCart, ImageIcon, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Edit3, Trash2, ShoppingCart, ImageIcon, ArrowUpDown, ArrowUp, ArrowDown, MoreVertical } from 'lucide-react'
 import type { Pembelian, Peron, AkunKas, PembelianFoto, PembelianDetail } from '@/lib/db/schema'
 
 type PembelianRow = Pembelian & { peron: Peron | null; sumberBayar: AkunKas | null; fotos: PembelianFoto[]; details: PembelianDetail[] }
@@ -53,6 +60,48 @@ function FotoIndicator({ count }: { count: number }) {
       <ImageIcon className="h-3 w-3" />
       {count}
     </span>
+  )
+}
+
+function PembelianRowMenu({ onEdit, onDelete, deleting, id }: { onEdit: () => void; onDelete: (id: string) => void; deleting: string | null; id: string }) {
+  const [delOpen, setDelOpen] = useState(false)
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-stone-400 hover:text-stone-900 hover:bg-stone-100 dark:hover:bg-white/[0.06] transition-colors outline-none aria-expanded:bg-stone-100 dark:aria-expanded:bg-white/[0.06]"
+          aria-label="Aksi"
+        >
+          <MoreVertical className="h-4 w-4" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="min-w-[150px]">
+          <DropdownMenuItem onClick={onEdit}>
+            <Edit3 className="h-4 w-4" /> Edit
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem variant="destructive" onClick={() => setDelOpen(true)}>
+            <Trash2 className="h-4 w-4" /> Hapus
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <AlertDialog open={delOpen} onOpenChange={setDelOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus tiket pembelian?</AlertDialogTitle>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={() => onDelete(id)}
+              disabled={deleting === id}
+            >
+              {deleting === id ? 'Menghapus...' : 'Hapus'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   )
 }
 
@@ -280,37 +329,14 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
                   </td>
                   {isOwner && (
                     <td className="px-3 py-2.5">
-                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center justify-end gap-1">
                         <PrintNotaButton pembelian={p} nomorUrut={nomorUrutMap.get(p.id) ?? 1} />
-                        <Button
-                          variant="ghost" size="icon"
-                          className="h-7 w-7 text-stone-500 hover:text-stone-900 hover:bg-stone-100"
-                          onClick={() => setEditTarget(p)}
-                        >
-                          <Edit3 className="h-3.5 w-3.5" />
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-stone-400 hover:text-red-600 hover:bg-red-50">
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Hapus tiket pembelian?</AlertDialogTitle>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Batal</AlertDialogCancel>
-                              <AlertDialogAction
-                                className="bg-red-600 hover:bg-red-700 text-white"
-                                onClick={() => handleDelete(p.id)}
-                                disabled={deletingId === p.id}
-                              >
-                                {deletingId === p.id ? 'Menghapus...' : 'Hapus'}
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        <PembelianRowMenu
+                          id={p.id}
+                          onEdit={() => setEditTarget(p)}
+                          onDelete={handleDelete}
+                          deleting={deletingId}
+                        />
                       </div>
                     </td>
                   )}
