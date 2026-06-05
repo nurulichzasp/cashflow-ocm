@@ -197,9 +197,14 @@ function buildThermalHTML(p: PembelianRow, paperWidthMm: number): string {
     const sub = formatRupiah(d.subtotalBeli)
     const line1 = `${tonase} x ${harga}`
     const nopolSupir = [d.nopol, d.supir].filter(Boolean).join(' / ')
-    const noTidLine = d.noTid ? `<div style="font-size:8pt;color:#555">No. TID: ${d.noTid}</div>` : ''
-    return `${noTidLine}<div>${line1}</div><div style="text-align:right">${sub}</div>${nopolSupir ? `<div style="color:#666;font-size:8pt">${nopolSupir}</div>` : ''}`
+    return `<div>${line1}</div><div style="text-align:right">${sub}</div>${nopolSupir ? `<div style="color:#666;font-size:8pt">${nopolSupir}</div>` : ''}`
   }).join('<div style="border-top:1px dashed #ccc;margin:2px 0"></div>')
+
+  // Kumpulkan semua No. TID yang ada
+  const noTidList = details.map(d => d.noTid).filter(Boolean)
+  const noTidDisplay = noTidList.length === 1
+    ? noTidList[0]
+    : noTidList.length > 1 ? noTidList.join(', ') : ''
 
   return `<!DOCTYPE html>
 <html lang="id">
@@ -270,6 +275,7 @@ function buildThermalHTML(p: PembelianRow, paperWidthMm: number): string {
   <div class="center small">PKS PT. BGA</div>
   <div class="solid"></div>
   <div class="center bold" style="letter-spacing:1px">NOTA PEMBELIAN</div>
+  ${noTidDisplay ? `<div class="center" style="font-size:9pt;margin-top:3px;letter-spacing:0.5px">${noTidDisplay}</div>` : ''}
   <div class="divider"></div>
 
   <div class="row"><span class="l">Tanggal</span><span class="r">${formatTanggal(p.tanggal)}</span></div>

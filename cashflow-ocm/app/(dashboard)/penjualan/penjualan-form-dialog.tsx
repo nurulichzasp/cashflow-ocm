@@ -22,7 +22,6 @@ export function PenjualanFormDialog({ children }: Props) {
   const [parsing, setParsing] = useState(false)
   const [statusBayar, setStatusBayar] = useState<'belum' | 'lunas'>('belum')
   const [tanggal, setTanggal] = useState(todayString())
-  const [noBast, setNoBast] = useState('')
   const [noInvoice, setNoInvoice] = useState('')
   const [totalBersih, setTotalBersih] = useState('')
   const [totalNilai, setTotalNilai] = useState('')
@@ -43,7 +42,6 @@ export function PenjualanFormDialog({ children }: Props) {
       if (!res.ok) throw new Error(data.error ?? 'Gagal membaca PDF')
 
       if (data.tanggal) setTanggal(data.tanggal)
-      if (data.noBast) setNoBast(data.noBast)
       if (data.noInvoice) setNoInvoice(data.noInvoice)
       if (data.totalBersih) setTotalBersih(data.totalBersih)
       if (data.totalNilai) setTotalNilai(data.totalNilai)
@@ -61,7 +59,7 @@ export function PenjualanFormDialog({ children }: Props) {
         if (notes) setCatatan(notes)
       }
 
-      const filled = [data.tanggal, data.noBast, data.noInvoice, data.catatan].filter(Boolean).length
+      const filled = [data.tanggal, data.noInvoice, data.catatan].filter(Boolean).length
       if (filled > 0) {
         const src = data.info === 'excel-bga-rekap' ? 'Rekap BGA' : data.info?.includes('excel') ? 'Excel' : 'PDF'
         toast.success(`Data berhasil diisi dari ${src}`)
@@ -83,7 +81,6 @@ export function PenjualanFormDialog({ children }: Props) {
       const formData = new FormData(e.currentTarget)
       formData.set('statusBayar', statusBayar)
       formData.set('tanggal', tanggal)
-      formData.set('noBast', noBast)
       formData.set('noInvoice', noInvoice)
       formData.set('totalBersih', totalBersih)
       formData.set('totalNilai', totalNilai)
@@ -217,11 +214,6 @@ export function PenjualanFormDialog({ children }: Props) {
           <div className="space-y-1.5">
             <Label>Tanggal</Label>
             <Input type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} required />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>No. BAST</Label>
-            <Input value={noBast} onChange={(e) => setNoBast(e.target.value)} placeholder="Opsional" />
           </div>
 
           <div className="space-y-1.5">
