@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
     '@libsql/client',
     'drizzle-orm',
     'pdf-parse',
+    'xlsx',
   ],
   typescript: { ignoreBuildErrors: true },
   turbopack: {},

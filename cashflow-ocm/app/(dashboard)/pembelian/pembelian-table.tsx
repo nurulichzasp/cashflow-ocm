@@ -180,7 +180,7 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
       </div>
 
       {/* Desktop table */}
-      <div className="hidden md:block rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
+      <div className="hidden md:block rounded-xl border border-stone-200 bg-white shadow-sm overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-stone-50 border-b border-stone-200">

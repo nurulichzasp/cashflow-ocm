@@ -56,7 +56,7 @@ export function HargaTable({ hargaList, isOwner }: Props) {
   return (
     <div className="space-y-3">
       {/* Desktop */}
-      <div className="hidden md:block rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
+      <div className="hidden md:block rounded-xl border border-stone-200 bg-white shadow-sm overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-stone-50 border-b border-stone-200">

@@ -100,7 +100,7 @@ export function PenjualanFormDialog({ children }: Props) {
             <Sparkles className="h-4 w-4 text-orange-500" />
             <p className="text-sm font-medium text-stone-700">Upload BAST / Invoice BGA</p>
           </div>
-          <p className="text-xs text-stone-400">Upload PDF dari BGA — form akan terisi otomatis</p>
+          <p className="text-xs text-stone-400">Upload PDF / Excel / Foto dari BGA — form terisi otomatis</p>
           <div className="flex items-center gap-2">
             <Button
               type="button"
@@ -116,7 +116,7 @@ export function PenjualanFormDialog({ children }: Props) {
                 <><FileText className="h-3.5 w-3.5" />Pilih File PDF</>
               )}
             </Button>
-            <input ref={fileRef} type="file" accept=".pdf" className="hidden" onChange={handlePdfUpload} />
+            <input ref={fileRef} type="file" accept=".pdf,.xlsx,.xls,image/*" className="hidden" onChange={handlePdfUpload} />
           </div>
         </div>
 
