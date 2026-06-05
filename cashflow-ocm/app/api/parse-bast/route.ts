@@ -35,7 +35,11 @@ export async function POST(req: NextRequest) {
         if (rekapName) {
           const rekapRows = XLSX.utils.sheet_to_json(wb.Sheets[rekapName], { header: 1, defval: '' }) as (string | number)[][]
           const bgaResult = parseBgaRekap(rekapRows)
-          if (bgaResult) return NextResponse.json({ success: true, ...bgaResult, info: 'excel-bga-rekap' })
+          if (bgaResult) return NextResponse.json({
+            success: true, ...bgaResult,
+            sheetNames: wb.SheetNames as string[],
+            info: 'excel-bga-rekap',
+          })
         }
 
         // Fallback: sheet pertama
@@ -94,6 +98,7 @@ function parseBgaRekap(rows: (string | number)[][]): {
   const detailLines: string[] = []
   let periode = ''
   let totTotal = 0, totDpp = 0, totPpn = 0, totPph = 0, totDibayar = 0
+  const previewRows: { noInv: string; ket: string; area: string; total: number; dpp: number; ppn: number; pph: number; dibayar: number }[] = []
 
   for (const row of rows.slice(dataStart)) {
     const col0 = String(row[0] ?? '').trim()
@@ -127,6 +132,14 @@ function parseBgaRekap(rows: (string | number)[][]): {
       invoiceList.push(noInv)
     }
 
+    // Preview row (semua baris, termasuk yang 0)
+    previewRows.push({
+      noInv,
+      ket: shortKeterangan(keterangan),
+      area: area.replace(/[()]/g, '').trim(),
+      total: totalVal, dpp: dppVal, ppn: ppnVal, pph: pphVal, dibayar: dibayarVal,
+    })
+
     // Baris detail — hanya yang ada nilainya
     if (dibayarVal > 0 || totalVal > 0) {
       const areaClean = area.replace(/[()]/g, '').trim()
@@ -154,6 +167,8 @@ function parseBgaRekap(rows: (string | number)[][]): {
     totalBersih: String(Math.round(totTotal)),
     totalNilai: String(Math.round(totDibayar)),
     catatan: lines.join('\n'),
+    previewRows,
+    totalRow: { total: totTotal, dpp: totDpp, ppn: totPpn, pph: totPph, dibayar: totDibayar },
   }
 }
 

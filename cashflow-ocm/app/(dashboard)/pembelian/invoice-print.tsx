@@ -196,9 +196,9 @@ function buildThermalHTML(p: PembelianRow, paperWidthMm: number): string {
     const harga = `${d.hargaLapangan.toLocaleString('id-ID')}`
     const sub = formatRupiah(d.subtotalBeli)
     const line1 = `${tonase} x ${harga}`
-    const sub2 = `  = ${sub}`
     const nopolSupir = [d.nopol, d.supir].filter(Boolean).join(' / ')
-    return `<div>${line1}</div><div style="text-align:right">${sub}</div>${nopolSupir ? `<div style="color:#666;font-size:8pt">${nopolSupir}</div>` : ''}`
+    const noTidLine = d.noTid ? `<div style="font-size:8pt;color:#555">No. TID: ${d.noTid}</div>` : ''
+    return `${noTidLine}<div>${line1}</div><div style="text-align:right">${sub}</div>${nopolSupir ? `<div style="color:#666;font-size:8pt">${nopolSupir}</div>` : ''}`
   }).join('<div style="border-top:1px dashed #ccc;margin:2px 0"></div>')
 
   return `<!DOCTYPE html>

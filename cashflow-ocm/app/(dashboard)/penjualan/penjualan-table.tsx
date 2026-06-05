@@ -14,9 +14,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { deletePenjualan } from './actions'
-import { formatTanggal, formatRupiah } from '@/lib/format'
-import { Trash2, FileText } from 'lucide-react'
+import { deletePenjualan, updatePenjualanStatus } from './actions'
+import { formatTanggal, formatRupiah, todayString } from '@/lib/format'
+import { Trash2, FileText, CheckCircle2, Clock } from 'lucide-react'
 import type { Penjualan } from '@/lib/db/schema'
 
 interface Props {
@@ -24,16 +24,35 @@ interface Props {
   isOwner: boolean
 }
 
-function StatusBadge({ status }: { status: 'lunas' | 'belum' }) {
+function StatusBadge({ status, onToggle, loading }: { status: 'lunas' | 'belum'; onToggle?: () => void; loading?: boolean }) {
   if (status === 'lunas') {
     return (
-      <span className="inline-flex items-center rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700 border border-green-200">
+      <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700 border border-green-200">
+        <CheckCircle2 className="h-3 w-3" />
         Lunas
       </span>
     )
   }
+  if (onToggle) {
+    return (
+      <button
+        onClick={onToggle}
+        disabled={loading}
+        title="Klik untuk tandai Lunas"
+        className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 border border-amber-200 hover:bg-amber-100 hover:border-amber-300 transition-colors disabled:opacity-50 cursor-pointer"
+      >
+        {loading ? (
+          <span className="h-3 w-3 border border-amber-500 border-t-transparent rounded-full animate-spin" />
+        ) : (
+          <Clock className="h-3 w-3" />
+        )}
+        Belum Lunas
+      </button>
+    )
+  }
   return (
-    <span className="inline-flex items-center rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-700 border border-red-200">
+    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 border border-amber-200">
+      <Clock className="h-3 w-3" />
       Belum Lunas
     </span>
   )
@@ -41,6 +60,19 @@ function StatusBadge({ status }: { status: 'lunas' | 'belum' }) {
 
 export function PenjualanTable({ penjualanList, isOwner }: Props) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [updatingId, setUpdatingId] = useState<string | null>(null)
+
+  async function handleToggleLunas(id: string) {
+    setUpdatingId(id)
+    try {
+      await updatePenjualanStatus(id, 'lunas', todayString())
+      toast.success('Status diperbarui → Lunas')
+    } catch {
+      toast.error('Gagal memperbarui status')
+    } finally {
+      setUpdatingId(null)
+    }
+  }
 
   async function handleDelete(id: string) {
     setDeletingId(id)
@@ -103,7 +135,13 @@ export function PenjualanTable({ penjualanList, isOwner }: Props) {
                     <span className="font-semibold num text-stone-900">{formatRupiah(item.totalNilai)}</span>
                   ) : <span className="text-stone-400">—</span>}
                 </td>
-                <td className="px-4 py-3"><StatusBadge status={item.statusBayar} /></td>
+                <td className="px-4 py-3">
+                  <StatusBadge
+                    status={item.statusBayar}
+                    onToggle={item.statusBayar === 'belum' ? () => handleToggleLunas(item.id) : undefined}
+                    loading={updatingId === item.id}
+                  />
+                </td>
                 <td className="px-4 py-3 text-stone-600">{item.tanggalBayarBga ? formatTanggal(item.tanggalBayarBga) : <span className="text-stone-400">—</span>}</td>
                 <td className="px-4 py-3 text-stone-500 max-w-[180px] truncate">{item.catatan ?? <span className="text-stone-400">—</span>}</td>
                 {isOwner && (
@@ -150,7 +188,11 @@ export function PenjualanTable({ penjualanList, isOwner }: Props) {
                 <p className="font-semibold text-stone-900 whitespace-pre-line text-sm leading-snug">{item.noInvoice || 'Tanpa nomor invoice'}</p>
                 <p className="text-xs text-stone-500 mt-0.5">{formatTanggal(item.tanggal)}</p>
               </div>
-              <StatusBadge status={item.statusBayar} />
+              <StatusBadge
+                status={item.statusBayar}
+                onToggle={item.statusBayar === 'belum' ? () => handleToggleLunas(item.id) : undefined}
+                loading={updatingId === item.id}
+              />
             </div>
             {(item.totalBersih || item.totalNilai) && (
               <div className="mb-3 rounded-lg bg-emerald-50 border border-emerald-100 px-3 py-2">

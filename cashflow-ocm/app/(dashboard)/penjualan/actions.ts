@@ -60,6 +60,16 @@ export async function createPenjualan(formData: FormData) {
   return { success: true }
 }
 
+export async function updatePenjualanStatus(id: string, statusBayar: 'belum' | 'lunas', tanggalBayarBga?: string) {
+  await requireSession()
+  await db.update(penjualan)
+    .set({ statusBayar, tanggalBayarBga: tanggalBayarBga ?? null })
+    .where(eq(penjualan.id, id))
+  revalidatePath('/penjualan')
+  revalidatePath('/dashboard')
+  return { success: true }
+}
+
 export async function deletePenjualan(id: string) {
   await requireOwner()
   await db.delete(penjualan).where(eq(penjualan.id, id))

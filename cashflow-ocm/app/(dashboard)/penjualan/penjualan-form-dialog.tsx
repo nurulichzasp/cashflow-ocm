@@ -9,7 +9,10 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { createPenjualan } from './actions'
 import { todayString } from '@/lib/format'
-import { FileText, Loader2, Sparkles } from 'lucide-react'
+import { FileText, Loader2, Sparkles, ChevronDown, ChevronUp, Table2 } from 'lucide-react'
+
+type PreviewRow = { noInv: string; ket: string; area: string; total: number; dpp: number; ppn: number; pph: number; dibayar: number }
+type TotalRow = { total: number; dpp: number; ppn: number; pph: number; dibayar: number }
 
 type Props = { children: React.ReactNode }
 
@@ -24,6 +27,8 @@ export function PenjualanFormDialog({ children }: Props) {
   const [totalBersih, setTotalBersih] = useState('')
   const [totalNilai, setTotalNilai] = useState('')
   const [catatan, setCatatan] = useState('')
+  const [preview, setPreview] = useState<{ sheetNames: string[]; rows: PreviewRow[]; totalRow: TotalRow } | null>(null)
+  const [previewOpen, setPreviewOpen] = useState(true)
   const fileRef = useRef<HTMLInputElement>(null)
 
   async function handlePdfUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -42,6 +47,10 @@ export function PenjualanFormDialog({ children }: Props) {
       if (data.noInvoice) setNoInvoice(data.noInvoice)
       if (data.totalBersih) setTotalBersih(data.totalBersih)
       if (data.totalNilai) setTotalNilai(data.totalNilai)
+      if (data.previewRows && data.sheetNames) {
+        setPreview({ sheetNames: data.sheetNames, rows: data.previewRows, totalRow: data.totalRow })
+        setPreviewOpen(true)
+      }
       if (data.catatan) {
         setCatatan(data.catatan)
       } else if (data.totalNilai || data.totalTonase) {
@@ -97,13 +106,14 @@ export function PenjualanFormDialog({ children }: Props) {
     setTotalBersih('')
     setTotalNilai('')
     setCatatan('')
+    setPreview(null)
     setStatusBayar('belum')
   }
 
   return (
     <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm() }}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Tambah Penjualan</DialogTitle>
         </DialogHeader>
@@ -133,6 +143,75 @@ export function PenjualanFormDialog({ children }: Props) {
             <input ref={fileRef} type="file" accept=".pdf,.xlsx,.xls,image/*" className="hidden" onChange={handlePdfUpload} />
           </div>
         </div>
+
+        {/* Preview Excel */}
+        {preview && (
+          <div className="rounded-lg border border-blue-200 bg-blue-50/50 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setPreviewOpen(v => !v)}
+              className="w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium text-blue-800 hover:bg-blue-50"
+            >
+              <span className="flex items-center gap-2">
+                <Table2 className="h-3.5 w-3.5" />
+                Preview Rekap BGA
+                <span className="text-xs text-blue-500 font-normal">({preview.rows.length} baris)</span>
+              </span>
+              {previewOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </button>
+            {previewOpen && (
+              <div className="border-t border-blue-200">
+                {/* Sheet names */}
+                <div className="px-3 py-2 flex flex-wrap gap-1.5 border-b border-blue-100">
+                  <span className="text-[10px] text-blue-400 self-center">Sheet:</span>
+                  {preview.sheetNames.map(s => (
+                    <span key={s} className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-600 font-medium">{s}</span>
+                  ))}
+                </div>
+                {/* REKAP table */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-[11px]">
+                    <thead>
+                      <tr className="bg-blue-100/60">
+                        <th className="text-left px-2 py-1.5 font-semibold text-blue-700">No Invoice</th>
+                        <th className="text-left px-2 py-1.5 font-semibold text-blue-700">Ket</th>
+                        <th className="text-left px-2 py-1.5 font-semibold text-blue-700">Area</th>
+                        <th className="text-right px-2 py-1.5 font-semibold text-blue-700">Total</th>
+                        <th className="text-right px-2 py-1.5 font-semibold text-blue-700">DPP</th>
+                        <th className="text-right px-2 py-1.5 font-semibold text-blue-700">PPN</th>
+                        <th className="text-right px-2 py-1.5 font-semibold text-blue-700">PPH</th>
+                        <th className="text-right px-2 py-1.5 font-semibold text-blue-700">Dibayar</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-blue-100">
+                      {preview.rows.map((r, i) => (
+                        <tr key={i} className={r.dibayar > 0 ? 'bg-white' : 'bg-blue-50/30 opacity-60'}>
+                          <td className="px-2 py-1 text-blue-800 font-mono text-[10px] max-w-[140px] truncate">{r.noInv}</td>
+                          <td className="px-2 py-1 text-stone-600">{r.ket}</td>
+                          <td className="px-2 py-1 text-stone-500">{r.area}</td>
+                          <td className="px-2 py-1 text-right num text-stone-600">{r.total > 0 ? r.total.toLocaleString('id-ID') : '—'}</td>
+                          <td className="px-2 py-1 text-right num text-stone-600">{r.dpp > 0 ? Math.round(r.dpp).toLocaleString('id-ID') : '—'}</td>
+                          <td className="px-2 py-1 text-right num text-stone-600">{r.ppn > 0 ? Math.round(r.ppn).toLocaleString('id-ID') : '—'}</td>
+                          <td className="px-2 py-1 text-right num text-stone-600">{r.pph > 0 ? Math.round(r.pph).toLocaleString('id-ID') : '—'}</td>
+                          <td className="px-2 py-1 text-right num font-semibold text-emerald-700">{r.dibayar > 0 ? Math.round(r.dibayar).toLocaleString('id-ID') : '—'}</td>
+                        </tr>
+                      ))}
+                      {/* Total row */}
+                      <tr className="bg-blue-100/80 font-bold">
+                        <td className="px-2 py-1.5 text-blue-800" colSpan={3}>TOTAL</td>
+                        <td className="px-2 py-1.5 text-right num text-blue-800">{Math.round(preview.totalRow.total).toLocaleString('id-ID')}</td>
+                        <td className="px-2 py-1.5 text-right num text-blue-800">{Math.round(preview.totalRow.dpp).toLocaleString('id-ID')}</td>
+                        <td className="px-2 py-1.5 text-right num text-blue-800">{Math.round(preview.totalRow.ppn).toLocaleString('id-ID')}</td>
+                        <td className="px-2 py-1.5 text-right num text-blue-800">{Math.round(preview.totalRow.pph).toLocaleString('id-ID')}</td>
+                        <td className="px-2 py-1.5 text-right num text-emerald-700">{Math.round(preview.totalRow.dibayar).toLocaleString('id-ID')}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
