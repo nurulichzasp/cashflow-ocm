@@ -7,7 +7,6 @@ const nextConfig: NextConfig = {
     '@better-auth/kysely-adapter',
     '@libsql/client',
     'drizzle-orm',
-    'pdf-parse',
     'xlsx',
   ],
   typescript: { ignoreBuildErrors: true },

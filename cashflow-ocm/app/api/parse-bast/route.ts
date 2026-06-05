@@ -13,64 +13,110 @@ export async function POST(req: NextRequest) {
     const file = formData.get('file') as File | null
     if (!file) return NextResponse.json({ error: 'File tidak ditemukan' }, { status: 400 })
 
-    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
-    const isExcel = file.type.includes('spreadsheet') || file.type.includes('excel') ||
-      file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls')
+    const name = file.name.toLowerCase()
+    const isPdf = file.type === 'application/pdf' || name.endsWith('.pdf')
+    const isExcel = name.endsWith('.xlsx') || name.endsWith('.xls') || file.type.includes('spreadsheet') || file.type.includes('excel')
     const isImage = file.type.startsWith('image/')
 
     if (isImage) {
-      // Foto: tidak bisa di-parse, kembalikan info minimal
-      return NextResponse.json({ success: true, tanggal: '', noBast: '', noInvoice: '', totalTonase: '', totalNilai: '', info: 'foto' })
+      return NextResponse.json({ success: true, tanggal: '', noBast: '', noInvoice: '', totalTonase: '', totalNilai: '', info: 'foto — tidak bisa di-parse otomatis, isi manual ya' })
     }
 
+    const buffer = Buffer.from(await file.arrayBuffer())
+
     if (isExcel) {
-      // Excel: coba extract dengan xlsx
       try {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const XLSX = require('xlsx')
-        const buffer = Buffer.from(await file.arrayBuffer())
         const wb = XLSX.read(buffer, { type: 'buffer' })
         const ws = wb.Sheets[wb.SheetNames[0]]
-        const text = XLSX.utils.sheet_to_csv(ws)
+        const text = (XLSX.utils.sheet_to_csv(ws) as string)
         const result = extractBastFields(text)
         return NextResponse.json({ success: true, ...result, info: 'excel' })
-      } catch {
-        return NextResponse.json({ success: true, tanggal: '', noBast: '', noInvoice: '', totalTonase: '', totalNilai: '', info: 'excel-parse-failed' })
+      } catch (e) {
+        console.error('[parse-bast:excel]', e)
+        return NextResponse.json({ success: true, tanggal: '', noBast: '', noInvoice: '', totalTonase: '', totalNilai: '', info: 'excel-parse-gagal' })
       }
     }
 
     if (isPdf) {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const pdfParse = require('pdf-parse')
-      const buffer = Buffer.from(await file.arrayBuffer())
-      const parsed = await pdfParse(buffer)
-      const text: string = parsed.text ?? ''
+      // Raw PDF text extraction — tanpa library DOM-dependent
+      const text = extractRawPdfText(buffer)
       const result = extractBastFields(text)
       return NextResponse.json({ success: true, ...result, info: 'pdf' })
     }
 
-    return NextResponse.json({ error: 'Format tidak didukung. Gunakan PDF, Excel, atau foto.' }, { status: 400 })
+    return NextResponse.json({ error: 'Format tidak didukung. Gunakan PDF, Excel (.xlsx), atau foto.' }, { status: 400 })
   } catch (err) {
     console.error('[parse-bast]', err)
     return NextResponse.json({ error: 'Gagal membaca file: ' + (err instanceof Error ? err.message : String(err)) }, { status: 500 })
   }
 }
 
+// ── Raw PDF text extractor (no DOM deps) ──────────────────────────────────────
+function extractRawPdfText(buffer: Buffer): string {
+  const str = buffer.toString('binary')
+  const texts: string[] = []
+
+  // Decode octal escape sequences in PDF strings
+  function decodeOctal(s: string): string {
+    return s.replace(/\\(\d{3})/g, (_, oct) => String.fromCharCode(parseInt(oct, 8)))
+      .replace(/\\n/g, ' ').replace(/\\r/g, ' ').replace(/\\t/g, ' ')
+      .replace(/\\\\/g, '\\').replace(/\\\(/g, '(').replace(/\\\)/g, ')')
+  }
+
+  // Method 1: extract from BT...ET text blocks
+  const btEt = /BT([\s\S]{0,2000}?)ET/g
+  let m: RegExpExecArray | null
+  while ((m = btEt.exec(str)) !== null) {
+    const block = m[1]
+    const tj = /\(([^)]{1,200})\)\s*Tj/g
+    let t: RegExpExecArray | null
+    while ((t = tj.exec(block)) !== null) {
+      const decoded = decodeOctal(t[1]).trim()
+      if (decoded.length > 1) texts.push(decoded)
+    }
+    // TJ array format: [(text)(more)] TJ
+    const tjArr = /\[([^\]]{1,500})\]\s*TJ/g
+    while ((t = tjArr.exec(block)) !== null) {
+      const inner = t[1]
+      const parts = /\(([^)]{1,200})\)/g
+      let p: RegExpExecArray | null
+      while ((p = parts.exec(inner)) !== null) {
+        const decoded = decodeOctal(p[1]).trim()
+        if (decoded.length > 1) texts.push(decoded)
+      }
+    }
+  }
+
+  // Method 2: fallback — any printable string in parentheses (catches more formats)
+  if (texts.length < 5) {
+    const fallback = /\(([A-Za-z0-9 \.\-\/\:,_]{3,100})\)/g
+    while ((m = fallback.exec(str)) !== null) {
+      const s = m[1].trim()
+      if (s.length >= 3 && !texts.includes(s)) texts.push(s)
+    }
+  }
+
+  return texts.join(' ')
+}
+
+// ── Field extractor ───────────────────────────────────────────────────────────
 function extractBastFields(text: string) {
   const clean = text.replace(/\s+/g, ' ').trim()
 
-  // Tanggal
-  let tanggal = ''
   const bulanMap: Record<string, string> = {
     januari: '01', februari: '02', maret: '03', april: '04', mei: '05', juni: '06',
     juli: '07', agustus: '08', september: '09', oktober: '10', november: '11', desember: '12',
   }
+
+  // Tanggal
+  let tanggal = ''
   const tglLong = clean.match(/(\d{1,2})\s+(Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)\s+(\d{4})/i)
   const tglSlash = clean.match(/(\d{2})\/(\d{2})\/(\d{4})/)
   const tglIso = clean.match(/(\d{4})-(\d{2})-(\d{2})/)
   if (tglLong) {
-    const bln = bulanMap[tglLong[2].toLowerCase()]
-    tanggal = `${tglLong[3]}-${bln}-${tglLong[1].padStart(2, '0')}`
+    tanggal = `${tglLong[3]}-${bulanMap[tglLong[2].toLowerCase()]}-${tglLong[1].padStart(2, '0')}`
   } else if (tglSlash) {
     tanggal = `${tglSlash[3]}-${tglSlash[2]}-${tglSlash[1]}`
   } else if (tglIso) {
@@ -89,7 +135,7 @@ function extractBastFields(text: string) {
 
   // Total tonase
   let totalTonase = ''
-  const tonaseMatch = clean.match(/(?:Total\s+)?(?:Berat|Tonase|Timbangan|Netto|Neto|Kg)[:\s]*([\d.,]+)\s*(?:Kg|Ton|KG)/i)
+  const tonaseMatch = clean.match(/(?:Total\s+)?(?:Berat|Tonase|Timbangan|Netto|Neto)[:\s]*([\d.,]+)\s*(?:Kg|Ton|KG)/i)
   if (tonaseMatch) totalTonase = tonaseMatch[1].replace(/\./g, '').replace(',', '.')
 
   // Total nilai
