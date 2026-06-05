@@ -89,7 +89,7 @@ function LabaRugiTab({ data, dari, sampai }: { data: LaporanData; dari: string; 
         <table className="w-full text-sm">
           <tbody>
             {[
-              { label: 'Pendapatan Penjualan (lunas)', value: totalPenjualan, cls: 'text-foreground' },
+              { label: 'Pendapatan Penjualan (lunas)', value: totalPenjualan, cls: 'text-[#2563EB] dark:text-[#60A5FA] font-medium' },
               { label: 'HPP – Pembelian (lunas)', value: totalPembelian, cls: 'text-muted-foreground' },
               { label: 'Laba Kotor', value: labaKotor, cls: 'font-semibold text-foreground', bg: 'bg-muted/30', sep: true },
               { label: 'Biaya Operasional', value: totalBiaya, cls: 'text-muted-foreground' },
@@ -246,11 +246,17 @@ function KasTab({
                   <td className="px-4 py-3 text-xs text-muted-foreground">{t.akun?.nama ?? t.akunId}</td>
                   <td className="px-4 py-3">{kategoriLabels[t.kategori]}</td>
                   <td className="px-4 py-3">
-                    <Badge variant={t.arah === 'masuk' ? 'default' : 'secondary'}>
-                      {t.arah === 'masuk' ? 'Masuk' : 'Keluar'}
-                    </Badge>
+                    {t.arah === 'masuk' ? (
+                      <span className="inline-flex rounded-full bg-[#3B82F6]/10 px-2 py-0.5 text-xs font-medium text-[#2563EB] dark:text-[#60A5FA] border border-[#3B82F6]/25">
+                        Masuk
+                      </span>
+                    ) : (
+                      <span className="inline-flex rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 border border-red-200">
+                        Keluar
+                      </span>
+                    )}
                   </td>
-                  <td className={cn('px-4 py-3 text-right tabular-nums', t.arah === 'masuk' ? 'text-green-600' : 'text-red-500')}>
+                  <td className={cn('px-4 py-3 text-right tabular-nums font-semibold', t.arah === 'masuk' ? 'text-[#2563EB] dark:text-[#60A5FA]' : 'text-red-500')}>
                     {t.arah === 'masuk' ? '+' : '-'}{formatRupiah(t.jumlah)}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums font-medium">{formatRupiah(t.saldo)}</td>
@@ -318,7 +324,7 @@ export function LaporanClient({
             <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">Penjualan Lunas</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xl font-semibold text-foreground">{formatRupiah(data.labaRugi.totalPenjualan)}</p>
+            <p className="text-xl font-semibold text-[#2563EB] dark:text-[#60A5FA]">{formatRupiah(data.labaRugi.totalPenjualan)}</p>
           </CardContent>
         </Card>
         <Card>
@@ -326,7 +332,7 @@ export function LaporanClient({
             <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">Pembelian Lunas</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xl font-semibold text-foreground">{formatRupiah(data.labaRugi.totalPembelian)}</p>
+            <p className="text-xl font-semibold text-[#2563EB] dark:text-[#60A5FA]">{formatRupiah(data.labaRugi.totalPembelian)}</p>
           </CardContent>
         </Card>
         <Card>

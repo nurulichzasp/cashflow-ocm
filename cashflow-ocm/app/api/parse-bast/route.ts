@@ -69,7 +69,8 @@ export async function POST(req: NextRequest) {
 // ── BGA REKAP sheet parser ────────────────────────────────────────────────────
 function parseBgaRekap(rows: (string | number)[][]): {
   tanggal: string; noInvoice: string; noBast: string
-  totalTonase: string; totalNilai: string; catatan: string
+  totalTonase: string; totalBersih: string; totalNilai: string; catatan: string
+  previewRows: any[]; totalRow: any;
 } | null {
   if (!rows || rows.length < 5) return null
 

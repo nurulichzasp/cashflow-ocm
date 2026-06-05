@@ -293,7 +293,7 @@ export default async function DashboardPage() {
             <div className="rounded-xl border border-orange-200/70 dark:border-[#D97757]/20 bg-orange-50/50 dark:bg-card dark:bg-none p-4">
               <p className="text-[10px] font-semibold text-orange-500 dark:text-[#D97757] uppercase tracking-widest mb-2">Rekening Utama</p>
               <p className="text-[11px] text-stone-400 dark:text-[#6B7280] mb-1.5 truncate">{akunCvOcm.nama}</p>
-              <p className={`text-xl font-bold num tracking-tight ${akunCvOcm.saldo >= 0 ? 'text-stone-900 dark:text-stone-100' : 'text-red-600 dark:text-red-400'}`}>
+              <p className={`text-xl font-bold num tracking-tight ${akunCvOcm.saldo >= 0 ? 'text-[#2563EB] dark:text-[#60A5FA]' : 'text-red-600 dark:text-red-400'}`}>
                 {formatRupiah(akunCvOcm.saldo)}
               </p>
             </div>
@@ -303,7 +303,7 @@ export default async function DashboardPage() {
             <div className="rounded-xl border border-stone-100 dark:border-border bg-white dark:bg-card p-4">
               <p className="text-[10px] font-semibold text-[#2563EB] dark:text-[#60A5FA] uppercase tracking-widest mb-2">Bank</p>
               <p className="text-[11px] text-stone-400 dark:text-[#6B7280] mb-1.5">Rek BRI Lainnya</p>
-              <p className={`text-xl font-bold num tracking-tight ${saldoLainnya >= 0 ? 'text-stone-900 dark:text-stone-100' : 'text-red-600 dark:text-red-400'}`}>
+              <p className={`text-xl font-bold num tracking-tight ${saldoLainnya >= 0 ? 'text-[#2563EB] dark:text-[#60A5FA]' : 'text-red-600 dark:text-red-400'}`}>
                 {formatRupiah(saldoLainnya)}
               </p>
               <p className="text-[10px] text-stone-300 dark:text-[#4B5563] mt-2 truncate">{akunLainnya.map((a) => a.nama).join(' · ')}</p>

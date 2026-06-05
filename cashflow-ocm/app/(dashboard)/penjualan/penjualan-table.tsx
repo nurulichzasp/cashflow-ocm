@@ -126,13 +126,13 @@ export function PenjualanTable({ penjualanList, isOwner }: Props) {
                 <td className="px-4 py-3 text-right">
                   {item.totalBersih ? (
                     <div>
-                      <p className="font-semibold num text-stone-900">{formatRupiah(item.totalBersih)}</p>
+                      <p className="font-semibold num text-[#2563EB] dark:text-[#60A5FA]">{formatRupiah(item.totalBersih)}</p>
                       {item.totalNilai && item.totalNilai !== item.totalBersih && (
                         <p className="text-[11px] text-stone-400 num">Dibayar: {formatRupiah(item.totalNilai)}</p>
                       )}
                     </div>
                   ) : item.totalNilai ? (
-                    <span className="font-semibold num text-stone-900">{formatRupiah(item.totalNilai)}</span>
+                    <span className="font-semibold num text-[#2563EB] dark:text-[#60A5FA]">{formatRupiah(item.totalNilai)}</span>
                   ) : <span className="text-stone-400">—</span>}
                 </td>
                 <td className="px-4 py-3">
