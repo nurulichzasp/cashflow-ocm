@@ -110,12 +110,16 @@ function extractBastFields(text: string) {
     juli: '07', agustus: '08', september: '09', oktober: '10', november: '11', desember: '12',
   }
 
-  // Tanggal
+  // === Tanggal ===
   let tanggal = ''
+  // BGA: "Periode 03-04 Juni 2026" → ambil tanggal akhir
+  const tglPeriode = clean.match(/Periode\s+\d{1,2}-(\d{1,2})\s+(Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)\s+(\d{4})/i)
   const tglLong = clean.match(/(\d{1,2})\s+(Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)\s+(\d{4})/i)
   const tglSlash = clean.match(/(\d{2})\/(\d{2})\/(\d{4})/)
   const tglIso = clean.match(/(\d{4})-(\d{2})-(\d{2})/)
-  if (tglLong) {
+  if (tglPeriode) {
+    tanggal = `${tglPeriode[3]}-${bulanMap[tglPeriode[2].toLowerCase()]}-${tglPeriode[1].padStart(2, '0')}`
+  } else if (tglLong) {
     tanggal = `${tglLong[3]}-${bulanMap[tglLong[2].toLowerCase()]}-${tglLong[1].padStart(2, '0')}`
   } else if (tglSlash) {
     tanggal = `${tglSlash[3]}-${tglSlash[2]}-${tglSlash[1]}`
@@ -123,25 +127,35 @@ function extractBastFields(text: string) {
     tanggal = tglIso[0]
   }
 
-  // No. BAST
+  // === No. BAST ===
   let noBast = ''
   const bastMatch = clean.match(/(?:No\.?\s*BAST|BAST[\s:]*No\.?|Nomor\s+BAST)[:\s]*([A-Z0-9\/\-\.]+)/i)
   if (bastMatch) noBast = bastMatch[1].trim()
 
-  // No. Invoice / Faktur
+  // === No. Invoice ===
   let noInvoice = ''
-  const invMatch = clean.match(/(?:No\.?\s*(?:Invoice|Faktur|INV|Nota)|Invoice\s+No\.?)[:\s]*([A-Z0-9\/\-\.]+)/i)
-  if (invMatch) noInvoice = invMatch[1].trim()
+  // BGA format: "No. 001/INV-TBS/CV.OCM/VI/2026"
+  const invBga = clean.match(/No\.\s+(\d{3}\/INV[-a-zA-Z0-9\/\.]+)/i)
+  const invStd = clean.match(/(?:No\.?\s*(?:Invoice|Faktur|INV|Nota)|Invoice\s+No\.?)[:\s]*([A-Z0-9\/\-\.]+)/i)
+  if (invBga) noInvoice = invBga[1].trim()
+  else if (invStd) noInvoice = invStd[1].trim()
 
-  // Total tonase
+  // === Total Tonase ===
   let totalTonase = ''
   const tonaseMatch = clean.match(/(?:Total\s+)?(?:Berat|Tonase|Timbangan|Netto|Neto)[:\s]*([\d.,]+)\s*(?:Kg|Ton|KG)/i)
   if (tonaseMatch) totalTonase = tonaseMatch[1].replace(/\./g, '').replace(',', '.')
 
-  // Total nilai
+  // === Total Nilai ===
   let totalNilai = ''
-  const nilaiMatch = clean.match(/(?:Total\s+(?:Harga|Nilai|Pembayaran|Tagihan)|Jumlah\s+(?:Total|Bayar|Tagihan))[:\s]*(?:Rp\.?\s*)?([\d.,]+)/i)
-  if (nilaiMatch) totalNilai = nilaiMatch[1].replace(/\./g, '').replace(',', '.')
+  // BGA format: baris Total di Excel → 5 angka setelah "Total", angka ke-5 = Total dibayar
+  // Contoh CSV: ,Total,,,1124013150,1030345388,123641447,2810033,1244844564
+  const bgaTotalRow = clean.match(/\bTotal\b[,\s]*([\d.]+)[,\s]*([\d.]+)[,\s]*([\d.]+)[,\s]*([\d.]+)[,\s]*([\d.]+)/i)
+  if (bgaTotalRow) {
+    totalNilai = bgaTotalRow[5].replace(/\./g, '').replace(',', '.')
+  } else {
+    const nilaiMatch = clean.match(/(?:Total\s+(?:Harga|Nilai|Pembayaran|Tagihan|[Dd]ibayar)|Jumlah\s+(?:Total|Bayar|Tagihan))[:\s,]*(?:Rp\.?\s*)?([\d.,]+)/i)
+    if (nilaiMatch) totalNilai = nilaiMatch[1].replace(/\./g, '').replace(',', '.')
+  }
 
   return { tanggal, noBast, noInvoice, totalTonase, totalNilai }
 }

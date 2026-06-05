@@ -166,7 +166,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, initi
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{initialData ? 'Edit Pembelian' : 'Tambah Tiket Pembelian'}</DialogTitle>
+          <DialogTitle>{initialData ? 'Edit Pembelian' : 'Tiket Pembelian'}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
@@ -204,10 +204,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, initi
           {/* Tabel Detail */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label>Rincian Tonase & Harga *</Label>
-              {keuntunganPerKg > 0 && (
-                <span className="text-xs text-stone-400">Margin peron: Rp {keuntunganPerKg.toLocaleString('id-ID')}/kg</span>
-              )}
+              <Label>Rincian</Label>
             </div>
 
             <div className="rounded-lg border border-stone-200 overflow-hidden">
@@ -292,7 +289,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, initi
           {/* Status bayar + Sumber bayar */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Status Bayar Peron</Label>
+              <Label>Status Bayar</Label>
               <Select value={statusBayar} onValueChange={(v) => setStatusBayar(v as 'belum' | 'lunas')}>
                 <SelectTrigger><SelectValue placeholder="Pilih status" /></SelectTrigger>
                 <SelectContent>
