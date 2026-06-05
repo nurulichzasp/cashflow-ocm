@@ -285,7 +285,7 @@ export function PenjualanFormDialog({ children }: Props) {
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-1">
+          <div className="flex justify-end gap-2 pt-4 -mx-6 px-6 -mb-6 pb-6 border-t border-border bg-muted/30 rounded-b-3xl">
             <Button variant="outline" type="button" onClick={() => setOpen(false)}>Batal</Button>
             <Button type="submit" disabled={loading}>
               {loading ? 'Menyimpan...' : 'Tambah Penjualan'}

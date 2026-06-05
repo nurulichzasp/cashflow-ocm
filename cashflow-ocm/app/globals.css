@@ -59,27 +59,27 @@
   --popover: #FFFFFF;
   --popover-foreground: #1C1917;
 
-  /* Primary: FC6E20 (palette sawit) */
-  --primary: #FC6E20;
+  /* Primary: Claude terracotta */
+  --primary: #D97757;
   --primary-foreground: #FFFFFF;
 
   --secondary: #F5F5F4;          /* stone-100 */
   --secondary-foreground: #44403C; /* stone-700 */
   --muted: #F5F5F4;              /* stone-100 */
   --muted-foreground: #78716C;   /* stone-500 */
-  --accent: #FFF7ED;             /* orange-50 */
-  --accent-foreground: #C2410C;  /* orange-700 */
-  --destructive: #DC2626;        /* red-600 */
+  --accent: #FBF1ED;             /* terracotta-50 */
+  --accent-foreground: #C2603F;  /* terracotta-700 */
+  --destructive: #78716C;        /* netral — no bright red */
   --border: #E7E5E4;             /* stone-200 */
   --input: #E7E5E4;              /* stone-200 */
-  --ring: #EA580C;               /* orange-600 */
+  --ring: #D97757;
 
-  /* Chart: green masuk / red keluar / orange total */
-  --chart-1: #16A34A;            /* green-600 — masuk */
-  --chart-2: #DC2626;            /* red-600  — keluar */
-  --chart-3: #EA580C;            /* orange-600 — total/netral */
-  --chart-4: #78716C;            /* stone-500 */
-  --chart-5: #D97706;            /* amber-600 */
+  /* Chart: blue masuk / orange keluar / gray netral */
+  --chart-1: #3B82F6;
+  --chart-2: #D97757;
+  --chart-3: #9CA3AF;
+  --chart-4: #78716C;
+  --chart-5: #D97757;
 
   --radius: 0.625rem;
 
@@ -304,6 +304,69 @@ html.dark [class~="divide-y"]         > * + * { border-color: rgba(255,255,255,0
 /* ── Scrollbar ── */
 html.dark ::-webkit-scrollbar-thumb       { background: #3a3a3a; }
 html.dark ::-webkit-scrollbar-thumb:hover { background: #4a4a4a; }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   LIGHT MODE CATCH-ALL — selaras dengan dark: netral + aksen oranye saja
+   ───────────────────────────────────────────────────────────────────────── */
+/* Warna semantik teks → netral */
+html:not(.dark) [class~="text-green-600"]  { color: #1C1917 !important; }  /* masuk → hitam */
+html:not(.dark) [class~="text-green-500"]  { color: #78716C !important; }
+html:not(.dark) [class~="text-green-700"]  { color: #78716C !important; }
+html:not(.dark) [class~="text-green-400"]  { color: #1C1917 !important; }
+html:not(.dark) [class~="text-emerald-600"]{ color: #1C1917 !important; }
+html:not(.dark) [class~="text-emerald-700"]{ color: #78716C !important; }
+html:not(.dark) [class~="text-red-600"]    { color: #78716C !important; }  /* keluar → abu */
+html:not(.dark) [class~="text-red-500"]    { color: #78716C !important; }
+html:not(.dark) [class~="text-red-400"]    { color: #78716C !important; }
+html:not(.dark) [class~="text-red-700"]    { color: #78716C !important; }
+html:not(.dark) [class~="text-amber-600"]  { color: #D97757 !important; }  /* → oranye */
+html:not(.dark) [class~="text-amber-700"]  { color: #D97757 !important; }
+html:not(.dark) [class~="text-amber-400"]  { color: #D97757 !important; }
+html:not(.dark) [class~="text-orange-500"] { color: #D97757 !important; }
+html:not(.dark) [class~="text-orange-600"] { color: #D97757 !important; }
+html:not(.dark) [class~="text-orange-700"] { color: #D97757 !important; }
+html:not(.dark) [class~="text-violet-600"] { color: #78716C !important; }
+html:not(.dark) [class~="text-violet-700"] { color: #78716C !important; }
+html:not(.dark) [class~="text-blue-500"]   { color: #78716C !important; }
+html:not(.dark) [class~="text-blue-700"]   { color: #78716C !important; }
+html:not(.dark) [class~="text-blue-800"]   { color: #44403C !important; }
+
+/* Badge/bg berwarna → netral stone */
+html:not(.dark) [class~="bg-green-50"]   { background-color: #F5F5F4 !important; }
+html:not(.dark) [class~="bg-green-100"]  { background-color: #F5F5F4 !important; }
+html:not(.dark) [class~="bg-red-50"]     { background-color: #F5F5F4 !important; }
+html:not(.dark) [class~="bg-amber-50"]   { background-color: #F5F5F4 !important; }
+html:not(.dark) [class~="bg-blue-50"]    { background-color: #F5F5F4 !important; }
+html:not(.dark) [class~="bg-violet-50"]  { background-color: #F5F5F4 !important; }
+html:not(.dark) [class~="bg-emerald-50"] { background-color: #F5F5F4 !important; }
+html:not(.dark) [class~="bg-orange-50"]  { background-color: #FBF1ED !important; }
+html:not(.dark) [class~="bg-orange-100"] { background-color: #FBF1ED !important; }
+html:not(.dark) [class~="bg-orange-500"] { background-color: #D97757 !important; }
+html:not(.dark) [class~="bg-orange-600"] { background-color: #D97757 !important; }
+
+/* Border berwarna → stone netral */
+html:not(.dark) [class~="border-green-200"]  { border-color: #E7E5E4 !important; }
+html:not(.dark) [class~="border-green-100"]  { border-color: #F0EFEE !important; }
+html:not(.dark) [class~="border-red-200"]    { border-color: #E7E5E4 !important; }
+html:not(.dark) [class~="border-amber-200"]  { border-color: #E7E5E4 !important; }
+html:not(.dark) [class~="border-blue-200"]   { border-color: #E7E5E4 !important; }
+html:not(.dark) [class~="border-violet-200"] { border-color: #E7E5E4 !important; }
+html:not(.dark) [class~="border-orange-500"] { border-color: #D97757 !important; }
+
+/* Strip border-l berwarna → hilangkan */
+html:not(.dark) [class~="border-l-green-500"],
+html:not(.dark) [class~="border-l-green-400"],
+html:not(.dark) [class~="border-l-blue-500"],
+html:not(.dark) [class~="border-l-violet-500"],
+html:not(.dark) [class~="border-l-amber-500"],
+html:not(.dark) [class~="border-l-orange-500"],
+html:not(.dark) [class~="border-l-orange-600"],
+html:not(.dark) [class~="border-l-red-500"],
+html:not(.dark) [class~="border-l-stone-400"] { border-left-color: #E7E5E4 !important; }
+
+/* Hover oranye → terracotta */
+html:not(.dark) [class~="hover:bg-orange-700"]:hover { background-color: #C2603F !important; }
+html.dark [class~="hover:bg-orange-700"]:hover       { background-color: #c8654a !important; }
 
 @layer utilities {
   /* App container: no max-width, just padding */

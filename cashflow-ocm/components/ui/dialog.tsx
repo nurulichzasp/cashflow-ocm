@@ -63,7 +63,14 @@ DialogContent.displayName = DialogPrimitive.Content.displayName
 
 function DialogHeader({ className, ...props }: React.ComponentPropsWithoutRef<"div">) {
   return (
-    <div data-slot="dialog-header" className={cn("flex flex-col gap-2", className)} {...props} />
+    <div
+      data-slot="dialog-header"
+      className={cn(
+        "-mx-6 -mt-6 mb-1 flex flex-col gap-2 border-b border-border px-6 pb-4 pt-6",
+        className
+      )}
+      {...props}
+    />
   )
 }
 

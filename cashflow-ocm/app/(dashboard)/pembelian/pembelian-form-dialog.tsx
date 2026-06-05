@@ -326,7 +326,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, initi
             <FotoBuktiUploader urls={fotos} onUrlsChange={setFotos} disabled={loading} />
           </div>
 
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex justify-end gap-2 pt-4 -mx-6 px-6 -mb-6 pb-6 border-t border-border bg-muted/30 rounded-b-3xl">
             <Button variant="outline" type="button" onClick={() => setOpen(false)}>Batal</Button>
             <Button type="submit" disabled={loading} className="bg-orange-600 hover:bg-orange-700 text-white">
               {loading ? 'Menyimpan...' : initialData ? 'Simpan Perubahan' : 'Tambah Tiket'}
