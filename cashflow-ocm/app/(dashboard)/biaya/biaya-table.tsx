@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
@@ -17,7 +17,7 @@ import {
 import { deleteBiayaOperasional } from './actions'
 import { formatRupiah, formatTanggal } from '@/lib/format'
 import { FotoBuktiGallery } from '@/components/foto-bukti-gallery'
-import { Trash2, Receipt, ImageIcon } from 'lucide-react'
+import { Trash2, Receipt, ImageIcon, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import type { BiayaOperasional, AkunKas, BiayaFoto } from '@/lib/db/schema'
 
 type BiayaRow = BiayaOperasional & { akunSumber: AkunKas | null; fotos: BiayaFoto[] }
@@ -41,9 +41,28 @@ interface Props {
   isOwner: boolean
 }
 
+type SortCol = 'tanggal' | 'jumlah'
+
 export function BiayaTable({ biayaList, isOwner }: Props) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [expandedFotoId, setExpandedFotoId] = useState<string | null>(null)
+  const [sortBy, setSortBy] = useState<SortCol>('tanggal')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+
+  function handleSort(col: SortCol) {
+    if (sortBy === col) setSortDir((d) => d === 'asc' ? 'desc' : 'asc')
+    else { setSortBy(col); setSortDir('desc') }
+  }
+
+  const sorted = useMemo(() => [...biayaList].sort((a, b) => {
+    const cmp = sortBy === 'tanggal' ? a.tanggal.localeCompare(b.tanggal) : a.jumlah - b.jumlah
+    return sortDir === 'asc' ? cmp : -cmp
+  }), [biayaList, sortBy, sortDir])
+
+  function SortIcon({ col }: { col: SortCol }) {
+    if (sortBy !== col) return <ArrowUpDown className="h-3 w-3" />
+    return sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+  }
 
   async function handleDelete(id: string) {
     setDeletingId(id)
@@ -78,17 +97,25 @@ export function BiayaTable({ biayaList, isOwner }: Props) {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-stone-50 border-b border-stone-200">
-              <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Tanggal</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">
+                <button onClick={() => handleSort('tanggal')} className={`inline-flex items-center gap-1 hover:text-orange-600 transition-colors ${sortBy === 'tanggal' ? 'text-orange-600' : ''}`}>
+                  Tanggal <SortIcon col="tanggal" />
+                </button>
+              </th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Kategori</th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Sumber</th>
-              <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Jumlah</th>
+              <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">
+                <button onClick={() => handleSort('jumlah')} className={`inline-flex items-center gap-1 hover:text-orange-600 transition-colors ${sortBy === 'jumlah' ? 'text-orange-600' : ''}`}>
+                  Jumlah <SortIcon col="jumlah" />
+                </button>
+              </th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Catatan</th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Foto</th>
               {isOwner && <th className="px-4 py-3 w-10" />}
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
-            {biayaList.map((item) => (
+            {sorted.map((item) => (
               <React.Fragment key={item.id}>
                 <tr className="bg-white hover:bg-orange-50/30 transition-colors">
                   <td className="px-4 py-3 text-stone-900">{formatTanggal(item.tanggal)}</td>
@@ -165,7 +192,7 @@ export function BiayaTable({ biayaList, isOwner }: Props) {
 
       {/* Mobile */}
       <div className="md:hidden space-y-2">
-        {biayaList.map((item) => (
+        {sorted.map((item) => (
           <div key={item.id} className="rounded-xl border border-stone-200 bg-white shadow-sm p-4">
             <div className="flex items-start justify-between gap-2 mb-3">
               <div>

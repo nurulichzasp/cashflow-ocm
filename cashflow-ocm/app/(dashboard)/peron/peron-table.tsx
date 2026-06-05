@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
@@ -18,7 +18,7 @@ import { formatRupiah } from '@/lib/format'
 import { PeronFormDialog } from './peron-form-dialog'
 import { ModalFormDialog } from './modal-form-dialog'
 import { deletePeron } from './actions'
-import { Edit, Trash2, Wallet, Users } from 'lucide-react'
+import { Edit, Trash2, Wallet, Users, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import type { Peron } from '@/lib/db/schema'
 
 type PeronWithDp = Peron & { dpAktif: number }
@@ -28,8 +28,30 @@ interface Props {
   isOwner: boolean
 }
 
+type SortCol = 'nama' | 'keuntungan' | 'dp'
+
 export function PeronTable({ peronList, isOwner }: Props) {
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [sortBy, setSortBy] = useState<SortCol>('nama')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+
+  function handleSort(col: SortCol) {
+    if (sortBy === col) setSortDir((d) => d === 'asc' ? 'desc' : 'asc')
+    else { setSortBy(col); setSortDir('desc') }
+  }
+
+  const sorted = useMemo(() => [...peronList].sort((a, b) => {
+    let cmp = 0
+    if (sortBy === 'nama') cmp = a.nama.localeCompare(b.nama)
+    else if (sortBy === 'keuntungan') cmp = a.keuntunganPerKg - b.keuntunganPerKg
+    else if (sortBy === 'dp') cmp = a.dpAktif - b.dpAktif
+    return sortDir === 'asc' ? cmp : -cmp
+  }), [peronList, sortBy, sortDir])
+
+  function SortIcon({ col }: { col: SortCol }) {
+    if (sortBy !== col) return <ArrowUpDown className="h-3 w-3" />
+    return sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+  }
 
   async function handleDelete(id: string) {
     setDeleting(id)
@@ -65,16 +87,28 @@ export function PeronTable({ peronList, isOwner }: Props) {
           <thead>
             <tr className="bg-stone-50 border-b border-stone-200">
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Kode</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Nama</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">
+                <button onClick={() => handleSort('nama')} className={`inline-flex items-center gap-1 hover:text-orange-600 transition-colors ${sortBy === 'nama' ? 'text-orange-600' : ''}`}>
+                  Nama <SortIcon col="nama" />
+                </button>
+              </th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Kontak</th>
-              <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Untung/kg</th>
-              <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">DP Aktif</th>
+              <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">
+                <button onClick={() => handleSort('keuntungan')} className={`inline-flex items-center gap-1 hover:text-orange-600 transition-colors ${sortBy === 'keuntungan' ? 'text-orange-600' : ''}`}>
+                  Untung/kg <SortIcon col="keuntungan" />
+                </button>
+              </th>
+              <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">
+                <button onClick={() => handleSort('dp')} className={`inline-flex items-center gap-1 hover:text-orange-600 transition-colors ${sortBy === 'dp' ? 'text-orange-600' : ''}`}>
+                  DP Aktif <SortIcon col="dp" />
+                </button>
+              </th>
               <th className="text-center px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
               <th className="px-4 py-3 w-24" />
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
-            {peronList.map((p) => (
+            {sorted.map((p) => (
               <tr key={p.id} className="bg-white hover:bg-orange-50/30 transition-colors group">
                 <td className="px-4 py-3 text-stone-500 num">{p.kode ?? <span className="text-stone-300">—</span>}</td>
                 <td className="px-4 py-3 font-semibold text-stone-900">{p.nama}</td>
@@ -141,7 +175,7 @@ export function PeronTable({ peronList, isOwner }: Props) {
 
       {/* Mobile */}
       <div className="md:hidden space-y-2">
-        {peronList.map((p) => (
+        {sorted.map((p) => (
           <div key={p.id} className="rounded-xl border border-stone-200 bg-white shadow-sm p-4">
             <div className="flex items-start justify-between gap-2 mb-3">
               <div>

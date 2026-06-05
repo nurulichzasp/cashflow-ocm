@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,7 +20,7 @@ import { deletePembelian } from './actions'
 import { PembelianFormDialog } from './pembelian-form-dialog'
 import { PrintRekapButton, PrintNotaButton } from './invoice-print'
 import { FotoBuktiGallery } from '@/components/foto-bukti-gallery'
-import { Edit3, Trash2, ShoppingCart, ImageIcon } from 'lucide-react'
+import { Edit3, Trash2, ShoppingCart, ImageIcon, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import type { Pembelian, Peron, AkunKas, PembelianFoto, PembelianDetail } from '@/lib/db/schema'
 
 type PembelianRow = Pembelian & { peron: Peron | null; sumberBayar: AkunKas | null; fotos: PembelianFoto[]; details: PembelianDetail[] }
@@ -63,6 +63,13 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
   const [filterTanggalSampai, setFilterTanggalSampai] = useState('')
   const [filterPeronId, setFilterPeronId] = useState('all')
   const [expandedFotoId, setExpandedFotoId] = useState<string | null>(null)
+  const [sortBy, setSortBy] = useState<'tanggal' | 'peron' | 'tonase' | 'totalBeli' | 'keuntungan'>('tanggal')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+
+  const handleSort = useCallback((col: typeof sortBy) => {
+    if (sortBy === col) setSortDir((d) => d === 'asc' ? 'desc' : 'asc')
+    else { setSortBy(col); setSortDir('desc') }
+  }, [sortBy])
 
   async function handleDelete(id: string) {
     setDeletingId(id)
@@ -77,13 +84,22 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
   }
 
   const filtered = useMemo(() => {
-    return pembelianList.filter((p) => {
+    const list = pembelianList.filter((p) => {
       if (filterTanggalDari && p.tanggal < filterTanggalDari) return false
       if (filterTanggalSampai && p.tanggal > filterTanggalSampai) return false
       if (filterPeronId !== 'all' && p.peronId !== filterPeronId) return false
       return true
     })
-  }, [pembelianList, filterTanggalDari, filterTanggalSampai, filterPeronId])
+    return [...list].sort((a, b) => {
+      let cmp = 0
+      if (sortBy === 'tanggal') cmp = a.tanggal.localeCompare(b.tanggal)
+      else if (sortBy === 'peron') cmp = (a.peron?.nama ?? '').localeCompare(b.peron?.nama ?? '')
+      else if (sortBy === 'tonase') cmp = a.tonase - b.tonase
+      else if (sortBy === 'totalBeli') cmp = a.totalBeli - b.totalBeli
+      else if (sortBy === 'keuntungan') cmp = a.keuntungan - b.keuntungan
+      return sortDir === 'asc' ? cmp : -cmp
+    })
+  }, [pembelianList, filterTanggalDari, filterTanggalSampai, filterPeronId, sortBy, sortDir])
 
   const totalTonase = filtered.reduce((s, p) => s + p.tonase, 0)
   const totalBeli = filtered.reduce((s, p) => s + p.totalBeli, 0)
@@ -120,7 +136,7 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
           catatan: editTarget.catatan ?? undefined,
           fotoUrls: editTarget.fotos.map((f) => f.url),
           details: editTarget.details.length > 0
-            ? editTarget.details.map((d) => ({ noTid: d.noTid ?? undefined, nopol: d.nopol ?? undefined, supir: d.supir ?? undefined, tonase: d.tonase, hargaLapangan: d.hargaLapangan }))
+            ? editTarget.details.map((d) => ({ noTid: d.noTid ?? undefined, tonase: d.tonase, hargaLapangan: d.hargaLapangan, tanggalReplas: d.tanggalReplas ?? undefined }))
             : [{ tonase: editTarget.tonase, hargaLapangan: editTarget.hargaBeli }],
         } : undefined}
         onOpenChange={(open) => { if (!open) setEditTarget(null) }}
@@ -168,15 +184,23 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-stone-50 border-b border-stone-200">
-              <th className="text-left px-3 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Tanggal</th>
+              {(['tanggal', 'peron', 'tonase', 'totalBeli', 'keuntungan'] as const).map((col) => {
+                const labels: Record<string, string> = { tanggal: 'Tanggal', peron: 'Peron', tonase: 'Tonase', totalBeli: 'Total Beli', keuntungan: 'Untung' }
+                const isRight = ['tonase', 'totalBeli', 'keuntungan'].includes(col)
+                const active = sortBy === col
+                const Icon = active ? (sortDir === 'asc' ? ArrowUp : ArrowDown) : ArrowUpDown
+                return (
+                  <th key={col} className={`px-3 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 ${isRight ? 'text-right' : 'text-left'}`}>
+                    <button onClick={() => handleSort(col)} className={`inline-flex items-center gap-1 hover:text-orange-600 transition-colors ${active ? 'text-orange-600' : ''}`}>
+                      {labels[col]}
+                      <Icon className="h-3 w-3" />
+                    </button>
+                  </th>
+                )
+              })}
+              <th className="text-right px-3 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">H.Beli</th>
               <th className="text-left px-3 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">TID</th>
               <th className="text-left px-3 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Kat</th>
-              <th className="text-left px-3 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Peron</th>
-              <th className="text-right px-3 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Tonase</th>
-              <th className="text-right px-3 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">H.Jual</th>
-              <th className="text-right px-3 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">H.Beli</th>
-              <th className="text-right px-3 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Total Beli</th>
-              <th className="text-right px-3 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Untung</th>
               <th className="text-left px-3 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
               <th className="text-left px-3 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Foto</th>
               {isOwner && <th className="px-3 py-3 w-20" />}
@@ -187,22 +211,19 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
               <React.Fragment key={p.id}>
                 <tr className="bg-white hover:bg-orange-50/30 transition-colors group">
                   <td className="px-3 py-2.5 text-stone-700 whitespace-nowrap">{formatTanggal(p.tanggal)}</td>
+                  <td className="px-3 py-2.5 font-semibold text-stone-900">{p.peron?.nama ?? p.peronId}</td>
+                  <td className="px-3 py-2.5 text-right num text-stone-700">{p.tonase.toLocaleString('id-ID')} kg</td>
+                  <td className="px-3 py-2.5 text-right font-semibold text-stone-900 num">{formatRupiah(p.totalBeli)}</td>
+                  <td className="px-3 py-2.5 text-right font-semibold text-green-600 num">{formatRupiah(p.keuntungan)}</td>
+                  <td className="px-3 py-2.5 text-right num text-stone-500 text-xs">
+                    Rp {p.hargaBeli.toLocaleString('id-ID')}
+                  </td>
                   <td className="px-3 py-2.5 text-stone-500 font-mono text-xs">{p.noTid ?? <span className="text-stone-300">—</span>}</td>
                   <td className="px-3 py-2.5">
                     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${kategoriBadge[p.kategori] ?? ''}`}>
                       {p.kategori}
                     </span>
                   </td>
-                  <td className="px-3 py-2.5 font-semibold text-stone-900">{p.peron?.nama ?? p.peronId}</td>
-                  <td className="px-3 py-2.5 text-right num text-stone-700">{p.tonase.toLocaleString('id-ID')} kg</td>
-                  <td className="px-3 py-2.5 text-right num text-stone-600">
-                    Rp {p.hargaJual.toLocaleString('id-ID')}
-                  </td>
-                  <td className="px-3 py-2.5 text-right num text-stone-600">
-                    Rp {p.hargaBeli.toLocaleString('id-ID')}
-                  </td>
-                  <td className="px-3 py-2.5 text-right font-semibold text-stone-900 num">{formatRupiah(p.totalBeli)}</td>
-                  <td className="px-3 py-2.5 text-right font-semibold text-green-600 num">{formatRupiah(p.keuntungan)}</td>
                   <td className="px-3 py-2.5"><StatusBayar status={p.statusBayarPeron} /></td>
                   <td className="px-3 py-2.5">
                     {p.fotos.length > 0 ? (
@@ -268,16 +289,15 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
           {/* Baris total */}
           <tfoot>
             <tr className="bg-stone-100 border-t-2 border-stone-300 font-semibold">
-              <td colSpan={4} className="px-3 py-2.5 text-stone-600 text-xs uppercase">
+              <td colSpan={2} className="px-3 py-2.5 text-stone-600 text-xs uppercase">
                 Total ({filtered.length} tiket)
               </td>
               <td className="px-3 py-2.5 text-right num text-stone-800">
                 {totalTonase.toLocaleString('id-ID')} kg
               </td>
-              <td colSpan={2} />
               <td className="px-3 py-2.5 text-right num text-stone-900">{formatRupiah(totalBeli)}</td>
               <td className="px-3 py-2.5 text-right num text-green-700">{formatRupiah(totalUntung)}</td>
-              <td colSpan={isOwner ? 3 : 2} />
+              <td colSpan={isOwner ? 6 : 5} />
             </tr>
           </tfoot>
         </table>
@@ -304,9 +324,9 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
                 <p className="font-medium num">{p.tonase.toLocaleString('id-ID')} kg</p>
               </div>
               <div className="rounded-lg bg-stone-50 border border-stone-100 p-2">
-                <p className="text-xs text-stone-400 mb-0.5">Harga Jual/Beli</p>
+                <p className="text-xs text-stone-400 mb-0.5">Harga Beli</p>
                 <p className="font-medium num text-xs">
-                  Rp {p.hargaJual.toLocaleString('id-ID')} / Rp {p.hargaBeli.toLocaleString('id-ID')}
+                  Rp {p.hargaBeli.toLocaleString('id-ID')}/kg
                 </p>
               </div>
               <div className="rounded-lg bg-stone-50 border border-stone-100 p-2">

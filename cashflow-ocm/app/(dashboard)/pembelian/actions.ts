@@ -24,10 +24,9 @@ export type KategoriPembelian = 'OCM R1' | 'OCM R2' | 'OCMP SAGU' | 'OCM BRDL'
 
 export interface DetailInput {
   noTid?: string
-  nopol?: string
-  supir?: string
   tonase: number
   hargaLapangan: number // harga yang dibayar ke peron
+  tanggalReplas?: string // tanggal replas bongkar di PKS (opsional)
 }
 
 const pembelianSchema = z.object({
@@ -39,10 +38,9 @@ const pembelianSchema = z.object({
   catatan: z.string().optional(),
   details: z.array(z.object({
     noTid: z.string().optional(),
-    nopol: z.string().optional(),
-    supir: z.string().optional(),
     tonase: z.number().positive(),
     hargaLapangan: z.number().positive(),
+    tanggalReplas: z.string().optional(),
   })).min(1, 'Minimal 1 baris detail'),
 })
 
@@ -101,14 +99,13 @@ export async function createPembelian(data: {
     computed.map((d) => ({
       pembelianId,
       noTid: d.noTid || null,
-      nopol: d.nopol || null,
-      supir: d.supir || null,
       tonase: d.tonase,
       hargaLapangan: d.hargaLapangan,
       subtotalBeli: d.subtotalBeli,
       subtotalJual: d.subtotalJual,
       keuntungan: d.keuntungan,
       urutan: d.urutan,
+      tanggalReplas: d.tanggalReplas || null,
     }))
   )
 
@@ -170,14 +167,13 @@ export async function updatePembelian(id: string, data: {
     computed.map((d) => ({
       pembelianId: id,
       noTid: d.noTid || null,
-      nopol: d.nopol || null,
-      supir: d.supir || null,
       tonase: d.tonase,
       hargaLapangan: d.hargaLapangan,
       subtotalBeli: d.subtotalBeli,
       subtotalJual: d.subtotalJual,
       keuntungan: d.keuntungan,
       urutan: d.urutan,
+      tanggalReplas: d.tanggalReplas || null,
     }))
   )
 

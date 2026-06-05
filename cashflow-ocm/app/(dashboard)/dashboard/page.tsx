@@ -257,8 +257,14 @@ export default async function DashboardPage() {
     year: 'numeric',
   })
 
+  // Kelompokkan akun: Rek BRI CV OCM tampil sendiri, sisanya digabung
+  const akunCvOcm = metrics.akunSaldo.find((a) => a.nama.toLowerCase().includes('cv ocm'))
+  const akunLainnya = metrics.akunSaldo.filter((a) => a.tipe === 'bank' && !a.nama.toLowerCase().includes('cv ocm'))
+  const akunTunai = metrics.akunSaldo.filter((a) => a.tipe === 'tunai')
+  const saldoLainnya = akunLainnya.reduce((s, a) => s + a.saldo, 0)
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-1 md:pt-0">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-semibold text-stone-900 tracking-tight">Dashboard</h1>
@@ -289,16 +295,42 @@ export default async function DashboardPage() {
       {/* Saldo per akun */}
       <div>
         <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-3">Saldo Rekening &amp; Kas</p>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-          {metrics.akunSaldo.map((a) => (
+        <div className="grid gap-3 sm:grid-cols-3">
+          {/* Rek BRI CV OCM — utama */}
+          {akunCvOcm && (
+            <div className="rounded-xl border-2 border-orange-200 bg-white p-4 transition-all duration-200 hover:shadow-sm hover:-translate-y-px">
+              <div className="flex items-center justify-between mb-2.5">
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-orange-50 text-orange-600">
+                  Utama
+                </span>
+              </div>
+              <p className="text-xs font-medium text-stone-400 mb-1 truncate">{akunCvOcm.nama}</p>
+              <p className={`text-lg font-bold num tracking-tight ${akunCvOcm.saldo >= 0 ? 'text-stone-900' : 'text-red-600'}`}>
+                {formatRupiah(akunCvOcm.saldo)}
+              </p>
+            </div>
+          )}
+          {/* Rekening BRI lainnya — digabung */}
+          {akunLainnya.length > 0 && (
+            <div className="rounded-xl border border-stone-200/80 bg-white p-4 transition-all duration-200 hover:border-stone-300 hover:shadow-sm hover:-translate-y-px">
+              <div className="flex items-center justify-between mb-2.5">
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">
+                  Bank
+                </span>
+              </div>
+              <p className="text-xs font-medium text-stone-400 mb-1">Rek BRI Lainnya</p>
+              <p className={`text-lg font-bold num tracking-tight ${saldoLainnya >= 0 ? 'text-stone-900' : 'text-red-600'}`}>
+                {formatRupiah(saldoLainnya)}
+              </p>
+              <p className="text-[10px] text-stone-300 mt-1">{akunLainnya.map((a) => a.nama).join(' · ')}</p>
+            </div>
+          )}
+          {/* Tunai */}
+          {akunTunai.map((a) => (
             <div key={a.id} className="rounded-xl border border-stone-200/80 bg-white p-4 transition-all duration-200 hover:border-stone-300 hover:shadow-sm hover:-translate-y-px">
               <div className="flex items-center justify-between mb-2.5">
-                <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full ${
-                  a.tipe === 'bank'
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'bg-stone-100 text-stone-500'
-                }`}>
-                  {a.tipe === 'bank' ? 'Bank' : 'Tunai'}
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-stone-100 text-stone-500">
+                  Tunai
                 </span>
               </div>
               <p className="text-xs font-medium text-stone-400 mb-1 truncate">{a.nama}</p>

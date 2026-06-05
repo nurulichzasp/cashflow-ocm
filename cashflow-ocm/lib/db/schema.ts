@@ -131,6 +131,7 @@ export const pembelianDetail = sqliteTable('pembelian_detail', {
   subtotalJual: real('subtotal_jual').notNull(),
   keuntungan: real('keuntungan').notNull(),
   urutan: integer('urutan').notNull().default(0),
+  tanggalReplas: text('tanggal_replas'), // tanggal replas bongkar di PKS (opsional)
 })
 
 export const penjualan = sqliteTable('penjualan', {

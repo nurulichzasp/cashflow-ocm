@@ -11,17 +11,16 @@ import { FotoBuktiUploader } from '@/components/foto-bukti-uploader'
 import { createPembelian, updatePembelian, type KategoriPembelian, type DetailInput } from './actions'
 import { savePembelianFotos, replacePembelianFotos } from './foto-actions'
 import { formatRupiah, todayString } from '@/lib/format'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, CalendarDays } from 'lucide-react'
 
 type PeronOption = { id: string; nama: string; keuntunganPerKg: number }
 type AkunOption = { id: string; nama: string; tipe: string }
 
 interface DetailRow {
   noTid: string
-  nopol: string
-  supir: string
   tonase: string
   hargaLapangan: string
+  tanggalReplas: string
 }
 
 interface Props {
@@ -37,12 +36,12 @@ interface Props {
     sumberBayarId?: string
     catatan?: string
     fotoUrls?: string[]
-    details: Array<{ noTid?: string; nopol?: string; supir?: string; tonase: number; hargaLapangan: number }>
+    details: Array<{ noTid?: string; tonase: number; hargaLapangan: number; tanggalReplas?: string }>
   }
   onOpenChange?: (open: boolean) => void
 }
 
-const EMPTY_DETAIL: DetailRow = { noTid: '', nopol: '', supir: '', tonase: '', hargaLapangan: '' }
+const EMPTY_DETAIL: DetailRow = { noTid: '', tonase: '', hargaLapangan: '', tanggalReplas: '' }
 
 export function PembelianFormDialog({ children, peronOptions, akunOptions, initialData, onOpenChange }: Props) {
   const [open, setOpen] = useState(false)
@@ -70,10 +69,9 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, initi
         initialData.details.length > 0
           ? initialData.details.map((d) => ({
               noTid: d.noTid ?? '',
-              nopol: d.nopol ?? '',
-              supir: d.supir ?? '',
               tonase: String(d.tonase),
               hargaLapangan: String(d.hargaLapangan),
+              tanggalReplas: d.tanggalReplas ?? '',
             }))
           : [{ ...EMPTY_DETAIL }]
       )
@@ -95,7 +93,6 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, initi
     setDetails((prev) => prev.filter((_, i) => i !== idx))
   }
 
-  // Computed totals
   const parsedDetails = details.map((d) => ({
     tonase: parseFloat(d.tonase) || 0,
     hargaLapangan: parseFloat(d.hargaLapangan) || 0,
@@ -127,10 +124,9 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, initi
     try {
       const detailInputs: DetailInput[] = validDetails.map((d) => ({
         noTid: d.noTid || undefined,
-        nopol: d.nopol || undefined,
-        supir: d.supir || undefined,
         tonase: parseFloat(d.tonase),
         hargaLapangan: parseFloat(d.hargaLapangan),
+        tanggalReplas: d.tanggalReplas || undefined,
       }))
 
       const payload = {
@@ -168,15 +164,15 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, initi
   return (
     <Dialog open={open} onOpenChange={(v) => { setOpen(v); onOpenChange?.(v) }}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{initialData ? 'Edit Pembelian' : 'Tambah Tiket Pembelian'}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
-          {/* Baris 1: Tanggal, Kategori, Peron */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="space-y-1.5">
+          {/* Baris 1: Tanggal full-width mobile, lalu Kategori + Peron */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="col-span-2 sm:col-span-1 space-y-1.5">
               <Label>Tanggal *</Label>
               <Input type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} required />
             </div>
@@ -216,12 +212,14 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, initi
 
             <div className="rounded-lg border border-stone-200 overflow-hidden">
               {/* Header */}
-              <div className="grid grid-cols-[2fr_2fr_2fr_2fr_2fr_auto] gap-0 bg-stone-50 border-b border-stone-200 text-xs font-semibold uppercase text-stone-500 tracking-wide">
+              <div className="grid grid-cols-[1.5fr_2fr_2fr_2fr_auto] gap-0 bg-stone-50 border-b border-stone-200 text-xs font-semibold uppercase text-stone-500 tracking-wide">
                 <div className="px-3 py-2">No. TID</div>
-                <div className="px-3 py-2">Plat Truk</div>
-                <div className="px-3 py-2">Supir</div>
                 <div className="px-3 py-2">Tonase (kg) *</div>
                 <div className="px-3 py-2">Harga (Rp/kg) *</div>
+                <div className="px-3 py-2 flex items-center gap-1">
+                  <CalendarDays className="h-3 w-3" />
+                  Tgl. Replas
+                </div>
                 <div className="px-3 py-2 w-10" />
               </div>
 
@@ -232,21 +230,18 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, initi
                 const subtotal = ton * harga
                 return (
                   <div key={idx} className="border-b border-stone-100 last:border-b-0">
-                    <div className="grid grid-cols-[2fr_2fr_2fr_2fr_2fr_auto] gap-0 items-center">
+                    <div className="grid grid-cols-[1.5fr_2fr_2fr_2fr_auto] gap-0 items-center">
                       <div className="px-2 py-1.5">
                         <Input value={d.noTid} onChange={(e) => updateDetail(idx, 'noTid', e.target.value)} placeholder="GR0600…" className="h-8 text-sm" />
-                      </div>
-                      <div className="px-2 py-1.5">
-                        <Input value={d.nopol} onChange={(e) => updateDetail(idx, 'nopol', e.target.value)} placeholder="KB 1234" className="h-8 text-sm" />
-                      </div>
-                      <div className="px-2 py-1.5">
-                        <Input value={d.supir} onChange={(e) => updateDetail(idx, 'supir', e.target.value)} placeholder="Nama" className="h-8 text-sm" />
                       </div>
                       <div className="px-2 py-1.5">
                         <Input type="number" step="0.01" value={d.tonase} onChange={(e) => updateDetail(idx, 'tonase', e.target.value)} placeholder="0" className="h-8 text-sm" />
                       </div>
                       <div className="px-2 py-1.5">
                         <Input type="number" value={d.hargaLapangan} onChange={(e) => updateDetail(idx, 'hargaLapangan', e.target.value)} placeholder="0" className="h-8 text-sm" />
+                      </div>
+                      <div className="px-2 py-1.5">
+                        <Input type="date" value={d.tanggalReplas} onChange={(e) => updateDetail(idx, 'tanggalReplas', e.target.value)} className="h-8 text-sm text-stone-500" />
                       </div>
                       <div className="px-2 py-1.5 w-10 flex justify-center">
                         {details.length > 1 && (
@@ -256,7 +251,6 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, initi
                         )}
                       </div>
                     </div>
-                    {/* Subtotal row */}
                     {subtotal > 0 && (
                       <div className="px-3 pb-1.5 text-xs text-stone-500 flex gap-4">
                         <span>Subtotal: <span className="font-semibold text-stone-800">{formatRupiah(subtotal)}</span></span>
@@ -267,7 +261,6 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, initi
                 )
               })}
 
-              {/* Add row button */}
               <button
                 type="button"
                 onClick={addDetail}
@@ -278,7 +271,6 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, initi
               </button>
             </div>
 
-            {/* Summary */}
             {totalTonase > 0 && (
               <div className="rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 flex flex-wrap gap-6 text-sm">
                 <div>
