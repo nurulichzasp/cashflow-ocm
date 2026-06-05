@@ -184,7 +184,7 @@ export function PeronTable({ peronList, isOwner }: Props) {
                 <td className="px-4 py-3 text-right text-stone-700 num">
                   Rp {p.keuntunganPerKg.toLocaleString('id-ID')}/kg
                 </td>
-                <td className="px-4 py-3 text-right font-semibold text-orange-600 num">
+                <td className="px-4 py-3 text-right font-semibold text-stone-900 dark:text-stone-100 num">
                   {formatRupiah(p.dpAktif)}
                 </td>
                 <td className="px-4 py-3 text-center">
@@ -231,7 +231,7 @@ export function PeronTable({ peronList, isOwner }: Props) {
               </div>
               <div>
                 <p className="text-xs text-stone-400 mb-0.5">DP Aktif</p>
-                <p className="font-semibold text-orange-600 num">{formatRupiah(p.dpAktif)}</p>
+                <p className="font-semibold text-stone-900 dark:text-stone-100 num">{formatRupiah(p.dpAktif)}</p>
               </div>
             </div>
 

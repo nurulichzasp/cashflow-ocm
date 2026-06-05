@@ -126,13 +126,13 @@ export function PenjualanTable({ penjualanList, isOwner }: Props) {
                 <td className="px-4 py-3 text-right">
                   {item.totalBersih ? (
                     <div>
-                      <p className="font-semibold num text-[#2563EB] dark:text-[#60A5FA]">{formatRupiah(item.totalBersih)}</p>
+                      <p className="font-semibold num text-stone-900 dark:text-stone-100">{formatRupiah(item.totalBersih)}</p>
                       {item.totalNilai && item.totalNilai !== item.totalBersih && (
                         <p className="text-[11px] text-stone-400 num">Dibayar: {formatRupiah(item.totalNilai)}</p>
                       )}
                     </div>
                   ) : item.totalNilai ? (
-                    <span className="font-semibold num text-[#2563EB] dark:text-[#60A5FA]">{formatRupiah(item.totalNilai)}</span>
+                    <span className="font-semibold num text-stone-900 dark:text-stone-100">{formatRupiah(item.totalNilai)}</span>
                   ) : <span className="text-stone-400">—</span>}
                 </td>
                 <td className="px-4 py-3">
@@ -195,11 +195,11 @@ export function PenjualanTable({ penjualanList, isOwner }: Props) {
               />
             </div>
             {(item.totalBersih || item.totalNilai) && (
-              <div className="mb-3 rounded-lg bg-[#3B82F6]/[0.08] border border-[#3B82F6]/20 px-3 py-2">
+              <div className="mb-3 rounded-lg bg-stone-50 dark:bg-stone-900/40 border border-stone-100 dark:border-stone-800 px-3 py-2">
                 {item.totalBersih && item.totalBersih > 0 && (
                   <div>
-                    <p className="text-xs text-[#2563EB] dark:text-[#60A5FA] mb-0.5">Nilai Bersih (tanpa pajak)</p>
-                    <p className="text-base font-bold text-[#2563EB] dark:text-[#60A5FA] num">{formatRupiah(item.totalBersih)}</p>
+                    <p className="text-xs text-stone-500 dark:text-stone-400 mb-0.5">Nilai Bersih (tanpa pajak)</p>
+                    <p className="text-base font-bold text-stone-900 dark:text-stone-100 num">{formatRupiah(item.totalBersih)}</p>
                   </div>
                 )}
                 {item.totalNilai && item.totalNilai > 0 && item.totalNilai !== item.totalBersih && (

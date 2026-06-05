@@ -257,12 +257,12 @@ export default async function DashboardPage() {
       {/* Hero — Modal Berputar + breakdown + ringkasan */}
       <div className="grid gap-3 lg:grid-cols-3">
         {/* Modal berputar — kartu utama */}
-        <div className="lg:col-span-2 rounded-xl border border-orange-200/60 dark:border-[#D97757]/20 bg-orange-50/40 dark:bg-card p-5">
+        <div className="lg:col-span-2 rounded-xl border border-stone-100 dark:border-border bg-white dark:bg-card p-5">
           <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Total Modal Berputar</p>
-          <p className="text-3xl font-bold num tracking-tight text-orange-700 dark:text-[#D97757] mt-1.5">
+          <p className="text-3xl font-bold num tracking-tight text-stone-900 dark:text-stone-100 mt-1.5">
             {formatRupiah(metrics.totalModalBerputar)}
           </p>
-          <div className="grid grid-cols-3 gap-3 mt-5 pt-4 border-t border-orange-200/50 dark:border-border">
+          <div className="grid grid-cols-3 gap-3 mt-5 pt-4 border-t border-stone-100 dark:border-border">
             {modalBreakdown.map((b) => (
               <div key={b.label}>
                 <p className="text-[10px] uppercase tracking-wider text-stone-400 dark:text-[#6B7280] mb-1">{b.label}</p>
@@ -290,8 +290,8 @@ export default async function DashboardPage() {
         <div className="grid gap-3 sm:grid-cols-3">
           {/* Rek BRI CV OCM — utama */}
           {akunCvOcm && (
-            <div className="rounded-xl border border-orange-200/70 dark:border-[#D97757]/20 bg-orange-50/50 dark:bg-card dark:bg-none p-4">
-              <p className="text-[10px] font-semibold text-orange-500 dark:text-[#D97757] uppercase tracking-widest mb-2">Rekening Utama</p>
+            <div className="rounded-xl border border-stone-100 dark:border-border bg-white dark:bg-card p-4">
+              <p className="text-[10px] font-semibold text-stone-400 dark:text-[#6B7280] uppercase tracking-widest mb-2">Rekening Utama</p>
               <p className="text-[11px] text-stone-400 dark:text-[#6B7280] mb-1.5 truncate">{akunCvOcm.nama}</p>
               <p className={`text-xl font-bold num tracking-tight ${akunCvOcm.saldo >= 0 ? 'text-stone-900 dark:text-stone-100' : 'text-red-600 dark:text-red-400'}`}>
                 {formatRupiah(akunCvOcm.saldo)}

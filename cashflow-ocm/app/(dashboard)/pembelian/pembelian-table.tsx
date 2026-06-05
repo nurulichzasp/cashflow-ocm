@@ -318,7 +318,7 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
                       <button
                         type="button"
                         onClick={() => setExpandedFotoId(expandedFotoId === p.id ? null : p.id)}
-                        className="inline-flex items-center gap-1 text-xs text-orange-600 hover:text-orange-700 font-medium"
+                        className="inline-flex items-center gap-1 text-xs text-stone-600 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-300 font-medium"
                       >
                         <ImageIcon className="h-3.5 w-3.5" />
                         {p.fotos.length}
