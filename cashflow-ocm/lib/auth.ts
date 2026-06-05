@@ -44,6 +44,7 @@ export const auth = betterAuth({
       personalEmail: { type: 'string', required: false },
       phone: { type: 'string', required: false },
       address: { type: 'string', required: false },
+      permissions: { type: 'string', required: false },
     },
   },
   session: {

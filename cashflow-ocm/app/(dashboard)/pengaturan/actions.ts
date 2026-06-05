@@ -49,7 +49,7 @@ export async function updateProfile(data: {
 }
 
 // 2. Tambah pengguna baru (Admin / Owner / Lainnya)
-export async function addUser(data: { name: string; email: string; password: string; role: string }) {
+export async function addUser(data: { name: string; email: string; password: string; role: string; permissions?: string }) {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session || session.user.role !== 'owner') {
     throw new Error('Hanya Owner yang dapat menambahkan pengguna')
@@ -76,11 +76,12 @@ export async function addUser(data: { name: string; email: string; password: str
     throw new Error('Gagal membuat pengguna baru')
   }
 
-  // Update role user baru di database ke role yang diinginkan
+  // Update role & permissions user baru di database ke yang diinginkan
   await db
     .update(user)
     .set({
       role: data.role,
+      permissions: data.permissions || null,
       updatedAt: new Date(),
     })
     .where(eq(user.id, newUser.user.id))

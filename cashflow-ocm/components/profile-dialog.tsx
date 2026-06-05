@@ -12,17 +12,11 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Camera, Loader2, User, Mail, Shield, Phone, MapPin, Eye, Info } from 'lucide-react'
+import { Camera, Loader2, Eye, Info } from 'lucide-react'
 import { toast } from 'sonner'
 import { updateProfile } from '@/app/(dashboard)/pengaturan/actions'
 import { useRouter } from 'next/navigation'
 import { fotoUrl } from '@/lib/foto-url'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 
 interface ProfileDialogProps {
   user: {
@@ -33,7 +27,6 @@ interface ProfileDialogProps {
     role: string
     nickname?: string | null
     fullName?: string | null
-    companyEmail?: string | null
     personalEmail?: string | null
     phone?: string | null
     address?: string | null
@@ -77,11 +70,11 @@ async function compressImage(file: File): Promise<Blob> {
 export function ProfileDialog({ user, children }: ProfileDialogProps) {
   const [open, setOpen] = useState(false)
   const [viewPhotoOpen, setViewPhotoOpen] = useState(false)
+  const [showPhotoOptions, setShowPhotoOptions] = useState(false)
 
   // Fields state
   const [nickname, setNickname] = useState(user.nickname || '')
   const [fullName, setFullName] = useState(user.fullName || user.name || '')
-  const [companyEmail, setCompanyEmail] = useState(user.companyEmail || '')
   const [personalEmail, setPersonalEmail] = useState(user.personalEmail || '')
   const [phone, setPhone] = useState(user.phone || '')
   const [address, setAddress] = useState(user.address || '')
@@ -97,11 +90,11 @@ export function ProfileDialog({ user, children }: ProfileDialogProps) {
     if (open) {
       setNickname(user.nickname || '')
       setFullName(user.fullName || user.name || '')
-      setCompanyEmail(user.companyEmail || '')
       setPersonalEmail(user.personalEmail || '')
       setPhone(user.phone || '')
       setAddress(user.address || '')
       setImage(user.image || null)
+      setShowPhotoOptions(false)
     }
   }, [user, open])
 
@@ -142,6 +135,18 @@ export function ProfileDialog({ user, children }: ProfileDialogProps) {
       toast.error('Nama Panjang wajib diisi')
       return
     }
+    if (!phone.trim()) {
+      toast.error('No WA wajib diisi')
+      return
+    }
+    if (!personalEmail.trim()) {
+      toast.error('Email Pribadi wajib diisi')
+      return
+    }
+    if (!address.trim()) {
+      toast.error('Alamat wajib diisi')
+      return
+    }
 
     setSaving(true)
     try {
@@ -149,7 +154,6 @@ export function ProfileDialog({ user, children }: ProfileDialogProps) {
         name: fullName.trim(),
         fullName: fullName.trim(),
         nickname: nickname.trim(),
-        companyEmail: companyEmail.trim(),
         personalEmail: personalEmail.trim(),
         phone: phone.trim(),
         address: address.trim(),
@@ -180,36 +184,62 @@ export function ProfileDialog({ user, children }: ProfileDialogProps) {
             <DialogTitle className="text-lg font-bold tracking-tight">Akun Saya</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSave} className="space-y-5 py-1">
-            {/* Avatar Selection Options */}
-            <div className="flex flex-col items-center gap-2 mb-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger className="relative group cursor-pointer select-none rounded-full outline-none focus:ring-2 focus:ring-orange-500">
-                  <div className="h-20 w-20 rounded-full overflow-hidden border-2 border-stone-200 dark:border-stone-800 bg-stone-100 dark:bg-stone-900 flex items-center justify-center transition-all group-hover:opacity-85">
-                    {image ? (
-                      <img src={fotoUrl(image)} alt={displayName} className="h-full w-full object-cover" />
-                    ) : (
-                      <span className="text-2xl font-bold text-stone-500 dark:text-stone-400">{initials}</span>
+            
+            {/* Custom Avatar Trigger & Choices */}
+            <div className="relative flex flex-col items-center gap-2 mb-2">
+              <button
+                type="button"
+                onClick={() => setShowPhotoOptions(!showPhotoOptions)}
+                className="relative group cursor-pointer select-none rounded-full outline-none focus:ring-2 focus:ring-orange-500 border-none bg-transparent p-0"
+              >
+                <div className="h-20 w-20 rounded-full overflow-hidden border-2 border-stone-200 dark:border-stone-800 bg-stone-100 dark:bg-stone-900 flex items-center justify-center transition-all group-hover:opacity-85">
+                  {image ? (
+                    <img src={fotoUrl(image)} alt={displayName} className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="text-2xl font-bold text-stone-500 dark:text-stone-400">{initials}</span>
+                  )}
+                </div>
+                <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  {uploading ? (
+                    <Loader2 className="h-5 w-5 text-white animate-spin" />
+                  ) : (
+                    <Camera className="h-5 w-5 text-white" />
+                  )}
+                </div>
+              </button>
+
+              {/* Custom state-controlled floating menu */}
+              {showPhotoOptions && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowPhotoOptions(false)} />
+                  <div className="absolute top-22 z-50 bg-white dark:bg-[#28282B] border border-stone-200 dark:border-stone-800 rounded-lg shadow-lg py-1 w-36 overflow-hidden">
+                    {image && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setViewPhotoOpen(true)
+                          setShowPhotoOptions(false)
+                        }}
+                        className="w-full px-3 py-2 text-xs text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 text-left flex items-center gap-2 font-medium cursor-pointer border-none bg-transparent outline-none"
+                      >
+                        <Eye className="h-3.5 w-3.5 text-stone-400" />
+                        Lihat Foto
+                      </button>
                     )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        fileInputRef.current?.click()
+                        setShowPhotoOptions(false)
+                      }}
+                      className="w-full px-3 py-2 text-xs text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 text-left flex items-center gap-2 font-medium cursor-pointer border-none bg-transparent outline-none"
+                    >
+                      <Camera className="h-3.5 w-3.5 text-stone-400" />
+                      Ubah Foto
+                    </button>
                   </div>
-                  <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    {uploading ? (
-                      <Loader2 className="h-5 w-5 text-white animate-spin" />
-                    ) : (
-                      <Camera className="h-5 w-5 text-white" />
-                    )}
-                  </div>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" className="dark:bg-[#28282B]">
-                  <DropdownMenuItem onClick={() => setViewPhotoOpen(true)} disabled={!image} className="cursor-pointer">
-                    <Eye className="h-4 w-4 mr-2" />
-                    Lihat Foto
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => fileInputRef.current?.click()} className="cursor-pointer">
-                    <Camera className="h-4 w-4 mr-2" />
-                    Ubah Foto
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                </>
+              )}
 
               <input
                 type="file"
@@ -253,7 +283,7 @@ export function ProfileDialog({ user, children }: ProfileDialogProps) {
 
               <div className="space-y-1">
                 <Label htmlFor="phone" className="text-xs font-semibold text-stone-500">
-                  No WA (WhatsApp)
+                  No WA (WhatsApp) <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   id="phone"
@@ -261,40 +291,28 @@ export function ProfileDialog({ user, children }: ProfileDialogProps) {
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="Contoh: 08123456789"
                   disabled={saving || uploading}
+                  required
                 />
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="companyEmail" className="text-xs font-semibold text-stone-500">
-                  Email Perusahaan
-                </Label>
-                <Input
-                  id="companyEmail"
-                  type="email"
-                  value={companyEmail}
-                  onChange={(e) => setCompanyEmail(e.target.value)}
-                  placeholder="email@cvocm.com"
-                  disabled={saving || uploading}
-                />
-              </div>
-
-              <div className="space-y-1 sm:col-span-2">
                 <Label htmlFor="personalEmail" className="text-xs font-semibold text-stone-500">
-                  Email Pribadi
+                  Email Pribadi <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   id="personalEmail"
                   type="email"
                   value={personalEmail}
                   onChange={(e) => setPersonalEmail(e.target.value)}
-                  placeholder="email@gmail.com"
+                  placeholder="email@pribadi.com"
                   disabled={saving || uploading}
+                  required
                 />
               </div>
 
               <div className="space-y-1 sm:col-span-2">
                 <Label htmlFor="address" className="text-xs font-semibold text-stone-500">
-                  Alamat
+                  Alamat <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   id="address"
@@ -302,6 +320,7 @@ export function ProfileDialog({ user, children }: ProfileDialogProps) {
                   onChange={(e) => setAddress(e.target.value)}
                   placeholder="Alamat lengkap domisili"
                   disabled={saving || uploading}
+                  required
                 />
               </div>
             </div>

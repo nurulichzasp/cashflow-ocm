@@ -16,6 +16,7 @@ export const user = sqliteTable('user', {
   personalEmail: text('personal_email'),
   phone: text('phone'),
   address: text('address'),
+  permissions: text('permissions'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
 })

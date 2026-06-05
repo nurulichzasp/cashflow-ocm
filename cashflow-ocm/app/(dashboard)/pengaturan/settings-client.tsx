@@ -136,6 +136,30 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
   const [showPassword, setShowPassword] = useState(false)
   const [submittingUser, setSubmittingUser] = useState(false)
 
+  // Permissions state
+  const [accessPembelian, setAccessPembelian] = useState(true)
+  const [accessPenjualan, setAccessPenjualan] = useState(true)
+  const [accessKas, setAccessKas] = useState(true)
+  const [accessBiaya, setAccessBiaya] = useState(true)
+  const [accessDelete, setAccessDelete] = useState(false)
+
+  // Auto check/uncheck permissions depending on role selection
+  useEffect(() => {
+    if (newUserRole === 'owner') {
+      setAccessPembelian(true)
+      setAccessPenjualan(true)
+      setAccessKas(true)
+      setAccessBiaya(true)
+      setAccessDelete(true)
+    } else if (newUserRole === 'admin') {
+      setAccessPembelian(true)
+      setAccessPenjualan(true)
+      setAccessKas(true)
+      setAccessBiaya(true)
+      setAccessDelete(false)
+    }
+  }, [newUserRole])
+
   async function handleAddUser(e: React.FormEvent) {
     e.preventDefault()
     if (!newUserName.trim() || !newUserEmail.trim() || !newUserPassword.trim()) {
@@ -149,6 +173,14 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
       return
     }
 
+    const permissionsJSON = JSON.stringify({
+      pembelian: accessPembelian,
+      penjualan: accessPenjualan,
+      kas: accessKas,
+      biaya: accessBiaya,
+      delete: accessDelete,
+    })
+
     setSubmittingUser(true)
     try {
       await addUser({
@@ -156,6 +188,7 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
         email: newUserEmail,
         password: newUserPassword,
         role: finalRole,
+        permissions: permissionsJSON,
       })
       toast.success('Pengguna baru berhasil ditambahkan')
       setAddUserOpen(false)
@@ -165,6 +198,11 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
       setNewUserPassword('')
       setNewUserRole('admin')
       setCustomRoleVal('')
+      setAccessPembelian(true)
+      setAccessPenjualan(true)
+      setAccessKas(true)
+      setAccessBiaya(true)
+      setAccessDelete(false)
       router.refresh()
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Gagal menambahkan pengguna'
@@ -487,6 +525,63 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
                           />
                         </div>
                       )}
+
+                      <div className="space-y-2 border-t border-stone-100 dark:border-stone-800 pt-3 mt-3">
+                        <Label className="text-xs font-bold uppercase tracking-wider text-stone-500">
+                          Pilihan Hak Akses
+                        </Label>
+                        <div className="space-y-2.5 mt-1.5">
+                          <label className="flex items-center gap-2.5 text-sm text-stone-700 dark:text-stone-300 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={accessPembelian}
+                              onChange={(e) => setAccessPembelian(e.target.checked)}
+                              className="h-4 w-4 rounded border-stone-300 dark:border-stone-700 text-orange-600 focus:ring-orange-500 accent-orange-600 cursor-pointer"
+                            />
+                            <span>Akses Modul Pembelian (Tiket Sawit)</span>
+                          </label>
+
+                          <label className="flex items-center gap-2.5 text-sm text-stone-700 dark:text-stone-300 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={accessPenjualan}
+                              onChange={(e) => setAccessPenjualan(e.target.checked)}
+                              className="h-4 w-4 rounded border-stone-300 dark:border-stone-700 text-orange-600 focus:ring-orange-500 accent-orange-600 cursor-pointer"
+                            />
+                            <span>Akses Modul Penjualan (Invoice BGA)</span>
+                          </label>
+
+                          <label className="flex items-center gap-2.5 text-sm text-stone-700 dark:text-stone-300 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={accessKas}
+                              onChange={(e) => setAccessKas(e.target.checked)}
+                              className="h-4 w-4 rounded border-stone-300 dark:border-stone-700 text-orange-600 focus:ring-orange-500 accent-orange-600 cursor-pointer"
+                            />
+                            <span>Akses Modul Buku Kas (Mutasi Rekening)</span>
+                          </label>
+
+                          <label className="flex items-center gap-2.5 text-sm text-stone-700 dark:text-stone-300 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={accessBiaya}
+                              onChange={(e) => setAccessBiaya(e.target.checked)}
+                              className="h-4 w-4 rounded border-stone-300 dark:border-stone-700 text-orange-600 focus:ring-orange-500 accent-orange-600 cursor-pointer"
+                            />
+                            <span>Akses Modul Biaya Operasional</span>
+                          </label>
+
+                          <label className="flex items-center gap-2.5 text-sm text-stone-700 dark:text-stone-300 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={accessDelete}
+                              onChange={(e) => setAccessDelete(e.target.checked)}
+                              className="h-4 w-4 rounded border-stone-300 dark:border-stone-700 text-orange-600 focus:ring-orange-500 accent-orange-600 cursor-pointer"
+                            />
+                            <span className="text-red-500 dark:text-red-400 font-medium">Akses Hapus Transaksi (Hapus Data)</span>
+                          </label>
+                        </div>
+                      </div>
 
                       <DialogFooter className="pt-2">
                         <Button type="button" variant="outline" onClick={() => setAddUserOpen(false)} className="border-stone-200">

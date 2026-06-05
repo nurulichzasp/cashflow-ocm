@@ -59,7 +59,27 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
     router.refresh()
   }
 
-  const visibleMore = moreNav.filter((item) => !item.ownerOnly || isOwner)
+  let perms = { pembelian: true, penjualan: true, kas: true, biaya: true }
+  if (user?.permissions) {
+    try {
+      perms = JSON.parse(user.permissions)
+    } catch {}
+  }
+
+  const visiblePrimary = primaryNav.filter((item) => {
+    if (isOwner) return true
+    if (item.href === '/pembelian' && perms.pembelian === false) return false
+    if (item.href === '/penjualan' && perms.penjualan === false) return false
+    if (item.href === '/kas' && perms.kas === false) return false
+    return true
+  })
+
+  const visibleMore = moreNav.filter((item) => {
+    if (isOwner) return true
+    if (item.href === '/pengaturan') return false
+    if (item.href === '/biaya' && perms.biaya === false) return false
+    return true
+  })
 
   const displayName = user?.nickname || user?.name || 'Admin'
 
@@ -69,7 +89,7 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#1E1E1E]/98 backdrop-blur-sm border-t border-stone-200/80 dark:border-white/[0.06] flex items-stretch"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
-        {primaryNav.map((item) => {
+        {visiblePrimary.map((item) => {
           const active = isActive(item.href)
           return (
             <Link

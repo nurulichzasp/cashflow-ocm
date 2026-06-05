@@ -19,8 +19,9 @@ export default async function PengaturanPage() {
     id: u.id,
     name: u.name,
     email: u.email,
-    role: u.role as 'owner' | 'admin',
+    role: u.role,
     image: u.image || null,
+    permissions: u.permissions || null,
   }))
 
   return (

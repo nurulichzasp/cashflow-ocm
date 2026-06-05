@@ -85,7 +85,22 @@ export function Sidebar({ user, isOwner, onToggle }: { user?: any; isOwner?: boo
     router.refresh()
   }
 
-  const visibleNavItems = navItems.filter(() => true)
+  let perms = { pembelian: true, penjualan: true, kas: true, biaya: true }
+  if (user?.permissions) {
+    try {
+      perms = JSON.parse(user.permissions)
+    } catch {}
+  }
+
+  const visibleNavItems = navItems.filter((item) => {
+    if (isOwner) return true
+    if (item.href === '/pengaturan') return false
+    if (item.href === '/pembelian' && perms.pembelian === false) return false
+    if (item.href === '/penjualan' && perms.penjualan === false) return false
+    if (item.href === '/kas' && perms.kas === false) return false
+    if (item.href === '/biaya' && perms.biaya === false) return false
+    return true
+  })
 
   return (
     <aside className="flex h-full w-60 flex-col bg-[#1E1E1E] border-r border-white/[0.06]">
@@ -165,8 +180,20 @@ export function MobileSidebar({ user, isOwner }: { user?: any; isOwner?: boolean
     router.refresh()
   }
 
+  let perms = { pembelian: true, penjualan: true, kas: true, biaya: true }
+  if (user?.permissions) {
+    try {
+      perms = JSON.parse(user.permissions)
+    } catch {}
+  }
+
   const visibleNavItems = navItems.filter((item) => {
-    if (item.href === '/pengaturan') return isOwner
+    if (isOwner) return true
+    if (item.href === '/pengaturan') return false
+    if (item.href === '/pembelian' && perms.pembelian === false) return false
+    if (item.href === '/penjualan' && perms.penjualan === false) return false
+    if (item.href === '/kas' && perms.kas === false) return false
+    if (item.href === '/biaya' && perms.biaya === false) return false
     return true
   })
 
