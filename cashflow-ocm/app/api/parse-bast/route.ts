@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const pdfParse = require('pdf-parse/lib/pdf-parse')
+const pdfParse = require('pdf-parse')
 
 export async function POST(req: NextRequest) {
   const session = await auth.api.getSession({ headers: await headers() })

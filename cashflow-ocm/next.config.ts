@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
     '@better-auth/kysely-adapter',
     '@libsql/client',
     'drizzle-orm',
+    'pdf-parse',
   ],
   typescript: { ignoreBuildErrors: true },
   turbopack: {},
