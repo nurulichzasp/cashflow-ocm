@@ -151,6 +151,7 @@ function parseBgaRekap(rows: (string | number)[][]): {
     noInvoice: invoiceList.join('\n'),
     noBast: '',
     totalTonase: '',
+    totalBersih: String(Math.round(totTotal)),
     totalNilai: String(Math.round(totDibayar)),
     catatan: lines.join('\n'),
   }

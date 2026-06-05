@@ -21,6 +21,7 @@ export function PenjualanFormDialog({ children }: Props) {
   const [tanggal, setTanggal] = useState(todayString())
   const [noBast, setNoBast] = useState('')
   const [noInvoice, setNoInvoice] = useState('')
+  const [totalBersih, setTotalBersih] = useState('')
   const [totalNilai, setTotalNilai] = useState('')
   const [catatan, setCatatan] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
@@ -39,6 +40,7 @@ export function PenjualanFormDialog({ children }: Props) {
       if (data.tanggal) setTanggal(data.tanggal)
       if (data.noBast) setNoBast(data.noBast)
       if (data.noInvoice) setNoInvoice(data.noInvoice)
+      if (data.totalBersih) setTotalBersih(data.totalBersih)
       if (data.totalNilai) setTotalNilai(data.totalNilai)
       if (data.catatan) {
         setCatatan(data.catatan)
@@ -74,6 +76,7 @@ export function PenjualanFormDialog({ children }: Props) {
       formData.set('tanggal', tanggal)
       formData.set('noBast', noBast)
       formData.set('noInvoice', noInvoice)
+      formData.set('totalBersih', totalBersih)
       formData.set('totalNilai', totalNilai)
       formData.set('catatan', catatan)
       await createPenjualan(formData)
@@ -91,6 +94,7 @@ export function PenjualanFormDialog({ children }: Props) {
     setTanggal(todayString())
     setNoBast('')
     setNoInvoice('')
+    setTotalBersih('')
     setTotalNilai('')
     setCatatan('')
     setStatusBayar('belum')
@@ -169,19 +173,35 @@ export function PenjualanFormDialog({ children }: Props) {
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <Label>Total Dibayar BGA <span className="text-stone-400 font-normal">(Rp)</span></Label>
-            <Input
-              type="number"
-              value={totalNilai}
-              onChange={(e) => setTotalNilai(e.target.value)}
-              placeholder="0 — auto-isi dari upload"
-            />
-            {totalNilai && Number(totalNilai) > 0 && (
-              <p className="text-xs text-green-700 font-medium">
-                = Rp {Number(totalNilai).toLocaleString('id-ID')}
-              </p>
-            )}
+          {/* Nilai penjualan */}
+          <div className="rounded-lg border border-stone-200 bg-stone-50/60 p-3 space-y-3">
+            <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Nilai Penjualan</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-sm">Nilai Bersih <span className="text-stone-400 font-normal text-xs">(tanpa pajak)</span></Label>
+                <Input
+                  type="number"
+                  value={totalBersih}
+                  onChange={(e) => setTotalBersih(e.target.value)}
+                  placeholder="0"
+                />
+                {totalBersih && Number(totalBersih) > 0 && (
+                  <p className="text-xs font-semibold text-emerald-700">Rp {Number(totalBersih).toLocaleString('id-ID')}</p>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm">Total Dibayar BGA <span className="text-stone-400 font-normal text-xs">(+PPN−PPH)</span></Label>
+                <Input
+                  type="number"
+                  value={totalNilai}
+                  onChange={(e) => setTotalNilai(e.target.value)}
+                  placeholder="0"
+                />
+                {totalNilai && Number(totalNilai) > 0 && (
+                  <p className="text-xs text-stone-500">Rp {Number(totalNilai).toLocaleString('id-ID')}</p>
+                )}
+              </div>
+            </div>
           </div>
 
           <div className="space-y-1.5">

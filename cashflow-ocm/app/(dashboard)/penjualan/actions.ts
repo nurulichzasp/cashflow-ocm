@@ -26,21 +26,28 @@ const penjualanSchema = z.object({
   noInvoice: z.string().optional(),
   statusBayar: z.enum(['belum', 'lunas']).default('belum'),
   tanggalBayarBga: z.string().optional(),
+  totalBersih: z.coerce.number().optional(),
   totalNilai: z.coerce.number().optional(),
   catatan: z.string().optional(),
 })
 
+function parseRpInput(v: FormDataEntryValue | null): number | undefined {
+  if (!v) return undefined
+  const n = Number(String(v).replace(/\./g, '').replace(',', '.'))
+  return isNaN(n) || n === 0 ? undefined : n
+}
+
 export async function createPenjualan(formData: FormData) {
   const session = await requireSession()
 
-  const rawTotal = formData.get('totalNilai')
   const data = penjualanSchema.parse({
     tanggal: formData.get('tanggal'),
     noBast: formData.get('noBast') || undefined,
     noInvoice: formData.get('noInvoice') || undefined,
     statusBayar: formData.get('statusBayar'),
     tanggalBayarBga: formData.get('tanggalBayarBga') || undefined,
-    totalNilai: rawTotal ? Number(String(rawTotal).replace(/\./g, '').replace(',', '.')) : undefined,
+    totalBersih: parseRpInput(formData.get('totalBersih')),
+    totalNilai: parseRpInput(formData.get('totalNilai')),
     catatan: formData.get('catatan') || undefined,
   })
 

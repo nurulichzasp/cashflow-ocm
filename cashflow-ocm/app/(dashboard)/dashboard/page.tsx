@@ -43,11 +43,11 @@ async function getMetrics() {
         .innerJoin(peron, and(eq(modalPeron.peronId, peron.id), eq(peron.status, 'aktif')))
         .groupBy(modalPeron.jenis),
 
-      db.select({ total: sum(penjualan.totalNilai) })
+      db.select({ total: sum(penjualan.totalBersih) })
         .from(penjualan)
         .where(eq(penjualan.statusBayar, 'belum')),
 
-      db.select({ total: sum(penjualan.totalNilai) })
+      db.select({ total: sum(penjualan.totalBersih) })
         .from(penjualan)
         .where(eq(penjualan.statusBayar, 'lunas')),
 
@@ -95,7 +95,7 @@ async function getTodayStats() {
         eq(transaksiKas.kategori, 'bayar_peron'),
         eq(transaksiKas.arah, 'keluar'),
       )),
-    db.select({ total: sum(penjualan.totalNilai) })
+    db.select({ total: sum(penjualan.totalBersih) })
       .from(penjualan)
       .where(eq(penjualan.tanggal, today)),
     db.select({ total: sum(biayaOperasional.jumlah) })

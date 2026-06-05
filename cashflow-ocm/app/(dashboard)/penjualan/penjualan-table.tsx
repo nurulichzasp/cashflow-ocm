@@ -77,7 +77,7 @@ export function PenjualanTable({ penjualanList, isOwner }: Props) {
             <tr className="bg-stone-50 border-b border-stone-200">
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Tanggal</th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">No. Invoice</th>
-              <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Total Dibayar</th>
+              <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Nilai Bersih</th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Tgl Bayar BGA</th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Catatan</th>
@@ -91,9 +91,16 @@ export function PenjualanTable({ penjualanList, isOwner }: Props) {
                 <td className="px-4 py-3 font-medium text-stone-900 max-w-[200px]">
                   <div className="whitespace-pre-line leading-tight">{item.noInvoice || <span className="text-stone-400">—</span>}</div>
                 </td>
-                <td className="px-4 py-3 text-right font-semibold num">
-                  {item.totalNilai ? (
-                    <span className="text-stone-900">{formatRupiah(item.totalNilai)}</span>
+                <td className="px-4 py-3 text-right">
+                  {item.totalBersih ? (
+                    <div>
+                      <p className="font-semibold num text-stone-900">{formatRupiah(item.totalBersih)}</p>
+                      {item.totalNilai && item.totalNilai !== item.totalBersih && (
+                        <p className="text-[11px] text-stone-400 num">Dibayar: {formatRupiah(item.totalNilai)}</p>
+                      )}
+                    </div>
+                  ) : item.totalNilai ? (
+                    <span className="font-semibold num text-stone-900">{formatRupiah(item.totalNilai)}</span>
                   ) : <span className="text-stone-400">—</span>}
                 </td>
                 <td className="px-4 py-3"><StatusBadge status={item.statusBayar} /></td>
@@ -145,10 +152,17 @@ export function PenjualanTable({ penjualanList, isOwner }: Props) {
               </div>
               <StatusBadge status={item.statusBayar} />
             </div>
-            {item.totalNilai && item.totalNilai > 0 && (
-              <div className="mb-3 rounded-lg bg-green-50 border border-green-100 px-3 py-2">
-                <p className="text-xs text-green-600 mb-0.5">Total Dibayar BGA</p>
-                <p className="text-base font-bold text-green-700 num">{formatRupiah(item.totalNilai)}</p>
+            {(item.totalBersih || item.totalNilai) && (
+              <div className="mb-3 rounded-lg bg-emerald-50 border border-emerald-100 px-3 py-2">
+                {item.totalBersih && item.totalBersih > 0 && (
+                  <div>
+                    <p className="text-xs text-emerald-600 mb-0.5">Nilai Bersih (tanpa pajak)</p>
+                    <p className="text-base font-bold text-emerald-700 num">{formatRupiah(item.totalBersih)}</p>
+                  </div>
+                )}
+                {item.totalNilai && item.totalNilai > 0 && item.totalNilai !== item.totalBersih && (
+                  <p className="text-xs text-stone-400 num mt-1">Total Dibayar BGA: {formatRupiah(item.totalNilai)}</p>
+                )}
               </div>
             )}
             <div className="grid grid-cols-2 gap-3 text-sm">
