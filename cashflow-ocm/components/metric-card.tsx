@@ -15,15 +15,15 @@ export function MetricCard({ title, value, subtitle, icon, iconBg, highlight }: 
   return (
     <div
       className={cn(
-        'rounded-xl border p-5 transition-all duration-200',
-        'hover:shadow-sm hover:-translate-y-px',
+        'rounded-xl border p-4 transition-all duration-200',
+        'hover:shadow-md hover:-translate-y-0.5',
         highlight
-          ? 'bg-gradient-to-br from-orange-50 to-white border-orange-100 shadow-sm shadow-orange-100/50'
-          : 'bg-white border-stone-200/80'
+          ? 'bg-gradient-to-br from-orange-50 via-orange-50/50 to-white border-orange-200/60 shadow-sm shadow-orange-100/80'
+          : 'bg-white border-stone-100 hover:border-stone-200'
       )}
     >
-      <div className="flex items-start justify-between mb-3">
-        <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 leading-none">
+      <div className="flex items-start justify-between mb-3.5">
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 leading-none">
           {title}
         </p>
         {icon && (
@@ -41,14 +41,16 @@ export function MetricCard({ title, value, subtitle, icon, iconBg, highlight }: 
       <p
         className={cn(
           'font-bold tracking-tight num leading-none',
-          highlight ? 'text-lg sm:text-2xl text-stone-900' : 'text-base sm:text-xl text-stone-800'
+          highlight
+            ? 'text-xl sm:text-2xl text-orange-700'
+            : 'text-lg sm:text-xl text-stone-900'
         )}
       >
         {value}
       </p>
 
       {subtitle && (
-        <p className="text-xs text-stone-400 mt-2">{subtitle}</p>
+        <p className="text-[11px] text-stone-400 mt-2 leading-relaxed">{subtitle}</p>
       )}
     </div>
   )

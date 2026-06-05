@@ -88,13 +88,13 @@ export function Sidebar({ userName, isOwner }: { userName?: string; isOwner?: bo
   })
 
   return (
-    <aside className="flex h-full w-60 flex-col bg-stone-900 border-r border-stone-800/80">
+    <aside className="flex h-full w-60 flex-col bg-stone-900 border-r border-stone-800/60">
       {/* Brand */}
-      <div className="flex h-14 items-center border-b border-stone-800/80 px-4 gap-3 shrink-0">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-600 text-white text-[11px] font-bold shrink-0 shadow-sm shadow-orange-900/50">
+      <div className="flex h-14 items-center border-b border-stone-800/60 px-4 gap-3 shrink-0">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-600 text-white text-[11px] font-bold shrink-0 shadow-sm shadow-orange-900/60 ring-1 ring-orange-500/30">
           OCM
         </div>
-        <span className="font-semibold text-sm text-stone-100 truncate">CV OCM Cashflow</span>
+        <span className="font-semibold text-sm text-stone-100 truncate tracking-wide">CV OCM Cashflow</span>
       </div>
 
       {/* Nav */}
@@ -114,10 +114,10 @@ export function Sidebar({ userName, isOwner }: { userName?: string; isOwner?: bo
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-stone-800/80 p-3 space-y-1 shrink-0">
+      <div className="border-t border-stone-800/60 p-3 space-y-1 shrink-0">
         {userName && (
-          <div className="flex items-center gap-2.5 px-3 py-1.5 mb-1">
-            <div className="h-7 w-7 rounded-full bg-orange-600 flex items-center justify-center text-[11px] font-bold text-white shrink-0">
+          <div className="flex items-center gap-2.5 px-3 py-2 mb-0.5 rounded-lg bg-stone-800/40">
+            <div className="h-7 w-7 rounded-full bg-orange-600 flex items-center justify-center text-[11px] font-bold text-white shrink-0 ring-1 ring-orange-500/30">
               {getInitials(userName)}
             </div>
             <div className="flex-1 min-w-0">
@@ -128,7 +128,7 @@ export function Sidebar({ userName, isOwner }: { userName?: string; isOwner?: bo
         )}
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-stone-500 hover:text-red-400 hover:bg-stone-800/60 transition-colors duration-150 font-medium"
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-stone-500 hover:text-red-400 hover:bg-red-950/30 transition-colors duration-150 font-medium"
         >
           <LogOut className="h-4 w-4 shrink-0" />
           Keluar
