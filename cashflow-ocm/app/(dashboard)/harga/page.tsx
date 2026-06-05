@@ -42,7 +42,7 @@ export default async function HargaPage() {
           {tbsTerbaru && (
             <div className="rounded-xl border border-stone-200 bg-white p-4">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-stone-400 mb-2">TBS — Harga Terbaru</p>
-              <p className="text-2xl font-bold text-stone-900 num">
+              <p className="text-2xl font-bold text-orange-600 dark:text-[#D97757] num">
                 {formatRupiah(tbsTerbaru.hargaLapangan + tbsTerbaru.selisihJualBga)}<span className="text-sm font-normal text-stone-400 ml-1">/kg</span>
               </p>
               <p className="text-xs text-stone-400 mt-1.5">

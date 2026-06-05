@@ -307,7 +307,7 @@ export default async function DashboardPage() {
         <div className="grid gap-3 sm:grid-cols-3">
           {/* Rek BRI CV OCM — utama */}
           {akunCvOcm && (
-            <div className="rounded-xl border border-orange-200/80 dark:border-border bg-gradient-to-br from-orange-50/80 to-white dark:bg-card p-4">
+            <div className="rounded-xl border border-orange-200/70 dark:border-[#D97757]/20 bg-orange-50/50 dark:bg-card dark:bg-none p-4">
               <p className="text-[10px] font-semibold text-orange-500 dark:text-[#D97757] uppercase tracking-widest mb-2">Rekening Utama</p>
               <p className="text-[11px] text-stone-400 dark:text-[#6B7280] mb-1.5 truncate">{akunCvOcm.nama}</p>
               <p className={`text-xl font-bold num tracking-tight ${akunCvOcm.saldo >= 0 ? 'text-stone-900 dark:text-stone-100' : 'text-red-600 dark:text-red-400'}`}>

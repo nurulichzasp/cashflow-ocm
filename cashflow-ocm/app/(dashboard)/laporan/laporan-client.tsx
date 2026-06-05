@@ -89,12 +89,12 @@ function LabaRugiTab({ data, dari, sampai }: { data: LaporanData; dari: string; 
         <table className="w-full text-sm">
           <tbody>
             {[
-              { label: 'Pendapatan Penjualan (lunas)', value: totalPenjualan, cls: 'text-green-600' },
-              { label: 'HPP – Pembelian (lunas)', value: totalPembelian, cls: 'text-red-500' },
-              { label: 'Laba Kotor', value: labaKotor, cls: cn('font-semibold', labaKotor >= 0 ? '' : 'text-destructive'), bg: 'bg-muted/30', sep: true },
-              { label: 'Biaya Operasional', value: totalBiaya, cls: 'text-orange-500' },
-              { label: 'Laba Bersih', value: labaBersih, cls: cn('font-semibold', labaBersih >= 0 ? 'text-green-600' : 'text-destructive'), bg: 'bg-muted/30', sep: true },
-              { label: 'Estimasi Laba Pembelian', value: totalKeuntungan, cls: 'text-green-500 text-xs' },
+              { label: 'Pendapatan Penjualan (lunas)', value: totalPenjualan, cls: 'text-foreground' },
+              { label: 'HPP – Pembelian (lunas)', value: totalPembelian, cls: 'text-muted-foreground' },
+              { label: 'Laba Kotor', value: labaKotor, cls: 'font-semibold text-foreground', bg: 'bg-muted/30', sep: true },
+              { label: 'Biaya Operasional', value: totalBiaya, cls: 'text-muted-foreground' },
+              { label: 'Laba Bersih', value: labaBersih, cls: 'font-semibold text-foreground', bg: 'bg-muted/30', sep: true },
+              { label: 'Estimasi Laba Pembelian', value: totalKeuntungan, cls: 'text-[#D97757] font-semibold text-xs' },
             ].map((row, i) => (
               <tr key={i} className={cn('border-b last:border-0', row.sep ? 'border-t-2 border-t-border' : '', row.bg ?? '')}>
                 <td className={cn('px-4 py-3', row.cls)}>{row.label}</td>
@@ -318,7 +318,7 @@ export function LaporanClient({
             <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">Penjualan Lunas</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xl font-semibold text-green-600">{formatRupiah(data.labaRugi.totalPenjualan)}</p>
+            <p className="text-xl font-semibold text-foreground">{formatRupiah(data.labaRugi.totalPenjualan)}</p>
           </CardContent>
         </Card>
         <Card>
@@ -326,7 +326,7 @@ export function LaporanClient({
             <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">Pembelian Lunas</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xl font-semibold text-red-500">{formatRupiah(data.labaRugi.totalPembelian)}</p>
+            <p className="text-xl font-semibold text-foreground">{formatRupiah(data.labaRugi.totalPembelian)}</p>
           </CardContent>
         </Card>
         <Card>
@@ -334,7 +334,7 @@ export function LaporanClient({
             <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">Biaya Operasional</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xl font-semibold text-orange-500">{formatRupiah(data.labaRugi.totalBiaya)}</p>
+            <p className="text-xl font-semibold text-foreground">{formatRupiah(data.labaRugi.totalBiaya)}</p>
           </CardContent>
         </Card>
         <Card>
@@ -342,7 +342,7 @@ export function LaporanClient({
             <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">Estimasi Laba</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className={cn('text-xl font-semibold', data.labaRugi.totalKeuntungan >= 0 ? 'text-green-600' : 'text-destructive')}>
+            <p className="text-xl font-semibold text-[#D97757]">
               {formatRupiah(data.labaRugi.totalKeuntungan)}
             </p>
           </CardContent>

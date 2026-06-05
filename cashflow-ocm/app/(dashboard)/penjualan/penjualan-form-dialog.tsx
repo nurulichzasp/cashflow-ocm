@@ -98,7 +98,6 @@ export function PenjualanFormDialog({ children }: Props) {
 
   function resetForm() {
     setTanggal(todayString())
-    setNoBast('')
     setNoInvoice('')
     setTotalBersih('')
     setTotalNilai('')
@@ -116,18 +115,18 @@ export function PenjualanFormDialog({ children }: Props) {
         </DialogHeader>
 
         {/* Upload PDF */}
-        <div className="rounded-lg border border-dashed border-stone-300 bg-stone-50 p-4 space-y-2">
+        <div className="rounded-lg border border-dashed border-border bg-muted/40 p-4 space-y-2">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-orange-500" />
-            <p className="text-sm font-medium text-stone-700">Upload BAST / Invoice BGA</p>
+            <Sparkles className="h-4 w-4 text-[#D97757]" />
+            <p className="text-sm font-medium text-foreground">Upload BAST / Invoice BGA</p>
           </div>
-          <p className="text-xs text-stone-400">Upload PDF / Excel / Foto dari BGA — form terisi otomatis</p>
+          <p className="text-xs text-muted-foreground">Upload PDF / Excel / Foto dari BGA — form terisi otomatis</p>
           <div className="flex items-center gap-2">
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="gap-2 text-stone-700"
+              className="gap-2"
               disabled={parsing}
               onClick={() => fileRef.current?.click()}
             >
@@ -143,64 +142,64 @@ export function PenjualanFormDialog({ children }: Props) {
 
         {/* Preview Excel */}
         {preview && (
-          <div className="rounded-lg border border-blue-200 bg-blue-50/50 overflow-hidden">
+          <div className="rounded-lg border border-border bg-muted/30 overflow-hidden">
             <button
               type="button"
               onClick={() => setPreviewOpen(v => !v)}
-              className="w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium text-blue-800 hover:bg-blue-50"
+              className="w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted/50"
             >
               <span className="flex items-center gap-2">
                 <Table2 className="h-3.5 w-3.5" />
                 Preview Rekap BGA
-                <span className="text-xs text-blue-500 font-normal">({preview.rows.length} baris)</span>
+                <span className="text-xs text-muted-foreground font-normal">({preview.rows.length} baris)</span>
               </span>
               {previewOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </button>
             {previewOpen && (
-              <div className="border-t border-blue-200">
+              <div className="border-t border-border">
                 {/* Sheet names */}
-                <div className="px-3 py-2 flex flex-wrap gap-1.5 border-b border-blue-100">
-                  <span className="text-[10px] text-blue-400 self-center">Sheet:</span>
+                <div className="px-3 py-2 flex flex-wrap gap-1.5 border-b border-border">
+                  <span className="text-[10px] text-muted-foreground self-center">Sheet:</span>
                   {preview.sheetNames.map(s => (
-                    <span key={s} className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-600 font-medium">{s}</span>
+                    <span key={s} className="text-[10px] px-1.5 py-0.5 rounded bg-white/[0.06] text-muted-foreground font-medium">{s}</span>
                   ))}
                 </div>
                 {/* REKAP table */}
                 <div className="overflow-x-auto">
                   <table className="w-full text-[11px]">
                     <thead>
-                      <tr className="bg-blue-100/60">
-                        <th className="text-left px-2 py-1.5 font-semibold text-blue-700">No Invoice</th>
-                        <th className="text-left px-2 py-1.5 font-semibold text-blue-700">Ket</th>
-                        <th className="text-left px-2 py-1.5 font-semibold text-blue-700">Area</th>
-                        <th className="text-right px-2 py-1.5 font-semibold text-blue-700">Total</th>
-                        <th className="text-right px-2 py-1.5 font-semibold text-blue-700">DPP</th>
-                        <th className="text-right px-2 py-1.5 font-semibold text-blue-700">PPN</th>
-                        <th className="text-right px-2 py-1.5 font-semibold text-blue-700">PPH</th>
-                        <th className="text-right px-2 py-1.5 font-semibold text-blue-700">Dibayar</th>
+                      <tr className="bg-white/[0.04]">
+                        <th className="text-left px-2 py-1.5 font-semibold text-muted-foreground">No Invoice</th>
+                        <th className="text-left px-2 py-1.5 font-semibold text-muted-foreground">Ket</th>
+                        <th className="text-left px-2 py-1.5 font-semibold text-muted-foreground">Area</th>
+                        <th className="text-right px-2 py-1.5 font-semibold text-muted-foreground">Total</th>
+                        <th className="text-right px-2 py-1.5 font-semibold text-muted-foreground">DPP</th>
+                        <th className="text-right px-2 py-1.5 font-semibold text-muted-foreground">PPN</th>
+                        <th className="text-right px-2 py-1.5 font-semibold text-muted-foreground">PPH</th>
+                        <th className="text-right px-2 py-1.5 font-semibold text-muted-foreground">Dibayar</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-blue-100">
+                    <tbody className="divide-y divide-border">
                       {preview.rows.map((r, i) => (
-                        <tr key={i} className={r.dibayar > 0 ? 'bg-white' : 'bg-blue-50/30 opacity-60'}>
-                          <td className="px-2 py-1 text-blue-800 font-mono text-[10px] max-w-[140px] truncate">{r.noInv}</td>
-                          <td className="px-2 py-1 text-stone-600">{r.ket}</td>
-                          <td className="px-2 py-1 text-stone-500">{r.area}</td>
-                          <td className="px-2 py-1 text-right num text-stone-600">{r.total > 0 ? r.total.toLocaleString('id-ID') : '—'}</td>
-                          <td className="px-2 py-1 text-right num text-stone-600">{r.dpp > 0 ? Math.round(r.dpp).toLocaleString('id-ID') : '—'}</td>
-                          <td className="px-2 py-1 text-right num text-stone-600">{r.ppn > 0 ? Math.round(r.ppn).toLocaleString('id-ID') : '—'}</td>
-                          <td className="px-2 py-1 text-right num text-stone-600">{r.pph > 0 ? Math.round(r.pph).toLocaleString('id-ID') : '—'}</td>
-                          <td className="px-2 py-1 text-right num font-semibold text-emerald-700">{r.dibayar > 0 ? Math.round(r.dibayar).toLocaleString('id-ID') : '—'}</td>
+                        <tr key={i} className={r.dibayar > 0 ? '' : 'opacity-50'}>
+                          <td className="px-2 py-1 text-foreground font-mono text-[10px] max-w-[140px] truncate">{r.noInv}</td>
+                          <td className="px-2 py-1 text-muted-foreground">{r.ket}</td>
+                          <td className="px-2 py-1 text-muted-foreground">{r.area}</td>
+                          <td className="px-2 py-1 text-right num text-muted-foreground">{r.total > 0 ? r.total.toLocaleString('id-ID') : '—'}</td>
+                          <td className="px-2 py-1 text-right num text-muted-foreground">{r.dpp > 0 ? Math.round(r.dpp).toLocaleString('id-ID') : '—'}</td>
+                          <td className="px-2 py-1 text-right num text-muted-foreground">{r.ppn > 0 ? Math.round(r.ppn).toLocaleString('id-ID') : '—'}</td>
+                          <td className="px-2 py-1 text-right num text-muted-foreground">{r.pph > 0 ? Math.round(r.pph).toLocaleString('id-ID') : '—'}</td>
+                          <td className="px-2 py-1 text-right num font-semibold text-foreground">{r.dibayar > 0 ? Math.round(r.dibayar).toLocaleString('id-ID') : '—'}</td>
                         </tr>
                       ))}
                       {/* Total row */}
-                      <tr className="bg-blue-100/80 font-bold">
-                        <td className="px-2 py-1.5 text-blue-800" colSpan={3}>TOTAL</td>
-                        <td className="px-2 py-1.5 text-right num text-blue-800">{Math.round(preview.totalRow.total).toLocaleString('id-ID')}</td>
-                        <td className="px-2 py-1.5 text-right num text-blue-800">{Math.round(preview.totalRow.dpp).toLocaleString('id-ID')}</td>
-                        <td className="px-2 py-1.5 text-right num text-blue-800">{Math.round(preview.totalRow.ppn).toLocaleString('id-ID')}</td>
-                        <td className="px-2 py-1.5 text-right num text-blue-800">{Math.round(preview.totalRow.pph).toLocaleString('id-ID')}</td>
-                        <td className="px-2 py-1.5 text-right num text-emerald-700">{Math.round(preview.totalRow.dibayar).toLocaleString('id-ID')}</td>
+                      <tr className="bg-white/[0.05] font-bold">
+                        <td className="px-2 py-1.5 text-foreground" colSpan={3}>TOTAL</td>
+                        <td className="px-2 py-1.5 text-right num text-foreground">{Math.round(preview.totalRow.total).toLocaleString('id-ID')}</td>
+                        <td className="px-2 py-1.5 text-right num text-foreground">{Math.round(preview.totalRow.dpp).toLocaleString('id-ID')}</td>
+                        <td className="px-2 py-1.5 text-right num text-foreground">{Math.round(preview.totalRow.ppn).toLocaleString('id-ID')}</td>
+                        <td className="px-2 py-1.5 text-right num text-foreground">{Math.round(preview.totalRow.pph).toLocaleString('id-ID')}</td>
+                        <td className="px-2 py-1.5 text-right num text-foreground">{Math.round(preview.totalRow.dibayar).toLocaleString('id-ID')}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -245,11 +244,11 @@ export function PenjualanFormDialog({ children }: Props) {
           </div>
 
           {/* Nilai penjualan */}
-          <div className="rounded-lg border border-stone-200 bg-stone-50/60 p-3 space-y-3">
-            <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide">Nilai Penjualan</p>
+          <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Nilai Penjualan</p>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-sm">Nilai Bersih <span className="text-stone-400 font-normal text-xs">(tanpa pajak)</span></Label>
+                <Label className="text-sm">Nilai Bersih <span className="text-muted-foreground font-normal text-xs">(tanpa pajak)</span></Label>
                 <Input
                   type="number"
                   value={totalBersih}
@@ -257,11 +256,11 @@ export function PenjualanFormDialog({ children }: Props) {
                   placeholder="0"
                 />
                 {totalBersih && Number(totalBersih) > 0 && (
-                  <p className="text-xs font-semibold text-emerald-700">Rp {Number(totalBersih).toLocaleString('id-ID')}</p>
+                  <p className="text-xs font-semibold text-foreground">Rp {Number(totalBersih).toLocaleString('id-ID')}</p>
                 )}
               </div>
               <div className="space-y-1.5">
-                <Label className="text-sm">Total Dibayar BGA <span className="text-stone-400 font-normal text-xs">(+PPN−PPH)</span></Label>
+                <Label className="text-sm">Total Dibayar BGA <span className="text-muted-foreground font-normal text-xs">(+PPN−PPH)</span></Label>
                 <Input
                   type="number"
                   value={totalNilai}
@@ -269,7 +268,7 @@ export function PenjualanFormDialog({ children }: Props) {
                   placeholder="0"
                 />
                 {totalNilai && Number(totalNilai) > 0 && (
-                  <p className="text-xs text-stone-500">Rp {Number(totalNilai).toLocaleString('id-ID')}</p>
+                  <p className="text-xs text-muted-foreground">Rp {Number(totalNilai).toLocaleString('id-ID')}</p>
                 )}
               </div>
             </div>

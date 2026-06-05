@@ -53,9 +53,9 @@ export default async function BiayaPage() {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm border-l-4 border-l-orange-500">
+        <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">Total Pengeluaran</p>
-          <p className="text-2xl font-bold text-stone-900 num">{formatRupiah(totalBiaya)}</p>
+          <p className="text-2xl font-bold text-orange-600 dark:text-[#D97757] num">{formatRupiah(totalBiaya)}</p>
           <p className="text-xs text-stone-400 mt-1">{biayaList.length} entri tercatat</p>
         </div>
         {perKategori.slice(0, 2).map((k) => (

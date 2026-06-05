@@ -17,7 +17,7 @@ export function MetricCard({ title, value, subtitle, icon, iconBg, highlight }: 
       className={cn(
         'rounded-xl border p-4 transition-colors duration-200',
         highlight
-          ? 'bg-gradient-to-br from-orange-50 via-orange-50/50 to-white dark:bg-card border-orange-200/60 dark:border-border shadow-sm shadow-orange-100/60 dark:shadow-none'
+          ? 'bg-orange-50/60 dark:bg-none dark:bg-card border-orange-200/50 dark:border-[#D97757]/20 shadow-sm shadow-orange-100/40 dark:shadow-none'
           : 'bg-white dark:bg-card border-stone-100 dark:border-border'
       )}
     >
