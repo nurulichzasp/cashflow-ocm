@@ -35,6 +35,15 @@ function getDetails(p: PembelianRow) {
   }]
 }
 
+// ── Nomor Invoice otomatis ────────────────────────────────────────────────────
+// Format: NP/[YYYYMMDD]/[4-CHAR-ID]
+// Contoh: NP/20260605/A3F2
+function generateNoPembelian(tanggal: string, id: string): string {
+  const dateStr = tanggal.replace(/-/g, '')          // "2026-06-05" → "20260605"
+  const idSuffix = id.slice(-4).toUpperCase()         // last 4 chars of UUID
+  return `NP/${dateStr}/${idSuffix}`
+}
+
 function getThermalWidth(): number {
   if (typeof window === 'undefined') return 58
   const stored = localStorage.getItem('thermal_paper_width')
@@ -47,6 +56,7 @@ function buildNotaHTML(p: PembelianRow): string {
   const details = getDetails(p)
   const waktu = formatWaktu(p.createdAt)
   const sumberLabel = sumberBayarLabel(p.sumberBayar)
+  const noInvoice = generateNoPembelian(p.tanggal, p.id)
 
   const detailRows = details.map((d) => `
     <tr>
@@ -121,6 +131,7 @@ function buildNotaHTML(p: PembelianRow): string {
     <div class="brand">CV OCM</div>
     <div class="brand-sub">Supplier TBS &amp; BRDL &mdash; PKS PT. BGA</div>
     <div class="nota-title">Nota Pembelian</div>
+    <div style="font-size:9px;color:#78716c;margin-top:3px;letter-spacing:0.04em">${noInvoice}</div>
   </div>
 
   <div class="meta">
@@ -182,6 +193,7 @@ function buildThermalHTML(p: PembelianRow, paperWidthMm: number): string {
   const details = getDetails(p)
   const waktu = formatWaktu(p.createdAt)
   const sumberLabel = sumberBayarLabel(p.sumberBayar)
+  const noInvoice = generateNoPembelian(p.tanggal, p.id)
   const charWidth = paperWidthMm === 80 ? 42 : 32
   const divider = '-'.repeat(charWidth)
   const doubleDivider = '='.repeat(charWidth)
@@ -275,7 +287,8 @@ function buildThermalHTML(p: PembelianRow, paperWidthMm: number): string {
   <div class="center small">PKS PT. BGA</div>
   <div class="solid"></div>
   <div class="center bold" style="letter-spacing:1px">NOTA PEMBELIAN</div>
-  ${noTidDisplay ? `<div class="center" style="font-size:9pt;margin-top:3px;letter-spacing:0.5px">${noTidDisplay}</div>` : ''}
+  <div class="center" style="font-size:8.5pt;margin-top:2px;letter-spacing:0.5px;color:#444">${noInvoice}</div>
+  ${noTidDisplay ? `<div class="center" style="font-size:7.5pt;margin-top:1px;color:#666">TID: ${noTidDisplay}</div>` : ''}
   <div class="divider"></div>
 
   <div class="row"><span class="l">Tanggal</span><span class="r">${formatTanggal(p.tanggal)}</span></div>
