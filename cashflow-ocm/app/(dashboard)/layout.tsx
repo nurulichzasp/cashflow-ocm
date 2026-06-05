@@ -5,7 +5,7 @@ import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
 import { Sidebar } from '@/components/sidebar'
 import { BottomNav } from '@/components/bottom-nav'
-import { MobileHeader } from '@/components/mobile-header'
+import { ScrollShell } from '@/components/scroll-shell'
 
 export default async function DashboardLayout({
   children,
@@ -27,15 +27,8 @@ export default async function DashboardLayout({
         <Sidebar userName={session.user.name} isOwner={isOwner} />
       </div>
 
-      {/* Main content */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <MobileHeader />
-        <main className="flex-1 overflow-y-auto bg-stone-50 p-4 pb-24 md:pb-6 md:p-6">
-          <div className="app-container">
-            {children}
-          </div>
-        </main>
-      </div>
+      {/* Main content + mobile header */}
+      <ScrollShell>{children}</ScrollShell>
 
       {/* Bottom nav — mobile only */}
       <BottomNav isOwner={isOwner} userName={session.user.name} />
