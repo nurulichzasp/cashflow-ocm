@@ -198,7 +198,7 @@ export default async function DashboardPage() {
       label: 'Penjualan Hari Ini',
       value: formatRupiah(today.penjualanHariIni),
       icon: TrendingUp,
-      color: 'text-green-600 dark:text-[#F3F4F6]',
+      color: 'text-[#2563EB] dark:text-[#60A5FA]',
     },
     {
       label: 'Biaya Hari Ini',
@@ -275,7 +275,7 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-2 lg:grid-cols-1 gap-3">
           <div className="rounded-xl border border-stone-100 dark:border-border bg-white dark:bg-card p-4 flex flex-col justify-center">
             <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Penjualan Lunas</p>
-            <p className="text-xl font-bold num tracking-tight text-stone-900 dark:text-[#F3F4F6] mt-1">{formatRupiah(metrics.totalPenjualanLunas)}</p>
+            <p className="text-xl font-bold num tracking-tight text-[#2563EB] dark:text-[#60A5FA] mt-1">{formatRupiah(metrics.totalPenjualanLunas)}</p>
           </div>
           <div className="rounded-xl border border-stone-100 dark:border-border bg-white dark:bg-card p-4 flex flex-col justify-center">
             <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Estimasi Laba</p>
@@ -301,7 +301,7 @@ export default async function DashboardPage() {
           {/* Rekening BRI lainnya — digabung */}
           {akunLainnya.length > 0 && (
             <div className="rounded-xl border border-stone-100 dark:border-border bg-white dark:bg-card p-4">
-              <p className="text-[10px] font-semibold text-stone-400 dark:text-[#6B7280] uppercase tracking-widest mb-2">Bank</p>
+              <p className="text-[10px] font-semibold text-[#2563EB] dark:text-[#60A5FA] uppercase tracking-widest mb-2">Bank</p>
               <p className="text-[11px] text-stone-400 dark:text-[#6B7280] mb-1.5">Rek BRI Lainnya</p>
               <p className={`text-xl font-bold num tracking-tight ${saldoLainnya >= 0 ? 'text-stone-900 dark:text-stone-100' : 'text-red-600 dark:text-red-400'}`}>
                 {formatRupiah(saldoLainnya)}

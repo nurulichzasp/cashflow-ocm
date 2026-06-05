@@ -48,7 +48,7 @@ const kategoriBadge: Record<string, string> = {
 
 function StatusBayar({ status }: { status: 'lunas' | 'belum' }) {
   if (status === 'lunas') {
-    return <span className="inline-flex rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700 border border-green-200">Lunas</span>
+    return <span className="inline-flex rounded-full bg-[#3B82F6]/10 px-2.5 py-0.5 text-xs font-medium text-[#2563EB] dark:text-[#60A5FA] border border-[#3B82F6]/25">Lunas</span>
   }
   return <span className="inline-flex rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 border border-amber-200">Belum</span>
 }

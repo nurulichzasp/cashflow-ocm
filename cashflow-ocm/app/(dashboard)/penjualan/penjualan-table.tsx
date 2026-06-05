@@ -27,7 +27,7 @@ interface Props {
 function StatusBadge({ status, onToggle, loading }: { status: 'lunas' | 'belum'; onToggle?: () => void; loading?: boolean }) {
   if (status === 'lunas') {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700 border border-green-200">
+      <span className="inline-flex items-center gap-1 rounded-full bg-[#3B82F6]/10 px-2.5 py-0.5 text-xs font-medium text-[#2563EB] dark:text-[#60A5FA] border border-[#3B82F6]/25">
         <CheckCircle2 className="h-3 w-3" />
         Lunas
       </span>
@@ -195,11 +195,11 @@ export function PenjualanTable({ penjualanList, isOwner }: Props) {
               />
             </div>
             {(item.totalBersih || item.totalNilai) && (
-              <div className="mb-3 rounded-lg bg-emerald-50 border border-emerald-100 px-3 py-2">
+              <div className="mb-3 rounded-lg bg-[#3B82F6]/[0.08] border border-[#3B82F6]/20 px-3 py-2">
                 {item.totalBersih && item.totalBersih > 0 && (
                   <div>
-                    <p className="text-xs text-emerald-600 mb-0.5">Nilai Bersih (tanpa pajak)</p>
-                    <p className="text-base font-bold text-emerald-700 num">{formatRupiah(item.totalBersih)}</p>
+                    <p className="text-xs text-[#2563EB] dark:text-[#60A5FA] mb-0.5">Nilai Bersih (tanpa pajak)</p>
+                    <p className="text-base font-bold text-[#2563EB] dark:text-[#60A5FA] num">{formatRupiah(item.totalBersih)}</p>
                   </div>
                 )}
                 {item.totalNilai && item.totalNilai > 0 && item.totalNilai !== item.totalBersih && (
