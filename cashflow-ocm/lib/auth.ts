@@ -38,6 +38,12 @@ export const auth = betterAuth({
         defaultValue: 'admin',
         input: false,
       },
+      nickname: { type: 'string', required: false },
+      fullName: { type: 'string', required: false },
+      companyEmail: { type: 'string', required: false },
+      personalEmail: { type: 'string', required: false },
+      phone: { type: 'string', required: false },
+      address: { type: 'string', required: false },
     },
   },
   session: {

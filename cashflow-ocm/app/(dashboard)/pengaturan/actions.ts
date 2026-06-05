@@ -9,7 +9,16 @@ import { revalidatePath } from 'next/cache'
 import { hashPassword } from '@better-auth/utils/password'
 
 // 1. Update profil user yang sedang login
-export async function updateProfile(data: { name?: string; image?: string }) {
+export async function updateProfile(data: {
+  name?: string
+  image?: string
+  nickname?: string
+  fullName?: string
+  companyEmail?: string
+  personalEmail?: string
+  phone?: string
+  address?: string
+}) {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session) {
     throw new Error('Tidak terautentikasi')
@@ -20,6 +29,15 @@ export async function updateProfile(data: { name?: string; image?: string }) {
   }
   if (data.name) updateData.name = data.name
   if (data.image !== undefined) updateData.image = data.image
+  if (data.nickname !== undefined) updateData.nickname = data.nickname
+  if (data.fullName !== undefined) {
+    updateData.fullName = data.fullName
+    updateData.name = data.fullName
+  }
+  if (data.companyEmail !== undefined) updateData.companyEmail = data.companyEmail
+  if (data.personalEmail !== undefined) updateData.personalEmail = data.personalEmail
+  if (data.phone !== undefined) updateData.phone = data.phone
+  if (data.address !== undefined) updateData.address = data.address
 
   await db
     .update(user)
@@ -30,8 +48,8 @@ export async function updateProfile(data: { name?: string; image?: string }) {
   return { success: true }
 }
 
-// 2. Tambah pengguna baru (Admin / Owner)
-export async function addUser(data: { name: string; email: string; password: string; role: 'owner' | 'admin' }) {
+// 2. Tambah pengguna baru (Admin / Owner / Lainnya)
+export async function addUser(data: { name: string; email: string; password: string; role: string }) {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session || session.user.role !== 'owner') {
     throw new Error('Hanya Owner yang dapat menambahkan pengguna')

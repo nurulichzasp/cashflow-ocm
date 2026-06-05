@@ -12,11 +12,17 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Camera, Loader2, User, Mail, Shield } from 'lucide-react'
+import { Camera, Loader2, User, Mail, Shield, Phone, MapPin, Eye, Info } from 'lucide-react'
 import { toast } from 'sonner'
 import { updateProfile } from '@/app/(dashboard)/pengaturan/actions'
 import { useRouter } from 'next/navigation'
 import { fotoUrl } from '@/lib/foto-url'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 interface ProfileDialogProps {
   user: {
@@ -25,6 +31,12 @@ interface ProfileDialogProps {
     email: string
     image?: string | null
     role: string
+    nickname?: string | null
+    fullName?: string | null
+    companyEmail?: string | null
+    personalEmail?: string | null
+    phone?: string | null
+    address?: string | null
   }
   children: React.ReactNode
 }
@@ -35,7 +47,7 @@ async function compressImage(file: File): Promise<Blob> {
     const objectUrl = URL.createObjectURL(file)
     img.onload = () => {
       URL.revokeObjectURL(objectUrl)
-      const MAX = 400 // Profile pic doesn't need to be large
+      const MAX = 400
       let { width, height } = img
       if (width > MAX || height > MAX) {
         if (width > height) {
@@ -64,12 +76,34 @@ async function compressImage(file: File): Promise<Blob> {
 
 export function ProfileDialog({ user, children }: ProfileDialogProps) {
   const [open, setOpen] = useState(false)
-  const [name, setName] = useState(user.name)
+  const [viewPhotoOpen, setViewPhotoOpen] = useState(false)
+
+  // Fields state
+  const [nickname, setNickname] = useState(user.nickname || '')
+  const [fullName, setFullName] = useState(user.fullName || user.name || '')
+  const [companyEmail, setCompanyEmail] = useState(user.companyEmail || '')
+  const [personalEmail, setPersonalEmail] = useState(user.personalEmail || '')
+  const [phone, setPhone] = useState(user.phone || '')
+  const [address, setAddress] = useState(user.address || '')
+
   const [image, setImage] = useState<string | null>(user.image || null)
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
+
+  // Reset local state when dialog is opened/closed to sync with user changes
+  React.useEffect(() => {
+    if (open) {
+      setNickname(user.nickname || '')
+      setFullName(user.fullName || user.name || '')
+      setCompanyEmail(user.companyEmail || '')
+      setPersonalEmail(user.personalEmail || '')
+      setPhone(user.phone || '')
+      setAddress(user.address || '')
+      setImage(user.image || null)
+    }
+  }, [user, open])
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -104,15 +138,21 @@ export function ProfileDialog({ user, children }: ProfileDialogProps) {
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
-    if (!name.trim()) {
-      toast.error('Nama tidak boleh kosong')
+    if (!fullName.trim()) {
+      toast.error('Nama Panjang wajib diisi')
       return
     }
 
     setSaving(true)
     try {
       await updateProfile({
-        name: name.trim(),
+        name: fullName.trim(),
+        fullName: fullName.trim(),
+        nickname: nickname.trim(),
+        companyEmail: companyEmail.trim(),
+        personalEmail: personalEmail.trim(),
+        phone: phone.trim(),
+        address: address.trim(),
         image: image || '',
       })
       toast.success('Profil berhasil diperbarui')
@@ -126,109 +166,196 @@ export function ProfileDialog({ user, children }: ProfileDialogProps) {
     }
   }
 
-  const initials = name
-    ? name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
+  const displayName = nickname || fullName || user.name
+  const initials = displayName
+    ? displayName.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
     : 'U'
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[420px] dark:bg-card">
-        <DialogHeader>
-          <DialogTitle className="text-lg font-bold tracking-tight">Akun Saya</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSave} className="space-y-5 py-2">
-          {/* Avatar Upload */}
-          <div className="flex flex-col items-center gap-3">
-            <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-              <div className="h-20 w-20 rounded-full overflow-hidden border-2 border-stone-200 dark:border-stone-800 bg-stone-100 dark:bg-stone-900 flex items-center justify-center transition-all group-hover:opacity-85">
-                {image ? (
-                  <img src={fotoUrl(image)} alt={name} className="h-full w-full object-cover" />
-                ) : (
-                  <span className="text-2xl font-bold text-stone-500 dark:text-stone-400">{initials}</span>
-                )}
+    <>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>{children}</DialogTrigger>
+        <DialogContent className="sm:max-w-[500px] dark:bg-card">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold tracking-tight">Akun Saya</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSave} className="space-y-5 py-1">
+            {/* Avatar Selection Options */}
+            <div className="flex flex-col items-center gap-2 mb-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger className="relative group cursor-pointer select-none rounded-full outline-none focus:ring-2 focus:ring-orange-500">
+                  <div className="h-20 w-20 rounded-full overflow-hidden border-2 border-stone-200 dark:border-stone-800 bg-stone-100 dark:bg-stone-900 flex items-center justify-center transition-all group-hover:opacity-85">
+                    {image ? (
+                      <img src={fotoUrl(image)} alt={displayName} className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="text-2xl font-bold text-stone-500 dark:text-stone-400">{initials}</span>
+                    )}
+                  </div>
+                  <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    {uploading ? (
+                      <Loader2 className="h-5 w-5 text-white animate-spin" />
+                    ) : (
+                      <Camera className="h-5 w-5 text-white" />
+                    )}
+                  </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="dark:bg-[#28282B]">
+                  <DropdownMenuItem onClick={() => setViewPhotoOpen(true)} disabled={!image} className="cursor-pointer">
+                    <Eye className="h-4 w-4 mr-2" />
+                    Lihat Foto
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => fileInputRef.current?.click()} className="cursor-pointer">
+                    <Camera className="h-4 w-4 mr-2" />
+                    Ubah Foto
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept="image/*"
+                className="hidden"
+                disabled={uploading || saving}
+              />
+              <p className="text-[10px] text-muted-foreground">Klik foto untuk pilihan</p>
+            </div>
+
+            {/* Profile Fields Group */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label htmlFor="fullName" className="text-xs font-semibold text-stone-500">
+                  Nama Panjang <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="fullName"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Nama lengkap sesuai KTP"
+                  disabled={saving || uploading}
+                  required
+                />
               </div>
-              <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                {uploading ? (
-                  <Loader2 className="h-5 w-5 text-white animate-spin" />
-                ) : (
-                  <Camera className="h-5 w-5 text-white" />
-                )}
+
+              <div className="space-y-1">
+                <Label htmlFor="nickname" className="text-xs font-semibold text-stone-500">
+                  Nama Panggilan
+                </Label>
+                <Input
+                  id="nickname"
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                  placeholder="Nama panggilan"
+                  disabled={saving || uploading}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="phone" className="text-xs font-semibold text-stone-500">
+                  No WA (WhatsApp)
+                </Label>
+                <Input
+                  id="phone"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="Contoh: 08123456789"
+                  disabled={saving || uploading}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="companyEmail" className="text-xs font-semibold text-stone-500">
+                  Email Perusahaan
+                </Label>
+                <Input
+                  id="companyEmail"
+                  type="email"
+                  value={companyEmail}
+                  onChange={(e) => setCompanyEmail(e.target.value)}
+                  placeholder="email@cvocm.com"
+                  disabled={saving || uploading}
+                />
+              </div>
+
+              <div className="space-y-1 sm:col-span-2">
+                <Label htmlFor="personalEmail" className="text-xs font-semibold text-stone-500">
+                  Email Pribadi
+                </Label>
+                <Input
+                  id="personalEmail"
+                  type="email"
+                  value={personalEmail}
+                  onChange={(e) => setPersonalEmail(e.target.value)}
+                  placeholder="email@gmail.com"
+                  disabled={saving || uploading}
+                />
+              </div>
+
+              <div className="space-y-1 sm:col-span-2">
+                <Label htmlFor="address" className="text-xs font-semibold text-stone-500">
+                  Alamat
+                </Label>
+                <Input
+                  id="address"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="Alamat lengkap domisili"
+                  disabled={saving || uploading}
+                />
               </div>
             </div>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              accept="image/*"
-              className="hidden"
-              disabled={uploading || saving}
-            />
-            <p className="text-[11px] text-muted-foreground">Klik foto untuk mengganti</p>
-          </div>
 
-          {/* Form Fields */}
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="name" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                <User className="h-3.5 w-3.5" /> Nama Lengkap
-              </Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Nama Lengkap"
+            {/* System Info Block */}
+            <div className="rounded-lg bg-stone-50 dark:bg-stone-900/40 border border-stone-100 dark:border-stone-800/80 p-3 text-xs space-y-1 text-stone-500">
+              <p className="font-semibold text-stone-700 dark:text-stone-300 flex items-center gap-1">
+                <Info className="h-3.5 w-3.5 text-orange-600 shrink-0" /> Akun Sistem (Hanya-Baca)
+              </p>
+              <div className="grid grid-cols-2 gap-2 mt-1.5">
+                <div>
+                  <span className="text-[10px] uppercase font-semibold text-stone-400">Email Login</span>
+                  <p className="font-medium text-stone-700 dark:text-stone-300">{user.email}</p>
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase font-semibold text-stone-400">Peran Sistem</span>
+                  <p className="font-medium text-stone-700 dark:text-stone-300 capitalize">{user.role}</p>
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter className="pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
                 disabled={saving || uploading}
-                required
-              />
-            </div>
+                className="border-stone-200"
+              >
+                Batal
+              </Button>
+              <Button type="submit" disabled={saving || uploading} className="bg-orange-600 hover:bg-orange-700 text-white">
+                {saving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Menyimpan...
+                  </>
+                ) : (
+                  'Simpan Perubahan'
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                <Mail className="h-3.5 w-3.5" /> Email
-              </Label>
-              <Input
-                value={user.email}
-                disabled
-                className="bg-stone-50 dark:bg-stone-900/50 cursor-not-allowed text-stone-500"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                <Shield className="h-3.5 w-3.5" /> Peran
-              </Label>
-              <Input
-                value={user.role === 'owner' ? 'Owner (Pemilik)' : 'Admin'}
-                disabled
-                className="bg-stone-50 dark:bg-stone-900/50 cursor-not-allowed text-stone-500 capitalize"
-              />
-            </div>
-          </div>
-
-          <DialogFooter className="pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setOpen(false)}
-              disabled={saving || uploading}
-              className="border-stone-200"
-            >
-              Batal
-            </Button>
-            <Button type="submit" disabled={saving || uploading} className="bg-orange-600 hover:bg-orange-700 text-white">
-              {saving ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Menyimpan...
-                </>
-              ) : (
-                'Simpan Perubahan'
-              )}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+      {/* Lightbox / View Photo Dialog */}
+      <Dialog open={viewPhotoOpen} onOpenChange={setViewPhotoOpen}>
+        <DialogContent className="max-w-[420px] p-0 overflow-hidden bg-transparent border-none flex items-center justify-center shadow-none">
+          {image && (
+            <img src={fotoUrl(image)} alt={displayName} className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl" />
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

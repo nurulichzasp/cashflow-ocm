@@ -132,12 +132,12 @@ export function Sidebar({ user, isOwner, onToggle }: { user?: any; isOwner?: boo
                 <img src={fotoUrl(user.image)} className="h-7 w-7 rounded-full object-cover shrink-0" alt="Avatar" />
               ) : (
                 <div className="h-7 w-7 rounded-full bg-[#D97757] flex items-center justify-center text-[11px] font-bold text-white shrink-0">
-                  {getInitials(isOwner ? 'Owner' : user.name)}
+                  {getInitials(user.nickname || user.name)}
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-[#F3F4F6] truncate">{isOwner ? 'Owner' : 'Admin'}</p>
-                <p className="text-[11px] text-[#9CA3AF]">CV OCM</p>
+                <p className="text-xs font-semibold text-[#F3F4F6] truncate">{user.nickname || user.name}</p>
+                <p className="text-[11px] text-[#9CA3AF] capitalize">{user.role}</p>
               </div>
             </button>
           </ProfileDialog>
@@ -250,12 +250,12 @@ export function MobileSidebar({ user, isOwner }: { user?: any; isOwner?: boolean
                     <img src={fotoUrl(user.image)} className="h-7 w-7 rounded-full object-cover shrink-0" alt="Avatar" />
                   ) : (
                     <div className="h-7 w-7 rounded-full bg-[#D97757] flex items-center justify-center text-[11px] font-bold text-white shrink-0">
-                      {getInitials(isOwner ? 'Owner' : user.name)}
+                      {getInitials(user.nickname || user.name)}
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-stone-200 truncate">{isOwner ? 'Owner' : 'Admin'}</p>
-                    <p className="text-[11px] text-stone-500">CV OCM</p>
+                    <p className="text-xs font-semibold text-stone-200 truncate">{user.nickname || user.name}</p>
+                    <p className="text-[11px] text-stone-500 capitalize">{user.role}</p>
                   </div>
                 </button>
               </ProfileDialog>

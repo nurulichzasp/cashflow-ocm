@@ -61,7 +61,7 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
 
   const visibleMore = moreNav.filter((item) => !item.ownerOnly || isOwner)
 
-  const displayName = isOwner ? 'Owner' : (user?.name ?? 'Admin')
+  const displayName = user?.nickname || user?.name || 'Admin'
 
   return (
     <>
@@ -155,7 +155,7 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
                   )}
                   <div>
                     <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">{displayName}</p>
-                    <p className="text-xs text-stone-400 dark:text-stone-500">CV OCM</p>
+                    <p className="text-xs text-stone-400 dark:text-stone-500 capitalize">{user.role}</p>
                   </div>
                 </button>
               </ProfileDialog>

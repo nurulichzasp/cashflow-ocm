@@ -71,7 +71,7 @@ interface UserItem {
   id: string
   name: string
   email: string
-  role: 'owner' | 'admin'
+  role: string
   image: string | null
 }
 
@@ -131,7 +131,8 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
   const [newUserName, setNewUserName] = useState('')
   const [newUserEmail, setNewUserEmail] = useState('')
   const [newUserPassword, setNewUserPassword] = useState('')
-  const [newUserRole, setNewUserRole] = useState<'owner' | 'admin'>('admin')
+  const [newUserRole, setNewUserRole] = useState<string>('admin')
+  const [customRoleVal, setCustomRoleVal] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [submittingUser, setSubmittingUser] = useState(false)
 
@@ -142,13 +143,19 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
       return
     }
 
+    const finalRole = newUserRole === 'other' ? customRoleVal.trim() : newUserRole
+    if (!finalRole) {
+      toast.error('Peran sistem wajib diisi')
+      return
+    }
+
     setSubmittingUser(true)
     try {
       await addUser({
         name: newUserName,
         email: newUserEmail,
         password: newUserPassword,
-        role: newUserRole,
+        role: finalRole,
       })
       toast.success('Pengguna baru berhasil ditambahkan')
       setAddUserOpen(false)
@@ -157,6 +164,7 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
       setNewUserEmail('')
       setNewUserPassword('')
       setNewUserRole('admin')
+      setCustomRoleVal('')
       router.refresh()
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Gagal menambahkan pengguna'
@@ -203,7 +211,7 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
   }
 
   // Change user role state
-  async function handleChangeRole(id: string, currentRole: 'owner' | 'admin') {
+  async function handleChangeRole(id: string, currentRole: string) {
     const nextRole = currentRole === 'owner' ? 'admin' : 'owner'
     try {
       await updateUserRole(id, nextRole)
@@ -454,7 +462,7 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
                         <Label htmlFor="newUserRole">Peran Sistem</Label>
                         <Select
                           value={newUserRole}
-                          onValueChange={(val: 'owner' | 'admin') => setNewUserRole(val)}
+                          onValueChange={(val: string) => setNewUserRole(val)}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih Peran" />
@@ -462,9 +470,23 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
                           <SelectContent>
                             <SelectItem value="admin">Admin (Kasir/Petugas Timbangan)</SelectItem>
                             <SelectItem value="owner">Owner (Akses Penuh)</SelectItem>
+                            <SelectItem value="other">Lainnya (Isi Manual)</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
+
+                      {newUserRole === 'other' && (
+                        <div className="space-y-1.5">
+                          <Label htmlFor="customRoleVal">Masukkan Peran Kustom</Label>
+                          <Input
+                            id="customRoleVal"
+                            value={customRoleVal}
+                            onChange={(e) => setCustomRoleVal(e.target.value)}
+                            placeholder="Contoh: Keuangan, Operator"
+                            required
+                          />
+                        </div>
+                      )}
 
                       <DialogFooter className="pt-2">
                         <Button type="button" variant="outline" onClick={() => setAddUserOpen(false)} className="border-stone-200">
@@ -499,7 +521,9 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
                           <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold uppercase tracking-wider ${
                             user.role === 'owner'
                               ? 'bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50'
-                              : 'bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700'
+                              : user.role === 'admin'
+                              ? 'bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700'
+                              : 'bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-900/50'
                           }`}>
                             {user.role}
                           </span>
