@@ -179,7 +179,7 @@ export function PeronTable({ peronList, isOwner }: Props) {
             {sorted.map((p) => (
               <tr key={p.id} className="bg-white hover:bg-orange-50/30 transition-colors group">
                 <td className="px-4 py-3 text-stone-500 num">{p.kode ?? <span className="text-stone-300">—</span>}</td>
-                <td className="px-4 py-3 font-semibold text-stone-900">{p.nama}</td>
+                <td className="px-4 py-3 font-semibold text-stone-900 dark:text-stone-100">{p.nama}</td>
                 <td className="px-4 py-3 text-stone-500">{p.kontak ?? <span className="text-stone-300">—</span>}</td>
                 <td className="px-4 py-3 text-right text-stone-700 num">
                   Rp {p.keuntunganPerKg.toLocaleString('id-ID')}/kg
@@ -211,7 +211,7 @@ export function PeronTable({ peronList, isOwner }: Props) {
           <div key={p.id} className="rounded-xl border border-stone-200 bg-white shadow-sm p-4">
             <div className="flex items-start justify-between gap-2 mb-3">
               <div>
-                <p className="font-semibold text-stone-900">
+                <p className="font-semibold text-stone-900 dark:text-stone-100">
                   {p.kode != null && <span className="text-stone-400 text-xs mr-1">#{p.kode}</span>}
                   {p.nama}
                 </p>

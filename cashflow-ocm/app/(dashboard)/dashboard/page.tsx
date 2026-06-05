@@ -279,7 +279,7 @@ export default async function DashboardPage() {
           </div>
           <div className="rounded-xl border border-stone-100 dark:border-border bg-white dark:bg-card p-4 flex flex-col justify-center">
             <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Estimasi Laba</p>
-            <p className="text-xl font-bold num tracking-tight text-[#2563EB] dark:text-[#60A5FA] mt-1">{formatRupiah(metrics.estimasiLaba)}</p>
+            <p className="text-xl font-bold num tracking-tight text-stone-900 dark:text-stone-100 mt-1">{formatRupiah(metrics.estimasiLaba)}</p>
           </div>
         </div>
       </div>
