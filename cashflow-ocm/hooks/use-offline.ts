@@ -13,10 +13,12 @@ export function useOffline() {
     // Listen for online/offline events
     const handleOnline = () => {
       setIsOnline(true)
-      // Trigger sync when coming back online
+      // Trigger sync when coming back online (Background Sync API — belum ada
+      // di lib DOM bawaan, jadi akses lewat cast aman)
       if ('serviceWorker' in navigator && 'SyncManager' in window) {
         navigator.serviceWorker.ready.then((registration) => {
-          registration.sync.register('sync-offline-queue')
+          ;(registration as unknown as { sync: { register(tag: string): Promise<void> } })
+            .sync.register('sync-offline-queue')
         })
       }
     }

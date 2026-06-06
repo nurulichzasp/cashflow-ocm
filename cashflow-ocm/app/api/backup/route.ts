@@ -69,10 +69,13 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const url = new URL(request.url)
-    const token = url.searchParams.get('token')
+    // Token dibaca dari header Authorization: Bearer <token> agar tidak
+    // ikut tercatat di access-log/proxy seperti bila lewat query string.
+    const authHeader = request.headers.get('authorization') ?? ''
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null
 
-    // Verify backup token from environment
-    if (token !== process.env.BACKUP_TOKEN) {
+    // Verify backup token from environment (timing-safe-ish: tolak bila kosong)
+    if (!process.env.BACKUP_TOKEN || !token || token !== process.env.BACKUP_TOKEN) {
       return Response.json({ error: 'Invalid backup token' }, { status: 401 })
     }
 

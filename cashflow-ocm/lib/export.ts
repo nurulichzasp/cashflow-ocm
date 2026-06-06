@@ -49,7 +49,7 @@ export function exportPembelian(
     return true
   })
 
-  const exportData = filtered.map((p) => ({
+  const rows = filtered.map((p) => ({
     Tanggal: p.tanggal,
     Peron: p.peron?.nama || '-',
     Kategori: p.kategori,
@@ -61,14 +61,7 @@ export function exportPembelian(
     Catatan: p.catatan || '-',
   }))
 
-  exportData({
-    filename: `Laporan Pembelian ${new Date().toISOString().split('T')[0]}`,
-    sheetName: 'Pembelian',
-    format: 'excel',
-  })
-
-  // Actually export with correct function
-  const ws = XLSX.utils.json_to_sheet(exportData)
+  const ws = XLSX.utils.json_to_sheet(rows)
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, 'Pembelian')
   XLSX.writeFile(wb, `Laporan Pembelian ${new Date().toISOString().split('T')[0]}.xlsx`)

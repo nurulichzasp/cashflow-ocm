@@ -53,8 +53,8 @@ export async function notifyNewPembelian(data: {
   keuntungan: number
   statusBayarPeron: string
   catatan?: string
-  createdByName?: string
-  createdByRole?: string
+  createdByName?: string | null
+  createdByRole?: string | null
 }) {
   try {
     // Fetch peron name
@@ -95,8 +95,8 @@ export async function notifyNewPenjualan(data: {
   totalNilai?: number
   statusBayar: string
   catatan?: string
-  createdByName?: string
-  createdByRole?: string
+  createdByName?: string | null
+  createdByRole?: string | null
 }) {
   try {
     const userInfo = data.createdByName
@@ -129,8 +129,8 @@ export async function notifyNewBiaya(data: {
   kategori: string
   jumlah: number
   catatan?: string
-  createdByName?: string
-  createdByRole?: string
+  createdByName?: string | null
+  createdByRole?: string | null
 }) {
   try {
     const userInfo = data.createdByName

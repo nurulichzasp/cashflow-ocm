@@ -35,9 +35,11 @@ curl https://cashflow-ocm.vercel.app/api/backup?format=json \
    BACKUP_TOKEN=your-secure-random-token
    ```
 
-2. **Use any cron service** (e.g., EasyCron, cron-job.org, or AWS CloudWatch):
+2. **Use any cron service** (e.g., EasyCron, cron-job.org, or AWS CloudWatch).
+   Kirim token lewat header `Authorization` (jangan di query string):
    ```
-   POST https://cashflow-ocm.vercel.app/api/backup?token=your-secure-random-token
+   POST https://cashflow-ocm.vercel.app/api/backup
+   Header: Authorization: Bearer your-secure-random-token
    ```
 
 3. **Schedule** (recommended):

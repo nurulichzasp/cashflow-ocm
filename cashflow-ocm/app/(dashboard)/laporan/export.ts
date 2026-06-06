@@ -27,7 +27,7 @@ export async function exportPembelianData(startDate?: string, endDate?: string) 
     description: `Export pembelian data dari ${startDate || 'awal'} hingga ${endDate || 'akhir'}`,
   })
 
-  const filters = []
+  const filters: ReturnType<typeof gte>[] = []
   if (startDate) filters.push(gte(pembelian.tanggal, startDate))
   if (endDate) filters.push(lte(pembelian.tanggal, endDate))
 
@@ -65,7 +65,7 @@ export async function exportPenjualanData(startDate?: string, endDate?: string) 
     description: `Export penjualan data dari ${startDate || 'awal'} hingga ${endDate || 'akhir'}`,
   })
 
-  const filters = []
+  const filters: ReturnType<typeof gte>[] = []
   if (startDate) filters.push(gte(penjualan.tanggal, startDate))
   if (endDate) filters.push(lte(penjualan.tanggal, endDate))
 
@@ -101,7 +101,7 @@ export async function exportBiayaData(startDate?: string, endDate?: string) {
     description: `Export biaya operasional dari ${startDate || 'awal'} hingga ${endDate || 'akhir'}`,
   })
 
-  const filters = []
+  const filters: ReturnType<typeof gte>[] = []
   if (startDate) filters.push(gte(biayaOperasional.tanggal, startDate))
   if (endDate) filters.push(lte(biayaOperasional.tanggal, endDate))
 
