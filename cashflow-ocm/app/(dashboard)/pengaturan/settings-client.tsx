@@ -88,7 +88,7 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
   const isOwner = currentUser.role === 'owner'
 
   // Tab state
-  const [activeTab, setActiveTab] = useState<'company' | 'users' | 'printer' | 'theme' | 'backup'>('company')
+  const [activeTab, setActiveTab] = useState<'company' | 'users' | 'pajak' | 'printer' | 'theme' | 'backup'>('company')
 
   // Company profile state
   const [companyName, setCompanyName] = useState('CV OCM')
@@ -97,6 +97,12 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
   const [email, setEmail] = useState('admin@ocm.com')
   const [npwp, setNpwp] = useState('91.234.567.8-123.000')
   const [threshold, setThreshold] = useState('50000000') // Rp 50.000.000
+
+  // Tax config state
+  const [tarifPpn, setTarifPpn] = useState('11')
+  const [tarifPphBadan, setTarifPphBadan] = useState('22')
+  const [nominalPph25, setNominalPph25] = useState('698917')
+  const [modalAwal, setModalAwal] = useState('0')
 
   useEffect(() => {
     // Load from localStorage if exists
@@ -113,6 +119,15 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
     if (storedEmail) setEmail(storedEmail)
     if (storedNpwp) setNpwp(storedNpwp)
     if (storedThreshold) setThreshold(storedThreshold)
+
+    const storedTarifPpn = localStorage.getItem('tax_tarif_ppn')
+    const storedTarifPph = localStorage.getItem('tax_tarif_pph_badan')
+    const storedNominalPph25 = localStorage.getItem('tax_nominal_pph25')
+    const storedModalAwal = localStorage.getItem('neraca_modal_awal')
+    if (storedTarifPpn) setTarifPpn(storedTarifPpn)
+    if (storedTarifPph) setTarifPphBadan(storedTarifPph)
+    if (storedNominalPph25) setNominalPph25(storedNominalPph25)
+    if (storedModalAwal) setModalAwal(storedModalAwal)
   }, [])
 
   function handleSaveCompany(e: React.FormEvent) {
@@ -307,6 +322,18 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
         >
           <Users className="h-4 w-4" />
           Manajemen Pengguna
+        </button>
+
+        <button
+          onClick={() => setActiveTab('pajak')}
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors text-left outline-none cursor-pointer ${
+            activeTab === 'pajak'
+              ? 'bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400'
+              : 'text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-900/60'
+          }`}
+        >
+          <Wallet2 className="h-4 w-4" />
+          Pajak &amp; Neraca
         </button>
 
         <button
@@ -724,6 +751,56 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
                   </TableBody>
                 </Table>
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {activeTab === 'pajak' && (
+          <Card className="dark:bg-card">
+            <CardHeader>
+              <CardTitle className="text-lg font-bold tracking-tight">Konfigurasi Pajak &amp; Neraca</CardTitle>
+              <CardDescription>Atur tarif pajak dan modal awal untuk laporan keuangan.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  localStorage.setItem('tax_tarif_ppn', tarifPpn)
+                  localStorage.setItem('tax_tarif_pph_badan', tarifPphBadan)
+                  localStorage.setItem('tax_nominal_pph25', nominalPph25)
+                  localStorage.setItem('neraca_modal_awal', modalAwal)
+                  toast.success('Konfigurasi pajak berhasil disimpan')
+                }}
+                className="space-y-4"
+              >
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="tarifPpn">Tarif PPN (%)</Label>
+                    <Input id="tarifPpn" type="number" step="0.1" value={tarifPpn} onChange={(e) => setTarifPpn(e.target.value)} />
+                    <p className="text-[11px] text-muted-foreground">Saat ini 11%. Berlaku untuk setiap penjualan ke BGA.</p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="tarifPph">Tarif PPh Badan (%)</Label>
+                    <Input id="tarifPph" type="number" step="0.1" value={tarifPphBadan} onChange={(e) => setTarifPphBadan(e.target.value)} />
+                    <p className="text-[11px] text-muted-foreground">22% dari laba kena pajak (tahunan).</p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="nominalPph25">PPh Pasal 25 / bulan (Rp)</Label>
+                    <Input id="nominalPph25" type="number" value={nominalPph25} onChange={(e) => setNominalPph25(e.target.value)} />
+                    <p className="text-[11px] text-muted-foreground">Cicilan bulanan. Dibayar paling lambat tgl 15 bulan berikutnya.</p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="modalAwal">Modal Awal Neraca (Rp)</Label>
+                    <Input id="modalAwal" type="number" value={modalAwal} onChange={(e) => setModalAwal(e.target.value)} />
+                    <p className="text-[11px] text-muted-foreground">Modal awal pemilik untuk laporan neraca.</p>
+                  </div>
+                </div>
+                <div className="pt-3">
+                  <Button type="submit" className="bg-orange-600 hover:bg-orange-700 text-white cursor-pointer">
+                    Simpan Konfigurasi Pajak
+                  </Button>
+                </div>
+              </form>
             </CardContent>
           </Card>
         )}

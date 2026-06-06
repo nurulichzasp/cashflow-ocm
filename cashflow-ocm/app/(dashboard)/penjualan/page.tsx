@@ -47,26 +47,26 @@ export default async function PenjualanPage() {
         </PenjualanFormDialog>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="surface p-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">Total Transaksi</p>
-          <p className="text-2xl font-bold text-stone-900 dark:text-stone-100 num tabular-nums">{penjualanList.length}</p>
-          <p className="text-xs text-stone-400 mt-1">Penjualan tercatat</p>
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
+        <div className="surface press-card p-3 sm:p-4">
+          <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-[#6B7280] mb-1">Total Transaksi</p>
+          <p className="text-lg sm:text-2xl font-bold text-stone-900 dark:text-stone-100 num tabular-nums">{penjualanList.length}</p>
+          <p className="text-[10px] sm:text-xs text-stone-400 dark:text-[#6B7280] mt-0.5 sm:mt-1">Penjualan tercatat</p>
         </div>
-        <div className="surface p-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">Total Penjualan</p>
-          <p className="text-2xl font-bold text-stone-900 dark:text-stone-100 num">{formatRupiah(totalPenjualan)}</p>
-          <p className="text-xs text-stone-400 mt-1">Nilai bersih (tanpa pajak)</p>
+        <div className="surface press-card p-3 sm:p-4">
+          <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-[#6B7280] mb-1">Total Penjualan</p>
+          <p className="text-lg sm:text-2xl font-bold text-stone-900 dark:text-stone-100 num tabular-nums">{formatRupiah(totalPenjualan)}</p>
+          <p className="text-[10px] sm:text-xs text-stone-400 dark:text-[#6B7280] mt-0.5 sm:mt-1">Nilai bersih (tanpa pajak)</p>
         </div>
-        <div className="surface p-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">Total PPN</p>
-          <p className="text-2xl font-bold text-stone-900 dark:text-stone-100 num tabular-nums">{formatRupiah(totalPpn)}</p>
-          <p className="text-xs text-stone-400 mt-1">Selisih PPN−PPH</p>
+        <div className="surface press-card p-3 sm:p-4">
+          <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-[#6B7280] mb-1">Total PPN</p>
+          <p className="text-lg sm:text-2xl font-bold text-stone-900 dark:text-stone-100 num tabular-nums">{formatRupiah(totalPpn)}</p>
+          <p className="text-[10px] sm:text-xs text-stone-400 dark:text-[#6B7280] mt-0.5 sm:mt-1">Selisih PPN-PPH</p>
         </div>
-        <div className="surface p-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">Estimasi Laba</p>
-          <p className="text-2xl font-bold text-stone-900 dark:text-stone-100 num tabular-nums">{formatRupiah(estimasiLaba)}</p>
-          <p className="text-xs text-stone-400 mt-1">Margin dari pembelian</p>
+        <div className="surface press-card p-3 sm:p-4">
+          <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-[#6B7280] mb-1">Estimasi Laba</p>
+          <p className="text-lg sm:text-2xl font-bold text-stone-900 dark:text-stone-100 num tabular-nums">{formatRupiah(estimasiLaba)}</p>
+          <p className="text-[10px] sm:text-xs text-stone-400 dark:text-[#6B7280] mt-0.5 sm:mt-1">Margin dari pembelian</p>
         </div>
       </div>
 

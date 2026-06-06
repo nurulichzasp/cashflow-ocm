@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { FotoBuktiUploader } from '@/components/foto-bukti-uploader'
 import { Textarea } from '@/components/ui/textarea'
-import { createPembelian, updatePembelian, type KategoriPembelian, type DetailInput } from './actions'
+import { createPembelian, updatePembelian, getLatestHargaAcuan, type KategoriPembelian, type DetailInput } from './actions'
 import { savePembelianFotos, replacePembelianFotos } from './foto-actions'
 import { formatRupiah, todayString } from '@/lib/format'
 import { Plus, Trash2, CalendarDays } from 'lucide-react'
@@ -85,7 +85,33 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
   const selectedPeron = peronOptions.find((p) => p.id === peronId)
   const keuntunganPerKg = selectedPeron?.keuntunganPerKg ?? 0
 
+  const [hargaAcuanData, setHargaAcuanData] = useState<{ hargaLapangan: number; selisihJualBga: number; tanggalBerlaku: string } | null>(null)
+  const [hargaLoading, setHargaLoading] = useState(false)
+  const [hargaOverride, setHargaOverride] = useState(false)
+
+  const derivedProduk: 'TBS' | 'BRDL' = kategori === 'OCM BRDL' ? 'BRDL' : 'TBS'
+  const kelebihan = hargaAcuanData ? hargaAcuanData.selisihJualBga - keuntunganPerKg : 0
+  const autoHarga = hargaAcuanData ? hargaAcuanData.hargaLapangan + kelebihan : 0
+
+  useEffect(() => {
+    if (!open || initialData) return
+    let cancelled = false
+    setHargaLoading(true)
+    getLatestHargaAcuan(derivedProduk, tanggal).then((result) => {
+      if (cancelled) return
+      setHargaAcuanData(result ? { hargaLapangan: result.hargaLapangan, selisihJualBga: result.selisihJualBga, tanggalBerlaku: result.tanggalBerlaku } : null)
+      setHargaLoading(false)
+    })
+    return () => { cancelled = true }
+  }, [open, derivedProduk, tanggal, initialData])
+
+  useEffect(() => {
+    if (!open || initialData || hargaOverride || !autoHarga) return
+    setDetails((prev) => prev.map((d) => d.hargaLapangan === '' || !hargaOverride ? { ...d, hargaLapangan: String(autoHarga) } : d))
+  }, [autoHarga, open, initialData, hargaOverride])
+
   function updateDetail(idx: number, field: keyof DetailRow, value: string) {
+    if (field === 'hargaLapangan') setHargaOverride(true)
     setDetails((prev) => prev.map((d, i) => i === idx ? { ...d, [field]: value } : d))
   }
 
@@ -204,6 +230,29 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
               </Select>
             </div>
           </div>
+
+          {/* Preview Harga Otomatis */}
+          {!initialData && hargaAcuanData && (
+            <div className="rounded-lg border border-stone-200 dark:border-border bg-stone-50 dark:bg-white/[0.03] px-4 py-3 text-sm">
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-[#6B7280]">Harga Otomatis ({derivedProduk})</p>
+                <button type="button" onClick={() => setHargaOverride(!hargaOverride)} className="text-xs text-orange-600 hover:underline">
+                  {hargaOverride ? 'Pakai otomatis' : 'Override manual'}
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-600 dark:text-stone-300">
+                <span>Acuan: <strong className="num">Rp {hargaAcuanData.hargaLapangan.toLocaleString('id-ID')}</strong>/kg</span>
+                <span>Kelebihan: <strong className="num">Rp {kelebihan.toLocaleString('id-ID')}</strong></span>
+                <span className="text-stone-900 dark:text-stone-100 font-semibold">Harga Beli: <strong className="num">Rp {autoHarga.toLocaleString('id-ID')}</strong>/kg</span>
+              </div>
+              <p className="text-[10px] text-stone-400 mt-1">Berlaku sejak {hargaAcuanData.tanggalBerlaku} · Untung CV: Rp {keuntunganPerKg}/kg</p>
+            </div>
+          )}
+          {!initialData && !hargaAcuanData && !hargaLoading && (
+            <div className="rounded-lg border border-amber-200 dark:border-amber-900/30 bg-amber-50 dark:bg-amber-950/10 px-4 py-3 text-xs text-amber-700 dark:text-amber-400">
+              Harga acuan belum tersedia untuk {derivedProduk}. Tambah dulu di Harga Acuan, atau isi manual.
+            </div>
+          )}
 
           {/* Tabel Detail */}
           <div className="space-y-2">

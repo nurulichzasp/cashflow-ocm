@@ -6,8 +6,9 @@ import { db } from '@/lib/db'
 import {
   transaksiKas, biayaOperasional, penjualan,
   pembelian, peron, modalPeron, akunKas,
+  ppnBulanan, pphBulanan,
 } from '@/lib/db/schema'
-import { eq, sum, and, gte, lte, lt, asc } from 'drizzle-orm'
+import { eq, sum, and, gte, lte, lt, asc, like } from 'drizzle-orm'
 
 async function requireSession() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -120,5 +121,135 @@ export async function getLaporanData(dari: string, sampai: string) {
     kasTransaksi: kasTransaksiTunai,
     briTransaksi: kasTransaksiBank,
     akunSaldoAwal: saldoAwalRows,
+  }
+}
+
+export async function getPajakData(tahun: string) {
+  await requireSession()
+
+  const [ppnRows, pphRows, penjualanRows] = await Promise.all([
+    db.select().from(ppnBulanan).where(like(ppnBulanan.bulan, `${tahun}-%`)).orderBy(asc(ppnBulanan.bulan)),
+    db.select().from(pphBulanan).where(like(pphBulanan.bulan, `${tahun}-%`)).orderBy(asc(pphBulanan.bulan)),
+    db.query.penjualan.findMany({
+      where: (t, { and, gte, lte, eq }) => and(
+        gte(t.tanggal, `${tahun}-01-01`),
+        lte(t.tanggal, `${tahun}-12-31`),
+        eq(t.statusBayar, 'lunas'),
+      ),
+    }),
+  ])
+
+  const ppnPerBulan: Record<string, { totalPenjualan: number; ppn: number; status: 'belum' | 'sudah'; tanggalSetor: string | null }> = {}
+  for (let m = 1; m <= 12; m++) {
+    const bulan = `${tahun}-${String(m).padStart(2, '0')}`
+    const penjualanBulan = penjualanRows.filter(p => p.tanggal.startsWith(bulan))
+    const totalPenjualan = penjualanBulan.reduce((s, p) => s + (p.totalBersih ?? 0), 0)
+    const ppnRecord = ppnRows.find(r => r.bulan === bulan)
+    ppnPerBulan[bulan] = {
+      totalPenjualan,
+      ppn: Math.round(totalPenjualan * 0.11),
+      status: ppnRecord?.statusSetor ?? 'belum',
+      tanggalSetor: ppnRecord?.tanggalSetor ?? null,
+    }
+  }
+
+  const pphPerBulan: Record<string, { nominal: number; status: 'belum' | 'sudah'; tanggalBayar: string | null }> = {}
+  for (let m = 1; m <= 12; m++) {
+    const bulan = `${tahun}-${String(m).padStart(2, '0')}`
+    const pphRecord = pphRows.find(r => r.bulan === bulan)
+    pphPerBulan[bulan] = {
+      nominal: pphRecord?.nominal ?? 698917,
+      status: pphRecord?.statusBayar ?? 'belum',
+      tanggalBayar: pphRecord?.tanggalBayar ?? null,
+    }
+  }
+
+  return { ppnPerBulan, pphPerBulan }
+}
+
+export async function getLabaRugiTahunan(tahun: string) {
+  await requireSession()
+
+  const dari = `${tahun}-01-01`
+  const sampai = `${tahun}-12-31`
+
+  const [penjualanTotal, pembelianTotal, biayaTotal, pphRows] = await Promise.all([
+    db.select({ total: sum(penjualan.totalBersih) })
+      .from(penjualan)
+      .where(and(eq(penjualan.statusBayar, 'lunas'), gte(penjualan.tanggal, dari), lte(penjualan.tanggal, sampai))),
+    db.select({ total: sum(pembelian.totalBeli) })
+      .from(pembelian)
+      .where(and(gte(pembelian.tanggal, dari), lte(pembelian.tanggal, sampai))),
+    db.select({ total: sum(biayaOperasional.jumlah) })
+      .from(biayaOperasional)
+      .where(and(gte(biayaOperasional.tanggal, dari), lte(biayaOperasional.tanggal, sampai))),
+    db.select().from(pphBulanan).where(like(pphBulanan.bulan, `${tahun}-%`)),
+  ])
+
+  const totalPenjualan = Number(penjualanTotal[0]?.total ?? 0)
+  const totalPembelian = Number(pembelianTotal[0]?.total ?? 0)
+  const totalBiaya = Number(biayaTotal[0]?.total ?? 0)
+  const labaKotor = totalPenjualan - totalPembelian
+  const labaOperasional = labaKotor - totalBiaya
+  const pphBadan = Math.round(labaOperasional * 0.22)
+  const labaBersih = labaOperasional - pphBadan
+  const totalPph25Dibayar = pphRows.filter(r => r.statusBayar === 'sudah').reduce((s, r) => s + r.nominal, 0)
+  const pphKurangBayar = pphBadan - totalPph25Dibayar
+
+  return {
+    totalPenjualan, totalPembelian, labaKotor, totalBiaya,
+    labaOperasional, pphBadan, labaBersih, totalPph25Dibayar, pphKurangBayar,
+  }
+}
+
+export async function getNeracaData() {
+  await requireSession()
+
+  const [allAkun, allTransaksi, piutangRows, dpRows, ppnRows, pphRows, pembelianTotal, penjualanTotal, biayaTotal] = await Promise.all([
+    db.select().from(akunKas).orderBy(akunKas.urutan),
+    db.select({ akunId: transaksiKas.akunId, arah: transaksiKas.arah, total: sum(transaksiKas.jumlah) })
+      .from(transaksiKas).groupBy(transaksiKas.akunId, transaksiKas.arah),
+    db.select({ total: sum(penjualan.totalBersih) }).from(penjualan).where(eq(penjualan.statusBayar, 'belum')),
+    db.select({ jenis: modalPeron.jenis, total: sum(modalPeron.jumlah) })
+      .from(modalPeron)
+      .innerJoin(peron, and(eq(modalPeron.peronId, peron.id), eq(peron.status, 'aktif')))
+      .groupBy(modalPeron.jenis),
+    db.select().from(ppnBulanan).where(eq(ppnBulanan.statusSetor, 'belum')),
+    db.select().from(pphBulanan).where(eq(pphBulanan.statusBayar, 'belum')),
+    db.select({ total: sum(pembelian.totalBeli) }).from(pembelian),
+    db.select({ total: sum(penjualan.totalBersih) }).from(penjualan).where(eq(penjualan.statusBayar, 'lunas')),
+    db.select({ total: sum(biayaOperasional.jumlah) }).from(biayaOperasional),
+  ])
+
+  const mutasiPerAkun: Record<string, number> = {}
+  for (const r of allTransaksi) {
+    mutasiPerAkun[r.akunId] = (mutasiPerAkun[r.akunId] ?? 0) + (r.arah === 'masuk' ? Number(r.total ?? 0) : -Number(r.total ?? 0))
+  }
+  const totalKasBank = allAkun.reduce((s, a) => s + a.saldoAwal + (mutasiPerAkun[a.id] ?? 0), 0)
+
+  const piutangBga = Number(piutangRows[0]?.total ?? 0)
+
+  const dpTambah = Number(dpRows.find(r => r.jenis === 'tambah')?.total ?? 0)
+  const dpKurang = Number(dpRows.find(r => r.jenis === 'kurang')?.total ?? 0)
+  const dpKembali = Number(dpRows.find(r => r.jenis === 'kembali')?.total ?? 0)
+  const dpPeron = dpTambah - dpKurang - dpKembali
+
+  const totalAset = totalKasBank + piutangBga + dpPeron
+
+  const hutangPpn = ppnRows.reduce((s, r) => s + r.totalPpn, 0)
+  const hutangPph = pphRows.reduce((s, r) => s + r.nominal, 0)
+  const totalKewajiban = hutangPpn + hutangPph
+
+  const totalPenjualanVal = Number(penjualanTotal[0]?.total ?? 0)
+  const totalPembelianVal = Number(pembelianTotal[0]?.total ?? 0)
+  const totalBiayaVal = Number(biayaTotal[0]?.total ?? 0)
+  const labaDitahan = totalPenjualanVal - totalPembelianVal - totalBiayaVal
+
+  return {
+    aset: { kasBank: totalKasBank, piutangBga, dpPeron, total: totalAset },
+    kewajiban: { hutangPpn, hutangPph, total: totalKewajiban },
+    ekuitas: { labaDitahan, total: labaDitahan },
+    balance: totalAset === totalKewajiban + labaDitahan,
+    selisih: totalAset - (totalKewajiban + labaDitahan),
   }
 }

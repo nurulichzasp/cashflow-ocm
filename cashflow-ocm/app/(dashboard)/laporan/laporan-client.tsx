@@ -1,18 +1,20 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import { getLaporanData } from './actions'
+import { useState, useEffect, useTransition } from 'react'
+import { getLaporanData, getPajakData, getLabaRugiTahunan, getNeracaData } from './actions'
 import { formatRupiah, formatTanggal } from '@/lib/format'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Download, FileSpreadsheet } from 'lucide-react'
+import { updatePpnStatus, updatePphStatus } from '../pengaturan/actions'
 import { cn } from '@/lib/utils'
 import type { TransaksiKas, AkunKas } from '@/lib/db/schema'
 
 type LaporanData = Awaited<ReturnType<typeof getLaporanData>>
-type TabKey = 'laba-rugi' | 'per-peron' | 'buku-kas' | 'mutasi-bank'
+type TabKey = 'laba-rugi' | 'per-peron' | 'buku-kas' | 'mutasi-bank' | 'pajak' | 'tahunan' | 'neraca'
 type KasRow = TransaksiKas & { akun: AkunKas | null }
 
 const kategoriLabels: Record<TransaksiKas['kategori'], string> = {
@@ -271,6 +273,228 @@ function KasTab({
   )
 }
 
+const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des']
+
+type PajakData = Awaited<ReturnType<typeof getPajakData>>
+type LabaRugiTahunanData = Awaited<ReturnType<typeof getLabaRugiTahunan>>
+type NeracaDataType = Awaited<ReturnType<typeof getNeracaData>>
+
+function PajakTab({ tahun, onTahunChange }: { tahun: string; onTahunChange: (t: string) => void }) {
+  const [data, setData] = useState<PajakData | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    setLoading(true)
+    getPajakData(tahun).then(setData).finally(() => setLoading(false))
+  }, [tahun])
+
+  if (loading || !data) return <p className="text-sm text-muted-foreground py-8 text-center">Memuat data pajak...</p>
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3">
+        <Select value={tahun} onValueChange={onTahunChange}>
+          <SelectTrigger className="w-28 h-8 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {[0, 1, 2].map(i => {
+              const y = String(new Date().getFullYear() - i)
+              return <SelectItem key={y} value={y}>{y}</SelectItem>
+            })}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div>
+        <h3 className="text-sm font-semibold mb-3">PPN Bulanan (11%)</h3>
+        <div className="rounded-lg border overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50">
+              <tr>
+                <th className="text-left px-4 py-2 font-medium text-muted-foreground">Bulan</th>
+                <th className="text-right px-4 py-2 font-medium text-muted-foreground">Penjualan</th>
+                <th className="text-right px-4 py-2 font-medium text-muted-foreground">PPN</th>
+                <th className="text-center px-4 py-2 font-medium text-muted-foreground">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(data.ppnPerBulan).map(([bulan, d]) => (
+                <tr key={bulan} className="border-t">
+                  <td className="px-4 py-2">{MONTHS_SHORT[parseInt(bulan.split('-')[1]) - 1]} {bulan.split('-')[0]}</td>
+                  <td className="px-4 py-2 text-right tabular-nums">{formatRupiah(d.totalPenjualan)}</td>
+                  <td className="px-4 py-2 text-right tabular-nums font-semibold">{formatRupiah(d.ppn)}</td>
+                  <td className="px-4 py-2 text-center">
+                    <button
+                      className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium cursor-pointer ${d.status === 'sudah' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}
+                      onClick={async () => {
+                        const next = d.status === 'sudah' ? 'belum' : 'sudah'
+                        const tgl = next === 'sudah' ? new Date().toISOString().slice(0, 10) : undefined
+                        await updatePpnStatus(bulan, next, tgl)
+                        const fresh = await getPajakData(tahun)
+                        setData(fresh)
+                      }}
+                    >
+                      {d.status === 'sudah' ? 'Sudah Disetor' : 'Belum'}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div>
+        <h3 className="text-sm font-semibold mb-3">PPh Pasal 25 Bulanan</h3>
+        <div className="rounded-lg border overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50">
+              <tr>
+                <th className="text-left px-4 py-2 font-medium text-muted-foreground">Bulan</th>
+                <th className="text-right px-4 py-2 font-medium text-muted-foreground">Nominal</th>
+                <th className="text-center px-4 py-2 font-medium text-muted-foreground">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(data.pphPerBulan).map(([bulan, d]) => (
+                <tr key={bulan} className="border-t">
+                  <td className="px-4 py-2">{MONTHS_SHORT[parseInt(bulan.split('-')[1]) - 1]} {bulan.split('-')[0]}</td>
+                  <td className="px-4 py-2 text-right tabular-nums">{formatRupiah(d.nominal)}</td>
+                  <td className="px-4 py-2 text-center">
+                    <button
+                      className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium cursor-pointer ${d.status === 'sudah' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}
+                      onClick={async () => {
+                        const next = d.status === 'sudah' ? 'belum' : 'sudah'
+                        const tgl = next === 'sudah' ? new Date().toISOString().slice(0, 10) : undefined
+                        await updatePphStatus(bulan, next, tgl)
+                        const fresh = await getPajakData(tahun)
+                        setData(fresh)
+                      }}
+                    >
+                      {d.status === 'sudah' ? 'Sudah Dibayar' : 'Belum'}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function LabaRugiTahunanTab({ tahun, onTahunChange }: { tahun: string; onTahunChange: (t: string) => void }) {
+  const [data, setData] = useState<LabaRugiTahunanData | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    setLoading(true)
+    getLabaRugiTahunan(tahun).then(setData).finally(() => setLoading(false))
+  }, [tahun])
+
+  if (loading || !data) return <p className="text-sm text-muted-foreground py-8 text-center">Memuat...</p>
+
+  const rows = [
+    { label: 'Pendapatan Penjualan', value: data.totalPenjualan, cls: 'text-foreground' },
+    { label: 'HPP / Pembelian', value: data.totalPembelian, cls: 'text-muted-foreground' },
+    { label: 'Laba Kotor', value: data.labaKotor, cls: 'font-semibold', sep: true },
+    { label: 'Biaya Operasional', value: data.totalBiaya, cls: 'text-muted-foreground' },
+    { label: 'Laba Operasional (sebelum pajak)', value: data.labaOperasional, cls: 'font-semibold', sep: true },
+    { label: 'PPh Badan (22%)', value: data.pphBadan, cls: 'text-muted-foreground' },
+    { label: 'Laba Bersih Setelah Pajak', value: data.labaBersih, cls: 'font-bold text-lg', sep: true },
+    { label: 'Total PPh Pasal 25 Dibayar', value: data.totalPph25Dibayar, cls: 'text-muted-foreground' },
+    { label: data.pphKurangBayar >= 0 ? 'PPh Kurang Bayar' : 'PPh Lebih Bayar', value: Math.abs(data.pphKurangBayar), cls: data.pphKurangBayar > 0 ? 'font-semibold text-amber-600' : 'font-semibold text-green-600' },
+  ]
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <h3 className="text-sm font-semibold">Laba Rugi Tahunan</h3>
+        <Select value={tahun} onValueChange={onTahunChange}>
+          <SelectTrigger className="w-28 h-8 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {[0, 1, 2].map(i => {
+              const y = String(new Date().getFullYear() - i)
+              return <SelectItem key={y} value={y}>{y}</SelectItem>
+            })}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="rounded-lg border overflow-hidden max-w-lg">
+        <table className="w-full text-sm">
+          <tbody>
+            {rows.map((row, i) => (
+              <tr key={i} className={cn('border-b last:border-0', row.sep ? 'border-t-2 border-t-border bg-muted/30' : '')}>
+                <td className={cn('px-4 py-3', row.cls)}>{row.label}</td>
+                <td className={cn('px-4 py-3 text-right tabular-nums', row.cls)}>{formatRupiah(row.value)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+function NeracaTab() {
+  const [data, setData] = useState<NeracaDataType | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    setLoading(true)
+    getNeracaData().then(setData).finally(() => setLoading(false))
+  }, [])
+
+  if (loading || !data) return <p className="text-sm text-muted-foreground py-8 text-center">Memuat neraca...</p>
+
+  const modalAwal = typeof window !== 'undefined' ? Number(localStorage.getItem('neraca_modal_awal') ?? '0') : 0
+  const totalEkuitas = modalAwal + data.ekuitas.labaDitahan
+  const totalKewajibanEkuitas = data.kewajiban.total + totalEkuitas
+  const balanced = data.aset.total === totalKewajibanEkuitas
+  const selisih = data.aset.total - totalKewajibanEkuitas
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-sm font-semibold">Neraca (Balance Sheet)</h3>
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="rounded-lg border overflow-hidden">
+          <div className="bg-muted/50 px-4 py-2 font-semibold text-sm">ASET</div>
+          <table className="w-full text-sm">
+            <tbody>
+              <tr className="border-t"><td className="px-4 py-2.5">Kas &amp; Bank</td><td className="px-4 py-2.5 text-right tabular-nums">{formatRupiah(data.aset.kasBank)}</td></tr>
+              <tr className="border-t"><td className="px-4 py-2.5">Piutang BGA</td><td className="px-4 py-2.5 text-right tabular-nums">{formatRupiah(data.aset.piutangBga)}</td></tr>
+              <tr className="border-t"><td className="px-4 py-2.5">DP/Modal Peron</td><td className="px-4 py-2.5 text-right tabular-nums">{formatRupiah(data.aset.dpPeron)}</td></tr>
+              <tr className="border-t-2 border-t-border bg-muted/30"><td className="px-4 py-2.5 font-bold">Total Aset</td><td className="px-4 py-2.5 text-right tabular-nums font-bold">{formatRupiah(data.aset.total)}</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div className="rounded-lg border overflow-hidden">
+          <div className="bg-muted/50 px-4 py-2 font-semibold text-sm">KEWAJIBAN + EKUITAS</div>
+          <table className="w-full text-sm">
+            <tbody>
+              <tr className="border-t"><td className="px-4 py-2.5">Hutang PPN</td><td className="px-4 py-2.5 text-right tabular-nums">{formatRupiah(data.kewajiban.hutangPpn)}</td></tr>
+              <tr className="border-t"><td className="px-4 py-2.5">Hutang PPh Psl 25</td><td className="px-4 py-2.5 text-right tabular-nums">{formatRupiah(data.kewajiban.hutangPph)}</td></tr>
+              <tr className="border-t bg-muted/20"><td className="px-4 py-2.5 font-semibold">Total Kewajiban</td><td className="px-4 py-2.5 text-right tabular-nums font-semibold">{formatRupiah(data.kewajiban.total)}</td></tr>
+              <tr className="border-t"><td className="px-4 py-2.5">Modal Awal</td><td className="px-4 py-2.5 text-right tabular-nums">{formatRupiah(modalAwal)}</td></tr>
+              <tr className="border-t"><td className="px-4 py-2.5">Laba Ditahan</td><td className="px-4 py-2.5 text-right tabular-nums">{formatRupiah(data.ekuitas.labaDitahan)}</td></tr>
+              <tr className="border-t bg-muted/20"><td className="px-4 py-2.5 font-semibold">Total Ekuitas</td><td className="px-4 py-2.5 text-right tabular-nums font-semibold">{formatRupiah(totalEkuitas)}</td></tr>
+              <tr className="border-t-2 border-t-border bg-muted/30"><td className="px-4 py-2.5 font-bold">Total K + E</td><td className="px-4 py-2.5 text-right tabular-nums font-bold">{formatRupiah(totalKewajibanEkuitas)}</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className={cn('rounded-lg px-4 py-3 text-sm font-semibold', balanced ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200')}>
+        {balanced
+          ? 'Aset = Kewajiban + Ekuitas (Balance)'
+          : `Selisih: ${formatRupiah(Math.abs(selisih))} — Aset ${selisih > 0 ? '>' : '<'} Kewajiban + Ekuitas`
+        }
+      </div>
+    </div>
+  )
+}
+
 export function LaporanClient({
   initialData, defaultDari, defaultSampai,
 }: {
@@ -291,11 +515,16 @@ export function LaporanClient({
     })
   }
 
+  const [taxTahun, setTaxTahun] = useState(String(new Date().getFullYear()))
+
   const tabs: { key: TabKey; label: string }[] = [
     { key: 'laba-rugi', label: 'Laba Rugi' },
     { key: 'per-peron', label: 'Per Peron' },
     { key: 'buku-kas', label: 'Buku Kas' },
     { key: 'mutasi-bank', label: 'Mutasi Bank' },
+    { key: 'pajak', label: 'Pajak' },
+    { key: 'tahunan', label: 'L/R Tahunan' },
+    { key: 'neraca', label: 'Neraca' },
   ]
 
   return (
@@ -395,6 +624,9 @@ export function LaporanClient({
               xlsxFilename={`mutasi-bank-${dari}-${sampai}.xlsx`}
             />
           )}
+          {activeTab === 'pajak' && <PajakTab tahun={taxTahun} onTahunChange={setTaxTahun} />}
+          {activeTab === 'tahunan' && <LabaRugiTahunanTab tahun={taxTahun} onTahunChange={setTaxTahun} />}
+          {activeTab === 'neraca' && <NeracaTab />}
         </div>
       </div>
     </div>

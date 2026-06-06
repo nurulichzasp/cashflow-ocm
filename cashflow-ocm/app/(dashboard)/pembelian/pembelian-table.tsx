@@ -3,7 +3,6 @@
 import React, { useState, useMemo, useCallback } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,6 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { DateRangeFilter } from '@/components/date-range-filter'
 import { Edit3, Trash2, ShoppingCart, ImageIcon, ArrowUpDown, ArrowUp, ArrowDown, MoreVertical } from 'lucide-react'
 import type { Pembelian, Peron, AkunKas, PembelianFoto, PembelianDetail } from '@/lib/db/schema'
 
@@ -108,10 +108,9 @@ function PembelianRowMenu({ onEdit, onDelete, deleting, id }: { onEdit: () => vo
 export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptions }: Props) {
   const [editTarget, setEditTarget] = useState<PembelianRow | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [filterTanggalDari, setFilterTanggalDari] = useState('')
-  const [filterTanggalSampai, setFilterTanggalSampai] = useState('')
+  const [filterDari, setFilterDari] = useState('')
+  const [filterSampai, setFilterSampai] = useState('')
   const [filterPeronId, setFilterPeronId] = useState('all')
-  const [filterBulan, setFilterBulan] = useState('')
   const [expandedFotoId, setExpandedFotoId] = useState<string | null>(null)
   const [sortBy, setSortBy] = useState<'tanggal' | 'peron' | 'tonase' | 'totalBeli' | 'keuntungan'>('tanggal')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
@@ -135,9 +134,8 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
 
   const filtered = useMemo(() => {
     const list = pembelianList.filter((p) => {
-      if (filterBulan && !p.tanggal.startsWith(filterBulan)) return false
-      if (filterTanggalDari && p.tanggal < filterTanggalDari) return false
-      if (filterTanggalSampai && p.tanggal > filterTanggalSampai) return false
+      if (filterDari && p.tanggal < filterDari) return false
+      if (filterSampai && p.tanggal > filterSampai) return false
       if (filterPeronId !== 'all' && p.peronId !== filterPeronId) return false
       return true
     })
@@ -150,7 +148,7 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
       else if (sortBy === 'keuntungan') cmp = a.keuntungan - b.keuntungan
       return sortDir === 'asc' ? cmp : -cmp
     })
-  }, [pembelianList, filterBulan, filterTanggalDari, filterTanggalSampai, filterPeronId, sortBy, sortDir])
+  }, [pembelianList, filterDari, filterSampai, filterPeronId, sortBy, sortDir])
 
   const nomorUrutMap = useMemo(() => {
     const map = new Map<string, number>()
@@ -221,50 +219,30 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
       </PembelianFormDialog>
 
       {/* Summary cards — ikut filter (termasuk bulan) */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
         {summaryCards.map((c) => (
-          <div key={c.label} className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">{c.label}</p>
-            <p className={`text-2xl font-bold num ${c.accent ? 'text-orange-600 dark:text-[#D97757]' : 'text-stone-900'}`}>{c.value}</p>
-            <p className="text-xs text-stone-400 mt-1">{c.sub}</p>
+          <div key={c.label} className="surface press-card p-3 sm:p-4">
+            <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-[#6B7280] mb-1">{c.label}</p>
+            <p className={`text-lg sm:text-2xl font-bold num tabular-nums ${c.accent ? 'text-orange-600 dark:text-[#D97757]' : 'text-stone-900 dark:text-stone-100'}`}>{c.value}</p>
+            <p className="text-[10px] sm:text-xs text-stone-400 dark:text-[#6B7280] mt-0.5 sm:mt-1">{c.sub}</p>
           </div>
         ))}
       </div>
 
       {/* Filter */}
-      <div className="flex flex-wrap gap-2 items-end">
-        <div className="space-y-1">
-          <p className="text-xs text-stone-500">Bulan</p>
-          <Input type="month" value={filterBulan} onChange={(e) => setFilterBulan(e.target.value)} className="w-36 h-8 text-sm" />
-        </div>
-        <div className="space-y-1">
-          <p className="text-xs text-stone-500">Dari</p>
-          <Input type="date" value={filterTanggalDari} onChange={(e) => setFilterTanggalDari(e.target.value)} className="w-36 h-8 text-sm" />
-        </div>
-        <div className="space-y-1">
-          <p className="text-xs text-stone-500">Sampai</p>
-          <Input type="date" value={filterTanggalSampai} onChange={(e) => setFilterTanggalSampai(e.target.value)} className="w-36 h-8 text-sm" />
-        </div>
-        <div className="space-y-1">
-          <p className="text-xs text-stone-500">Peron</p>
-          <Select value={filterPeronId} onValueChange={(v) => { if (v) setFilterPeronId(v) }}>
-            <SelectTrigger className="w-36 h-8 text-sm"><SelectValue placeholder="Semua Peron" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Semua Peron</SelectItem>
-              {peronOptions.map((p) => <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
-        {(filterBulan || filterTanggalDari || filterTanggalSampai || filterPeronId !== 'all') && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 text-stone-500"
-            onClick={() => { setFilterBulan(''); setFilterTanggalDari(''); setFilterTanggalSampai(''); setFilterPeronId('all') }}
-          >
-            Reset Filter
-          </Button>
-        )}
+      <div className="flex flex-wrap gap-2 items-center">
+        <DateRangeFilter
+          dari={filterDari}
+          sampai={filterSampai}
+          onChange={(d, s) => { setFilterDari(d); setFilterSampai(s) }}
+        />
+        <Select value={filterPeronId} onValueChange={(v) => { if (v) setFilterPeronId(v) }}>
+          <SelectTrigger className="w-[140px] h-8 text-xs"><SelectValue placeholder="Semua Peron" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Semua Peron</SelectItem>
+            {peronOptions.map((p) => <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>)}
+          </SelectContent>
+        </Select>
         <div className="ml-auto">
           <PrintRekapButton pembelianList={filtered} />
         </div>
@@ -372,7 +350,7 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
       {/* Mobile cards */}
       <div className="md:hidden space-y-2">
         {filtered.map((p) => (
-          <div key={p.id} className="rounded-xl border border-stone-200 bg-white shadow-sm p-4">
+          <div key={p.id} className="surface press-card p-4">
             <div className="flex items-start justify-between gap-2 mb-2">
               <div>
                 <p className="font-semibold text-stone-900">{p.peron?.nama ?? p.peronId}</p>

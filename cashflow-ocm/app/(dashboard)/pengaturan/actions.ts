@@ -1,7 +1,7 @@
 'use server'
 
 import { db } from '@/lib/db'
-import { user, account } from '@/lib/db/schema'
+import { user, account, ppnBulanan, pphBulanan } from '@/lib/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
 import { headers } from 'next/headers'
@@ -178,4 +178,44 @@ export async function resetUserPassword(targetUserId: string, newPassword: strin
 
   revalidatePath('/')
   return { success: true }
+}
+
+// ─── PPN / PPh Tracking ──────────────────────────────────────────────────────
+
+export async function updatePpnStatus(bulan: string, statusSetor: 'belum' | 'sudah', tanggalSetor?: string) {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session || session.user.role !== 'owner') throw new Error('Hanya Owner')
+
+  const existing = await db.query.ppnBulanan.findFirst({ where: eq(ppnBulanan.bulan, bulan) })
+  if (existing) {
+    await db.update(ppnBulanan).set({ statusSetor, tanggalSetor: tanggalSetor ?? null }).where(eq(ppnBulanan.id, existing.id))
+  } else {
+    await db.insert(ppnBulanan).values({ bulan, totalPpn: 0, statusSetor, tanggalSetor: tanggalSetor ?? null })
+  }
+  revalidatePath('/laporan')
+  revalidatePath('/dashboard')
+  return { success: true }
+}
+
+export async function updatePphStatus(bulan: string, statusBayar: 'belum' | 'sudah', tanggalBayar?: string) {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session || session.user.role !== 'owner') throw new Error('Hanya Owner')
+
+  const existing = await db.query.pphBulanan.findFirst({ where: eq(pphBulanan.bulan, bulan) })
+  if (existing) {
+    await db.update(pphBulanan).set({ statusBayar, tanggalBayar: tanggalBayar ?? null }).where(eq(pphBulanan.id, existing.id))
+  } else {
+    await db.insert(pphBulanan).values({ bulan, statusBayar, tanggalBayar: tanggalBayar ?? null })
+  }
+  revalidatePath('/laporan')
+  revalidatePath('/dashboard')
+  return { success: true }
+}
+
+export async function getPpnList() {
+  return db.select().from(ppnBulanan).orderBy(ppnBulanan.bulan)
+}
+
+export async function getPphList() {
+  return db.select().from(pphBulanan).orderBy(pphBulanan.bulan)
 }

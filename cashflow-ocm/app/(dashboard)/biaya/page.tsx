@@ -53,7 +53,7 @@ export default async function BiayaPage() {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="surface p-4">
+        <div className="surface press-card p-3 sm:p-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">Total Pengeluaran</p>
           <p className="text-2xl font-bold text-orange-600 dark:text-[#D97757] num">{formatRupiah(totalBiaya)}</p>
           <p className="text-xs text-stone-400 mt-1">{biayaList.length} entri tercatat</p>

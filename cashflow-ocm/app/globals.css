@@ -447,6 +447,21 @@ html.dark [class~="hover:bg-orange-700"]:hover       { background-color: #c8654a
     font-feature-settings: "tnum";
   }
 
+  /* ── Press card: mobile-only tap feedback ── */
+  @media (hover: none) {
+    .press-card {
+      transition: transform 150ms ease, box-shadow 150ms ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .press-card:active {
+      transform: scale(1.02);
+      box-shadow: 0 0 16px oklch(0.57 0.2 41 / 0.18);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .press-card:active { transform: none; box-shadow: none; }
+  }
+
   /* Semantic financial colors */
   .text-masuk   { color: #16A34A; }
   .text-keluar  { color: #DC2626; }

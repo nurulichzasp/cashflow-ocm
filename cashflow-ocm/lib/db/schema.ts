@@ -217,6 +217,26 @@ export const transaksiKas = sqliteTable('transaksi_kas', {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
 })
 
+export const ppnBulanan = sqliteTable('ppn_bulanan', {
+  id: text('id').primaryKey().default(sql`(lower(hex(randomblob(8))))`),
+  bulan: text('bulan').notNull(), // format YYYY-MM
+  totalPpn: integer('total_ppn').notNull().default(0),
+  statusSetor: text('status_setor', { enum: ['belum', 'sudah'] }).notNull().default('belum'),
+  tanggalSetor: text('tanggal_setor'),
+  catatan: text('catatan'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+})
+
+export const pphBulanan = sqliteTable('pph_bulanan', {
+  id: text('id').primaryKey().default(sql`(lower(hex(randomblob(8))))`),
+  bulan: text('bulan').notNull(), // format YYYY-MM
+  nominal: integer('nominal').notNull().default(698917),
+  statusBayar: text('status_bayar', { enum: ['belum', 'sudah'] }).notNull().default('belum'),
+  tanggalBayar: text('tanggal_bayar'),
+  catatan: text('catatan'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+})
+
 export const activityLog = sqliteTable('activity_log', {
   id: text('id').primaryKey().default(sql`(lower(hex(randomblob(8))))`),
   userId: text('user_id').notNull().references(() => user.id),
@@ -324,3 +344,5 @@ export type TransaksiKas = typeof transaksiKas.$inferSelect
 export type ActivityLog = typeof activityLog.$inferSelect
 export type PembelianFoto = typeof pembelianFoto.$inferSelect
 export type BiayaFoto = typeof biayaFoto.$inferSelect
+export type PpnBulanan = typeof ppnBulanan.$inferSelect
+export type PphBulanan = typeof pphBulanan.$inferSelect

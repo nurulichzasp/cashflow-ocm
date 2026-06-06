@@ -11,8 +11,10 @@ import {
   peron,
   biayaOperasional,
   akunKas,
+  ppnBulanan,
+  pphBulanan,
 } from '@/lib/db/schema'
-import { eq, sum, and, gte } from 'drizzle-orm'
+import { eq, sum, and, gte, like } from 'drizzle-orm'
 import { formatRupiah } from '@/lib/format'
 import {
   TrendingUp,
@@ -103,6 +105,35 @@ async function getTodayStats() {
   }
 }
 
+async function getTaxStatus() {
+  const now = new Date()
+  const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+  const lastMonth = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth() + 1).padStart(2, '0')}`
+
+  const thisMonthStart = `${thisMonth}-01`
+  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+  const thisMonthEnd = `${thisMonth}-${String(lastDay).padStart(2, '0')}`
+
+  const [ppnThisMonthRows, ppnLastRecord, pphLastRecord] = await Promise.all([
+    db.select({ total: sum(penjualan.totalBersih) })
+      .from(penjualan)
+      .where(and(gte(penjualan.tanggal, thisMonthStart), eq(penjualan.statusBayar, 'lunas'))),
+    db.query.ppnBulanan.findFirst({ where: eq(ppnBulanan.bulan, lastMonth) }),
+    db.query.pphBulanan.findFirst({ where: eq(pphBulanan.bulan, lastMonth) }),
+  ])
+
+  const ppnThisMonth = Math.round(Number(ppnThisMonthRows[0]?.total ?? 0) * 0.11)
+
+  return {
+    thisMonth,
+    lastMonth,
+    ppnThisMonth,
+    ppnLastMonth: ppnLastRecord ?? null,
+    pphLastMonth: pphLastRecord ?? null,
+  }
+}
+
 async function getChartSeries(days = 14) {
   const end = new Date()
   const startDate = new Date(end.getTime() - (days - 1) * 24 * 60 * 60 * 1000)
@@ -174,11 +205,12 @@ async function getChartSeries(days = 14) {
 }
 
 export default async function DashboardPage() {
-  const [session, metrics, today, charts] = await Promise.all([
+  const [session, metrics, today, charts, tax] = await Promise.all([
     auth.api.getSession({ headers: await headers() }),
     getMetrics(),
     getTodayStats(),
     getChartSeries(14),
+    getTaxStatus(),
   ])
 
   const modalBreakdown = [
@@ -236,7 +268,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Ringkasan Hari Ini */}
-      <div className="surface overflow-hidden">
+      <div className="surface press-card overflow-hidden">
         <div className="px-5 py-3 border-b border-stone-100 dark:border-border flex items-center gap-2">
           <span className="h-1.5 w-1.5 rounded-full live-dot" />
           <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Hari Ini</p>
@@ -259,7 +291,7 @@ export default async function DashboardPage() {
       {/* Hero — Modal Berputar + breakdown + ringkasan */}
       <div className="grid gap-3 grid-cols-1 lg:grid-cols-3">
         {/* Modal berputar — kartu utama */}
-        <div className="surface lift lg:col-span-2 p-5 sm:p-6">
+        <div className="surface lift press-card lg:col-span-2 p-5 sm:p-6">
           <div className="flex items-center gap-2">
             <span className="h-3 w-1 rounded-full bg-primary" />
             <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Total Modal Berputar</p>
@@ -267,10 +299,10 @@ export default async function DashboardPage() {
           <p className="text-[2rem] sm:text-[2.5rem] leading-none font-bold num tabular-nums tracking-[-0.03em] text-stone-900 dark:text-stone-100 mt-3">
             {formatRupiah(metrics.totalModalBerputar)}
           </p>
-          <div className="grid grid-cols-3 gap-3 mt-6 pt-4 border-t border-stone-100 dark:border-border">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 mt-6 pt-4 border-t border-stone-100 dark:border-border">
             {modalBreakdown.map((b) => (
-              <div key={b.label}>
-                <p className="text-[10px] uppercase tracking-wider text-stone-400 dark:text-[#6B7280] mb-1">{b.label}</p>
+              <div key={b.label} className="flex items-center justify-between sm:block">
+                <p className="text-[10px] uppercase tracking-wider text-stone-400 dark:text-[#6B7280] sm:mb-1">{b.label}</p>
                 <p className="text-sm font-semibold num tabular-nums text-stone-900 dark:text-[#F3F4F6]">{b.value}</p>
               </div>
             ))}
@@ -278,11 +310,11 @@ export default async function DashboardPage() {
         </div>
         {/* Secondary — penjualan & laba */}
         <div className="grid grid-cols-2 lg:grid-cols-1 gap-3">
-          <div className="surface lift p-4 flex flex-col justify-center">
+          <div className="surface lift press-card p-4 flex flex-col justify-center">
             <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Penjualan Lunas</p>
             <p className="text-xl sm:text-2xl font-bold num tabular-nums tracking-tight text-stone-900 dark:text-stone-100 mt-1.5">{formatRupiah(metrics.totalPenjualanLunas)}</p>
           </div>
-          <div className="surface lift p-4 flex flex-col justify-center">
+          <div className="surface lift press-card p-4 flex flex-col justify-center">
             <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Estimasi Laba</p>
             <p className="text-xl sm:text-2xl font-bold num tabular-nums tracking-tight text-stone-900 dark:text-stone-100 mt-1.5">{formatRupiah(metrics.estimasiLaba)}</p>
           </div>
@@ -295,7 +327,7 @@ export default async function DashboardPage() {
         <div className="grid gap-2.5 sm:gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {/* Rek BRI CV OCM — utama */}
           {akunCvOcm && (
-            <div className="surface lift p-4 sm:col-span-2 lg:col-span-1 ring-1 ring-primary/15">
+            <div className="surface lift press-card p-4 sm:col-span-2 lg:col-span-1 ring-1 ring-primary/15">
               <p className="text-[10px] font-semibold text-primary uppercase tracking-widest mb-2 flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Rekening Utama
               </p>
@@ -307,7 +339,7 @@ export default async function DashboardPage() {
           )}
           {/* Rekening BRI lainnya — digabung */}
           {akunLainnya.length > 0 && (
-            <div className="surface lift p-4">
+            <div className="surface lift press-card p-4">
               <p className="text-[10px] font-semibold text-stone-400 dark:text-[#6B7280] uppercase tracking-widest mb-2">Bank</p>
               <p className="text-[11px] text-stone-400 dark:text-[#6B7280] mb-1.5">Rek BRI Lainnya</p>
               <p className={`text-xl font-bold num tabular-nums tracking-tight ${saldoLainnya >= 0 ? 'text-stone-900 dark:text-stone-100' : 'text-red-600 dark:text-red-400'}`}>
@@ -318,7 +350,7 @@ export default async function DashboardPage() {
           )}
           {/* Tunai */}
           {akunTunai.map((a) => (
-            <div key={a.id} className="surface lift p-4">
+            <div key={a.id} className="surface lift press-card p-4">
               <p className="text-[10px] font-semibold text-stone-400 dark:text-[#6B7280] uppercase tracking-widest mb-2">Tunai</p>
               <p className="text-[11px] text-stone-400 dark:text-[#6B7280] mb-1.5 truncate">{a.nama}</p>
               <p className={`text-xl font-bold num tabular-nums tracking-tight ${a.saldo >= 0 ? 'text-stone-900 dark:text-stone-100' : 'text-red-600 dark:text-red-400'}`}>
@@ -326,6 +358,46 @@ export default async function DashboardPage() {
               </p>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Pajak */}
+      <div>
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280] mb-3">Pajak</p>
+        <div className="grid gap-2.5 sm:gap-3 grid-cols-1 sm:grid-cols-3">
+          <div className="surface press-card p-4">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280] mb-2">PPN Bulan Ini</p>
+            <p className="text-xl font-bold num tabular-nums text-stone-900 dark:text-stone-100">{formatRupiah(tax.ppnThisMonth)}</p>
+            <p className="text-[10px] text-stone-400 dark:text-[#6B7280] mt-1">Estimasi 11% dari penjualan lunas</p>
+          </div>
+          <div className={`surface press-card p-4 ${!tax.ppnLastMonth || tax.ppnLastMonth.statusSetor === 'belum' ? 'ring-1 ring-amber-400/30' : ''}`}>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280] mb-2">PPN Bulan Lalu</p>
+            {tax.ppnLastMonth?.statusSetor === 'sudah' ? (
+              <>
+                <p className="text-sm font-semibold text-green-600 dark:text-green-400">Sudah Disetor</p>
+                <p className="text-[10px] text-stone-400 mt-1">Tgl setor: {tax.ppnLastMonth.tanggalSetor ?? '-'}</p>
+              </>
+            ) : (
+              <>
+                <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">Belum Disetor</p>
+                <p className="text-[10px] text-stone-400 mt-1">Jatuh tempo akhir bulan ini</p>
+              </>
+            )}
+          </div>
+          <div className={`surface press-card p-4 ${!tax.pphLastMonth || tax.pphLastMonth.statusBayar === 'belum' ? 'ring-1 ring-amber-400/30' : ''}`}>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280] mb-2">PPh Pasal 25</p>
+            {tax.pphLastMonth?.statusBayar === 'sudah' ? (
+              <>
+                <p className="text-sm font-semibold text-green-600 dark:text-green-400">Sudah Dibayar</p>
+                <p className="text-[10px] text-stone-400 mt-1">Rp 698.917 · tgl {tax.pphLastMonth.tanggalBayar ?? '-'}</p>
+              </>
+            ) : (
+              <>
+                <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">Belum Dibayar</p>
+                <p className="text-[10px] text-stone-400 mt-1">Rp 698.917 · jatuh tempo tgl 15</p>
+              </>
+            )}
+          </div>
         </div>
       </div>
 

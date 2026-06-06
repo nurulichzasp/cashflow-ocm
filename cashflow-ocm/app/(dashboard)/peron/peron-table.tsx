@@ -211,7 +211,7 @@ export function PeronTable({ peronList, isOwner, akunOptions = [] }: Props) {
       {/* Mobile */}
       <div className="md:hidden space-y-2">
         {sorted.map((p) => (
-          <div key={p.id} className="rounded-xl border border-stone-200 bg-white shadow-sm p-4">
+          <div key={p.id} className="surface press-card p-4">
             <div className="flex items-start justify-between gap-2 mb-3">
               <div>
                 <p className="font-semibold text-stone-900 dark:text-stone-100">

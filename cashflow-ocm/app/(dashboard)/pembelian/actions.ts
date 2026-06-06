@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { eq, and } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { auth } from '@/lib/auth'
-import { pembelian, pembelianDetail, transaksiKas, akunKas, peron } from '@/lib/db/schema'
+import { pembelian, pembelianDetail, transaksiKas, akunKas, peron, hargaAcuan } from '@/lib/db/schema'
 import { z } from 'zod'
 import { notifyNewPembelian } from '@/lib/notification'
 import { requirePermission } from '@/lib/permissions'
@@ -271,4 +271,16 @@ export async function getAkunKasList() {
 export async function getKeuntunganPerKg(peronId: string): Promise<number> {
   const p = await db.query.peron.findFirst({ where: (t, { eq }) => eq(t.id, peronId) })
   return p?.keuntunganPerKg ?? 0
+}
+
+export async function getLatestHargaAcuan(produk: 'TBS' | 'BRDL', tanggal?: string) {
+  const targetDate = tanggal || new Date().toISOString().slice(0, 10)
+  const result = await db.query.hargaAcuan.findFirst({
+    where: (t, { and, eq, lte }) => and(
+      eq(t.produk, produk),
+      lte(t.tanggalBerlaku, targetDate),
+    ),
+    orderBy: (t, { desc }) => [desc(t.tanggalBerlaku), desc(t.createdAt)],
+  })
+  return result ?? null
 }
