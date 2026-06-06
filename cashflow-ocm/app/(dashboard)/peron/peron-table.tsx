@@ -30,7 +30,7 @@ import type { Peron } from '@/lib/db/schema'
 
 type PeronRow = Peron & { dpAktif: number }
 
-function RowActions({ p, isOwner, onDelete, deleting }: { p: PeronRow; isOwner: boolean; onDelete: (id: string) => void; deleting: string | null }) {
+function RowActions({ p, isOwner, onDelete, deleting, akunOptions = [] }: { p: PeronRow; isOwner: boolean; onDelete: (id: string) => void; deleting: string | null; akunOptions?: AkunOption[] }) {
   const [editOpen, setEditOpen] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -62,7 +62,7 @@ function RowActions({ p, isOwner, onDelete, deleting }: { p: PeronRow; isOwner: 
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {modalOpen && <ModalFormDialog peronId={p.id} peronNama={p.nama} open={modalOpen} onOpenChange={setModalOpen} />}
+      {modalOpen && <ModalFormDialog peronId={p.id} peronNama={p.nama} akunOptions={akunOptions} open={modalOpen} onOpenChange={setModalOpen} />}
       {editOpen && <PeronFormDialog mode="edit" peron={p} open={editOpen} onOpenChange={setEditOpen} />}
 
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
@@ -91,14 +91,17 @@ function RowActions({ p, isOwner, onDelete, deleting }: { p: PeronRow; isOwner: 
 
 type PeronWithDp = Peron & { dpAktif: number }
 
+interface AkunOption { id: string; nama: string; tipe: string }
+
 interface Props {
   peronList: PeronWithDp[]
   isOwner: boolean
+  akunOptions?: AkunOption[]
 }
 
 type SortCol = 'nama' | 'keuntungan' | 'dp'
 
-export function PeronTable({ peronList, isOwner }: Props) {
+export function PeronTable({ peronList, isOwner, akunOptions = [] }: Props) {
   const [deleting, setDeleting] = useState<string | null>(null)
   const [sortBy, setSortBy] = useState<SortCol>('nama')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
@@ -196,7 +199,7 @@ export function PeronTable({ peronList, isOwner }: Props) {
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center justify-end">
-                    <RowActions p={p} isOwner={isOwner} onDelete={handleDelete} deleting={deleting} />
+                    <RowActions p={p} isOwner={isOwner} onDelete={handleDelete} deleting={deleting} akunOptions={akunOptions} />
                   </div>
                 </td>
               </tr>
@@ -236,7 +239,7 @@ export function PeronTable({ peronList, isOwner }: Props) {
             </div>
 
             <div className="flex gap-2 pt-3 border-t border-stone-100">
-              <ModalFormDialog peronId={p.id} peronNama={p.nama}>
+              <ModalFormDialog peronId={p.id} peronNama={p.nama} akunOptions={akunOptions}>
                 <Button variant="outline" size="sm" className="flex-1 gap-2 border-stone-200 text-stone-700 hover:bg-stone-50">
                   <Wallet className="h-3.5 w-3.5" />
                   Kelola DP

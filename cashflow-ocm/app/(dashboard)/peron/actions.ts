@@ -4,7 +4,8 @@ import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { eq, sum } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { peron, modalPeron } from '@/lib/db/schema'
+import { peron, modalPeron, transaksiKas } from '@/lib/db/schema'
+import { and } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
 import { requirePermission } from '@/lib/permissions'
@@ -37,6 +38,7 @@ const modalSchema = z.object({
   tanggal: z.string().min(1, 'Tanggal wajib diisi'),
   jenis: z.enum(['tambah', 'kurang', 'kembali']),
   jumlah: z.coerce.number().positive('Jumlah harus positif'),
+  akunSumberId: z.string().optional(),
   catatan: z.string().optional(),
 })
 
@@ -107,22 +109,58 @@ export async function addModalPeron(formData: FormData) {
     tanggal: formData.get('tanggal'),
     jenis: formData.get('jenis'),
     jumlah: formData.get('jumlah'),
+    akunSumberId: formData.get('akunSumberId') || undefined,
     catatan: formData.get('catatan') || undefined,
   })
 
-  await db.insert(modalPeron).values({
-    ...data,
-    createdBy: session.user.id,
+  // Cari nama peron untuk catatan kas
+  const peronData = await db.query.peron.findFirst({ where: (t, { eq }) => eq(t.id, data.peronId) })
+  const peronNama = peronData?.nama ?? 'Peron'
+
+  // Atomic: catat modal + mutasi kas sekaligus
+  await db.transaction(async (tx) => {
+    const inserted = await tx.insert(modalPeron).values({
+      peronId: data.peronId,
+      tanggal: data.tanggal,
+      jenis: data.jenis,
+      jumlah: data.jumlah,
+      catatan: data.catatan,
+      createdBy: session.user.id,
+    }).returning()
+
+    // Sinkronisasi kas: tambah = uang keluar, kembali = uang masuk
+    // kurang = hanya pencatatan internal (potong tagihan), tidak ada kas fisik
+    if (data.akunSumberId && (data.jenis === 'tambah' || data.jenis === 'kembali')) {
+      await tx.insert(transaksiKas).values({
+        tanggal: data.tanggal,
+        akunId: data.akunSumberId,
+        arah: data.jenis === 'tambah' ? 'keluar' : 'masuk',
+        jumlah: data.jumlah,
+        kategori: data.jenis === 'tambah' ? 'modal_peron' : 'kembali_modal',
+        refTabel: 'modal_peron',
+        refId: inserted[0].id,
+        catatan: `${data.jenis === 'tambah' ? 'DP/Modal ke' : 'Kembali modal dari'} peron ${peronNama}`,
+        createdBy: session.user.id,
+      })
+    }
   })
 
   revalidatePath('/peron')
+  revalidatePath('/kas')
+  revalidatePath('/dashboard')
   return { success: true }
 }
 
 export async function deleteModalPeron(id: string) {
   await requireOwner()
-  await db.delete(modalPeron).where(eq(modalPeron.id, id))
+  await db.transaction(async (tx) => {
+    // Hapus transaksi kas terkait dulu
+    await tx.delete(transaksiKas).where(and(eq(transaksiKas.refTabel, 'modal_peron'), eq(transaksiKas.refId, id)))
+    await tx.delete(modalPeron).where(eq(modalPeron.id, id))
+  })
   revalidatePath('/peron')
+  revalidatePath('/kas')
+  revalidatePath('/dashboard')
   return { success: true }
 }
 

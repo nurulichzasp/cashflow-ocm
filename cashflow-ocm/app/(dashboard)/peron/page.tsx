@@ -6,13 +6,16 @@ import { PeronFormDialog } from './peron-form-dialog'
 import { Button } from '@/components/ui/button'
 import { formatRupiah } from '@/lib/format'
 import { Plus } from 'lucide-react'
+import { db } from '@/lib/db'
+import { akunKas } from '@/lib/db/schema'
 
 export const dynamic = 'force-dynamic'
 
 export default async function PeronPage() {
-  const [session, peronList] = await Promise.all([
+  const [session, peronList, akunList] = await Promise.all([
     auth.api.getSession({ headers: await headers() }),
     getPeronList(),
+    db.select().from(akunKas).orderBy(akunKas.urutan),
   ])
 
   const isOwner = session?.user.role === 'owner'
@@ -54,7 +57,7 @@ export default async function PeronPage() {
         </div>
       </div>
 
-      <PeronTable peronList={peronList} isOwner={isOwner} />
+      <PeronTable peronList={peronList} isOwner={isOwner} akunOptions={akunList.map(a => ({ id: a.id, nama: a.nama, tipe: a.tipe }))} />
     </div>
   )
 }

@@ -11,15 +11,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatRupiah, formatTanggal } from '@/lib/format'
 import { Edit, Plus, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import { db } from '@/lib/db'
+import { akunKas } from '@/lib/db/schema'
 
 export const dynamic = 'force-dynamic'
 
 export default async function PeronDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const [session, data] = await Promise.all([
+  const [session, data, akunList] = await Promise.all([
     auth.api.getSession({ headers: await headers() }),
     getPeronById(id),
+    db.select().from(akunKas).orderBy(akunKas.urutan),
   ])
+  const akunOptions = akunList.map(a => ({ id: a.id, nama: a.nama, tipe: a.tipe }))
 
   if (!data) notFound()
 
@@ -42,7 +46,7 @@ export default async function PeronDetailPage({ params }: { params: Promise<{ id
           {data.alamat && <p className="text-sm text-muted-foreground">{data.alamat}</p>}
         </div>
         <div className="flex gap-2">
-          <ModalFormDialog peronId={data.id} peronNama={data.nama}>
+          <ModalFormDialog peronId={data.id} peronNama={data.nama} akunOptions={akunOptions}>
             <Button size="sm" className="gap-2">
               <Plus className="h-4 w-4" />
               Mutasi Modal

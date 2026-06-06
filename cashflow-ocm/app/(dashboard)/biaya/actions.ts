@@ -5,7 +5,8 @@ import { revalidatePath } from 'next/cache'
 import { eq, desc } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { auth } from '@/lib/auth'
-import { biayaOperasional } from '@/lib/db/schema'
+import { biayaOperasional, transaksiKas } from '@/lib/db/schema'
+import { and } from 'drizzle-orm'
 import { z } from 'zod'
 import { notifyNewBiaya } from '@/lib/notification'
 import { requirePermission } from '@/lib/permissions'
@@ -42,10 +43,27 @@ export async function createBiayaOperasional(formData: FormData) {
     catatan: formData.get('catatan') || undefined,
   })
 
-  const inserted = await db.insert(biayaOperasional).values({
-    ...data,
-    createdBy: session.user.id,
-  }).returning()
+  // Atomic: catat biaya + mutasi kas (uang keluar) sekaligus
+  const inserted = await db.transaction(async (tx) => {
+    const ins = await tx.insert(biayaOperasional).values({
+      ...data,
+      createdBy: session.user.id,
+    }).returning()
+
+    await tx.insert(transaksiKas).values({
+      tanggal: data.tanggal,
+      akunId: data.akunSumberId,
+      arah: 'keluar',
+      jumlah: data.jumlah,
+      kategori: 'biaya_operasional',
+      refTabel: 'biaya_operasional',
+      refId: ins[0].id,
+      catatan: `Biaya ${data.kategori}${data.catatan ? `: ${data.catatan}` : ''}`,
+      createdBy: session.user.id,
+    })
+
+    return ins
+  })
 
   // Trigger Telegram Notification
   try {
@@ -68,8 +86,13 @@ export async function createBiayaOperasional(formData: FormData) {
 export async function deleteBiayaOperasional(id: string) {
   const session = await requireSession()
   requirePermission(session.user.role as any, 'canDelete')
-  await db.delete(biayaOperasional).where(eq(biayaOperasional.id, id))
+  await db.transaction(async (tx) => {
+    await tx.delete(transaksiKas).where(and(eq(transaksiKas.refTabel, 'biaya_operasional'), eq(transaksiKas.refId, id)))
+    await tx.delete(biayaOperasional).where(eq(biayaOperasional.id, id))
+  })
   revalidatePath('/biaya')
+  revalidatePath('/kas')
+  revalidatePath('/dashboard')
   return { success: true }
 }
 

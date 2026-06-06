@@ -19,21 +19,26 @@ import { Input } from '@/components/ui/input'
 import { addModalPeron } from './actions'
 import { todayString } from '@/lib/format'
 
+interface AkunOption { id: string; nama: string; tipe: string }
+
 interface Props {
   peronId: string
   peronNama: string
+  akunOptions?: AkunOption[]
   children?: React.ReactNode
   open?: boolean
   onOpenChange?: (open: boolean) => void
 }
 
-export function ModalFormDialog({ peronId, peronNama, children, open: openProp, onOpenChange }: Props) {
+export function ModalFormDialog({ peronId, peronNama, akunOptions = [], children, open: openProp, onOpenChange }: Props) {
   const [openInternal, setOpenInternal] = useState(false)
   const open = openProp ?? openInternal
   const setOpen = (v: boolean) => { onOpenChange ? onOpenChange(v) : setOpenInternal(v) }
   const [loading, setLoading] = useState(false)
   const [jenis, setJenis] = useState<'tambah' | 'kurang' | 'kembali'>('tambah')
   const [jumlah, setJumlah] = useState(0)
+  const [akunSumberId, setAkunSumberId] = useState('')
+  const showSumberAkun = jenis === 'tambah' || jenis === 'kembali'
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -44,6 +49,7 @@ export function ModalFormDialog({ peronId, peronNama, children, open: openProp, 
       fd.set('peronId', peronId)
       fd.set('jenis', jenis)
       fd.set('jumlah', String(jumlah))
+      if (akunSumberId) fd.set('akunSumberId', akunSumberId)
       await addModalPeron(fd)
       toast.success('Mutasi modal berhasil disimpan')
       setOpen(false)
@@ -100,6 +106,27 @@ export function ModalFormDialog({ peronId, peronNama, children, open: openProp, 
             <Label>Jumlah (Rp)</Label>
             <NumberInput value={jumlah} onChange={setJumlah} placeholder="0" />
           </div>
+
+          {showSumberAkun && akunOptions.length > 0 && (
+            <div className="space-y-1.5">
+              <Label>Sumber Akun</Label>
+              <Select value={akunSumberId} onValueChange={setAkunSumberId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih rekening/kas" />
+                </SelectTrigger>
+                <SelectContent>
+                  {akunOptions.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      {a.nama} ({a.tipe})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {jenis === 'tambah' ? 'Uang keluar dari rekening ini ke peron' : 'Uang masuk dari peron ke rekening ini'}
+              </p>
+            </div>
+          )}
 
           <div className="space-y-1.5">
             <Label>Catatan</Label>
