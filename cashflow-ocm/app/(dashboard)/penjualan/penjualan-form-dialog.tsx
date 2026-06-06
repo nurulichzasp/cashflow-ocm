@@ -255,6 +255,7 @@ export function PenjualanFormDialog({ children }: Props) {
                   value={totalBersih}
                   onChange={(e) => setTotalBersih(e.target.value)}
                   placeholder="0"
+                  className="glow-masuk"
                 />
                 {totalBersih && Number(totalBersih) > 0 && (
                   <p className="text-xs font-semibold text-foreground">Rp {Number(totalBersih).toLocaleString('id-ID')}</p>
@@ -267,6 +268,7 @@ export function PenjualanFormDialog({ children }: Props) {
                   value={totalNilai}
                   onChange={(e) => setTotalNilai(e.target.value)}
                   placeholder="0"
+                  className="glow-masuk"
                 />
                 {totalNilai && Number(totalNilai) > 0 && (
                   <p className="text-xs text-muted-foreground">Rp {Number(totalNilai).toLocaleString('id-ID')}</p>

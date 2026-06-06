@@ -83,72 +83,88 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
 
   const displayName = user?.nickname || user?.name || 'Admin'
 
+  // Floating pill — index untuk morph indicator yang menggeser antar tab
+  const totalTabs = visiblePrimary.length + 1
+  let activeIndex = visiblePrimary.findIndex((item) => isActive(item.href))
+  if (activeIndex === -1 && isMoreActive) activeIndex = visiblePrimary.length
+
   return (
     <>
-      {/* Bottom tab bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#1E1E1E]/98 backdrop-blur-sm border-t border-stone-200/80 dark:border-white/[0.06] flex items-stretch"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      {/* Floating pill nav — glass, rounded, morphing active indicator */}
+      <div
+        className="md:hidden fixed bottom-0 inset-x-0 z-40 px-3 pointer-events-none"
+        style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0.55rem)' }}
       >
-        {visiblePrimary.map((item) => {
-          const active = isActive(item.href)
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
+        <nav className="float-in glass-panel pointer-events-auto relative mx-auto flex max-w-md rounded-[1.85rem] p-1.5">
+          <div className="relative flex flex-1">
+            {/* Morphing active pill — menggeser & melebar mengikuti tab aktif */}
+            {activeIndex >= 0 && (
+              <span
+                aria-hidden
+                className="morph-indicator absolute top-0 bottom-0 rounded-[1.45rem] bg-primary/10 hairline"
+                style={{
+                  width: `calc(100% / ${totalTabs})`,
+                  left: `calc(${activeIndex} * 100% / ${totalTabs})`,
+                }}
+              />
+            )}
+
+            {visiblePrimary.map((item) => {
+              const active = isActive(item.href)
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    'tactile relative z-10 flex flex-1 flex-col items-center justify-center gap-1 py-2 min-h-[52px] rounded-[1.45rem] transition-colors duration-200',
+                    active ? 'text-primary' : 'text-stone-400'
+                  )}
+                >
+                  <item.icon className={cn('h-5 w-5 shrink-0 transition-transform duration-300', active && 'stroke-[2.2px] -translate-y-0.5')} />
+                  <span className={cn('text-[10px] leading-none transition-all', active ? 'font-semibold' : 'font-medium')}>
+                    {item.label}
+                  </span>
+                </Link>
+              )
+            })}
+
+            {/* Menu button */}
+            <button
+              onClick={() => setDrawerOpen(true)}
               className={cn(
-                'relative flex flex-1 flex-col items-center justify-center gap-1 py-2.5 min-h-[56px] transition-colors duration-150',
-                active ? 'text-orange-600' : 'text-stone-400'
+                'tactile relative z-10 flex flex-1 flex-col items-center justify-center gap-1 py-2 min-h-[52px] rounded-[1.45rem] transition-colors duration-200',
+                isMoreActive ? 'text-primary' : 'text-stone-400'
               )}
             >
-              {active && (
-                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-orange-500" />
-              )}
-              <item.icon className={cn('h-5 w-5 shrink-0', active && 'stroke-[2.2px]')} />
-              <span className={cn('text-[10px] font-medium leading-none', active && 'font-semibold')}>
-                {item.label}
+              <Menu className={cn('h-5 w-5 shrink-0 transition-transform duration-300', isMoreActive && 'stroke-[2.2px] -translate-y-0.5')} />
+              <span className={cn('text-[10px] leading-none transition-all', isMoreActive ? 'font-semibold' : 'font-medium')}>
+                Menu
               </span>
-            </Link>
-          )
-        })}
-
-        {/* Menu button */}
-        <button
-          onClick={() => setDrawerOpen(true)}
-          className={cn(
-            'relative flex flex-1 flex-col items-center justify-center gap-1 py-2.5 min-h-[56px] transition-colors duration-150',
-            isMoreActive ? 'text-orange-600' : 'text-stone-400'
-          )}
-        >
-          {isMoreActive && (
-            <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-orange-500" />
-          )}
-          <Menu className={cn('h-5 w-5 shrink-0', isMoreActive && 'stroke-[2.2px]')} />
-          <span className={cn('text-[10px] font-medium leading-none', isMoreActive && 'font-semibold')}>
-            Menu
-          </span>
-        </button>
-      </nav>
+            </button>
+          </div>
+        </nav>
+      </div>
 
       {/* Drawer overlay for "More" */}
       <div
         className={cn('fixed inset-0 z-50 md:hidden overflow-hidden', !drawerOpen && 'pointer-events-none')}
         aria-hidden={!drawerOpen}
       >
-        {/* Backdrop */}
+        {/* Backdrop — blur konten di belakang saat drawer naik */}
         <div
           className={cn(
-            'absolute inset-0 bg-black/60 backdrop-blur-[2px] transition-opacity duration-200',
-            drawerOpen ? 'opacity-100' : 'opacity-0'
+            'depth-backdrop absolute inset-0 bg-black/40 transition-opacity duration-300',
+            drawerOpen ? 'opacity-100 backdrop-blur-md' : 'opacity-0'
           )}
           onClick={() => setDrawerOpen(false)}
         />
 
-        {/* Sheet dari bawah */}
+        {/* Sheet dari bawah — glass + floating */}
         <div
           className={cn(
-            'absolute bottom-0 left-0 right-0 bg-white dark:bg-[#28282B] rounded-t-2xl flex flex-col',
+            'glass-panel absolute bottom-2 left-2 right-2 rounded-3xl flex flex-col',
             'transition-transform',
-            drawerOpen ? 'translate-y-0' : 'translate-y-full'
+            drawerOpen ? 'translate-y-0' : 'translate-y-[120%]'
           )}
           style={{
             transitionDuration: drawerOpen ? '300ms' : '220ms',
@@ -200,7 +216,7 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
                   href={item.href}
                   onClick={() => setDrawerOpen(false)}
                   className={cn(
-                    'flex items-center gap-3 px-3 py-3 rounded-xl transition-colors duration-150',
+                    'tactile flex items-center gap-3 px-3 py-3 rounded-xl transition-colors duration-150',
                     active
                       ? 'bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400'
                       : 'text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-900'
@@ -217,7 +233,7 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
           <div className="px-3 pb-3 pt-1 border-t border-stone-100 dark:border-stone-800 mt-1">
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors duration-150"
+              className="tactile w-full flex items-center gap-3 px-3 py-3 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors duration-150"
             >
               <LogOut className="h-5 w-5 shrink-0" />
               <span className="text-sm font-medium">Keluar</span>

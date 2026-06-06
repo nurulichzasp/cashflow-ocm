@@ -105,7 +105,7 @@ export function BiayaFormDialog({ children, akunOptions }: Props) {
             </div>
             <div className="space-y-1.5">
               <Label>Jumlah (Rp)</Label>
-              <NumberInput name="jumlah" value={jumlah} onChange={setJumlah} placeholder="0" />
+              <NumberInput name="jumlah" value={jumlah} onChange={setJumlah} placeholder="0" className="glow-keluar" />
             </div>
           </div>
 
