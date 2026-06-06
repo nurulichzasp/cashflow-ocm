@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
@@ -16,7 +16,8 @@ import {
 } from '@/components/ui/alert-dialog'
 import { deleteTransaksiKas } from './actions'
 import { formatRupiah, formatTanggal } from '@/lib/format'
-import { Trash2, Wallet } from 'lucide-react'
+import { Trash2, Wallet, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { DateRangeFilter } from '@/components/date-range-filter'
 import type { TransaksiKas, AkunKas } from '@/lib/db/schema'
 
 type TransaksiRow = TransaksiKas & { akun: AkunKas | null }
@@ -37,8 +38,30 @@ interface Props {
   isOwner: boolean
 }
 
+type SortCol = 'tanggal' | 'jumlah'
+
 export function KasTable({ transaksiList, isOwner }: Props) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [dari, setDari] = useState('')
+  const [sampai, setSampai] = useState('')
+  const [sortBy, setSortBy] = useState<SortCol>('tanggal')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+
+  function handleSort(col: SortCol) {
+    if (sortBy === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortBy(col); setSortDir('desc') }
+  }
+
+  const filtered = useMemo(() => {
+    let list = [...transaksiList]
+    if (dari) list = list.filter(t => t.tanggal >= dari)
+    if (sampai) list = list.filter(t => t.tanggal <= sampai)
+    list.sort((a, b) => {
+      if (sortBy === 'tanggal') { const c = a.tanggal.localeCompare(b.tanggal); return sortDir === 'asc' ? c : -c }
+      return sortDir === 'asc' ? a.jumlah - b.jumlah : b.jumlah - a.jumlah
+    })
+    return list
+  }, [transaksiList, dari, sampai, sortBy, sortDir])
 
   async function handleDelete(id: string) {
     setDeletingId(id)
@@ -54,7 +77,7 @@ export function KasTable({ transaksiList, isOwner }: Props) {
 
   if (transaksiList.length === 0) {
     return (
-      <div className="rounded-xl border border-stone-200 bg-white shadow-sm">
+      <div className="surface">
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-stone-100">
             <Wallet className="h-6 w-6 text-stone-400" />
@@ -68,22 +91,29 @@ export function KasTable({ transaksiList, isOwner }: Props) {
 
   return (
     <div className="space-y-3">
+      {/* Filter tanggal/bulan */}
+      <DateRangeFilter dari={dari} sampai={sampai} onChange={(d, s) => { setDari(d); setSampai(s) }} />
+
       {/* Desktop */}
-      <div className="hidden md:block rounded-xl border border-stone-200 bg-white shadow-sm overflow-x-auto">
+      <div className="hidden md:block surface overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-stone-50 border-b border-stone-200">
-              <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Tanggal</th>
+            <tr className="bg-stone-50 dark:bg-white/[0.03] border-b border-stone-200 dark:border-border">
+              <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 cursor-pointer select-none" onClick={() => handleSort('tanggal')}>
+                <span className="inline-flex items-center gap-1">Tanggal {sortBy === 'tanggal' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</span>
+              </th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Akun</th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Kategori</th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Arah</th>
-              <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Jumlah</th>
+              <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 cursor-pointer select-none" onClick={() => handleSort('jumlah')}>
+                <span className="inline-flex items-center gap-1 justify-end">Jumlah {sortBy === 'jumlah' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</span>
+              </th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Catatan</th>
               {isOwner && <th className="px-4 py-3 w-10" />}
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
-            {transaksiList.map((item) => (
+            {filtered.map((item) => (
               <tr key={item.id} className="bg-white hover:bg-stone-50 dark:hover:bg-white/[0.03] transition-colors">
                 <td className="px-4 py-3 text-stone-900">{formatTanggal(item.tanggal)}</td>
                 <td className="px-4 py-3">
@@ -141,7 +171,7 @@ export function KasTable({ transaksiList, isOwner }: Props) {
 
       {/* Mobile */}
       <div className="md:hidden space-y-2">
-        {transaksiList.map((item) => (
+        {filtered.map((item) => (
           <div key={item.id} className="rounded-xl border border-stone-200 bg-white shadow-sm p-4">
             <div className="flex items-start justify-between gap-2 mb-2">
               <div>

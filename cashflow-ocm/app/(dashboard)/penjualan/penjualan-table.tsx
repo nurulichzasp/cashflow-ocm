@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
@@ -16,7 +16,8 @@ import {
 } from '@/components/ui/alert-dialog'
 import { deletePenjualan, updatePenjualanStatus } from './actions'
 import { formatTanggal, formatRupiah, todayString } from '@/lib/format'
-import { Trash2, FileText, CheckCircle2, Clock } from 'lucide-react'
+import { Trash2, FileText, CheckCircle2, Clock, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { DateRangeFilter } from '@/components/date-range-filter'
 import type { Penjualan } from '@/lib/db/schema'
 
 interface Props {
@@ -58,9 +59,40 @@ function StatusBadge({ status, onToggle, loading }: { status: 'lunas' | 'belum';
   )
 }
 
+type SortCol = 'tanggal' | 'totalBersih' | 'totalNilai'
+
+function SortIcon({ active, dir }: { active: boolean; dir: 'asc' | 'desc' }) {
+  if (!active) return <ArrowUpDown className="h-3 w-3 opacity-30" />
+  return dir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+}
+
 export function PenjualanTable({ penjualanList, isOwner }: Props) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
+  const [dari, setDari] = useState('')
+  const [sampai, setSampai] = useState('')
+  const [sortBy, setSortBy] = useState<SortCol>('tanggal')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+
+  function handleSort(col: SortCol) {
+    if (sortBy === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortBy(col); setSortDir('desc') }
+  }
+
+  const filtered = useMemo(() => {
+    let list = [...penjualanList]
+    if (dari) list = list.filter(p => p.tanggal >= dari)
+    if (sampai) list = list.filter(p => p.tanggal <= sampai)
+
+    list.sort((a, b) => {
+      let va: number, vb: number
+      if (sortBy === 'tanggal') { va = a.tanggal.localeCompare(b.tanggal); return sortDir === 'asc' ? va : -va }
+      if (sortBy === 'totalBersih') { va = a.totalBersih ?? 0; vb = b.totalBersih ?? 0 }
+      else { va = a.totalNilai ?? 0; vb = b.totalNilai ?? 0 }
+      return sortDir === 'asc' ? va - vb : vb - va
+    })
+    return list
+  }, [penjualanList, dari, sampai, sortBy, sortDir])
 
   async function handleToggleLunas(id: string) {
     setUpdatingId(id)
@@ -88,7 +120,7 @@ export function PenjualanTable({ penjualanList, isOwner }: Props) {
 
   if (penjualanList.length === 0) {
     return (
-      <div className="rounded-xl border border-stone-200 bg-white shadow-sm">
+      <div className="surface">
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-stone-100">
             <FileText className="h-6 w-6 text-stone-400" />
@@ -102,14 +134,20 @@ export function PenjualanTable({ penjualanList, isOwner }: Props) {
 
   return (
     <div className="space-y-3">
+      {/* Filter tanggal/bulan */}
+      <DateRangeFilter dari={dari} sampai={sampai} onChange={(d, s) => { setDari(d); setSampai(s) }} />
       {/* Desktop */}
-      <div className="hidden md:block rounded-xl border border-stone-200 bg-white shadow-sm overflow-x-auto">
+      <div className="hidden md:block surface overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-stone-50 border-b border-stone-200">
-              <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Tanggal</th>
+            <tr className="bg-stone-50 dark:bg-white/[0.03] border-b border-stone-200 dark:border-border">
+              <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 cursor-pointer select-none" onClick={() => handleSort('tanggal')}>
+                <span className="inline-flex items-center gap-1">Tanggal <SortIcon active={sortBy === 'tanggal'} dir={sortDir} /></span>
+              </th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">No. Invoice</th>
-              <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Nilai Bersih</th>
+              <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 cursor-pointer select-none" onClick={() => handleSort('totalBersih')}>
+                <span className="inline-flex items-center gap-1 justify-end">Nilai Bersih <SortIcon active={sortBy === 'totalBersih'} dir={sortDir} /></span>
+              </th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Tgl Bayar BGA</th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Catatan</th>
@@ -117,7 +155,7 @@ export function PenjualanTable({ penjualanList, isOwner }: Props) {
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
-            {penjualanList.map((item) => (
+            {filtered.map((item) => (
               <tr key={item.id} className="bg-white hover:bg-stone-50 dark:hover:bg-white/[0.03] transition-colors">
                 <td className="px-4 py-3 text-stone-900">{formatTanggal(item.tanggal)}</td>
                 <td className="px-4 py-3 font-medium text-stone-900 max-w-[200px]">
@@ -181,7 +219,7 @@ export function PenjualanTable({ penjualanList, isOwner }: Props) {
 
       {/* Mobile */}
       <div className="md:hidden space-y-2">
-        {penjualanList.map((item) => (
+        {filtered.map((item) => (
           <div key={item.id} className="rounded-xl border border-stone-200 bg-white shadow-sm p-4">
             <div className="flex items-start justify-between gap-2 mb-3">
               <div className="flex-1 min-w-0">

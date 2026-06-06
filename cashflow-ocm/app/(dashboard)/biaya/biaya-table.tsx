@@ -18,6 +18,7 @@ import { deleteBiayaOperasional } from './actions'
 import { formatRupiah, formatTanggal } from '@/lib/format'
 import { FotoBuktiGallery } from '@/components/foto-bukti-gallery'
 import { Trash2, Receipt, ImageIcon, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { DateRangeFilter } from '@/components/date-range-filter'
 import type { BiayaOperasional, AkunKas, BiayaFoto } from '@/lib/db/schema'
 
 type BiayaRow = BiayaOperasional & { akunSumber: AkunKas | null; fotos: BiayaFoto[] }
@@ -48,16 +49,24 @@ export function BiayaTable({ biayaList, isOwner }: Props) {
   const [expandedFotoId, setExpandedFotoId] = useState<string | null>(null)
   const [sortBy, setSortBy] = useState<SortCol>('tanggal')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+  const [dari, setDari] = useState('')
+  const [sampai, setSampai] = useState('')
 
   function handleSort(col: SortCol) {
     if (sortBy === col) setSortDir((d) => d === 'asc' ? 'desc' : 'asc')
     else { setSortBy(col); setSortDir('desc') }
   }
 
-  const sorted = useMemo(() => [...biayaList].sort((a, b) => {
-    const cmp = sortBy === 'tanggal' ? a.tanggal.localeCompare(b.tanggal) : a.jumlah - b.jumlah
-    return sortDir === 'asc' ? cmp : -cmp
-  }), [biayaList, sortBy, sortDir])
+  const sorted = useMemo(() => {
+    let list = [...biayaList]
+    if (dari) list = list.filter(b => b.tanggal >= dari)
+    if (sampai) list = list.filter(b => b.tanggal <= sampai)
+    list.sort((a, b) => {
+      const cmp = sortBy === 'tanggal' ? a.tanggal.localeCompare(b.tanggal) : a.jumlah - b.jumlah
+      return sortDir === 'asc' ? cmp : -cmp
+    })
+    return list
+  }, [biayaList, sortBy, sortDir, dari, sampai])
 
   function SortIcon({ col }: { col: SortCol }) {
     if (sortBy !== col) return <ArrowUpDown className="h-3 w-3" />
@@ -92,8 +101,11 @@ export function BiayaTable({ biayaList, isOwner }: Props) {
 
   return (
     <div className="space-y-3">
+      {/* Filter tanggal/bulan */}
+      <DateRangeFilter dari={dari} sampai={sampai} onChange={(d, s) => { setDari(d); setSampai(s) }} />
+
       {/* Desktop */}
-      <div className="hidden md:block rounded-xl border border-stone-200 bg-white shadow-sm overflow-x-auto">
+      <div className="hidden md:block surface overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-stone-50 border-b border-stone-200">

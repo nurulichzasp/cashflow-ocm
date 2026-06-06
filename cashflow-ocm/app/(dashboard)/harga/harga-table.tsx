@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
@@ -16,7 +16,8 @@ import {
 } from '@/components/ui/alert-dialog'
 import { deleteHargaAcuan } from './actions'
 import { formatRupiah, formatTanggal } from '@/lib/format'
-import { Trash2, DollarSign } from 'lucide-react'
+import { Trash2, DollarSign, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { DateRangeFilter } from '@/components/date-range-filter'
 import type { HargaAcuan } from '@/lib/db/schema'
 
 interface Props {
@@ -24,8 +25,30 @@ interface Props {
   isOwner: boolean
 }
 
+type SortCol = 'tanggal' | 'harga'
+
 export function HargaTable({ hargaList, isOwner }: Props) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [dari, setDari] = useState('')
+  const [sampai, setSampai] = useState('')
+  const [sortBy, setSortBy] = useState<SortCol>('tanggal')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+
+  function handleSort(col: SortCol) {
+    if (sortBy === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortBy(col); setSortDir('desc') }
+  }
+
+  const filtered = useMemo(() => {
+    let list = [...hargaList]
+    if (dari) list = list.filter(h => h.tanggalBerlaku >= dari)
+    if (sampai) list = list.filter(h => h.tanggalBerlaku <= sampai)
+    list.sort((a, b) => {
+      if (sortBy === 'tanggal') { const c = a.tanggalBerlaku.localeCompare(b.tanggalBerlaku); return sortDir === 'asc' ? c : -c }
+      return sortDir === 'asc' ? a.hargaLapangan - b.hargaLapangan : b.hargaLapangan - a.hargaLapangan
+    })
+    return list
+  }, [hargaList, dari, sampai, sortBy, sortDir])
 
   async function handleDelete(id: string) {
     setDeletingId(id)
@@ -55,8 +78,11 @@ export function HargaTable({ hargaList, isOwner }: Props) {
 
   return (
     <div className="space-y-3">
+      {/* Filter tanggal */}
+      <DateRangeFilter dari={dari} sampai={sampai} onChange={(d, s) => { setDari(d); setSampai(s) }} />
+
       {/* Desktop */}
-      <div className="hidden md:block rounded-xl border border-stone-200 bg-white shadow-sm overflow-x-auto">
+      <div className="hidden md:block surface overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-stone-50 border-b border-stone-200">
@@ -70,7 +96,7 @@ export function HargaTable({ hargaList, isOwner }: Props) {
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
-            {hargaList.map((harga) => {
+            {filtered.map((harga) => {
               const hargaJual = harga.hargaLapangan + harga.selisihJualBga
               return (
                 <tr key={harga.id} className="bg-white hover:bg-orange-50/30 transition-colors">
@@ -123,7 +149,7 @@ export function HargaTable({ hargaList, isOwner }: Props) {
 
       {/* Mobile */}
       <div className="md:hidden space-y-2">
-        {hargaList.map((harga) => {
+        {filtered.map((harga) => {
           const hargaJual = harga.hargaLapangan + harga.selisihJualBga
           return (
             <div key={harga.id} className="rounded-xl border border-stone-200 bg-white shadow-sm p-4">
