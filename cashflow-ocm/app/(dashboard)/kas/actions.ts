@@ -7,6 +7,7 @@ import { db } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { transaksiKas, akunKas } from '@/lib/db/schema'
 import { z } from 'zod'
+import { requirePermission } from '@/lib/permissions'
 
 async function requireSession() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -42,6 +43,7 @@ const kasSchema = z.object({
 
 export async function createTransaksiKas(formData: FormData) {
   const session = await requireSession()
+  requirePermission(session.user.role as any, 'canCreate')
 
   const data = kasSchema.parse({
     tanggal: formData.get('tanggal'),

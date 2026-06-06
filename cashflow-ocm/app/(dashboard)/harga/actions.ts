@@ -7,6 +7,7 @@ import { db } from '@/lib/db'
 import { hargaAcuan } from '@/lib/db/schema'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
+import { requirePermission } from '@/lib/permissions'
 
 async function requireSession() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -29,7 +30,8 @@ const hargaSchema = z.object({
 })
 
 export async function createHargaAcuan(formData: FormData) {
-  await requireSession()
+  const session = await requireSession()
+  requirePermission(session.user.role as any, 'canCreate')
   const data = hargaSchema.parse({
     tanggalBerlaku: formData.get('tanggalBerlaku'),
     produk: formData.get('produk'),

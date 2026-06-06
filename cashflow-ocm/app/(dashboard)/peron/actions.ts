@@ -7,6 +7,7 @@ import { db } from '@/lib/db'
 import { peron, modalPeron } from '@/lib/db/schema'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
+import { requirePermission } from '@/lib/permissions'
 
 async function requireSession() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -42,7 +43,8 @@ const modalSchema = z.object({
 // ─── Peron CRUD ───────────────────────────────────────────────────────────────
 
 export async function createPeron(formData: FormData) {
-  await requireSession()
+  const session = await requireSession()
+  requirePermission(session.user.role as any, 'canCreate')
   const data = peronSchema.parse({
     kode: formData.get('kode') || undefined,
     nama: formData.get('nama'),
@@ -65,7 +67,8 @@ export async function createPeron(formData: FormData) {
 }
 
 export async function updatePeron(id: string, formData: FormData) {
-  await requireSession()
+  const session = await requireSession()
+  requirePermission(session.user.role as any, 'canEdit')
   const data = peronSchema.parse({
     kode: formData.get('kode') || undefined,
     nama: formData.get('nama'),
@@ -98,6 +101,7 @@ export async function deletePeron(id: string) {
 
 export async function addModalPeron(formData: FormData) {
   const session = await requireSession()
+  requirePermission(session.user.role as any, 'canCreate')
   const data = modalSchema.parse({
     peronId: formData.get('peronId'),
     tanggal: formData.get('tanggal'),

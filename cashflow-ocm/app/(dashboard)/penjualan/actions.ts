@@ -81,7 +81,8 @@ export async function createPenjualan(formData: FormData) {
 }
 
 export async function updatePenjualanStatus(id: string, statusBayar: 'belum' | 'lunas', tanggalBayarBga?: string) {
-  await requireSession()
+  const session = await requireSession()
+  requirePermission(session.user.role as any, 'canEdit')
   await db.update(penjualan)
     .set({ statusBayar, tanggalBayarBga: tanggalBayarBga ?? null })
     .where(eq(penjualan.id, id))
