@@ -29,13 +29,19 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false,
+    // KEAMANAN: matikan pendaftaran publik. Pembuatan user hanya lewat
+    // server action addUser (owner-only). Tanpa ini, siapa pun bisa
+    // POST /api/auth/sign-up/email dan dapat akun (lihat default role di bawah).
+    disableSignUp: true,
   },
   user: {
     additionalFields: {
       role: {
         type: 'string',
         required: false,
-        defaultValue: 'admin',
+        // Default paling rendah (defense-in-depth). Owner/role lain di-set
+        // eksplisit saat user dibuat via addUser.
+        defaultValue: 'viewer',
         input: false,
         // Supported roles: owner, admin, kasir, akuntan, viewer
       },

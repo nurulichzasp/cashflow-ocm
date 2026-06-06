@@ -55,36 +55,48 @@ export async function addUser(data: { name: string; email: string; password: str
     throw new Error('Hanya Owner yang dapat menambahkan pengguna')
   }
 
+  const email = data.email.toLowerCase()
+
+  // Validasi dasar (signUpEmail publik sudah dimatikan via disableSignUp,
+  // jadi kita buat user server-side langsung di sini).
+  if (!email.includes('@')) throw new Error('Email tidak valid')
+  if (!data.password || data.password.length < 8) {
+    throw new Error('Kata sandi minimal 8 karakter')
+  }
+
   // Cek apakah email sudah ada
-  const existing = await db.query.user.findFirst({
-    where: eq(user.email, data.email.toLowerCase()),
-  })
+  const existing = await db.query.user.findFirst({ where: eq(user.email, email) })
   if (existing) {
     throw new Error('Email sudah terdaftar')
   }
 
-  // Buat user baru menggunakan Better Auth API
-  const newUser = await auth.api.signUpEmail({
-    body: {
-      email: data.email.toLowerCase(),
-      password: data.password,
+  const newUserId = crypto.randomUUID()
+  const now = new Date()
+  const hashedPassword = await hashPassword(data.password)
+
+  // Buat user + akun credential dalam satu transaksi agar atomic
+  await db.transaction(async (tx) => {
+    await tx.insert(user).values({
+      id: newUserId,
       name: data.name,
-    },
-  })
-
-  if (!newUser || !newUser.user) {
-    throw new Error('Gagal membuat pengguna baru')
-  }
-
-  // Update role & permissions user baru di database ke yang diinginkan
-  await db
-    .update(user)
-    .set({
+      email,
+      emailVerified: true,
       role: data.role,
       permissions: data.permissions || null,
-      updatedAt: new Date(),
+      createdAt: now,
+      updatedAt: now,
     })
-    .where(eq(user.id, newUser.user.id))
+
+    await tx.insert(account).values({
+      id: crypto.randomUUID(),
+      userId: newUserId,
+      accountId: newUserId,
+      providerId: 'credential',
+      password: hashedPassword,
+      createdAt: now,
+      updatedAt: now,
+    })
+  })
 
   revalidatePath('/')
   return { success: true }
