@@ -5,7 +5,7 @@ import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import {
   transaksiKas, biayaOperasional, penjualan,
-  penjualanDetail, pembelian, peron, modalPeron, akunKas,
+  pembelian, peron, modalPeron, akunKas,
 } from '@/lib/db/schema'
 import { eq, sum, and, gte, lte, lt, asc } from 'drizzle-orm'
 
@@ -27,9 +27,11 @@ export async function getLaporanData(dari: string, sampai: string) {
     dpRows,
     allPeron,
   ] = await Promise.all([
-    db.select({ total: sum(penjualanDetail.subtotal) })
-      .from(penjualanDetail)
-      .innerJoin(penjualan, eq(penjualanDetail.penjualanId, penjualan.id))
+    // Penjualan dijumlah dari kolom totalBersih di header. Impor REKAP BGA
+    // mengisi totalBersih (bukan baris penjualan_detail), jadi memakai detail
+    // akan mengurangi-hitung. Samakan dengan sumber data dashboard.
+    db.select({ total: sum(penjualan.totalBersih) })
+      .from(penjualan)
       .where(and(eq(penjualan.statusBayar, 'lunas'), gte(penjualan.tanggal, dari), lte(penjualan.tanggal, sampai))),
 
     db.select({ total: sum(biayaOperasional.jumlah) })
