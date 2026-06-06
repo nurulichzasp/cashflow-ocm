@@ -1,8 +1,17 @@
 import { createClient } from '@libsql/client'
+import { auth } from '@/lib/auth'
+import { headers } from 'next/headers'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
+  // KEAMANAN: endpoint diagnostik ini membocorkan skema DB, jumlah user,
+  // dan potongan URL Turso. Batasi hanya untuk owner yang terautentikasi.
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session || session.user.role !== 'owner') {
+    return Response.json({ error: 'Tidak terautentikasi atau bukan owner' }, { status: 401 })
+  }
+
   try {
     const client = createClient({
       url: process.env.TURSO_CONNECTION_URL ?? 'NOT SET',
@@ -31,8 +40,6 @@ export async function GET() {
   }
 }
 
-import { auth } from '@/lib/auth'
-import { headers } from 'next/headers'
 import { db } from '@/lib/db'
 import {
   pembelian,
