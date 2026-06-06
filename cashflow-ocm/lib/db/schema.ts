@@ -63,7 +63,7 @@ export const akunKas = sqliteTable('akun_kas', {
   id: text('id').primaryKey().default(sql`(lower(hex(randomblob(8))))`),
   nama: text('nama').notNull(),
   tipe: text('tipe', { enum: ['bank', 'tunai'] }).notNull().default('bank'),
-  saldoAwal: real('saldo_awal').notNull().default(0),
+  saldoAwal: integer('saldo_awal').notNull().default(0),
   urutan: integer('urutan').notNull().default(0),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
 })
@@ -75,7 +75,7 @@ export const peron = sqliteTable('peron', {
   kontak: text('kontak'),
   alamat: text('alamat'),
   status: text('status', { enum: ['aktif', 'nonaktif'] }).notNull().default('aktif'),
-  keuntunganPerKg: real('keuntungan_per_kg').notNull().default(50),
+  keuntunganPerKg: integer('keuntungan_per_kg').notNull().default(50),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
 })
 
@@ -84,7 +84,7 @@ export const modalPeron = sqliteTable('modal_peron', {
   peronId: text('peron_id').notNull().references(() => peron.id, { onDelete: 'cascade' }),
   tanggal: text('tanggal').notNull(),
   jenis: text('jenis', { enum: ['tambah', 'kurang', 'kembali'] }).notNull(),
-  jumlah: real('jumlah').notNull(),
+  jumlah: integer('jumlah').notNull(),
   catatan: text('catatan'),
   createdBy: text('created_by').notNull().references(() => user.id),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
@@ -94,8 +94,8 @@ export const hargaAcuan = sqliteTable('harga_acuan', {
   id: text('id').primaryKey().default(sql`(lower(hex(randomblob(8))))`),
   tanggalBerlaku: text('tanggal_berlaku').notNull(),
   produk: text('produk', { enum: ['TBS', 'BRDL'] }).notNull(),
-  hargaLapangan: real('harga_lapangan').notNull(),
-  selisihJualBga: real('selisih_jual_bga').notNull().default(120),
+  hargaLapangan: integer('harga_lapangan').notNull(),
+  selisihJualBga: integer('selisih_jual_bga').notNull().default(120),
   catatan: text('catatan'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
 })
@@ -108,15 +108,15 @@ export const pembelian = sqliteTable('pembelian', {
   noTid: text('no_tid'),
   nopol: text('nopol'),
   supir: text('supir'),
-  hargaJual: real('harga_jual').notNull().default(0),
-  hargaBeli: real('harga_beli').notNull().default(0),
+  hargaJual: integer('harga_jual').notNull().default(0),
+  hargaBeli: integer('harga_beli').notNull().default(0),
   // aggregate fields
   kategori: text('kategori', { enum: ['OCM R1', 'OCM R2', 'OCMP SAGU', 'OCM BRDL'] }).notNull().default('OCM R1'),
   peronId: text('peron_id').notNull().references(() => peron.id),
-  tonase: real('tonase').notNull().default(0),
-  totalJual: real('total_jual').notNull().default(0),
-  totalBeli: real('total_beli').notNull().default(0),
-  keuntungan: real('keuntungan').notNull().default(0),
+  tonase: real('tonase').notNull().default(0), // tetap real (berat kg bisa pecahan)
+  totalJual: integer('total_jual').notNull().default(0),
+  totalBeli: integer('total_beli').notNull().default(0),
+  keuntungan: integer('keuntungan').notNull().default(0),
   statusBayarPeron: text('status_bayar_peron', { enum: ['belum', 'lunas'] }).notNull().default('belum'),
   tanggalBayar: text('tanggal_bayar'),
   sumberBayarId: text('sumber_bayar_id').references(() => akunKas.id),
@@ -132,11 +132,11 @@ export const pembelianDetail = sqliteTable('pembelian_detail', {
   noTid: text('no_tid'),
   nopol: text('nopol'),
   supir: text('supir'),
-  tonase: real('tonase').notNull(),
-  hargaLapangan: real('harga_lapangan').notNull(), // harga bayar ke peron
-  subtotalBeli: real('subtotal_beli').notNull(),
-  subtotalJual: real('subtotal_jual').notNull(),
-  keuntungan: real('keuntungan').notNull(),
+  tonase: real('tonase').notNull(), // tetap real (berat kg bisa pecahan)
+  hargaLapangan: integer('harga_lapangan').notNull(),
+  subtotalBeli: integer('subtotal_beli').notNull(),
+  subtotalJual: integer('subtotal_jual').notNull(),
+  keuntungan: integer('keuntungan').notNull(),
   urutan: integer('urutan').notNull().default(0),
   tanggalReplas: text('tanggal_replas'), // tanggal replas bongkar di PKS (opsional)
 })
@@ -148,8 +148,8 @@ export const penjualan = sqliteTable('penjualan', {
   noInvoice: text('no_invoice'),
   statusBayar: text('status_bayar', { enum: ['belum', 'lunas'] }).notNull().default('belum'),
   tanggalBayarBga: text('tanggal_bayar_bga'),
-  totalBersih: real('total_bersih'),
-  totalNilai: real('total_nilai'),
+  totalBersih: integer('total_bersih'),
+  totalNilai: integer('total_nilai'),
   catatan: text('catatan'),
   createdBy: text('created_by').notNull().references(() => user.id),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
@@ -159,16 +159,16 @@ export const penjualanDetail = sqliteTable('penjualan_detail', {
   id: text('id').primaryKey().default(sql`(lower(hex(randomblob(8))))`),
   penjualanId: text('penjualan_id').notNull().references(() => penjualan.id, { onDelete: 'cascade' }),
   produk: text('produk', { enum: ['TBS', 'BRDL'] }).notNull(),
-  qtyKg: real('qty_kg').notNull(),
-  hargaJual: real('harga_jual').notNull(),
-  subtotal: real('subtotal').notNull(),
+  qtyKg: real('qty_kg').notNull(), // tetap real (berat kg bisa pecahan)
+  hargaJual: integer('harga_jual').notNull(),
+  subtotal: integer('subtotal').notNull(),
 })
 
 export const biayaOperasional = sqliteTable('biaya_operasional', {
   id: text('id').primaryKey().default(sql`(lower(hex(randomblob(8))))`),
   tanggal: text('tanggal').notNull(),
   kategori: text('kategori', { enum: ['gaji', 'solar', 'transport', 'lainnya'] }).notNull(),
-  jumlah: real('jumlah').notNull(),
+  jumlah: integer('jumlah').notNull(),
   akunSumberId: text('akun_sumber_id').notNull().references(() => akunKas.id),
   catatan: text('catatan'),
   createdBy: text('created_by').notNull().references(() => user.id),
@@ -196,7 +196,7 @@ export const transaksiKas = sqliteTable('transaksi_kas', {
   tanggal: text('tanggal').notNull(),
   akunId: text('akun_id').notNull().references(() => akunKas.id),
   arah: text('arah', { enum: ['masuk', 'keluar'] }).notNull(),
-  jumlah: real('jumlah').notNull(),
+  jumlah: integer('jumlah').notNull(),
   kategori: text('kategori', {
     enum: [
       'penerimaan_bga',
