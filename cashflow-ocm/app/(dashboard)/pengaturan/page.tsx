@@ -27,8 +27,8 @@ export default async function PengaturanPage() {
   return (
     <div className="space-y-6">
       <div className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight text-stone-900 dark:text-stone-100">Pengaturan Sistem</h1>
-        <p className="text-muted-foreground text-sm">
+        <h1 className="text-2xl font-semibold tracking-tight text-stone-900">Pengaturan Sistem</h1>
+        <p className="text-sm text-stone-500 mt-0.5">
           Kelola profil perusahaan, kontrol akses pengguna, printer kasir, dan cadangan data.
         </p>
       </div>

@@ -37,20 +37,20 @@ export default async function PeronPage() {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">Total Peron</p>
-          <p className="text-2xl font-bold text-stone-900 num">{peronList.length}</p>
-          <p className="text-xs text-stone-400 mt-1">{totalAktif} aktif saat ini</p>
+        <div className="surface p-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500 mb-1.5">Total Peron</p>
+          <p className="text-2xl font-bold text-stone-900 dark:text-stone-100 num tabular-nums">{peronList.length}</p>
+          <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">{totalAktif} aktif saat ini</p>
         </div>
-        <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm border-l-4 border-l-green-500">
-          <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">Aktif</p>
-          <p className="text-2xl font-bold text-green-600 num">{totalAktif}</p>
-          <p className="text-xs text-stone-400 mt-1">Peron yang sedang bermitra</p>
+        <div className="surface p-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500 mb-1.5">Aktif</p>
+          <p className="text-2xl font-bold text-stone-900 dark:text-stone-100 num tabular-nums">{totalAktif}</p>
+          <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Peron yang sedang bermitra</p>
         </div>
-        <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm border-l-4 border-l-orange-500">
-          <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">Total DP Beredar</p>
-          <p className="text-2xl font-bold text-orange-600 num">{formatRupiah(totalDp)}</p>
-          <p className="text-xs text-stone-400 mt-1">Modal yang sedang di peron</p>
+        <div className="surface p-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500 mb-1.5">Total DP Beredar</p>
+          <p className="text-2xl font-bold text-primary num tabular-nums">{formatRupiah(totalDp)}</p>
+          <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Modal yang sedang di peron</p>
         </div>
       </div>
 

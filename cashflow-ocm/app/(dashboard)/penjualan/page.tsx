@@ -48,24 +48,24 @@ export default async function PenjualanPage() {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
+        <div className="surface p-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">Total Transaksi</p>
-          <p className="text-2xl font-bold text-stone-900 num">{penjualanList.length}</p>
+          <p className="text-2xl font-bold text-stone-900 dark:text-stone-100 num tabular-nums">{penjualanList.length}</p>
           <p className="text-xs text-stone-400 mt-1">Penjualan tercatat</p>
         </div>
-        <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
+        <div className="surface p-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">Total Penjualan</p>
           <p className="text-2xl font-bold text-stone-900 dark:text-stone-100 num">{formatRupiah(totalPenjualan)}</p>
           <p className="text-xs text-stone-400 mt-1">Nilai bersih (tanpa pajak)</p>
         </div>
-        <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
+        <div className="surface p-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">Total PPN</p>
-          <p className="text-2xl font-bold text-stone-900 num">{formatRupiah(totalPpn)}</p>
+          <p className="text-2xl font-bold text-stone-900 dark:text-stone-100 num tabular-nums">{formatRupiah(totalPpn)}</p>
           <p className="text-xs text-stone-400 mt-1">Selisih PPN−PPH</p>
         </div>
-        <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
+        <div className="surface p-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">Estimasi Laba</p>
-          <p className="text-2xl font-bold text-stone-900 num">{formatRupiah(estimasiLaba)}</p>
+          <p className="text-2xl font-bold text-stone-900 dark:text-stone-100 num tabular-nums">{formatRupiah(estimasiLaba)}</p>
           <p className="text-xs text-stone-400 mt-1">Margin dari pembelian</p>
         </div>
       </div>

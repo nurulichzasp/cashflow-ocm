@@ -53,15 +53,15 @@ export default async function BiayaPage() {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
+        <div className="surface p-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">Total Pengeluaran</p>
           <p className="text-2xl font-bold text-orange-600 dark:text-[#D97757] num">{formatRupiah(totalBiaya)}</p>
           <p className="text-xs text-stone-400 mt-1">{biayaList.length} entri tercatat</p>
         </div>
         {perKategori.slice(0, 2).map((k) => (
-          <div key={k.label} className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
+          <div key={k.label} className="surface p-4">
             <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">{k.label}</p>
-            <p className="text-2xl font-bold text-stone-900 num">{formatRupiah(k.total)}</p>
+            <p className="text-2xl font-bold text-stone-900 dark:text-stone-100 num tabular-nums">{formatRupiah(k.total)}</p>
             <p className="text-xs text-stone-400 mt-1">Total biaya {k.label.toLowerCase()}</p>
           </div>
         ))}

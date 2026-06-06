@@ -40,7 +40,7 @@ export default async function HargaPage() {
       {(tbsTerbaru || brdlTerbaru) && (
         <div className="grid gap-3 sm:grid-cols-2">
           {tbsTerbaru && (
-            <div className="rounded-xl border border-stone-200 bg-white p-4">
+            <div className="surface p-4">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-stone-400 mb-2">TBS — Harga Terbaru</p>
               <p className="text-2xl font-bold text-orange-600 dark:text-[#D97757] num">
                 {formatRupiah(tbsTerbaru.hargaLapangan + tbsTerbaru.selisihJualBga)}<span className="text-sm font-normal text-stone-400 ml-1">/kg</span>
@@ -51,7 +51,7 @@ export default async function HargaPage() {
             </div>
           )}
           {brdlTerbaru && (
-            <div className="rounded-xl border border-stone-200 bg-white p-4">
+            <div className="surface p-4">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-stone-400 mb-2">BRDL — Harga Terbaru</p>
               <p className="text-2xl font-bold text-stone-900 num">
                 {formatRupiah(brdlTerbaru.hargaLapangan + brdlTerbaru.selisihJualBga)}<span className="text-sm font-normal text-stone-400 ml-1">/kg</span>

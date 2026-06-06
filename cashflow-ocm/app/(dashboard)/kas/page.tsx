@@ -57,12 +57,12 @@ export default async function KasPage() {
         {akunSaldo.map((a, i) => {
           const colors = ['border-l-green-500', 'border-l-blue-500', 'border-l-violet-500', 'border-l-amber-500', 'border-l-stone-400']
           return (
-            <div key={a.id} className={`rounded-xl border border-stone-200 bg-white p-4 shadow-sm border-l-4 ${colors[i % colors.length]}`}>
-              <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5 truncate">{a.nama}</p>
-              <p className={`text-xl font-bold num ${a.saldo >= 0 ? 'text-stone-900' : 'text-red-600'}`}>
+            <div key={a.id} className="surface lift p-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500 mb-1.5 truncate">{a.nama}</p>
+              <p className={`text-xl font-bold num tabular-nums ${a.saldo >= 0 ? 'text-stone-900 dark:text-stone-100' : 'text-red-600 dark:text-red-400'}`}>
                 {formatRupiah(a.saldo)}
               </p>
-              <p className="text-xs text-stone-400 mt-1">
+              <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">
                 {a.tipe === 'bank' ? 'Rekening Bank' : 'Uang Tunai'}
               </p>
             </div>
@@ -72,12 +72,12 @@ export default async function KasPage() {
 
       {/* Total masuk / keluar */}
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
+        <div className="surface p-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">Total Masuk</p>
           <p className="text-2xl font-bold text-[#3B82F6] dark:text-[#3B82F6] num">{formatRupiah(totalMasuk)}</p>
           <p className="text-xs text-stone-400 mt-1">Seluruh penerimaan tercatat</p>
         </div>
-        <div className="rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
+        <div className="surface p-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">Total Keluar</p>
           <p className="text-2xl font-bold text-orange-600 dark:text-[#D97757] num">{formatRupiah(totalKeluar)}</p>
           <p className="text-xs text-stone-400 mt-1">Seluruh pengeluaran tercatat</p>
