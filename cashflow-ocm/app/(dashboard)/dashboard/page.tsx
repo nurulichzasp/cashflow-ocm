@@ -251,7 +251,6 @@ export default async function DashboardPage() {
   const akunCvOcm = metrics.akunSaldo.find((a) => a.nama.toLowerCase().includes('cv ocm'))
   const akunLainnya = metrics.akunSaldo.filter((a) => a.tipe === 'bank' && !a.nama.toLowerCase().includes('cv ocm'))
   const akunTunai = metrics.akunSaldo.filter((a) => a.tipe === 'tunai')
-  const saldoLainnya = akunLainnya.reduce((s, a) => s + a.saldo, 0)
 
   return (
     <div className="space-y-4 sm:space-y-6 pt-1 md:pt-0">
@@ -321,39 +320,42 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Saldo per akun */}
-      <div>
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280] mb-3">Saldo Rekening &amp; Kas</p>
-        <div className="grid gap-2.5 sm:gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {/* Rek BRI CV OCM — utama */}
+      {/* Saldo per akun — satu card list */}
+      <div className="surface press-card overflow-hidden">
+        <div className="px-5 py-3 border-b border-stone-100 dark:border-border flex items-center justify-between">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Saldo Rekening &amp; Kas</p>
+          <p className="text-xs font-semibold num tabular-nums text-stone-900 dark:text-stone-100">{formatRupiah(metrics.totalSaldo)}</p>
+        </div>
+        <div className="divide-y divide-stone-100 dark:divide-border">
           {akunCvOcm && (
-            <div className="surface lift press-card p-4 sm:col-span-2 lg:col-span-1 ring-1 ring-primary/15">
-              <p className="text-[10px] font-semibold text-primary uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-primary" /> Rekening Utama
-              </p>
-              <p className="text-[11px] text-stone-400 dark:text-[#6B7280] mb-1.5 truncate">{akunCvOcm.nama}</p>
-              <p className={`text-2xl font-bold num tabular-nums tracking-[-0.02em] ${akunCvOcm.saldo >= 0 ? 'text-stone-900 dark:text-stone-100' : 'text-red-600 dark:text-red-400'}`}>
+            <div className="flex items-center justify-between px-5 py-3.5">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-stone-900 dark:text-stone-100 truncate">{akunCvOcm.nama}</p>
+                  <p className="text-[10px] text-primary font-semibold uppercase tracking-wider">Utama</p>
+                </div>
+              </div>
+              <p className={`text-sm font-bold num tabular-nums shrink-0 ${akunCvOcm.saldo >= 0 ? 'text-stone-900 dark:text-stone-100' : 'text-red-500'}`}>
                 {formatRupiah(akunCvOcm.saldo)}
               </p>
             </div>
           )}
-          {/* Rekening BRI lainnya — digabung */}
-          {akunLainnya.length > 0 && (
-            <div className="surface lift press-card p-4">
-              <p className="text-[10px] font-semibold text-stone-400 dark:text-[#6B7280] uppercase tracking-widest mb-2">Bank</p>
-              <p className="text-[11px] text-stone-400 dark:text-[#6B7280] mb-1.5">Rek BRI Lainnya</p>
-              <p className={`text-xl font-bold num tabular-nums tracking-tight ${saldoLainnya >= 0 ? 'text-stone-900 dark:text-stone-100' : 'text-red-600 dark:text-red-400'}`}>
-                {formatRupiah(saldoLainnya)}
+          {akunLainnya.map((a) => (
+            <div key={a.id} className="flex items-center justify-between px-5 py-3">
+              <p className="text-sm text-stone-600 dark:text-stone-300 truncate mr-3">{a.nama}</p>
+              <p className={`text-sm font-semibold num tabular-nums shrink-0 ${a.saldo >= 0 ? 'text-stone-900 dark:text-stone-100' : 'text-red-500'}`}>
+                {formatRupiah(a.saldo)}
               </p>
-              <p className="text-[10px] text-stone-300 dark:text-[#4B5563] mt-2 truncate">{akunLainnya.map((a) => a.nama).join(' · ')}</p>
             </div>
-          )}
-          {/* Tunai */}
+          ))}
           {akunTunai.map((a) => (
-            <div key={a.id} className="surface lift press-card p-4">
-              <p className="text-[10px] font-semibold text-stone-400 dark:text-[#6B7280] uppercase tracking-widest mb-2">Tunai</p>
-              <p className="text-[11px] text-stone-400 dark:text-[#6B7280] mb-1.5 truncate">{a.nama}</p>
-              <p className={`text-xl font-bold num tabular-nums tracking-tight ${a.saldo >= 0 ? 'text-stone-900 dark:text-stone-100' : 'text-red-600 dark:text-red-400'}`}>
+            <div key={a.id} className="flex items-center justify-between px-5 py-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <p className="text-sm text-stone-600 dark:text-stone-300 truncate">{a.nama}</p>
+                <span className="text-[10px] text-stone-400 dark:text-[#6B7280] uppercase tracking-wider shrink-0">Tunai</span>
+              </div>
+              <p className={`text-sm font-semibold num tabular-nums shrink-0 ${a.saldo >= 0 ? 'text-stone-900 dark:text-stone-100' : 'text-red-500'}`}>
                 {formatRupiah(a.saldo)}
               </p>
             </div>
