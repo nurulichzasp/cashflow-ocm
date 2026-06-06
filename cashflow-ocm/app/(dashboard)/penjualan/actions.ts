@@ -8,6 +8,7 @@ import { auth } from '@/lib/auth'
 import { penjualan } from '@/lib/db/schema'
 import { z } from 'zod'
 import { notifyNewPenjualan } from '@/lib/notification'
+import { requirePermission } from '@/lib/permissions'
 
 async function requireSession() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -40,6 +41,7 @@ function parseRpInput(v: FormDataEntryValue | null): number | undefined {
 
 export async function createPenjualan(formData: FormData) {
   const session = await requireSession()
+  requirePermission(session.user.role as any, 'canCreate')
 
   const data = penjualanSchema.parse({
     tanggal: formData.get('tanggal'),

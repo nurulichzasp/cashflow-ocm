@@ -8,6 +8,7 @@ import { auth } from '@/lib/auth'
 import { pembelian, pembelianDetail, transaksiKas, akunKas, peron } from '@/lib/db/schema'
 import { z } from 'zod'
 import { notifyNewPembelian } from '@/lib/notification'
+import { requirePermission } from '@/lib/permissions'
 
 async function requireSession() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -71,6 +72,7 @@ export async function createPembelian(data: {
   details: DetailInput[]
 }) {
   const session = await requireSession()
+  requirePermission(session.user.role as any, 'canCreate')
   const parsed = pembelianSchema.parse(data)
 
   const peronData = await db.query.peron.findFirst({ where: (t, { eq }) => eq(t.id, parsed.peronId) })
@@ -157,6 +159,7 @@ export async function updatePembelian(id: string, data: {
   details: DetailInput[]
 }) {
   const session = await requireSession()
+  requirePermission(session.user.role as any, 'canEdit')
   const parsed = pembelianSchema.parse(data)
 
   const peronData = await db.query.peron.findFirst({ where: (t, { eq }) => eq(t.id, parsed.peronId) })
@@ -217,7 +220,8 @@ export async function updatePembelian(id: string, data: {
 }
 
 export async function deletePembelian(id: string) {
-  await requireOwner()
+  const session = await requireSession()
+  requirePermission(session.user.role as any, 'canDelete')
   await db.delete(transaksiKas).where(and(eq(transaksiKas.refTabel, 'pembelian'), eq(transaksiKas.refId, id)))
   await db.delete(pembelian).where(eq(pembelian.id, id))
   revalidatePath('/pembelian')

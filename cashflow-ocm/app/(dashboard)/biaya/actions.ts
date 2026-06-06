@@ -8,6 +8,7 @@ import { auth } from '@/lib/auth'
 import { biayaOperasional } from '@/lib/db/schema'
 import { z } from 'zod'
 import { notifyNewBiaya } from '@/lib/notification'
+import { requirePermission } from '@/lib/permissions'
 
 async function requireSession() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -31,6 +32,7 @@ const biayaSchema = z.object({
 
 export async function createBiayaOperasional(formData: FormData) {
   const session = await requireSession()
+  requirePermission(session.user.role as any, 'canCreate')
 
   const data = biayaSchema.parse({
     tanggal: formData.get('tanggal'),
@@ -64,7 +66,8 @@ export async function createBiayaOperasional(formData: FormData) {
 }
 
 export async function deleteBiayaOperasional(id: string) {
-  await requireOwner()
+  const session = await requireSession()
+  requirePermission(session.user.role as any, 'canDelete')
   await db.delete(biayaOperasional).where(eq(biayaOperasional.id, id))
   revalidatePath('/biaya')
   return { success: true }

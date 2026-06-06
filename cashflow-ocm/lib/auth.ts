@@ -37,6 +37,7 @@ export const auth = betterAuth({
         required: false,
         defaultValue: 'admin',
         input: false,
+        // Supported roles: owner, admin, kasir, akuntan, viewer
       },
       nickname: { type: 'string', required: false },
       fullName: { type: 'string', required: false },
@@ -45,6 +46,7 @@ export const auth = betterAuth({
       phone: { type: 'string', required: false },
       address: { type: 'string', required: false },
       permissions: { type: 'string', required: false },
+      // permissions: JSON string with custom permission overrides
     },
   },
   session: {
