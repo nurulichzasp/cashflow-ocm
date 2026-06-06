@@ -361,42 +361,42 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Pajak */}
-      <div>
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280] mb-3">Pajak</p>
-        <div className="grid gap-2.5 sm:gap-3 grid-cols-1 sm:grid-cols-3">
-          <div className="surface press-card p-4">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280] mb-2">PPN Bulan Ini</p>
-            <p className="text-xl font-bold num tabular-nums text-stone-900 dark:text-stone-100">{formatRupiah(tax.ppnThisMonth)}</p>
-            <p className="text-[10px] text-stone-400 dark:text-[#6B7280] mt-1">Estimasi 11% dari penjualan lunas</p>
+      {/* Pajak — satu card compact */}
+      <div className="surface press-card overflow-hidden">
+        <div className="px-5 py-3 border-b border-stone-100 dark:border-border flex items-center justify-between">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Kewajiban Pajak</p>
+          <p className="text-xs text-stone-400 dark:text-[#6B7280]">PPN 11% · PPh Psl 25</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-stone-100 dark:divide-border">
+          {/* PPN Bulan Ini */}
+          <div className="px-5 py-4">
+            <p className="text-xs text-stone-400 dark:text-[#6B7280] font-medium mb-1">PPN Bulan Ini</p>
+            <p className="text-lg font-bold num tabular-nums text-stone-900 dark:text-stone-100">{formatRupiah(tax.ppnThisMonth)}</p>
+            <p className="text-[10px] text-stone-400 dark:text-[#4B5563] mt-0.5">Estimasi dari penjualan lunas</p>
           </div>
-          <div className={`surface press-card p-4 ${!tax.ppnLastMonth || tax.ppnLastMonth.statusSetor === 'belum' ? 'ring-1 ring-amber-400/30' : ''}`}>
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280] mb-2">PPN Bulan Lalu</p>
+          {/* PPN Bulan Lalu */}
+          <div className="px-5 py-4">
+            <p className="text-xs text-stone-400 dark:text-[#6B7280] font-medium mb-1">PPN Bulan Lalu</p>
             {tax.ppnLastMonth?.statusSetor === 'sudah' ? (
-              <>
-                <p className="text-sm font-semibold text-green-600 dark:text-green-400">Sudah Disetor</p>
-                <p className="text-[10px] text-stone-400 mt-1">Tgl setor: {tax.ppnLastMonth.tanggalSetor ?? '-'}</p>
-              </>
+              <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">Sudah Disetor</p>
             ) : (
-              <>
-                <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">Belum Disetor</p>
-                <p className="text-[10px] text-stone-400 mt-1">Jatuh tempo akhir bulan ini</p>
-              </>
+              <p className="text-sm font-semibold text-amber-600 dark:text-[#D97757]">Belum Disetor</p>
             )}
+            <p className="text-[10px] text-stone-400 dark:text-[#4B5563] mt-0.5">
+              {tax.ppnLastMonth?.statusSetor === 'sudah' ? `Tgl ${tax.ppnLastMonth.tanggalSetor ?? '-'}` : 'Jatuh tempo akhir bulan ini'}
+            </p>
           </div>
-          <div className={`surface press-card p-4 ${!tax.pphLastMonth || tax.pphLastMonth.statusBayar === 'belum' ? 'ring-1 ring-amber-400/30' : ''}`}>
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280] mb-2">PPh Pasal 25</p>
+          {/* PPh Pasal 25 */}
+          <div className="px-5 py-4">
+            <p className="text-xs text-stone-400 dark:text-[#6B7280] font-medium mb-1">PPh Pasal 25</p>
             {tax.pphLastMonth?.statusBayar === 'sudah' ? (
-              <>
-                <p className="text-sm font-semibold text-green-600 dark:text-green-400">Sudah Dibayar</p>
-                <p className="text-[10px] text-stone-400 mt-1">Rp 698.917 · tgl {tax.pphLastMonth.tanggalBayar ?? '-'}</p>
-              </>
+              <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">Sudah Dibayar</p>
             ) : (
-              <>
-                <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">Belum Dibayar</p>
-                <p className="text-[10px] text-stone-400 mt-1">Rp 698.917 · jatuh tempo tgl 15</p>
-              </>
+              <p className="text-sm font-semibold text-amber-600 dark:text-[#D97757]">Belum Dibayar</p>
             )}
+            <p className="text-[10px] text-stone-400 dark:text-[#4B5563] mt-0.5">
+              Rp 698.917 · {tax.pphLastMonth?.statusBayar === 'sudah' ? `tgl ${tax.pphLastMonth.tanggalBayar ?? '-'}` : 'jatuh tempo tgl 15'}
+            </p>
           </div>
         </div>
       </div>
