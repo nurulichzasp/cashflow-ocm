@@ -87,7 +87,7 @@ function LabaRugiTab({ data, dari, sampai }: { data: LaporanData; dari: string; 
           onXLSX={() => exportXLSX(exportRows, `laba-rugi-${dari}-${sampai}.xlsx`)}
         />
       </div>
-      <div className="rounded-lg border overflow-hidden max-w-md">
+      <div className="rounded-lg border overflow-x-auto max-w-md">
         <table className="w-full text-sm">
           <tbody>
             {[
@@ -137,15 +137,15 @@ function PerPeronTab({ data, dari, sampai }: { data: LaporanData; dari: string; 
           </CardContent>
         </Card>
       ) : (
-        <div className="rounded-lg border overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="rounded-lg border overflow-x-auto">
+          <table className="w-full text-sm min-w-[500px]">
             <thead className="bg-muted/50">
               <tr>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Peron</th>
-                <th className="text-right px-4 py-3 font-medium text-muted-foreground">Tiket</th>
-                <th className="text-right px-4 py-3 font-medium text-muted-foreground">Total Beli</th>
-                <th className="text-right px-4 py-3 font-medium text-muted-foreground">Keuntungan</th>
-                <th className="text-right px-4 py-3 font-medium text-muted-foreground">DP Aktif</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">Peron</th>
+                <th className="text-right px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">Tiket</th>
+                <th className="text-right px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">Total Beli</th>
+                <th className="text-right px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">Keuntungan</th>
+                <th className="text-right px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">DP Aktif</th>
               </tr>
             </thead>
             <tbody>
@@ -228,7 +228,7 @@ function KasTab({
           </CardContent>
         </Card>
       ) : (
-        <div className="rounded-lg border overflow-hidden overflow-x-auto">
+        <div className="rounded-lg border overflow-x-auto overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-muted/50">
               <tr>
@@ -306,7 +306,7 @@ function PajakTab({ tahun, onTahunChange }: { tahun: string; onTahunChange: (t: 
 
       <div>
         <h3 className="text-sm font-semibold mb-3">PPN Bulanan (11%)</h3>
-        <div className="rounded-lg border overflow-hidden">
+        <div className="rounded-lg border overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-muted/50">
               <tr>
@@ -345,7 +345,7 @@ function PajakTab({ tahun, onTahunChange }: { tahun: string; onTahunChange: (t: 
 
       <div>
         <h3 className="text-sm font-semibold mb-3">PPh Pasal 25 Bulanan</h3>
-        <div className="rounded-lg border overflow-hidden">
+        <div className="rounded-lg border overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-muted/50">
               <tr>
@@ -420,7 +420,7 @@ function LabaRugiTahunanTab({ tahun, onTahunChange }: { tahun: string; onTahunCh
           </SelectContent>
         </Select>
       </div>
-      <div className="rounded-lg border overflow-hidden max-w-lg">
+      <div className="rounded-lg border overflow-x-auto max-w-lg">
         <table className="w-full text-sm">
           <tbody>
             {rows.map((row, i) => (
@@ -457,7 +457,7 @@ function NeracaTab() {
     <div className="space-y-4">
       <h3 className="text-sm font-semibold">Neraca (Balance Sheet)</h3>
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-lg border overflow-hidden">
+        <div className="rounded-lg border overflow-x-auto">
           <div className="bg-muted/50 px-4 py-2 font-semibold text-sm">ASET</div>
           <table className="w-full text-sm">
             <tbody>
@@ -469,7 +469,7 @@ function NeracaTab() {
           </table>
         </div>
 
-        <div className="rounded-lg border overflow-hidden">
+        <div className="rounded-lg border overflow-x-auto">
           <div className="bg-muted/50 px-4 py-2 font-semibold text-sm">KEWAJIBAN + EKUITAS</div>
           <table className="w-full text-sm">
             <tbody>
