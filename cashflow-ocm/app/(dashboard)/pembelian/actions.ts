@@ -9,6 +9,7 @@ import { pembelian, pembelianDetail, transaksiKas, akunKas, peron } from '@/lib/
 import { z } from 'zod'
 import { notifyNewPembelian } from '@/lib/notification'
 import { requirePermission } from '@/lib/permissions'
+import { logActivity, describeActivity } from '@/lib/audit'
 
 async function requireSession() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -97,6 +98,23 @@ export async function createPembelian(data: {
     createdBy: session.user.id,
   }).returning()
   const pembelianId = inserted[0].id
+
+  // Log audit trail
+  await logActivity({
+    userId: session.user.id,
+    action: 'create',
+    entityType: 'pembelian',
+    entityId: pembelianId,
+    description: describeActivity('create', 'pembelian', `${parsed.kategori} dari ${peronData.nama}`),
+    newValues: {
+      kategori: parsed.kategori,
+      peronId: parsed.peronId,
+      totalBeli,
+      totalJual,
+      keuntungan: totalKeuntungan,
+      statusBayarPeron: parsed.statusBayarPeron,
+    },
+  })
 
   await db.insert(pembelianDetail).values(
     computed.map((d) => ({

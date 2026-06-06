@@ -217,11 +217,26 @@ export const transaksiKas = sqliteTable('transaksi_kas', {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
 })
 
+export const activityLog = sqliteTable('activity_log', {
+  id: text('id').primaryKey().default(sql`(lower(hex(randomblob(8))))`),
+  userId: text('user_id').notNull().references(() => user.id),
+  action: text('action').notNull(), // create, update, delete, view, export
+  entityType: text('entity_type').notNull(), // pembelian, penjualan, biaya_operasional, transaksi_kas, etc
+  entityId: text('entity_id'),
+  description: text('description'), // Human-readable description of what happened
+  oldValues: text('old_values'), // JSON string of previous values (for updates)
+  newValues: text('new_values'), // JSON string of new values
+  ipAddress: text('ip_address'),
+  userAgent: text('user_agent'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+})
+
 // ─── Relations ─────────────────────────────────────────────────────────────────
 
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),
   accounts: many(account),
+  activityLogs: many(activityLog),
 }))
 
 export const sessionRelations = relations(session, ({ one }) => ({
@@ -288,6 +303,10 @@ export const transaksiKasRelations = relations(transaksiKas, ({ one }) => ({
   createdByUser: one(user, { fields: [transaksiKas.createdBy], references: [user.id] }),
 }))
 
+export const activityLogRelations = relations(activityLog, ({ one }) => ({
+  user: one(user, { fields: [activityLog.userId], references: [user.id] }),
+}))
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type User = typeof user.$inferSelect
@@ -302,5 +321,6 @@ export type Penjualan = typeof penjualan.$inferSelect
 export type PenjualanDetail = typeof penjualanDetail.$inferSelect
 export type BiayaOperasional = typeof biayaOperasional.$inferSelect
 export type TransaksiKas = typeof transaksiKas.$inferSelect
+export type ActivityLog = typeof activityLog.$inferSelect
 export type PembelianFoto = typeof pembelianFoto.$inferSelect
 export type BiayaFoto = typeof biayaFoto.$inferSelect
