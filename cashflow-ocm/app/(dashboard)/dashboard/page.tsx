@@ -222,7 +222,7 @@ export default async function DashboardPage() {
   const saldoLainnya = akunLainnya.reduce((s, a) => s + a.saldo, 0)
 
   return (
-    <div className="space-y-6 pt-1 md:pt-0">
+    <div className="space-y-4 sm:space-y-6 pt-1 md:pt-0">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-100 tracking-tight">Dashboard</h1>
@@ -255,7 +255,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Hero — Modal Berputar + breakdown + ringkasan */}
-      <div className="grid gap-3 lg:grid-cols-3">
+      <div className="grid gap-3 grid-cols-1 lg:grid-cols-3">
         {/* Modal berputar — kartu utama */}
         <div className="lg:col-span-2 rounded-xl border border-stone-100 dark:border-border bg-white dark:bg-card p-5">
           <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Total Modal Berputar</p>
@@ -287,7 +287,7 @@ export default async function DashboardPage() {
       {/* Saldo per akun */}
       <div>
         <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280] mb-3">Saldo Rekening &amp; Kas</p>
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-2.5 sm:gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {/* Rek BRI CV OCM — utama */}
           {akunCvOcm && (
             <div className="rounded-xl border border-stone-100 dark:border-border bg-white dark:bg-card p-4">
@@ -323,7 +323,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Charts */}
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <div className="rounded-xl border border-stone-100 dark:border-border bg-white dark:bg-card overflow-hidden">
             <div className="px-5 py-4 border-b border-stone-50 dark:border-border">

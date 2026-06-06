@@ -136,6 +136,8 @@ export async function createPembelian(data: {
       keuntungan: totalKeuntungan,
       statusBayarPeron: parsed.statusBayarPeron,
       catatan: parsed.catatan,
+      createdByName: session.user.name,
+      createdByRole: session.user.role,
     })
   } catch (err) {
     console.error('Failed to trigger Telegram notification for Pembelian:', err)

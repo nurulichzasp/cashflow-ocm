@@ -7,6 +7,7 @@ import { db } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { biayaOperasional } from '@/lib/db/schema'
 import { z } from 'zod'
+import { notifyNewBiaya } from '@/lib/notification'
 
 async function requireSession() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -43,6 +44,20 @@ export async function createBiayaOperasional(formData: FormData) {
     ...data,
     createdBy: session.user.id,
   }).returning()
+
+  // Trigger Telegram Notification
+  try {
+    notifyNewBiaya({
+      tanggal: data.tanggal,
+      kategori: data.kategori,
+      jumlah: data.jumlah,
+      catatan: data.catatan,
+      createdByName: session.user.name,
+      createdByRole: session.user.role,
+    })
+  } catch (err) {
+    console.error('Failed to trigger Telegram notification for Biaya:', err)
+  }
 
   revalidatePath('/biaya')
   return { success: true, id: inserted[0].id }

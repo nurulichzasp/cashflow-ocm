@@ -53,14 +53,21 @@ export async function notifyNewPembelian(data: {
   keuntungan: number
   statusBayarPeron: string
   catatan?: string
+  createdByName?: string
+  createdByRole?: string
 }) {
   try {
     // Fetch peron name
     const peronData = await db.select({ nama: peron.nama }).from(peron).where(eq(peron.id, data.peronId)).limit(1)
     const peronNama = peronData[0]?.nama || 'Peron Tidak Dikenal'
 
+    const userInfo = data.createdByName
+      ? `👤 <b>Dibuat oleh:</b> ${data.createdByName}${data.createdByRole ? ` (${data.createdByRole})` : ''}`
+      : null
+
     const message = [
       `<b>📥 TRANSAKSI PEMBELIAN BARU</b>`,
+      userInfo,
       `📅 <b>Tanggal:</b> ${data.tanggal}`,
       `🏭 <b>Peron:</b> ${peronNama}`,
       `🏷️ <b>Kategori:</b> ${data.kategori}`,
@@ -69,7 +76,7 @@ export async function notifyNewPembelian(data: {
       `📈 <b>Estimasi Untung:</b> Rp ${data.keuntungan.toLocaleString('id-ID')}`,
       `💳 <b>Status:</b> ${data.statusBayarPeron === 'lunas' ? '✅ Lunas' : '⏳ Belum Lunas'}`,
       `📝 <b>Catatan:</b> ${data.catatan || '-'}`,
-    ].join('\n')
+    ].filter(Boolean).join('\n')
 
     await sendTelegramMessage(message)
   } catch (error) {
@@ -88,10 +95,17 @@ export async function notifyNewPenjualan(data: {
   totalNilai?: number
   statusBayar: string
   catatan?: string
+  createdByName?: string
+  createdByRole?: string
 }) {
   try {
+    const userInfo = data.createdByName
+      ? `👤 <b>Dibuat oleh:</b> ${data.createdByName}${data.createdByRole ? ` (${data.createdByRole})` : ''}`
+      : null
+
     const message = [
       `<b>📤 TRANSAKSI PENJUALAN BARU</b>`,
+      userInfo,
       `📅 <b>Tanggal:</b> ${data.tanggal}`,
       `📄 <b>No. Invoice:</b> ${data.noInvoice || '-'}`,
       `📄 <b>No. BAST:</b> ${data.noBast || '-'}`,
@@ -99,10 +113,41 @@ export async function notifyNewPenjualan(data: {
       `💰 <b>Total Nilai BGA:</b> ${data.totalNilai ? `Rp ${data.totalNilai.toLocaleString('id-ID')}` : '-'}`,
       `💳 <b>Status Bayar:</b> ${data.statusBayar === 'lunas' ? '✅ Lunas' : '⏳ Belum Lunas'}`,
       `📝 <b>Catatan:</b> ${data.catatan || '-'}`,
-    ].join('\n')
+    ].filter(Boolean).join('\n')
 
     await sendTelegramMessage(message)
   } catch (error) {
     console.error('notifyNewPenjualan failed:', error)
+  }
+}
+
+/**
+ * Triggers a notification for a new Biaya Operasional transaction.
+ */
+export async function notifyNewBiaya(data: {
+  tanggal: string
+  kategori: string
+  jumlah: number
+  catatan?: string
+  createdByName?: string
+  createdByRole?: string
+}) {
+  try {
+    const userInfo = data.createdByName
+      ? `👤 <b>Dibuat oleh:</b> ${data.createdByName}${data.createdByRole ? ` (${data.createdByRole})` : ''}`
+      : null
+
+    const message = [
+      `<b>💸 BIAYA OPERASIONAL BARU</b>`,
+      userInfo,
+      `📅 <b>Tanggal:</b> ${data.tanggal}`,
+      `🏷️ <b>Kategori:</b> ${data.kategori}`,
+      `💰 <b>Jumlah:</b> Rp ${data.jumlah.toLocaleString('id-ID')}`,
+      `📝 <b>Catatan:</b> ${data.catatan || '-'}`,
+    ].filter(Boolean).join('\n')
+
+    await sendTelegramMessage(message)
+  } catch (error) {
+    console.error('notifyNewBiaya failed:', error)
   }
 }

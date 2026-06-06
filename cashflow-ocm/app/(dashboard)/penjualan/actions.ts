@@ -67,6 +67,8 @@ export async function createPenjualan(formData: FormData) {
       totalNilai: data.totalNilai,
       statusBayar: data.statusBayar,
       catatan: data.catatan,
+      createdByName: session.user.name,
+      createdByRole: session.user.role,
     })
   } catch (err) {
     console.error('Failed to trigger Telegram notification for Penjualan:', err)
