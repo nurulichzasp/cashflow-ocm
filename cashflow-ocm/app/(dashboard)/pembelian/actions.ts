@@ -51,8 +51,10 @@ function computeTotals(details: DetailInput[], keuntunganPerKg: number) {
   let totalTonase = 0, totalBeli = 0, totalJual = 0, totalKeuntungan = 0
   const computed = details.map((d, i) => {
     const hargaJual = d.hargaLapangan + keuntunganPerKg
-    const subtotalBeli = d.tonase * d.hargaLapangan
-    const subtotalJual = d.tonase * hargaJual
+    // Tonase bisa pecahan (mis. 15.53 kg) sehingga subtotal bisa menghasilkan
+    // pecahan rupiah. Bulatkan ke rupiah utuh agar tidak ada sen yang menumpuk.
+    const subtotalBeli = Math.round(d.tonase * d.hargaLapangan)
+    const subtotalJual = Math.round(d.tonase * hargaJual)
     const keuntungan = subtotalJual - subtotalBeli
     totalTonase += d.tonase
     totalBeli += subtotalBeli
@@ -82,24 +84,59 @@ export async function createPembelian(data: {
   const { computed, totalTonase, totalBeli, totalJual, totalKeuntungan } = computeTotals(parsed.details, peronData.keuntunganPerKg)
   const firstDetail = computed[0]
 
-  const inserted = await db.insert(pembelian).values({
-    tanggal: parsed.tanggal,
-    kategori: parsed.kategori,
-    peronId: parsed.peronId,
-    tonase: totalTonase,
-    hargaBeli: firstDetail.hargaLapangan,
-    hargaJual: firstDetail.hargaJual,
-    totalBeli,
-    totalJual,
-    keuntungan: totalKeuntungan,
-    statusBayarPeron: parsed.statusBayarPeron,
-    sumberBayarId: parsed.sumberBayarId,
-    catatan: parsed.catatan,
-    createdBy: session.user.id,
-  }).returning()
-  const pembelianId = inserted[0].id
+  // Semua penulisan uang (header + detail + mutasi kas) dibungkus dalam satu
+  // transaksi agar atomic — tidak ada kemungkinan data parsial bila gagal di tengah.
+  const pembelianId = await db.transaction(async (tx) => {
+    const inserted = await tx.insert(pembelian).values({
+      tanggal: parsed.tanggal,
+      kategori: parsed.kategori,
+      peronId: parsed.peronId,
+      tonase: totalTonase,
+      hargaBeli: firstDetail.hargaLapangan,
+      hargaJual: firstDetail.hargaJual,
+      totalBeli,
+      totalJual,
+      keuntungan: totalKeuntungan,
+      statusBayarPeron: parsed.statusBayarPeron,
+      sumberBayarId: parsed.sumberBayarId,
+      catatan: parsed.catatan,
+      createdBy: session.user.id,
+    }).returning()
+    const id = inserted[0].id
 
-  // Log audit trail
+    await tx.insert(pembelianDetail).values(
+      computed.map((d) => ({
+        pembelianId: id,
+        noTid: d.noTid || null,
+        tonase: d.tonase,
+        hargaLapangan: d.hargaLapangan,
+        subtotalBeli: d.subtotalBeli,
+        subtotalJual: d.subtotalJual,
+        keuntungan: d.keuntungan,
+        urutan: d.urutan,
+        tanggalReplas: d.tanggalReplas || null,
+      }))
+    )
+
+    if (parsed.statusBayarPeron === 'lunas' && parsed.sumberBayarId) {
+      const tids = computed.map((d) => d.noTid).filter(Boolean).join(', ')
+      await tx.insert(transaksiKas).values({
+        tanggal: parsed.tanggal,
+        akunId: parsed.sumberBayarId,
+        arah: 'keluar',
+        jumlah: totalBeli,
+        kategori: 'bayar_peron',
+        refTabel: 'pembelian',
+        refId: id,
+        catatan: `Bayar peron ${peronData.nama}${tids ? ` TID ${tids}` : ''}`,
+        createdBy: session.user.id,
+      })
+    }
+
+    return id
+  })
+
+  // Audit trail di luar transaksi (kegagalan audit tidak boleh membatalkan transaksi uang)
   await logActivity({
     userId: session.user.id,
     action: 'create',
@@ -115,35 +152,6 @@ export async function createPembelian(data: {
       statusBayarPeron: parsed.statusBayarPeron,
     },
   })
-
-  await db.insert(pembelianDetail).values(
-    computed.map((d) => ({
-      pembelianId,
-      noTid: d.noTid || null,
-      tonase: d.tonase,
-      hargaLapangan: d.hargaLapangan,
-      subtotalBeli: d.subtotalBeli,
-      subtotalJual: d.subtotalJual,
-      keuntungan: d.keuntungan,
-      urutan: d.urutan,
-      tanggalReplas: d.tanggalReplas || null,
-    }))
-  )
-
-  if (parsed.statusBayarPeron === 'lunas' && parsed.sumberBayarId) {
-    const tids = computed.map((d) => d.noTid).filter(Boolean).join(', ')
-    await db.insert(transaksiKas).values({
-      tanggal: parsed.tanggal,
-      akunId: parsed.sumberBayarId,
-      arah: 'keluar',
-      jumlah: totalBeli,
-      kategori: 'bayar_peron',
-      refTabel: 'pembelian',
-      refId: pembelianId,
-      catatan: `Bayar peron ${peronData.nama}${tids ? ` TID ${tids}` : ''}`,
-      createdBy: session.user.id,
-    })
-  }
 
   // Trigger Telegram Notification (handled asynchronously so it doesn't block the UI response)
   try {
@@ -186,52 +194,55 @@ export async function updatePembelian(id: string, data: {
   const { computed, totalTonase, totalBeli, totalJual, totalKeuntungan } = computeTotals(parsed.details, peronData.keuntunganPerKg)
   const firstDetail = computed[0]
 
-  await db.update(pembelian).set({
-    tanggal: parsed.tanggal,
-    kategori: parsed.kategori,
-    peronId: parsed.peronId,
-    tonase: totalTonase,
-    hargaBeli: firstDetail.hargaLapangan,
-    hargaJual: firstDetail.hargaJual,
-    totalBeli,
-    totalJual,
-    keuntungan: totalKeuntungan,
-    statusBayarPeron: parsed.statusBayarPeron,
-    sumberBayarId: parsed.sumberBayarId,
-    catatan: parsed.catatan,
-  }).where(eq(pembelian.id, id))
-
-  // Replace all details
-  await db.delete(pembelianDetail).where(eq(pembelianDetail.pembelianId, id))
-  await db.insert(pembelianDetail).values(
-    computed.map((d) => ({
-      pembelianId: id,
-      noTid: d.noTid || null,
-      tonase: d.tonase,
-      hargaLapangan: d.hargaLapangan,
-      subtotalBeli: d.subtotalBeli,
-      subtotalJual: d.subtotalJual,
-      keuntungan: d.keuntungan,
-      urutan: d.urutan,
-      tanggalReplas: d.tanggalReplas || null,
-    }))
-  )
-
-  await db.delete(transaksiKas).where(and(eq(transaksiKas.refTabel, 'pembelian'), eq(transaksiKas.refId, id)))
-  if (parsed.statusBayarPeron === 'lunas' && parsed.sumberBayarId) {
-    const tids = computed.map((d) => d.noTid).filter(Boolean).join(', ')
-    await db.insert(transaksiKas).values({
+  // Update + ganti detail + sinkron mutasi kas, atomic dalam satu transaksi.
+  await db.transaction(async (tx) => {
+    await tx.update(pembelian).set({
       tanggal: parsed.tanggal,
-      akunId: parsed.sumberBayarId,
-      arah: 'keluar',
-      jumlah: totalBeli,
-      kategori: 'bayar_peron',
-      refTabel: 'pembelian',
-      refId: id,
-      catatan: `Bayar peron ${peronData.nama}${tids ? ` TID ${tids}` : ''}`,
-      createdBy: session.user.id,
-    })
-  }
+      kategori: parsed.kategori,
+      peronId: parsed.peronId,
+      tonase: totalTonase,
+      hargaBeli: firstDetail.hargaLapangan,
+      hargaJual: firstDetail.hargaJual,
+      totalBeli,
+      totalJual,
+      keuntungan: totalKeuntungan,
+      statusBayarPeron: parsed.statusBayarPeron,
+      sumberBayarId: parsed.sumberBayarId,
+      catatan: parsed.catatan,
+    }).where(eq(pembelian.id, id))
+
+    // Replace all details
+    await tx.delete(pembelianDetail).where(eq(pembelianDetail.pembelianId, id))
+    await tx.insert(pembelianDetail).values(
+      computed.map((d) => ({
+        pembelianId: id,
+        noTid: d.noTid || null,
+        tonase: d.tonase,
+        hargaLapangan: d.hargaLapangan,
+        subtotalBeli: d.subtotalBeli,
+        subtotalJual: d.subtotalJual,
+        keuntungan: d.keuntungan,
+        urutan: d.urutan,
+        tanggalReplas: d.tanggalReplas || null,
+      }))
+    )
+
+    await tx.delete(transaksiKas).where(and(eq(transaksiKas.refTabel, 'pembelian'), eq(transaksiKas.refId, id)))
+    if (parsed.statusBayarPeron === 'lunas' && parsed.sumberBayarId) {
+      const tids = computed.map((d) => d.noTid).filter(Boolean).join(', ')
+      await tx.insert(transaksiKas).values({
+        tanggal: parsed.tanggal,
+        akunId: parsed.sumberBayarId,
+        arah: 'keluar',
+        jumlah: totalBeli,
+        kategori: 'bayar_peron',
+        refTabel: 'pembelian',
+        refId: id,
+        catatan: `Bayar peron ${peronData.nama}${tids ? ` TID ${tids}` : ''}`,
+        createdBy: session.user.id,
+      })
+    }
+  })
 
   revalidatePath('/pembelian')
   return { success: true }
