@@ -26,8 +26,6 @@ import {
   Sparkles,
 } from 'lucide-react'
 import CashflowChart from '@/components/charts/CashflowChart'
-import TrendChart from '@/components/charts/TrendChart'
-import CompositionChart from '@/components/charts/CompositionChart'
 
 async function getMetrics() {
   const [akunList, transaksiRows, modalRows, piutangBelumRaw, penjualanLunasRaw, pembelianKeuntungan] =
@@ -273,43 +271,24 @@ export default async function DashboardPage() {
     },
   ]
 
-  const tanggal = new Date().toLocaleDateString('id-ID', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  })
-
   // Kelompokkan akun: Rek BRI CV OCM tampil sendiri, sisanya digabung
   const akunCvOcm = metrics.akunSaldo.find((a) => a.nama.toLowerCase().includes('cv ocm'))
   const akunLainnya = metrics.akunSaldo.filter((a) => a.tipe === 'bank' && !a.nama.toLowerCase().includes('cv ocm'))
   const akunTunai = metrics.akunSaldo.filter((a) => a.tipe === 'tunai')
 
   return (
-    <div className="space-y-4 sm:space-y-6 pt-1 md:pt-0">
+    <div className="space-y-4 sm:space-y-5 pt-1 md:pt-0">
 
-      {/* Ringkasan Hari Ini */}
-      <div className="surface press-card overflow-hidden">
-        <div className="px-5 py-3 border-b border-stone-100 dark:border-border flex items-center gap-2">
-          <span className="h-1.5 w-1.5 rounded-full live-dot" />
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Hari Ini</p>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-stone-100 dark:divide-border">
-          {todayItems.map((item) => (
-            <div key={item.label} className="flex items-center justify-between px-5 py-4 sm:flex-col sm:items-start sm:py-5">
-              <div className="flex items-center gap-2">
-                <span className="grid place-items-center h-7 w-7 rounded-lg bg-stone-50 dark:bg-white/5 shrink-0">
-                  <item.icon className={`h-3.5 w-3.5 ${item.color}`} />
-                </span>
-                <p className="text-xs text-stone-400 dark:text-[#6B7280] font-medium">{item.label}</p>
-              </div>
-              <p className={`text-xl font-bold num tracking-tight tabular-nums ${item.color} sm:mt-3`}>{item.value}</p>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* HERO — Modal Berputar (full width, gradient subtle, breakdown inline) */}
+      <ModalHero
+        total={metrics.totalModalBerputar}
+        breakdown={modalBreakdown}
+      />
 
-      {/* Premium glance — Net Margin + Harga Acuan reference */}
+      {/* TODAY STRIP — kompak horizontal, bukan card besar */}
+      <TodayStrip items={todayItems} />
+
+      {/* GLANCE — Net Margin + Harga Acuan */}
       <NetMarginAndHarga
         netMarginPct={metrics.netMarginPct}
         estimasiLaba={metrics.estimasiLaba}
@@ -318,157 +297,190 @@ export default async function DashboardPage() {
         hargaLatest={hargaLatest}
       />
 
-      {/* Hero — Modal Berputar + breakdown + ringkasan */}
-      <div className="grid gap-3 grid-cols-1 lg:grid-cols-3">
-        {/* Modal berputar — kartu utama */}
-        <div className="surface lift press-card lg:col-span-2 p-5 sm:p-6">
-          <div className="flex items-center gap-2">
-            <span className="h-3 w-1 rounded-full bg-primary" />
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Total Modal Berputar</p>
+      {/* TWO-UP — Saldo akun + Pajak compact */}
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
+        {/* Saldo (lg:col-span-2) */}
+        <div className="lg:col-span-2 surface overflow-hidden">
+          <div className="px-5 py-3 border-b border-stone-100 dark:border-border flex items-center justify-between">
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Saldo Rekening &amp; Kas</p>
+            <p className="text-xs font-semibold num tabular-nums text-stone-900 dark:text-stone-100">{formatRupiah(metrics.totalSaldo)}</p>
           </div>
-          <p className="text-[2rem] sm:text-[2.5rem] leading-none font-bold num tabular-nums tracking-[-0.03em] text-stone-900 dark:text-stone-100 mt-3">
-            {formatRupiah(metrics.totalModalBerputar)}
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 mt-6 pt-4 border-t border-stone-100 dark:border-border">
-            {modalBreakdown.map((b) => (
-              <div key={b.label} className="flex items-center justify-between sm:block">
-                <p className="text-[10px] uppercase tracking-wider text-stone-400 dark:text-[#6B7280] sm:mb-1">{b.label}</p>
-                <p className="text-sm font-semibold num tabular-nums text-stone-900 dark:text-[#F3F4F6]">{b.value}</p>
+          <div className="divide-y divide-stone-100 dark:divide-border">
+            {akunCvOcm && (
+              <div className="flex items-center justify-between px-5 py-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="h-1.5 w-1.5 rounded-full bg-stone-900 dark:bg-white shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-stone-900 dark:text-stone-100 truncate">{akunCvOcm.nama}</p>
+                    <p className="text-[10px] text-stone-400 dark:text-zinc-500 font-semibold uppercase tracking-wider">Utama</p>
+                  </div>
+                </div>
+                <p className={`text-sm font-bold num tabular-nums shrink-0 ${akunCvOcm.saldo >= 0 ? 'text-stone-900 dark:text-stone-100' : 'text-red-500'}`}>
+                  {formatRupiah(akunCvOcm.saldo)}
+                </p>
+              </div>
+            )}
+            {akunLainnya.map((a) => (
+              <div key={a.id} className="flex items-center justify-between px-5 py-2.5">
+                <p className="text-sm text-stone-600 dark:text-stone-300 truncate mr-3">{a.nama}</p>
+                <p className={`text-sm font-semibold num tabular-nums shrink-0 ${a.saldo >= 0 ? 'text-stone-800 dark:text-stone-200' : 'text-red-500'}`}>
+                  {formatRupiah(a.saldo)}
+                </p>
+              </div>
+            ))}
+            {akunTunai.map((a) => (
+              <div key={a.id} className="flex items-center justify-between px-5 py-2.5">
+                <div className="flex items-center gap-2 min-w-0">
+                  <p className="text-sm text-stone-600 dark:text-stone-300 truncate">{a.nama}</p>
+                  <span className="text-[10px] text-stone-400 dark:text-zinc-500 uppercase tracking-wider shrink-0">Tunai</span>
+                </div>
+                <p className={`text-sm font-semibold num tabular-nums shrink-0 ${a.saldo >= 0 ? 'text-stone-800 dark:text-stone-200' : 'text-red-500'}`}>
+                  {formatRupiah(a.saldo)}
+                </p>
               </div>
             ))}
           </div>
         </div>
-        {/* Secondary — penjualan & laba */}
-        <div className="grid grid-cols-2 lg:grid-cols-1 gap-3">
-          <div className="surface lift press-card p-4 flex flex-col justify-center">
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Penjualan Lunas</p>
-            <p className="text-xl sm:text-2xl font-bold num tabular-nums tracking-tight text-stone-900 dark:text-stone-100 mt-1.5">{formatRupiah(metrics.totalPenjualanLunas)}</p>
-          </div>
-          <div className="surface lift press-card p-4 flex flex-col justify-center">
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Estimasi Laba</p>
-            <p className="text-xl sm:text-2xl font-bold num tabular-nums tracking-tight text-stone-900 dark:text-stone-100 mt-1.5">{formatRupiah(metrics.estimasiLaba)}</p>
-          </div>
-        </div>
+
+        {/* Pajak strip — ultra compact */}
+        <TaxStrip tax={tax} />
       </div>
 
-      {/* Saldo per akun — satu card list */}
-      <div className="surface press-card overflow-hidden">
-        <div className="px-5 py-3 border-b border-stone-100 dark:border-border flex items-center justify-between">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Saldo Rekening &amp; Kas</p>
-          <p className="text-xs font-semibold num tabular-nums text-stone-900 dark:text-stone-100">{formatRupiah(metrics.totalSaldo)}</p>
-        </div>
-        <div className="divide-y divide-stone-100 dark:divide-border">
-          {akunCvOcm && (
-            <div className="flex items-center justify-between px-5 py-3.5">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-stone-900 dark:text-stone-100 truncate">{akunCvOcm.nama}</p>
-                  <p className="text-[10px] text-primary font-semibold uppercase tracking-wider">Utama</p>
-                </div>
-              </div>
-              <p className={`text-sm font-bold num tabular-nums shrink-0 ${akunCvOcm.saldo >= 0 ? 'text-stone-900 dark:text-stone-100' : 'text-red-500'}`}>
-                {formatRupiah(akunCvOcm.saldo)}
-              </p>
-            </div>
-          )}
-          {akunLainnya.map((a) => (
-            <div key={a.id} className="flex items-center justify-between px-5 py-3">
-              <p className="text-sm text-stone-600 dark:text-stone-300 truncate mr-3">{a.nama}</p>
-              <p className={`text-sm font-semibold num tabular-nums shrink-0 ${a.saldo >= 0 ? 'text-stone-900 dark:text-stone-100' : 'text-red-500'}`}>
-                {formatRupiah(a.saldo)}
-              </p>
-            </div>
-          ))}
-          {akunTunai.map((a) => (
-            <div key={a.id} className="flex items-center justify-between px-5 py-3">
-              <div className="flex items-center gap-2 min-w-0">
-                <p className="text-sm text-stone-600 dark:text-stone-300 truncate">{a.nama}</p>
-                <span className="text-[10px] text-stone-400 dark:text-[#6B7280] uppercase tracking-wider shrink-0">Tunai</span>
-              </div>
-              <p className={`text-sm font-semibold num tabular-nums shrink-0 ${a.saldo >= 0 ? 'text-stone-900 dark:text-stone-100' : 'text-red-500'}`}>
-                {formatRupiah(a.saldo)}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Pajak — satu card compact */}
-      <div className="surface press-card overflow-hidden">
-        <div className="px-5 py-3 border-b border-stone-100 dark:border-border flex items-center justify-between">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Kewajiban Pajak</p>
-          <p className="text-xs text-stone-400 dark:text-[#6B7280]">PPN 11% · PPh Psl 25</p>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-stone-100 dark:divide-border">
-          {/* PPN Bulan Ini */}
-          <div className="px-5 py-4">
-            <p className="text-xs text-stone-400 dark:text-[#6B7280] font-medium mb-1">PPN Bulan Ini</p>
-            <p className="text-lg font-bold num tabular-nums text-stone-900 dark:text-stone-100">{formatRupiah(tax.ppnThisMonth)}</p>
-            <p className="text-[10px] text-stone-400 dark:text-[#4B5563] mt-0.5">Estimasi dari penjualan lunas</p>
-          </div>
-          {/* PPN Bulan Lalu */}
-          <div className="px-5 py-4">
-            <p className="text-xs text-stone-400 dark:text-[#6B7280] font-medium mb-1">PPN Bulan Lalu</p>
-            {tax.ppnLastMonth?.statusSetor === 'sudah' ? (
-              <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">Sudah Disetor</p>
-            ) : (
-              <p className="text-sm font-semibold text-amber-600 dark:text-[#D97757]">Belum Disetor</p>
-            )}
-            <p className="text-[10px] text-stone-400 dark:text-[#4B5563] mt-0.5">
-              {tax.ppnLastMonth?.statusSetor === 'sudah' ? `Tgl ${tax.ppnLastMonth.tanggalSetor ?? '-'}` : 'Jatuh tempo akhir bulan ini'}
-            </p>
-          </div>
-          {/* PPh Pasal 25 */}
-          <div className="px-5 py-4">
-            <p className="text-xs text-stone-400 dark:text-[#6B7280] font-medium mb-1">PPh Pasal 25</p>
-            {tax.pphLastMonth?.statusBayar === 'sudah' ? (
-              <p className="text-sm font-semibold text-stone-900 dark:text-stone-100">Sudah Dibayar</p>
-            ) : (
-              <p className="text-sm font-semibold text-amber-600 dark:text-[#D97757]">Belum Dibayar</p>
-            )}
-            <p className="text-[10px] text-stone-400 dark:text-[#4B5563] mt-0.5">
-              Rp 698.917 · {tax.pphLastMonth?.statusBayar === 'sudah' ? `tgl ${tax.pphLastMonth.tanggalBayar ?? '-'}` : 'jatuh tempo tgl 15'}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Charts */}
-      <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <div className="surface overflow-hidden">
-            <div className="px-5 py-4 border-b border-stone-50 dark:border-border">
-              <p className="text-sm font-semibold text-stone-800 dark:text-stone-200">Cashflow Harian</p>
-              <p className="text-xs text-stone-400 dark:text-[#6B7280] mt-0.5">Masuk vs keluar — 14 hari terakhir</p>
-            </div>
-            <div className="p-4">
-              <CashflowChart data={charts.daily} />
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <div className="surface overflow-hidden">
-            <div className="px-5 py-4 border-b border-stone-50 dark:border-border">
-              <p className="text-sm font-semibold text-stone-800 dark:text-stone-200">Komposisi Modal</p>
-              <p className="text-xs text-stone-400 dark:text-[#6B7280] mt-0.5">Bank, Tunai, DP Peron, Piutang</p>
-            </div>
-            <div className="p-4">
-              <CompositionChart data={charts.composition} />
-            </div>
-          </div>
-        </div>
-      </div>
-
+      {/* CHART — cashflow harian (single, fokus) */}
       <div className="surface overflow-hidden">
-        <div className="px-5 py-4 border-b border-stone-50 dark:border-border">
-          <p className="text-sm font-semibold text-stone-800 dark:text-stone-200">Tren Modal Berputar</p>
-          <p className="text-xs text-stone-400 dark:text-[#6B7280] mt-0.5">Perkembangan modal selama 14 hari terakhir</p>
+        <div className="px-5 py-3.5 border-b border-stone-100 dark:border-border flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-stone-800 dark:text-stone-200 tracking-tight">Cashflow Harian</p>
+            <p className="text-[11px] text-stone-400 dark:text-zinc-500 mt-0.5">Kas masuk vs keluar — 14 hari terakhir</p>
+          </div>
         </div>
         <div className="p-4">
-          <TrendChart data={charts.trend} />
+          <CashflowChart data={charts.daily} />
         </div>
+      </div>
+    </div>
+  )
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   Modal Hero — full-width, subtle gradient, breakdown inline.
+   ────────────────────────────────────────────────────────────── */
+
+function ModalHero({
+  total,
+  breakdown,
+}: {
+  total: number
+  breakdown: { label: string; value: string }[]
+}) {
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-black/[0.06] dark:border-white/[0.07] bg-white dark:bg-[#0F0F0F] p-5 sm:p-6">
+      {/* Subtle radial accent — dark plum/indigo, sangat halus */}
+      <div
+        aria-hidden
+        className="absolute -top-24 -right-24 h-64 w-64 rounded-full opacity-[0.10] dark:opacity-[0.18] blur-3xl"
+        style={{ background: 'radial-gradient(circle, #6366F1 0%, transparent 70%)' }}
+      />
+      <div
+        aria-hidden
+        className="absolute -bottom-32 -left-20 h-72 w-72 rounded-full opacity-[0.06] dark:opacity-[0.10] blur-3xl"
+        style={{ background: 'radial-gradient(circle, #10B981 0%, transparent 70%)' }}
+      />
+
+      <div className="relative">
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-zinc-500">Total Modal Berputar</p>
+        <p className="mt-3 text-[2.25rem] sm:text-[2.75rem] leading-none font-bold num tabular-nums tracking-[-0.035em] text-stone-900 dark:text-zinc-50">
+          {formatRupiah(total)}
+        </p>
+
+        {/* Inline breakdown — chip style, bukan grid card */}
+        <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 pt-4 border-t border-stone-100 dark:border-white/[0.06]">
+          {breakdown.map((b, i) => (
+            <div key={b.label} className="flex items-center gap-2">
+              {i > 0 && <span className="hidden sm:inline h-3 w-px bg-stone-200 dark:bg-white/10" />}
+              <span className="text-[10px] uppercase tracking-wider text-stone-400 dark:text-zinc-500 font-medium">{b.label}</span>
+              <span className="text-[13px] font-semibold num tabular-nums text-stone-800 dark:text-zinc-200">{b.value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* Today strip — horizontal chip row, monokrom dengan accent kanan saja. */
+function TodayStrip({
+  items,
+}: {
+  items: { label: string; value: string; icon: React.ElementType; color: string }[]
+}) {
+  return (
+    <div className="grid grid-cols-3 gap-2 sm:gap-3">
+      {items.map((item) => (
+        <div
+          key={item.label}
+          className="rounded-xl border border-black/[0.06] dark:border-white/[0.06] bg-stone-50/60 dark:bg-white/[0.025] px-3 py-3 sm:px-4 sm:py-3.5 min-w-0"
+        >
+          <div className="flex items-center gap-1.5">
+            <item.icon className="h-3 w-3 text-stone-400 dark:text-zinc-500" strokeWidth={2} />
+            <p className="text-[10px] uppercase tracking-wider text-stone-400 dark:text-zinc-500 font-medium truncate">{item.label.replace(' Hari Ini', '')}</p>
+          </div>
+          <p className="mt-1.5 text-[15px] sm:text-base font-bold num tabular-nums text-stone-900 dark:text-zinc-100 truncate">{item.value}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/* Pajak — compact column dengan dot status */
+function TaxStrip({ tax }: { tax: any }) {
+  const items = [
+    {
+      label: 'PPN Bulan Ini',
+      value: formatRupiah(tax.ppnThisMonth),
+      sub: 'Estimasi penjualan lunas',
+      status: 'info' as const,
+    },
+    {
+      label: 'PPN Bulan Lalu',
+      value: tax.ppnLastMonth?.statusSetor === 'sudah' ? 'Sudah Disetor' : 'Belum Disetor',
+      sub: tax.ppnLastMonth?.statusSetor === 'sudah' ? `Tgl ${tax.ppnLastMonth.tanggalSetor ?? '-'}` : 'JT akhir bulan ini',
+      status: (tax.ppnLastMonth?.statusSetor === 'sudah' ? 'done' : 'pending') as 'done' | 'pending',
+    },
+    {
+      label: 'PPh Pasal 25',
+      value: tax.pphLastMonth?.statusBayar === 'sudah' ? 'Sudah Dibayar' : 'Belum Dibayar',
+      sub: tax.pphLastMonth?.statusBayar === 'sudah' ? `Tgl ${tax.pphLastMonth.tanggalBayar ?? '-'}` : 'JT tgl 15',
+      status: (tax.pphLastMonth?.statusBayar === 'sudah' ? 'done' : 'pending') as 'done' | 'pending',
+    },
+  ]
+
+  return (
+    <div className="surface overflow-hidden">
+      <div className="px-5 py-3 border-b border-stone-100 dark:border-border flex items-center justify-between">
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Pajak</p>
+        <p className="text-[10px] text-stone-400 dark:text-zinc-500">PPN 11% · PPh 25</p>
+      </div>
+      <div className="divide-y divide-stone-100 dark:divide-border">
+        {items.map((it) => {
+          const dotColor = it.status === 'done'
+            ? 'bg-[#60A5FA]'
+            : it.status === 'pending'
+              ? 'bg-[#F87171]'
+              : 'bg-stone-300 dark:bg-zinc-600'
+          return (
+            <div key={it.label} className="px-5 py-2.5 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[11px] text-stone-400 dark:text-zinc-500 font-medium">{it.label}</p>
+                <p className="text-[10px] text-stone-400 dark:text-zinc-600 mt-0.5">{it.sub}</p>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className={`h-1.5 w-1.5 rounded-full ${dotColor}`} />
+                <p className="text-[12px] font-semibold num tabular-nums text-stone-800 dark:text-zinc-200">{it.value}</p>
+              </div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )

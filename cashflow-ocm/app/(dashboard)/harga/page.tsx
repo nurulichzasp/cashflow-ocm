@@ -23,13 +23,6 @@ export default async function HargaPage() {
 
   return (
     <div className="space-y-5">
-      <div className="hidden md:flex items-center justify-end">
-        <HargaFormDialog>
-          <Button size="sm" className="gap-2 bg-orange-600 hover:bg-orange-700 text-white">
-            <Plus className="h-4 w-4" />Tambah
-          </Button>
-        </HargaFormDialog>
-      </div>
       <HargaFormDialog><FloatingFab /></HargaFormDialog>
 
       {(tbsTerbaru || brdlKtwmTerbaru) && (

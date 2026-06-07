@@ -25,13 +25,6 @@ export default async function PeronPage() {
 
   return (
     <div className="space-y-5">
-      <div className="hidden md:flex items-center justify-end">
-        <PeronFormDialog mode="create">
-          <Button size="sm" className="gap-2 bg-orange-600 hover:bg-orange-700 text-white">
-            <Plus className="h-4 w-4" />Tambah
-          </Button>
-        </PeronFormDialog>
-      </div>
       <PeronFormDialog mode="create"><FloatingFab /></PeronFormDialog>
 
       <div className="grid gap-3 sm:grid-cols-3">

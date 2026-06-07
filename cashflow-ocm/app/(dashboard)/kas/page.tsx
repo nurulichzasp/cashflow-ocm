@@ -38,13 +38,6 @@ export default async function KasPage() {
 
   return (
     <div className="space-y-5">
-      <div className="hidden md:flex items-center justify-end">
-        <KasFormDialog akunOptions={akunOptions}>
-          <Button size="sm" className="gap-2 bg-orange-600 hover:bg-orange-700 text-white">
-            <Plus className="h-4 w-4" />Tambah
-          </Button>
-        </KasFormDialog>
-      </div>
       <KasFormDialog akunOptions={akunOptions}><FloatingFab /></KasFormDialog>
 
       {/* Saldo per akun */}

@@ -38,13 +38,6 @@ export default async function BiayaPage() {
 
   return (
     <div className="space-y-5">
-      <div className="hidden md:flex items-center justify-end">
-        <BiayaFormDialog akunOptions={akunOptions}>
-          <Button size="sm" className="gap-2 bg-orange-600 hover:bg-orange-700 text-white">
-            <Plus className="h-4 w-4" />Tambah
-          </Button>
-        </BiayaFormDialog>
-      </div>
       <BiayaFormDialog akunOptions={akunOptions}><FloatingFab /></BiayaFormDialog>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

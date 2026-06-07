@@ -47,11 +47,14 @@ function NavTab({
       whileTap={{ scale: 0.9 }}
       animate={active ? { scale: [1, 1.08, 1] } : { scale: 1 }}
       transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-      className="flex flex-1 flex-col items-center justify-center gap-1"
+      className={cn(
+        'flex h-11 w-11 items-center justify-center rounded-full transition-colors',
+        active && 'bg-white/[0.06] dark:bg-white/[0.08]',
+      )}
     >
       <Icon
         className={cn(
-          'h-[26px] w-[26px] transition-colors',
+          'h-[22px] w-[22px] transition-colors',
           active ? 'text-stone-900 dark:text-[#FAFAFA]' : 'text-stone-400 dark:text-zinc-500',
         )}
         fill={active ? 'currentColor' : 'none'}
@@ -100,24 +103,24 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
 
   return (
     <>
-      {/* Bottom bar — premium floating glass */}
+      {/* Bottom bar — compact pill, premium glass */}
       <div
-        className="md:hidden fixed bottom-0 inset-x-0 z-40 px-5 pointer-events-none"
+        className="md:hidden fixed bottom-0 inset-x-0 z-40 flex justify-center px-5 pointer-events-none"
         style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0.75rem)' }}
       >
         <motion.nav
           initial={false}
           animate={navVisible ? { y: 0, opacity: 1 } : { y: 20, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 380, damping: 34 }}
-          className="pointer-events-auto relative mx-auto flex max-w-[20rem] rounded-[1.8rem] bg-stone-100/70 dark:bg-[#111111]/75 backdrop-blur-2xl border border-black/[0.06] dark:border-white/[0.07] shadow-[0_10px_32px_rgba(0,0,0,0.25)] p-1.5"
+          className="pointer-events-auto relative flex w-fit gap-0.5 rounded-full bg-stone-100/70 dark:bg-[#111111]/80 backdrop-blur-2xl border border-black/[0.06] dark:border-white/[0.08] shadow-[0_8px_28px_rgba(0,0,0,0.28)] p-1"
         >
-          <div className="flex flex-1">
+          <div className="flex gap-0.5">
             {visiblePrimary.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 aria-label={item.label}
-                className="flex flex-1 items-center justify-center"
+                className="flex h-11 w-11 items-center justify-center"
               >
                 <NavTab active={isActive(item.href)} label={item.label} icon={item.icon} />
               </Link>
@@ -126,7 +129,7 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
             <button
               onClick={() => setDrawerOpen(true)}
               aria-label="Menu"
-              className="flex flex-1 items-center justify-center"
+              className="flex h-11 w-11 items-center justify-center"
             >
               <NavTab active={drawerOpen} label="Menu" icon={MenuIcon} />
             </button>
