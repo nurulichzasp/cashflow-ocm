@@ -48,10 +48,15 @@ const kategoriColor: Record<string, string> = {
 }
 
 function StatusBayar({ status }: { status: 'lunas' | 'belum' }) {
-  if (status === 'lunas') {
-    return <span className="inline-flex rounded-full bg-[#3B82F6]/10 px-2.5 py-0.5 text-xs font-medium text-[#3B82F6] dark:text-[#3B82F6] border border-[#3B82F6]/25">Lunas</span>
-  }
-  return <span className="inline-flex rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 border border-amber-200">Belum</span>
+  const isLunas = status === 'lunas'
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${isLunas ? 'bg-[#60A5FA]' : 'bg-[#F87171]'}`} />
+      <span className={`text-[11px] font-medium ${isLunas ? 'text-[#93C5FD]' : 'text-[#FCA5A5]'}`}>
+        {isLunas ? 'Lunas' : 'Belum'}
+      </span>
+    </span>
+  )
 }
 
 function FotoIndicator({ count }: { count: number }) {
@@ -348,65 +353,84 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
         </table>
       </div>
 
-      {/* Mobile cards */}
-      <div className="md:hidden space-y-2">
-        {filtered.map((p) => (
-          <div key={p.id} className="surface press-card p-4">
-            <div className="flex items-start justify-between gap-2 mb-2">
-              <div>
-                <p className="font-semibold text-stone-900">{p.peron?.nama ?? p.peronId}</p>
-                <p className="text-xs text-stone-500 mt-0.5">{formatTanggal(p.tanggal)}</p>
+      {/* Mobile cards — premium */}
+      <div className="md:hidden space-y-2.5">
+        {filtered.map((p) => {
+          const margin = p.totalBeli > 0 ? (p.keuntungan / p.totalBeli) * 100 : 0
+          return (
+          <div key={p.id} className="rounded-2xl border border-black/[0.06] dark:border-white/[0.07] bg-white dark:bg-white/[0.025] p-4">
+            {/* Header */}
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-[15px] text-stone-900 dark:text-zinc-100 leading-snug truncate">{p.peron?.nama ?? p.peronId}</p>
+                <p className="text-[11px] text-stone-500 dark:text-zinc-500 mt-0.5">{formatTanggal(p.tanggal)}</p>
               </div>
-              <div className="flex gap-1.5 shrink-0 items-center">
-                <span className={`text-xs font-medium ${kategoriColor[p.kategori] ?? 'text-stone-600'}`}>{p.kategori}</span>
+              <div className="flex flex-col items-end gap-1.5 shrink-0">
+                <span className={`text-[10px] font-semibold uppercase tracking-wider ${kategoriColor[p.kategori] ?? 'text-stone-500'}`}>{p.kategori}</span>
                 <StatusBayar status={p.statusBayarPeron} />
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 text-sm mb-3">
-              <div className="rounded-lg bg-stone-50 border border-stone-100 p-2 min-w-0">
-                <p className="text-xs text-stone-400 mb-0.5">Tonase</p>
-                <p className="font-medium num text-sm truncate">{p.tonase.toLocaleString('id-ID')} kg</p>
+            {/* Hero nominal + margin glance */}
+            <div className="mt-3 flex items-end justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[10px] uppercase tracking-widest text-stone-400 dark:text-zinc-500 font-medium">Total Beli</p>
+                <p className="mt-1 text-[22px] font-bold text-stone-900 dark:text-zinc-50 num tabular-nums tracking-tight leading-none truncate">
+                  {formatRupiah(p.totalBeli)}
+                </p>
               </div>
-              <div className="rounded-lg bg-stone-50 border border-stone-100 p-2 min-w-0">
-                <p className="text-xs text-stone-400 mb-0.5">Harga Beli</p>
-                <p className="font-medium num text-sm truncate">Rp {p.hargaBeli.toLocaleString('id-ID')}/kg</p>
+              <div className="text-right shrink-0">
+                <p className="text-[10px] uppercase tracking-widest text-stone-400 dark:text-zinc-500 font-medium">Margin</p>
+                <p className="mt-1 text-[15px] font-semibold text-emerald-500 dark:text-emerald-400 num tabular-nums leading-none">
+                  +{margin.toFixed(1)}%
+                </p>
               </div>
-              <div className="rounded-lg bg-stone-50 border border-stone-100 p-2 min-w-0">
-                <p className="text-xs text-stone-400 mb-0.5">Total Beli</p>
-                <p className="font-semibold text-stone-900 num text-sm truncate">{formatRupiah(p.totalBeli)}</p>
+            </div>
+
+            {/* Sub-metrics */}
+            <div className="mt-3 pt-3 border-t border-black/[0.05] dark:border-white/[0.05] grid grid-cols-3 gap-3 text-[11px]">
+              <div className="min-w-0">
+                <p className="text-stone-400 dark:text-zinc-500 uppercase tracking-wider text-[10px]">Tonase</p>
+                <p className="mt-0.5 font-semibold text-stone-800 dark:text-zinc-200 num tabular-nums truncate">{p.tonase.toLocaleString('id-ID')} kg</p>
               </div>
-              <div className="rounded-lg bg-green-50 border border-green-100 p-2 min-w-0">
-                <p className="text-xs text-stone-400 mb-0.5">Keuntungan</p>
-                <p className="font-bold text-green-600 num text-sm truncate">{formatRupiah(p.keuntungan)}</p>
+              <div className="min-w-0">
+                <p className="text-stone-400 dark:text-zinc-500 uppercase tracking-wider text-[10px]">Harga</p>
+                <p className="mt-0.5 font-semibold text-stone-800 dark:text-zinc-200 num tabular-nums truncate">{p.hargaBeli.toLocaleString('id-ID')}</p>
+              </div>
+              <div className="min-w-0">
+                <p className="text-stone-400 dark:text-zinc-500 uppercase tracking-wider text-[10px]">Untung</p>
+                <p className="mt-0.5 font-semibold text-emerald-600 dark:text-emerald-400 num tabular-nums truncate">{formatRupiah(p.keuntungan)}</p>
               </div>
             </div>
 
             {isOwner && (
-              <div className="flex items-center gap-2 pt-2 border-t border-stone-100">
+              <div className="mt-3 pt-3 border-t border-black/[0.05] dark:border-white/[0.05] flex items-center gap-1">
                 <PrintNotaButton pembelian={p} nomorUrut={nomorUrutMap.get(p.id) ?? 1} />
                 {p.fotos.length > 0 && (
                   <button
                     type="button"
                     onClick={() => setExpandedFotoId(expandedFotoId === p.id ? null : p.id)}
-                    className="inline-flex items-center gap-1 text-xs text-stone-500 hover:text-stone-700 transition-colors"
+                    className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-[12px] font-medium text-stone-500 dark:text-zinc-400 hover:text-stone-800 dark:hover:text-zinc-200 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors"
                   >
-                    <ImageIcon className="h-4 w-4" />
+                    <ImageIcon className="h-3.5 w-3.5" />
                     {p.fotos.length}
                   </button>
                 )}
-                <Button
-                  variant="outline" size="sm"
-                  className="gap-1.5 border-stone-200 text-stone-700 hover:bg-stone-50"
+                <button
+                  type="button"
                   onClick={() => setEditTarget(p)}
+                  className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-stone-600 dark:text-zinc-300 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors"
                 >
                   <Edit3 className="h-3.5 w-3.5" />Edit
-                </Button>
+                </button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50 gap-1.5 ml-auto">
+                    <button
+                      type="button"
+                      className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-stone-500 dark:text-zinc-400 hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                    >
                       <Trash2 className="h-3.5 w-3.5" />Hapus
-                    </Button>
+                    </button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
@@ -427,12 +451,13 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
               </div>
             )}
             {expandedFotoId === p.id && p.fotos.length > 0 && (
-              <div className="mt-2 pt-2 border-t border-stone-100">
+              <div className="mt-2 pt-2 border-t border-black/[0.05] dark:border-white/[0.05]">
                 <FotoBuktiGallery urls={p.fotos.map((f) => f.url)} />
               </div>
             )}
           </div>
-        ))}
+          )
+        })}
 
         {/* Mobile total */}
         <div className="rounded-xl border-2 border-stone-300 bg-stone-100 p-4">

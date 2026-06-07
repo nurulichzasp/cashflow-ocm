@@ -100,16 +100,16 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
 
   return (
     <>
-      {/* Bottom bar — floating oval, transparent glass */}
+      {/* Bottom bar — premium floating glass */}
       <div
-        className="md:hidden fixed bottom-0 inset-x-0 z-40 px-4 pointer-events-none"
-        style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0.65rem)' }}
+        className="md:hidden fixed bottom-0 inset-x-0 z-40 px-5 pointer-events-none"
+        style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0.75rem)' }}
       >
         <motion.nav
           initial={false}
           animate={navVisible ? { y: 0, opacity: 1 } : { y: 20, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 380, damping: 34 }}
-          className="pointer-events-auto relative mx-auto flex max-w-sm rounded-[2rem] bg-white/50 dark:bg-black/50 backdrop-blur-2xl border border-white/60 dark:border-white/10 shadow-lg shadow-black/10 p-1.5"
+          className="pointer-events-auto relative mx-auto flex max-w-[20rem] rounded-[1.8rem] bg-stone-100/70 dark:bg-[#111111]/75 backdrop-blur-2xl border border-black/[0.06] dark:border-white/[0.07] shadow-[0_10px_32px_rgba(0,0,0,0.25)] p-1.5"
         >
           <div className="flex flex-1">
             {visiblePrimary.map((item) => (

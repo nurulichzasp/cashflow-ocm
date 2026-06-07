@@ -37,31 +37,27 @@ export function ScrollShell({
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden relative">
-      {/* Floating header — no background, just content */}
+      {/* Premium glass header — solid blur, no gradient bleed */}
       <div
-        className="md:hidden fixed top-0 left-0 right-0 z-30"
+        className="md:hidden fixed top-0 left-0 right-0 z-30 pointer-events-none"
         style={{
           willChange: 'transform, opacity',
           transform: headerVisible ? 'translateY(0)' : 'translateY(-100%)',
           opacity: headerVisible ? 1 : 0,
-          transition: 'transform 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+          transition:
+            'transform 280ms cubic-bezier(0.22, 0.61, 0.36, 1), opacity 220ms cubic-bezier(0.22, 0.61, 0.36, 1)',
         }}
       >
-        {/* Gradient backdrop for header readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#F5F5F4]/95 via-[#F5F5F4]/70 to-transparent dark:from-[#0A0A0A]/95 dark:via-[#0A0A0A]/70 dark:to-transparent pointer-events-none" />
-        <MobileHeader isOwner={isOwner} perms={perms} />
+        <div className="pointer-events-auto bg-stone-50/70 dark:bg-[#0A0A0A]/75 backdrop-blur-xl border-b border-black/5 dark:border-white/[0.06]">
+          <MobileHeader isOwner={isOwner} perms={perms} />
+        </div>
       </div>
-
-      {/* Bottom gradient — smooths content behind floating bottom nav */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-30 h-28 pointer-events-none bg-gradient-to-t from-[#F5F5F4]/90 via-[#F5F5F4]/40 to-transparent dark:from-[#0A0A0A]/90 dark:via-[#0A0A0A]/40 dark:to-transparent" />
 
       <main
         onScroll={onScroll}
-        className="flex-1 overflow-y-auto bg-background px-4 pt-[72px] pb-32 md:p-6"
+        className="flex-1 overflow-y-auto bg-background px-4 pt-[64px] pb-32 md:p-6"
       >
-        <div className="app-container">
-          {children}
-        </div>
+        <div className="app-container">{children}</div>
       </main>
     </div>
   )

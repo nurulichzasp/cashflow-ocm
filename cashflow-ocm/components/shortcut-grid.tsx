@@ -40,15 +40,15 @@ export function ShortcutGrid({
               className={cn(
                 'flex h-full flex-col items-center justify-center gap-2.5 rounded-xl border px-2 py-4 text-center transition-colors',
                 isActive
-                  ? 'border-orange-200/80 bg-orange-50/80 dark:border-orange-500/20 dark:bg-orange-500/10'
-                  : 'border-black/10 bg-black/[0.02] hover:bg-black/[0.04] dark:border-white/10 dark:bg-white/[0.03] dark:hover:bg-white/[0.06]'
+                  ? 'border-white/[0.12] bg-white/[0.07] dark:border-white/[0.12] dark:bg-white/[0.07]'
+                  : 'border-black/[0.06] bg-black/[0.02] hover:bg-black/[0.04] dark:border-white/[0.06] dark:bg-white/[0.025] dark:hover:bg-white/[0.05]'
               )}
             >
               <Icon
-                className={cn('h-6 w-6', isActive ? 'text-orange-600 dark:text-orange-400' : 'text-stone-600 dark:text-zinc-300')}
+                className={cn('h-6 w-6', isActive ? 'text-stone-900 dark:text-white' : 'text-stone-600 dark:text-zinc-400')}
                 strokeWidth={isActive ? 2.25 : 1.75}
               />
-              <span className={cn('text-[10px] font-medium uppercase tracking-wide', isActive ? 'text-orange-600 dark:text-orange-400' : 'text-stone-500 dark:text-zinc-400')}>
+              <span className={cn('text-[10px] font-medium uppercase tracking-wide', isActive ? 'text-stone-900 dark:text-white' : 'text-stone-500 dark:text-zinc-500')}>
                 {r.label}
               </span>
             </Link>

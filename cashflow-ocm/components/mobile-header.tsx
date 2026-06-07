@@ -36,10 +36,10 @@ export function MobileHeader({
 
   return (
     <header className="flex items-center h-14 px-4 gap-3">
-      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-orange-600 text-white text-[10px] font-bold shrink-0 shadow-sm shadow-orange-600/25">
+      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/[0.06] dark:bg-white/[0.06] border border-white/[0.08] text-stone-700 dark:text-zinc-300 text-[10px] font-bold tracking-tight shrink-0">
         OCM
       </div>
-      <span className="flex-1 text-base font-semibold text-stone-900 dark:text-stone-100 tracking-tight truncate">
+      <span className="flex-1 text-[15px] font-semibold text-stone-900 dark:text-zinc-100 tracking-tight truncate">
         {title}
       </span>
       <CommandPalette isOwner={isOwner} perms={perms} />

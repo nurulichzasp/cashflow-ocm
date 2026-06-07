@@ -25,39 +25,40 @@ interface Props {
   isOwner: boolean
 }
 
-function StatusBadge({ status, onToggle, loading }: { status: 'lunas' | 'belum'; onToggle?: () => void; loading?: boolean }) {
-  if (status === 'lunas') {
-    return (
-      <span className="inline-flex items-center gap-1.5 text-xs text-stone-600 dark:text-stone-400">
-        <span className="h-2 w-2 rounded-full bg-[#3B82F6] shrink-0" />
-        Lunas
-      </span>
-    )
-  }
-  if (onToggle) {
+/** Status dot konsisten — muted text, blue/red dot 6px. */
+export function StatusDot({ status, onToggle, loading }: { status: 'lunas' | 'belum'; onToggle?: () => void; loading?: boolean }) {
+  const isLunas = status === 'lunas'
+  const dotClass = isLunas ? 'bg-[#60A5FA]' : 'bg-[#F87171]'
+  const textClass = isLunas ? 'text-[#93C5FD]' : 'text-[#FCA5A5]'
+  const label = isLunas ? 'Lunas' : 'Belum'
+
+  const inner = (
+    <>
+      {loading ? (
+        <span className="h-1.5 w-1.5 border border-current border-t-transparent rounded-full animate-spin shrink-0" />
+      ) : (
+        <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${dotClass}`} />
+      )}
+      <span className={`text-[11px] font-medium ${textClass}`}>{label}</span>
+    </>
+  )
+
+  if (onToggle && !isLunas) {
     return (
       <button
         onClick={onToggle}
         disabled={loading}
         title="Klik untuk tandai Lunas"
-        className="inline-flex items-center gap-1.5 text-xs text-stone-600 dark:text-stone-400 hover:text-stone-900 transition-colors disabled:opacity-50 cursor-pointer"
+        className="inline-flex items-center gap-1.5 hover:opacity-80 transition-opacity disabled:opacity-50 cursor-pointer"
       >
-        {loading ? (
-          <span className="h-2 w-2 border border-red-500 border-t-transparent rounded-full animate-spin shrink-0" />
-        ) : (
-          <span className="h-2 w-2 rounded-full bg-red-500 shrink-0" />
-        )}
-        Belum
+        {inner}
       </button>
     )
   }
-  return (
-    <span className="inline-flex items-center gap-1.5 text-xs text-stone-600 dark:text-stone-400">
-      <span className="h-2 w-2 rounded-full bg-red-500 shrink-0" />
-      Belum
-    </span>
-  )
+  return <span className="inline-flex items-center gap-1.5">{inner}</span>
 }
+
+const StatusBadge = StatusDot
 
 type SortCol = 'tanggal' | 'totalBersih' | 'totalNilai'
 
@@ -218,77 +219,192 @@ export function PenjualanTable({ penjualanList, isOwner }: Props) {
       </div>
 
       {/* Mobile */}
-      <div className="md:hidden space-y-2">
+      <div className="md:hidden space-y-2.5">
         {filtered.map((item) => (
-          <div key={item.id} className="rounded-xl border border-stone-200 bg-white shadow-sm p-4">
-            <div className="flex items-start justify-between gap-2 mb-3">
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-stone-900 whitespace-pre-line text-sm leading-snug">{item.noInvoice || 'Tanpa nomor invoice'}</p>
-                <p className="text-xs text-stone-500 mt-0.5">{formatTanggal(item.tanggal)}</p>
-              </div>
-              <StatusBadge
-                status={item.statusBayar}
-                onToggle={item.statusBayar === 'belum' ? () => handleToggleLunas(item.id) : undefined}
-                loading={updatingId === item.id}
-              />
-            </div>
-            {(item.totalBersih || item.totalNilai) && (
-              <div className="mb-3 rounded-lg bg-stone-50 dark:bg-stone-900/40 border border-stone-100 dark:border-stone-800 px-3 py-2">
-                {item.totalBersih && item.totalBersih > 0 && (
-                  <div>
-                    <p className="text-xs text-stone-500 dark:text-stone-400 mb-0.5">Nilai Bersih (tanpa pajak)</p>
-                    <p className="text-base font-bold text-stone-900 dark:text-stone-100 num">{formatRupiah(item.totalBersih)}</p>
-                  </div>
-                )}
-                {item.totalNilai && item.totalNilai > 0 && item.totalNilai !== item.totalBersih && (
-                  <p className="text-xs text-stone-400 num mt-1">Total Dibayar: {formatRupiah(item.totalNilai)}</p>
-                )}
-              </div>
-            )}
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div>
-                <p className="text-xs text-stone-400 mb-0.5">Tgl Bayar</p>
-                <p className="text-stone-700">{item.tanggalBayarBga ? formatTanggal(item.tanggalBayarBga) : '—'}</p>
-              </div>
-              {item.catatan && (
-                <div>
-                  <p className="text-xs text-stone-400 mb-0.5">Catatan</p>
-                  <p className="text-stone-700 whitespace-pre-line">{item.catatan}</p>
-                </div>
-              )}
-            </div>
-            {isOwner && (
-              <div className="flex justify-end mt-3 pt-3 border-t border-stone-100">
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50 gap-1.5">
-                      <Trash2 className="h-3.5 w-3.5" />
-                      Hapus
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Hapus penjualan?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Invoice {item.noInvoice || 'tanpa nomor'} akan dihapus.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Batal</AlertDialogCancel>
-                      <AlertDialogAction
-                        className="bg-red-600 hover:bg-red-700 text-white"
-                        onClick={() => handleDelete(item.id)}
-                        disabled={deletingId === item.id}
-                      >
-                        {deletingId === item.id ? 'Menghapus...' : 'Hapus'}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
+          <PenjualanCard
+            key={item.id}
+            item={item}
+            isOwner={isOwner}
+            updatingId={updatingId}
+            deletingId={deletingId}
+            onToggleLunas={handleToggleLunas}
+            onDelete={handleDelete}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Premium mobile card — collapsible invoice list, catatan clamped
+   ───────────────────────────────────────────────────────────────── */
+
+type CardItem = Penjualan
+
+function PenjualanCard({
+  item,
+  isOwner,
+  updatingId,
+  deletingId,
+  onToggleLunas,
+  onDelete,
+}: {
+  item: CardItem
+  isOwner: boolean
+  updatingId: string | null
+  deletingId: string | null
+  onToggleLunas: (id: string) => void
+  onDelete: (id: string) => void
+}) {
+  const [expanded, setExpanded] = useState(false)
+  const invoices = (item.noInvoice ?? '').split('\n').filter(Boolean)
+  const primaryInvoice = invoices[0] || 'Tanpa nomor invoice'
+  const moreInvoices = invoices.length > 1 ? invoices.length - 1 : 0
+
+  const catatan = item.catatan ?? ''
+  const catatanShort = catatan.length > 60 ? catatan.slice(0, 60).trim() + '…' : catatan
+
+  function handleShare() {
+    const lines = [
+      `Penjualan ${formatTanggal(item.tanggal)}`,
+      invoices.length ? `Invoice:\n${invoices.join('\n')}` : '',
+      item.totalBersih ? `Nilai Bersih: ${formatRupiah(item.totalBersih)}` : '',
+      item.totalNilai ? `Total Dibayar: ${formatRupiah(item.totalNilai)}` : '',
+      item.tanggalBayarBga ? `Tgl Bayar: ${formatTanggal(item.tanggalBayarBga)}` : '',
+      catatan ? `\nCatatan:\n${catatan}` : '',
+    ].filter(Boolean).join('\n')
+    const text = encodeURIComponent(lines)
+    window.open(`https://wa.me/?text=${text}`, '_blank')
+  }
+
+  return (
+    <div className="rounded-2xl border border-black/[0.06] dark:border-white/[0.07] bg-white dark:bg-white/[0.025] p-4">
+      {/* Header: invoice + status */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-[14px] text-stone-900 dark:text-zinc-100 leading-snug truncate">
+            {primaryInvoice}
+          </p>
+          <div className="mt-1 flex items-center gap-2 text-[11px] text-stone-500 dark:text-zinc-500">
+            <span>{formatTanggal(item.tanggal)}</span>
+            {moreInvoices > 0 && (
+              <button
+                type="button"
+                onClick={() => setExpanded((v) => !v)}
+                className="inline-flex items-center gap-0.5 rounded-full bg-black/[0.04] dark:bg-white/[0.06] px-2 py-0.5 text-[10px] font-medium text-stone-600 dark:text-zinc-300 hover:bg-black/[0.07] dark:hover:bg-white/[0.1] transition-colors"
+              >
+                +{moreInvoices} {expanded ? '↑' : '↓'}
+              </button>
             )}
           </div>
-        ))}
+        </div>
+        <StatusDot
+          status={item.statusBayar}
+          onToggle={item.statusBayar === 'belum' ? () => onToggleLunas(item.id) : undefined}
+          loading={updatingId === item.id}
+        />
+      </div>
+
+      {/* Expanded extra invoices */}
+      {expanded && moreInvoices > 0 && (
+        <div className="mt-2 pl-0.5 text-[12px] font-mono text-stone-600 dark:text-zinc-400 space-y-0.5">
+          {invoices.slice(1).map((inv, i) => (
+            <p key={i} className="truncate">{inv}</p>
+          ))}
+        </div>
+      )}
+
+      {/* Nominal — hero */}
+      {(item.totalBersih || item.totalNilai) ? (
+        <div className="mt-3">
+          {item.totalBersih && item.totalBersih > 0 && (
+            <>
+              <p className="text-[10px] uppercase tracking-widest text-stone-400 dark:text-zinc-500 font-medium">Nilai Bersih</p>
+              <p className="mt-1 text-[22px] font-bold text-stone-900 dark:text-zinc-50 num tabular-nums tracking-tight leading-none">
+                {formatRupiah(item.totalBersih)}
+              </p>
+            </>
+          )}
+          {item.totalNilai && item.totalNilai > 0 && item.totalNilai !== item.totalBersih && (
+            <p className="mt-1.5 text-[11px] text-stone-400 dark:text-zinc-500 num">
+              Total dibayar {formatRupiah(item.totalNilai)}
+            </p>
+          )}
+        </div>
+      ) : null}
+
+      {/* Meta row */}
+      <div className="mt-3 flex items-center gap-3 text-[11px] text-stone-500 dark:text-zinc-500">
+        {item.tanggalBayarBga && (
+          <span className="inline-flex items-center gap-1">
+            <span className="text-stone-400 dark:text-zinc-600">Bayar</span>
+            <span className="text-stone-700 dark:text-zinc-300">{formatTanggal(item.tanggalBayarBga)}</span>
+          </span>
+        )}
+      </div>
+
+      {/* Catatan — clamped */}
+      {catatan && (
+        <div className="mt-3 pt-3 border-t border-black/[0.05] dark:border-white/[0.05]">
+          <p className="text-[11px] uppercase tracking-widest text-stone-400 dark:text-zinc-500 font-medium mb-1">Catatan</p>
+          <p className="text-[12px] text-stone-600 dark:text-zinc-400 whitespace-pre-line leading-relaxed">
+            {expanded ? catatan : catatanShort}
+          </p>
+          {catatan.length > 60 && (
+            <button
+              type="button"
+              onClick={() => setExpanded((v) => !v)}
+              className="mt-1.5 text-[11px] font-medium text-stone-700 dark:text-zinc-300 hover:text-stone-900 dark:hover:text-white transition-colors"
+            >
+              {expanded ? 'Sembunyikan' : 'Selengkapnya'}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="mt-3 pt-3 border-t border-black/[0.05] dark:border-white/[0.05] flex items-center gap-1">
+        <button
+          type="button"
+          onClick={handleShare}
+          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-stone-600 dark:text-zinc-300 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors"
+          aria-label="Bagikan via WhatsApp"
+        >
+          <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M20.52 3.48A11.94 11.94 0 0 0 12.04 0C5.5 0 .2 5.3.2 11.84a11.79 11.79 0 0 0 1.66 6.04L0 24l6.27-1.65a11.86 11.86 0 0 0 5.77 1.47h.01c6.54 0 11.84-5.3 11.84-11.84 0-3.16-1.23-6.13-3.37-8.5ZM12.04 21.8h-.01a9.94 9.94 0 0 1-5.06-1.38l-.36-.22-3.72.98.99-3.63-.23-.37a9.94 9.94 0 1 1 8.39 4.62Zm5.45-7.45c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.66.15-.2.3-.76.97-.93 1.17-.17.2-.34.22-.64.07-.3-.15-1.25-.46-2.39-1.47a8.97 8.97 0 0 1-1.66-2.06c-.17-.3-.02-.46.13-.6.13-.13.3-.34.45-.51.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.66-1.6-.9-2.18-.24-.58-.49-.5-.66-.51l-.56-.01a1.1 1.1 0 0 0-.78.37c-.27.3-1.02 1-1.02 2.43 0 1.43 1.05 2.82 1.2 3.02.15.2 2.07 3.16 5.01 4.43.7.3 1.25.48 1.67.62.7.22 1.34.19 1.85.12.56-.08 1.76-.72 2.01-1.42.25-.7.25-1.3.17-1.42-.07-.12-.27-.2-.57-.35Z"/></svg>
+          Bagikan
+        </button>
+        {isOwner && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button
+                type="button"
+                className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-stone-500 dark:text-zinc-400 hover:text-red-500 hover:bg-red-500/10 transition-colors"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Hapus
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Hapus penjualan?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Invoice {primaryInvoice} akan dihapus.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Batal</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                  onClick={() => onDelete(item.id)}
+                  disabled={deletingId === item.id}
+                >
+                  {deletingId === item.id ? 'Menghapus...' : 'Hapus'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
     </div>
   )

@@ -144,12 +144,12 @@ export function CommandPalette({
                           : 'hover:bg-black/[0.03] dark:hover:bg-white/5',
                       )}
                     >
-                      <Icon className={cn('h-[18px] w-[18px] shrink-0', isCurrentPage ? 'text-orange-600 dark:text-orange-400' : 'text-stone-500 dark:text-zinc-300')} />
-                      <span className={cn('flex-1 text-sm font-medium', isCurrentPage ? 'text-orange-600 dark:text-orange-400' : 'text-stone-900 dark:text-zinc-100')}>
+                      <Icon className={cn('h-[18px] w-[18px] shrink-0', isCurrentPage ? 'text-stone-900 dark:text-white' : 'text-stone-500 dark:text-zinc-400')} strokeWidth={isCurrentPage ? 2.25 : 1.75} />
+                      <span className={cn('flex-1 text-sm', isCurrentPage ? 'font-semibold text-stone-900 dark:text-white' : 'font-medium text-stone-800 dark:text-zinc-200')}>
                         {r.label}
                       </span>
                       {isCurrentPage && (
-                        <span className="h-1.5 w-1.5 rounded-full bg-orange-500 shrink-0" />
+                        <span className="h-1.5 w-1.5 rounded-full bg-stone-900 dark:bg-white shrink-0" />
                       )}
                       {isKeyActive && !isCurrentPage && (
                         <CornerDownLeft className="h-3.5 w-3.5 text-stone-400 dark:text-zinc-500" />
