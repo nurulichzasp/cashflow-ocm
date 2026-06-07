@@ -31,14 +31,7 @@ export default async function PenjualanPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-stone-900">Penjualan</h1>
-          <p className="text-sm text-stone-500 mt-0.5">
-            Kelola invoice dan status pembayaran BGA.
-            <span className="text-stone-400"> · {jumlahLunas} lunas · {jumlahBelum} piutang</span>
-          </p>
-        </div>
+      <div className="flex items-center justify-end gap-4 flex-wrap">
         <PenjualanFormDialog>
           <Button size="sm" className="gap-2 bg-orange-600 hover:bg-orange-700 text-white">
             <Plus className="h-4 w-4" />

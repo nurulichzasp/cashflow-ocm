@@ -89,7 +89,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
   const [hargaLoading, setHargaLoading] = useState(false)
   const [hargaOverride, setHargaOverride] = useState(false)
 
-  const derivedProduk: 'TBS' | 'BRDL' = kategori === 'OCM BRDL' ? 'BRDL' : 'TBS'
+  const derivedProduk: 'TBS' | 'BRDL KTWM' = kategori === 'OCM BRDL' ? 'BRDL KTWM' : 'TBS'
   const kelebihan = hargaAcuanData ? hargaAcuanData.selisihJualBga - keuntunganPerKg : 0
   const autoHarga = hargaAcuanData ? hargaAcuanData.hargaLapangan + kelebihan : 0
 

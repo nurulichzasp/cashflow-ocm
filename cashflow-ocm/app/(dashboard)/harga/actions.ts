@@ -23,7 +23,7 @@ async function requireOwner() {
 
 const hargaSchema = z.object({
   tanggalBerlaku: z.string().min(1, 'Tanggal wajib diisi'),
-  produk: z.enum(['TBS', 'BRDL']),
+  produk: z.enum(['TBS', 'BRDL KTWM', 'BRDL TRYM', 'BRDL LMDM']),
   hargaLapangan: z.coerce.number().positive('Harga lapangan harus positif'),
   selisihJualBga: z.coerce.number().min(0).default(120),
   catatan: z.string().optional(),
@@ -36,7 +36,7 @@ export async function createHargaAcuan(formData: FormData) {
     tanggalBerlaku: formData.get('tanggalBerlaku'),
     produk: formData.get('produk'),
     hargaLapangan: formData.get('hargaLapangan'),
-    selisihJualBga: formData.get('selisihJualBga') || 120,
+    selisihJualBga: 120,
     catatan: formData.get('catatan') || undefined,
   })
 
@@ -60,7 +60,7 @@ export async function getHargaList() {
 }
 
 /** Ambil harga acuan terbaru untuk produk tertentu pada/sebelum tanggal tertentu */
-export async function getHargaAktif(produk: 'TBS' | 'BRDL', tanggal: string) {
+export async function getHargaAktif(produk: 'TBS' | 'BRDL KTWM' | 'BRDL TRYM' | 'BRDL LMDM', tanggal: string) {
   const rows = await db
     .select()
     .from(hargaAcuan)

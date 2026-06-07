@@ -24,13 +24,7 @@ export default async function PeronPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-stone-900">Peron</h1>
-          <p className="text-sm text-stone-500 mt-0.5">
-            Kelola penengkulak masyarakat yang bermitra dengan CV OCM.
-          </p>
-        </div>
+      <div className="flex items-center justify-end gap-4 flex-wrap">
         <PeronFormDialog mode="create">
           <Button size="sm" className="gap-2 bg-orange-600 hover:bg-orange-700 text-white">
             <Plus className="h-4 w-4" />

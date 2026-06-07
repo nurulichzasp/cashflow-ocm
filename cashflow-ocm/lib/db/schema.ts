@@ -93,7 +93,7 @@ export const modalPeron = sqliteTable('modal_peron', {
 export const hargaAcuan = sqliteTable('harga_acuan', {
   id: text('id').primaryKey().default(sql`(lower(hex(randomblob(8))))`),
   tanggalBerlaku: text('tanggal_berlaku').notNull(),
-  produk: text('produk', { enum: ['TBS', 'BRDL'] }).notNull(),
+  produk: text('produk', { enum: ['TBS', 'BRDL KTWM', 'BRDL TRYM', 'BRDL LMDM'] }).notNull(),
   hargaLapangan: integer('harga_lapangan').notNull(),
   selisihJualBga: integer('selisih_jual_bga').notNull().default(120),
   catatan: text('catatan'),

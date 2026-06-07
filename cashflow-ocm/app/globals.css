@@ -534,48 +534,22 @@ html.dark [class~="hover:bg-orange-700"]:hover       { background-color: #c8654a
     -webkit-backdrop-filter: blur(8px) saturate(1.1) brightness(0.96);
   }
 
-  /* ── 3. Neural glow — breathing radial saat field fokus / state finansial ── */
+  /* ── 3. Focus — subtle thin border, no glow ──────────────────────────────── */
   .neural-focus {
-    transition:
-      box-shadow 220ms var(--ease-out-expo),
-      border-color 220ms var(--ease-out-expo);
+    transition: border-color 150ms ease;
   }
   .neural-focus:focus,
   .neural-focus:focus-within,
   .neural-focus:focus-visible {
-    border-color: var(--ring);
+    border-color: #D6D3D1;
     outline: none;
-    animation: neural-breathe 2.8s var(--ease-in-out-expo) infinite;
-  }
-  @keyframes neural-breathe {
-    0%, 100% {
-      box-shadow:
-        0 0 0 3px color-mix(in oklab, var(--ring) 16%, transparent),
-        0 0 16px -2px color-mix(in oklab, var(--ring) 26%, transparent);
-    }
-    50% {
-      box-shadow:
-        0 0 0 4px color-mix(in oklab, var(--ring) 26%, transparent),
-        0 0 26px 0px color-mix(in oklab, var(--ring) 44%, transparent);
-    }
+    box-shadow: none;
   }
 
-  /* Glow semantik finansial — pakai warna existing masuk/keluar/warning */
-  .glow-masuk:focus,   .glow-masuk:focus-within   { border-color: var(--masuk);   animation: glow-masuk 2.8s var(--ease-in-out-expo) infinite; outline: none; }
-  .glow-keluar:focus,  .glow-keluar:focus-within  { border-color: var(--keluar);  animation: glow-keluar 2.8s var(--ease-in-out-expo) infinite; outline: none; }
-  .glow-warning:focus, .glow-warning:focus-within { border-color: var(--warning); animation: glow-warning 2.8s var(--ease-in-out-expo) infinite; outline: none; }
-  @keyframes glow-masuk {
-    0%,100% { box-shadow: 0 0 0 3px color-mix(in oklab, var(--masuk) 15%, transparent), 0 0 16px -2px color-mix(in oklab, var(--masuk) 26%, transparent); }
-    50%     { box-shadow: 0 0 0 4px color-mix(in oklab, var(--masuk) 24%, transparent), 0 0 26px 0   color-mix(in oklab, var(--masuk) 40%, transparent); }
-  }
-  @keyframes glow-keluar {
-    0%,100% { box-shadow: 0 0 0 3px color-mix(in oklab, var(--keluar) 15%, transparent), 0 0 16px -2px color-mix(in oklab, var(--keluar) 26%, transparent); }
-    50%     { box-shadow: 0 0 0 4px color-mix(in oklab, var(--keluar) 24%, transparent), 0 0 26px 0   color-mix(in oklab, var(--keluar) 40%, transparent); }
-  }
-  @keyframes glow-warning {
-    0%,100% { box-shadow: 0 0 0 3px color-mix(in oklab, var(--warning) 15%, transparent), 0 0 16px -2px color-mix(in oklab, var(--warning) 26%, transparent); }
-    50%     { box-shadow: 0 0 0 4px color-mix(in oklab, var(--warning) 24%, transparent), 0 0 26px 0   color-mix(in oklab, var(--warning) 40%, transparent); }
-  }
+  /* Semantic border-only focus for financial fields */
+  .glow-masuk:focus,   .glow-masuk:focus-within   { border-color: color-mix(in oklab, var(--masuk) 50%, #D6D3D1); outline: none; box-shadow: none; }
+  .glow-keluar:focus,  .glow-keluar:focus-within  { border-color: color-mix(in oklab, var(--keluar) 50%, #D6D3D1); outline: none; box-shadow: none; }
+  .glow-warning:focus, .glow-warning:focus-within { border-color: color-mix(in oklab, var(--warning) 50%, #D6D3D1); outline: none; box-shadow: none; }
 
   /* One-shot pulse saat transaksi sukses tercatat */
   .pulse-success { animation: pulse-success 900ms var(--ease-out-expo) 1; }
@@ -586,10 +560,6 @@ html.dark [class~="hover:bg-orange-700"]:hover       { background-color: #c8654a
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .neural-focus:focus, .neural-focus:focus-within,
-    .glow-masuk:focus, .glow-masuk:focus-within,
-    .glow-keluar:focus, .glow-keluar:focus-within,
-    .glow-warning:focus, .glow-warning:focus-within { animation: none; box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 22%, transparent); }
     .pulse-success { animation: none; }
   }
 

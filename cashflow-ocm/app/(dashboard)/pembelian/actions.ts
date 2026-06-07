@@ -273,7 +273,7 @@ export async function getKeuntunganPerKg(peronId: string): Promise<number> {
   return p?.keuntunganPerKg ?? 0
 }
 
-export async function getLatestHargaAcuan(produk: 'TBS' | 'BRDL', tanggal?: string) {
+export async function getLatestHargaAcuan(produk: 'TBS' | 'BRDL KTWM' | 'BRDL TRYM' | 'BRDL LMDM', tanggal?: string) {
   const targetDate = tanggal || new Date().toISOString().slice(0, 10)
   const result = await db.query.hargaAcuan.findFirst({
     where: (t, { and, eq, lte }) => and(

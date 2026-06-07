@@ -26,12 +26,6 @@ export default async function LaporanPage() {
 
   return (
     <div className="space-y-5">
-      <div className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight text-stone-900">Laporan</h1>
-        <p className="text-sm text-stone-500 mt-0.5">
-          Laporan laba rugi, arus kas, dan kinerja per peron CV OCM.
-        </p>
-      </div>
       <LaporanClient initialData={initialData} defaultDari={dari} defaultSampai={sampai} />
     </div>
   )

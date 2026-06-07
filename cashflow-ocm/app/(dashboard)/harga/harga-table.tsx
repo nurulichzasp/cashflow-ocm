@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { deleteHargaAcuan } from './actions'
 import { formatRupiah, formatTanggal } from '@/lib/format'
-import { Trash2, DollarSign, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { Trash2, DollarSign } from 'lucide-react'
 import { DateRangeFilter } from '@/components/date-range-filter'
 import type { HargaAcuan } from '@/lib/db/schema'
 
@@ -26,6 +26,21 @@ interface Props {
 }
 
 type SortCol = 'tanggal' | 'harga'
+
+function ProdukBadge({ produk }: { produk: string }) {
+  if (produk === 'TBS') {
+    return (
+      <span className="inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold bg-orange-50 text-orange-700 border border-orange-200">
+        {produk}
+      </span>
+    )
+  }
+  return (
+    <span className="inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold bg-stone-100 text-stone-600 border border-stone-200">
+      {produk}
+    </span>
+  )
+}
 
 export function HargaTable({ hargaList, isOwner }: Props) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -78,7 +93,6 @@ export function HargaTable({ hargaList, isOwner }: Props) {
 
   return (
     <div className="space-y-3">
-      {/* Filter tanggal */}
       <DateRangeFilter dari={dari} sampai={sampai} onChange={(d, s) => { setDari(d); setSampai(s) }} />
 
       {/* Desktop */}
@@ -89,7 +103,6 @@ export function HargaTable({ hargaList, isOwner }: Props) {
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Tgl Berlaku</th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Produk</th>
               <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Harga Lapangan</th>
-              <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Selisih BGA</th>
               <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Harga Jual</th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Catatan</th>
               {isOwner && <th className="px-4 py-3 w-10" />}
@@ -99,15 +112,12 @@ export function HargaTable({ hargaList, isOwner }: Props) {
             {filtered.map((harga) => {
               const hargaJual = harga.hargaLapangan + harga.selisihJualBga
               return (
-                <tr key={harga.id} className="bg-white hover:bg-orange-50/30 transition-colors">
+                <tr key={harga.id} className="bg-white hover:bg-stone-50/60 transition-colors">
                   <td className="px-4 py-3 text-stone-900">{formatTanggal(harga.tanggalBerlaku)}</td>
                   <td className="px-4 py-3">
-                    <span className="font-mono text-xs font-semibold text-stone-700 tracking-wide">
-                      {harga.produk}
-                    </span>
+                    <ProdukBadge produk={harga.produk} />
                   </td>
                   <td className="px-4 py-3 text-right text-stone-700 num">{formatRupiah(harga.hargaLapangan)}/kg</td>
-                  <td className="px-4 py-3 text-right text-stone-700 num">{formatRupiah(harga.selisihJualBga)}/kg</td>
                   <td className="px-4 py-3 text-right font-semibold text-stone-900 num">{formatRupiah(hargaJual)}/kg</td>
                   <td className="px-4 py-3 text-stone-500 max-w-[180px] truncate">{harga.catatan ?? <span className="text-stone-400">—</span>}</td>
                   {isOwner && (
@@ -155,9 +165,7 @@ export function HargaTable({ hargaList, isOwner }: Props) {
             <div key={harga.id} className="rounded-xl border border-stone-200 bg-white shadow-sm p-4">
               <div className="flex items-center justify-between gap-3 mb-3">
                 <div>
-                  <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${harga.produk === 'TBS' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
-                    {harga.produk}
-                  </span>
+                  <ProdukBadge produk={harga.produk} />
                   <p className="text-xs text-stone-500 mt-1">{formatTanggal(harga.tanggalBerlaku)}</p>
                 </div>
                 {isOwner && (
@@ -188,14 +196,10 @@ export function HargaTable({ hargaList, isOwner }: Props) {
                   </AlertDialog>
                 )}
               </div>
-              <div className="grid grid-cols-3 gap-3 text-sm">
+              <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
                   <p className="text-xs text-stone-400 mb-0.5">Harga Lapangan</p>
                   <p className="font-medium text-stone-900 num">{formatRupiah(harga.hargaLapangan)}/kg</p>
-                </div>
-                <div>
-                  <p className="text-xs text-stone-400 mb-0.5">Selisih BGA</p>
-                  <p className="font-medium text-stone-900 num">{formatRupiah(harga.selisihJualBga)}/kg</p>
                 </div>
                 <div>
                   <p className="text-xs text-stone-400 mb-0.5">Harga Jual</p>

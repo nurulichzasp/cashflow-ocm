@@ -56,13 +56,13 @@ async function seed() {
     },
     {
       tanggalBerlaku: today,
-      produk: 'BRDL',
+      produk: 'BRDL KTWM',
       hargaLapangan: 1600,
       selisihJualBga: 120,
       catatan: 'Harga awal seed',
     },
   ])
-  console.log('  → Harga acuan TBS & BRDL dibuat')
+  console.log('  → Harga acuan TBS & BRDL KTWM dibuat')
 
   console.log('\n✅ Seed selesai!')
   console.log('\nAkun login:')

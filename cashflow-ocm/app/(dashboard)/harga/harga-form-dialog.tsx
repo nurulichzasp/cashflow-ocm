@@ -18,6 +18,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { createHargaAcuan } from './actions'
 import { todayString } from '@/lib/format'
 
+type Produk = 'TBS' | 'BRDL KTWM' | 'BRDL TRYM' | 'BRDL LMDM'
+
 interface Props {
   children: React.ReactNode
 }
@@ -25,9 +27,8 @@ interface Props {
 export function HargaFormDialog({ children }: Props) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [produk, setProduk] = useState<'TBS' | 'BRDL'>('TBS')
+  const [produk, setProduk] = useState<Produk>('TBS')
   const [hargaLapangan, setHargaLapangan] = useState(0)
-  const [selisih, setSelisih] = useState(120)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -37,12 +38,10 @@ export function HargaFormDialog({ children }: Props) {
       const fd = new FormData(e.currentTarget)
       fd.set('produk', produk)
       fd.set('hargaLapangan', String(hargaLapangan))
-      fd.set('selisihJualBga', String(selisih))
       await createHargaAcuan(fd)
       toast.success('Harga acuan berhasil ditambahkan')
       setOpen(false)
       setHargaLapangan(0)
-      setSelisih(120)
       setProduk('TBS')
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Terjadi kesalahan')
@@ -50,8 +49,6 @@ export function HargaFormDialog({ children }: Props) {
       setLoading(false)
     }
   }
-
-  const hargaJual = hargaLapangan + selisih
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -65,13 +62,15 @@ export function HargaFormDialog({ children }: Props) {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Produk</Label>
-              <Select value={produk} onValueChange={(v) => setProduk(v as 'TBS' | 'BRDL')}>
+              <Select value={produk} onValueChange={(v) => setProduk(v as Produk)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="TBS">TBS</SelectItem>
-                  <SelectItem value="BRDL">BRDL (Brondolan)</SelectItem>
+                  <SelectItem value="BRDL KTWM">BRDL KTWM</SelectItem>
+                  <SelectItem value="BRDL TRYM">BRDL TRYM</SelectItem>
+                  <SelectItem value="BRDL LMDM">BRDL LMDM</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -90,15 +89,6 @@ export function HargaFormDialog({ children }: Props) {
             <Label>Harga Lapangan (Rp/kg)</Label>
             <NumberInput value={hargaLapangan} onChange={setHargaLapangan} placeholder="0" />
             <p className="text-xs text-muted-foreground">Harga acuan dari lapangan/pasar</p>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Selisih Jual BGA (Rp/kg)</Label>
-            <NumberInput value={selisih} onChange={setSelisih} placeholder="120" />
-            <p className="text-xs text-muted-foreground">
-              Harga jual ke BGA = {hargaLapangan.toLocaleString('id-ID')} + {selisih.toLocaleString('id-ID')} ={' '}
-              <strong>Rp {hargaJual.toLocaleString('id-ID')}/kg</strong>
-            </p>
           </div>
 
           <div className="space-y-1.5">
