@@ -3,14 +3,27 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { db } from '@/lib/db'
 import * as schema from '@/lib/db/schema'
 
-// Kumpulkan semua origin yang dipercaya
-// VERCEL_URL & VERCEL_BRANCH_URL otomatis tersedia di setiap deployment Vercel
-const trustedOrigins = [
-  process.env.BETTER_AUTH_URL,
-  process.env.NEXT_PUBLIC_APP_URL,
-  process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined,
-  process.env.VERCEL_BRANCH_URL ? `https://${process.env.VERCEL_BRANCH_URL}` : undefined,
-].filter(Boolean) as string[]
+// Kumpulkan semua origin yang dipercaya — SEMUA dari ENV, tidak ada hardcode.
+// VERCEL_URL & VERCEL_BRANCH_URL otomatis tersedia di setiap deployment Vercel.
+// Saat pindah ke domain .com cukup set ENV di Vercel (BETTER_AUTH_URL /
+// NEXT_PUBLIC_APP_URL), atau daftarkan beberapa domain sekaligus via
+// ADDITIONAL_TRUSTED_ORIGINS (dipisah koma) — tanpa ubah kode.
+const extraOrigins = (process.env.ADDITIONAL_TRUSTED_ORIGINS ?? '')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean)
+
+const trustedOrigins = Array.from(
+  new Set(
+    [
+      process.env.BETTER_AUTH_URL,
+      process.env.NEXT_PUBLIC_APP_URL,
+      process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined,
+      process.env.VERCEL_BRANCH_URL ? `https://${process.env.VERCEL_BRANCH_URL}` : undefined,
+      ...extraOrigins,
+    ].filter(Boolean) as string[],
+  ),
+)
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {

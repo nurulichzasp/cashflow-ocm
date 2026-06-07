@@ -6,6 +6,8 @@ import { auth } from '@/lib/auth'
 import { DesktopSidebar } from '@/components/desktop-sidebar'
 import { BottomNav } from '@/components/bottom-nav'
 import { ScrollShell } from '@/components/scroll-shell'
+import { SwipeNavigator } from '@/components/swipe-navigator'
+import { parsePerms } from '@/lib/nav-routes'
 
 export default async function DashboardLayout({
   children,
@@ -19,14 +21,17 @@ export default async function DashboardLayout({
   }
 
   const isOwner = session.user.role === 'owner'
+  const perms = parsePerms((session.user as any).permissions)
 
   return (
     <div className="flex h-[100dvh] overflow-hidden">
       {/* Sidebar — desktop only, collapsible */}
       <DesktopSidebar user={session.user} isOwner={isOwner} />
 
-      {/* Main content + mobile header */}
-      <ScrollShell>{children}</ScrollShell>
+      {/* Main content + mobile header. SwipeNavigator: geser kiri=back, kanan=forward */}
+      <ScrollShell isOwner={isOwner} perms={perms}>
+        <SwipeNavigator>{children}</SwipeNavigator>
+      </ScrollShell>
 
       {/* Bottom nav — mobile only */}
       <BottomNav isOwner={isOwner} user={session.user} />
