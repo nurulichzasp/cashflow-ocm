@@ -13,13 +13,17 @@ import {
   akunKas,
   ppnBulanan,
   pphBulanan,
+  hargaAcuan,
 } from '@/lib/db/schema'
-import { eq, sum, and, gte, like } from 'drizzle-orm'
-import { formatRupiah } from '@/lib/format'
+import { eq, sum, and, gte, like, desc } from 'drizzle-orm'
+import { formatRupiah, formatTanggal } from '@/lib/format'
 import {
   TrendingUp,
   ShoppingCart,
   Receipt,
+  ArrowUpRight,
+  ArrowDownRight,
+  Sparkles,
 } from 'lucide-react'
 import CashflowChart from '@/components/charts/CashflowChart'
 import TrendChart from '@/components/charts/TrendChart'
@@ -78,7 +82,35 @@ async function getMetrics() {
 
   const estimasiLaba = Number(pembelianKeuntungan?.[0]?.total ?? 0)
 
-  return { akunSaldo, totalSaldo, totalDpPeron, piutangBga, totalPenjualanLunas, totalModalBerputar, estimasiLaba }
+  // Total pembelian (modal terserap) untuk hitung Net Margin
+  const totalPembelianRaw = await db.select({ total: sum(pembelian.totalBeli) }).from(pembelian)
+  const totalPembelian = Number(totalPembelianRaw?.[0]?.total ?? 0)
+  const totalRevenue = totalPenjualanLunas + piutangBga // total nilai bersih semua penjualan
+  const netMarginPct = totalPembelian > 0 ? (estimasiLaba / totalPembelian) * 100 : 0
+
+  return {
+    akunSaldo, totalSaldo, totalDpPeron, piutangBga,
+    totalPenjualanLunas, totalModalBerputar, estimasiLaba,
+    totalPembelian, totalRevenue, netMarginPct,
+  }
+}
+
+/** Harga acuan terbaru per produk + selisih hari (untuk Quick Reference card). */
+async function getHargaAcuanLatest() {
+  const produks = ['TBS', 'BRDL KTWM', 'BRDL TRYM', 'BRDL LMDM'] as const
+  const rows = await Promise.all(
+    produks.map(async (p) => {
+      const r = await db.select().from(hargaAcuan)
+        .where(eq(hargaAcuan.produk, p))
+        .orderBy(desc(hargaAcuan.tanggalBerlaku))
+        .limit(2)
+      const current = r[0] ?? null
+      const previous = r[1] ?? null
+      const delta = current && previous ? current.hargaLapangan - previous.hargaLapangan : 0
+      return { produk: p, current, previous, delta }
+    })
+  )
+  return rows
 }
 
 async function getTodayStats() {
@@ -205,18 +237,19 @@ async function getChartSeries(days = 14) {
 }
 
 export default async function DashboardPage() {
-  const [session, metrics, today, charts, tax] = await Promise.all([
+  const [session, metrics, today, charts, tax, hargaLatest] = await Promise.all([
     auth.api.getSession({ headers: await headers() }),
     getMetrics(),
     getTodayStats(),
     getChartSeries(14),
     getTaxStatus(),
+    getHargaAcuanLatest(),
   ])
 
   const modalBreakdown = [
     { label: 'Saldo Kas', value: formatRupiah(metrics.totalSaldo) },
     { label: 'DP Peron', value: formatRupiah(metrics.totalDpPeron) },
-    { label: 'Piutang BGA', value: formatRupiah(metrics.piutangBga) },
+    { label: 'Piutang', value: formatRupiah(metrics.piutangBga) },
   ]
 
   const todayItems = [
@@ -275,6 +308,15 @@ export default async function DashboardPage() {
           ))}
         </div>
       </div>
+
+      {/* Premium glance — Net Margin + Harga Acuan reference */}
+      <NetMarginAndHarga
+        netMarginPct={metrics.netMarginPct}
+        estimasiLaba={metrics.estimasiLaba}
+        totalPembelian={metrics.totalPembelian}
+        totalRevenue={metrics.totalRevenue}
+        hargaLatest={hargaLatest}
+      />
 
       {/* Hero — Modal Berputar + breakdown + ringkasan */}
       <div className="grid gap-3 grid-cols-1 lg:grid-cols-3">
@@ -426,6 +468,145 @@ export default async function DashboardPage() {
         </div>
         <div className="p-4">
           <TrendChart data={charts.trend} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   Net Margin Glance + Harga Acuan Reference
+   Two-up premium glance bar — owner langsung lihat profitabilitas
+   dan harga lapangan terbaru tanpa pindah halaman.
+   ────────────────────────────────────────────────────────────── */
+
+type HargaLatest = {
+  produk: string
+  current: { hargaLapangan: number; selisihJualBga: number; tanggalBerlaku: string } | null
+  previous: { hargaLapangan: number } | null
+  delta: number
+}
+
+function NetMarginAndHarga({
+  netMarginPct,
+  estimasiLaba,
+  totalPembelian,
+  totalRevenue,
+  hargaLatest,
+}: {
+  netMarginPct: number
+  estimasiLaba: number
+  totalPembelian: number
+  totalRevenue: number
+  hargaLatest: HargaLatest[]
+}) {
+  // Klasifikasi warna margin — health visual
+  const healthy = netMarginPct >= 1.5
+  const moderate = netMarginPct >= 0.5 && netMarginPct < 1.5
+  const marginTone = healthy
+    ? 'text-emerald-500 dark:text-emerald-400'
+    : moderate
+      ? 'text-amber-500 dark:text-amber-400'
+      : 'text-stone-500 dark:text-zinc-400'
+  const marginBar = healthy
+    ? 'bg-emerald-500/80'
+    : moderate
+      ? 'bg-amber-500/80'
+      : 'bg-stone-400/60'
+
+  // Skala bar — 3% margin = 100% bar (TBS trading umumnya tipis)
+  const barWidth = Math.max(4, Math.min(100, (netMarginPct / 3) * 100))
+
+  return (
+    <div className="grid gap-3 grid-cols-1 lg:grid-cols-2">
+      {/* Net Margin Glance */}
+      <div className="surface press-card p-5 sm:p-6">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="h-3 w-3 text-stone-400 dark:text-zinc-500" strokeWidth={2} />
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Net Margin</p>
+            </div>
+            <div className="mt-3 flex items-baseline gap-1.5">
+              <span className={`text-[2.25rem] sm:text-[2.6rem] leading-none font-bold num tabular-nums tracking-[-0.03em] ${marginTone}`}>
+                {netMarginPct.toFixed(2)}
+              </span>
+              <span className={`text-base font-semibold ${marginTone}`}>%</span>
+            </div>
+            <p className="mt-1.5 text-[11px] text-stone-400 dark:text-zinc-500">
+              {formatRupiah(estimasiLaba)} dari {formatRupiah(totalPembelian)} pembelian
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] uppercase tracking-wider text-stone-400 dark:text-zinc-500 font-medium">Revenue</p>
+            <p className="mt-1 text-[13px] font-semibold text-stone-700 dark:text-zinc-300 num tabular-nums">
+              {formatRupiah(totalRevenue)}
+            </p>
+          </div>
+        </div>
+        {/* Margin health bar */}
+        <div className="mt-5 h-1.5 w-full rounded-full bg-stone-100 dark:bg-white/[0.06] overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-700 ${marginBar}`}
+            style={{ width: `${barWidth}%` }}
+          />
+        </div>
+        <div className="mt-1.5 flex items-center justify-between text-[10px] text-stone-400 dark:text-zinc-500 font-medium tabular-nums">
+          <span>0%</span>
+          <span>1.5%</span>
+          <span>3%+</span>
+        </div>
+      </div>
+
+      {/* Harga Acuan Reference */}
+      <div className="surface press-card overflow-hidden">
+        <div className="px-5 py-3 border-b border-stone-100 dark:border-border flex items-center justify-between">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Harga Lapangan</p>
+          <a
+            href="/harga"
+            className="text-[10px] uppercase tracking-wider text-stone-500 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white font-medium transition-colors"
+          >
+            Kelola →
+          </a>
+        </div>
+        <div className="divide-y divide-stone-100 dark:divide-border">
+          {hargaLatest.map(({ produk, current, delta }) => {
+            const up = delta > 0
+            const down = delta < 0
+            const DeltaIcon = up ? ArrowUpRight : down ? ArrowDownRight : null
+            const deltaTone = up
+              ? 'text-emerald-500 dark:text-emerald-400'
+              : down
+                ? 'text-rose-500 dark:text-rose-400'
+                : 'text-stone-400 dark:text-zinc-500'
+            return (
+              <div key={produk} className="flex items-center justify-between px-5 py-2.5">
+                <div className="min-w-0">
+                  <p className="text-[12px] font-mono font-semibold text-stone-700 dark:text-zinc-200 truncate">{produk}</p>
+                  {current && (
+                    <p className="text-[10px] text-stone-400 dark:text-zinc-500 mt-0.5">{formatTanggal(current.tanggalBerlaku)}</p>
+                  )}
+                </div>
+                <div className="text-right shrink-0">
+                  {current ? (
+                    <>
+                      <p className="text-[14px] font-bold num tabular-nums text-stone-900 dark:text-zinc-50 leading-none">
+                        Rp {current.hargaLapangan.toLocaleString('id-ID')}
+                      </p>
+                      {delta !== 0 && DeltaIcon && (
+                        <p className={`inline-flex items-center gap-0.5 mt-1 text-[10px] font-semibold num tabular-nums ${deltaTone}`}>
+                          <DeltaIcon className="h-3 w-3" strokeWidth={2.5} />
+                          {Math.abs(delta).toLocaleString('id-ID')}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-[11px] text-stone-400 dark:text-zinc-600">—</p>
+                  )}
+                </div>
+              </div>
+            )
+          })}
         </div>
       </div>
     </div>
