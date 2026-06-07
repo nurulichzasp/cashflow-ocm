@@ -15,31 +15,36 @@ export function ScrollShell({
 }) {
   const [headerVisible, setHeaderVisible] = useState(true)
   const lastY = useRef(0)
+  const rafId = useRef<number | null>(null)
 
   const onScroll = useCallback((e: React.UIEvent<HTMLElement>) => {
-    const y = e.currentTarget.scrollTop
-    const dy = y - lastY.current
-    // Threshold ±8px supaya tidak flicker. Header & bottom-nav berbagi arah:
-    // scroll bawah → sembunyi, scroll atas → muncul (gaya Instagram).
-    if (dy > 8 && y > 56) {
-      setHeaderVisible(false)
-      setNavVisible(false)
-    } else if (dy < -5 || y < 10) {
-      setHeaderVisible(true)
-      setNavVisible(true)
-    }
-    lastY.current = y
+    const target = e.currentTarget
+    if (rafId.current !== null) return
+    rafId.current = requestAnimationFrame(() => {
+      rafId.current = null
+      const y = target.scrollTop
+      const dy = y - lastY.current
+      if (dy > 12 && y > 56) {
+        setHeaderVisible(false)
+        setNavVisible(false)
+      } else if (dy < -8 || y < 16) {
+        setHeaderVisible(true)
+        setNavVisible(true)
+      }
+      lastY.current = y
+    })
   }, [])
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
-      {/* Fixed glass header — animates with transform+opacity, no layout shift */}
+      {/* Fixed glass header */}
       <div
         className="md:hidden fixed top-0 left-0 right-0 z-30"
         style={{
+          willChange: 'transform, opacity',
           transform: headerVisible ? 'translateY(0)' : 'translateY(-100%)',
           opacity: headerVisible ? 1 : 0,
-          transition: 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease',
+          transition: 'transform 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94)',
         }}
       >
         <MobileHeader isOwner={isOwner} perms={perms} />

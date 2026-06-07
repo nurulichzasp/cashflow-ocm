@@ -8,16 +8,21 @@ import { visibleRoutes } from '@/lib/nav-routes'
  * ShortcutGrid — app-launcher minimalist premium (monokrom, tanpa glow/oranye).
  * Solusi "sekali tap" supaya halaman penting tidak menumpuk di Menu.
  */
+const PRIMARY_PATHS = ['/dashboard', '/pembelian', '/penjualan']
+
 export function ShortcutGrid({
   isOwner,
   perms,
   onNavigate,
+  excludePrimary,
 }: {
   isOwner?: boolean
   perms?: { pembelian?: boolean; penjualan?: boolean; kas?: boolean; biaya?: boolean }
   onNavigate?: () => void
+  excludePrimary?: boolean
 }) {
-  const routes = visibleRoutes(isOwner, perms)
+  const all = visibleRoutes(isOwner, perms)
+  const routes = excludePrimary ? all.filter((r) => !PRIMARY_PATHS.includes(r.path)) : all
 
   return (
     <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4">

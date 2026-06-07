@@ -10,7 +10,6 @@ import {
   LayoutDashboard,
   ShoppingCart,
   TrendingUp,
-  Wallet,
   Menu as MenuIcon,
   X,
   LogOut,
@@ -21,14 +20,12 @@ import { fotoUrl } from '@/lib/foto-url'
 import { useNavVisible } from '@/lib/nav-visibility-store'
 import { parsePerms } from '@/lib/nav-routes'
 
-// Set true bila ingin label kecil di bawah ikon. DEFAULT false (gaya Instagram).
 const SHOW_LABELS = false
 
 const primaryNav = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, perm: undefined },
   { href: '/pembelian', label: 'Pembelian', icon: ShoppingCart, perm: 'pembelian' as const },
   { href: '/penjualan', label: 'Penjualan', icon: TrendingUp, perm: 'penjualan' as const },
-  { href: '/kas', label: 'Kas', icon: Wallet, perm: 'kas' as const },
 ]
 
 function getInitials(name?: string) {
@@ -36,7 +33,6 @@ function getInitials(name?: string) {
   return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
 }
 
-/** Satu tab ikon — outline (inactive) → filled monokrom (active), tap feedback halus. */
 function NavTab({
   active,
   label,
@@ -58,8 +54,6 @@ function NavTab({
           'h-[26px] w-[26px] transition-colors',
           active ? 'text-stone-900 dark:text-[#FAFAFA]' : 'text-stone-400 dark:text-zinc-500',
         )}
-        // Active = "terisi" (gaya IG). Untuk ikon garis (mis. TrendingUp) fill
-        // tidak terlihat, jadi stroke ditebalkan agar tetap menonjol.
         fill={active ? 'currentColor' : 'none'}
         strokeWidth={active ? 2.25 : 2}
       />
@@ -106,7 +100,7 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
 
   return (
     <>
-      {/* ── Bottom bar — flush full-width, solid, monokrom (gaya Instagram) ── */}
+      {/* Bottom bar */}
       <motion.nav
         initial={false}
         animate={navVisible ? { y: 0, opacity: 1 } : { y: 100, opacity: 0 }}
@@ -128,7 +122,6 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
             </Link>
           ))}
 
-          {/* Menu — app launcher */}
           <button
             onClick={() => setDrawerOpen(true)}
             aria-label="Menu"
@@ -139,7 +132,7 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
         </div>
       </motion.nav>
 
-      {/* ── Drawer "Menu" — bottom sheet minimalist + Shortcut Grid ── */}
+      {/* Drawer pintasan */}
       <AnimatePresence>
         {drawerOpen && (
           <div className="fixed inset-0 z-50 md:hidden">
@@ -192,12 +185,12 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
                 </div>
               )}
 
-              {/* Shortcut grid — semua halaman, sekali tap */}
+              {/* Shortcut grid — hanya halaman yang tidak ada di bottom bar */}
               <div className="px-4 py-4">
                 <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-zinc-500">
                   Pintasan
                 </p>
-                <ShortcutGrid isOwner={isOwner} perms={perms} onNavigate={() => setDrawerOpen(false)} />
+                <ShortcutGrid isOwner={isOwner} perms={perms} onNavigate={() => setDrawerOpen(false)} excludePrimary />
               </div>
 
               {/* Logout */}
