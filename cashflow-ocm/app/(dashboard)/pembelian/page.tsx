@@ -5,6 +5,7 @@ import { getPeronList } from '../peron/actions'
 import { PembelianTable } from './pembelian-table'
 import { PembelianFormDialog } from './pembelian-form-dialog'
 import { Button } from '@/components/ui/button'
+import { FloatingFab } from '@/components/fab'
 import { Plus } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -33,14 +34,14 @@ export default async function PembelianPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-end gap-4 flex-wrap">
+      <div className="hidden md:flex items-center justify-end">
         <PembelianFormDialog peronOptions={peronOptions} akunOptions={akunOptions}>
           <Button size="sm" className="gap-2 bg-orange-600 hover:bg-orange-700 text-white">
-            <Plus className="h-4 w-4" />
-            Tambah
+            <Plus className="h-4 w-4" />Tambah
           </Button>
         </PembelianFormDialog>
       </div>
+      <PembelianFormDialog peronOptions={peronOptions} akunOptions={akunOptions}><FloatingFab /></PembelianFormDialog>
 
       <PembelianTable
         pembelianList={pembelianList}

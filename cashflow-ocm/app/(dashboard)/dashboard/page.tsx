@@ -254,17 +254,6 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-4 sm:space-y-6 pt-1 md:pt-0">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-100 tracking-tight">Dashboard</h1>
-        <p className="text-sm text-stone-500 dark:text-stone-400 mt-0.5">
-          {tanggal} &mdash; Selamat datang, {session?.user.name}
-        </p>
-      </div>
-      {/* Mobile greeting */}
-      <div className="md:hidden">
-        <p className="text-sm text-stone-500">{tanggal}</p>
-      </div>
 
       {/* Ringkasan Hari Ini */}
       <div className="surface press-card overflow-hidden">

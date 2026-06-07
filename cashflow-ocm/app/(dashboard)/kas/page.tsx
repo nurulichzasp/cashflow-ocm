@@ -4,6 +4,7 @@ import { getKasTransactions, getAkunKasList } from './actions'
 import { KasTable } from './kas-table'
 import { KasFormDialog } from './kas-form-dialog'
 import { Button } from '@/components/ui/button'
+import { FloatingFab } from '@/components/fab'
 import { formatRupiah } from '@/lib/format'
 import { Plus } from 'lucide-react'
 
@@ -37,14 +38,14 @@ export default async function KasPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-end gap-4 flex-wrap">
+      <div className="hidden md:flex items-center justify-end">
         <KasFormDialog akunOptions={akunOptions}>
           <Button size="sm" className="gap-2 bg-orange-600 hover:bg-orange-700 text-white">
-            <Plus className="h-4 w-4" />
-            Tambah
+            <Plus className="h-4 w-4" />Tambah
           </Button>
         </KasFormDialog>
       </div>
+      <KasFormDialog akunOptions={akunOptions}><FloatingFab /></KasFormDialog>
 
       {/* Saldo per akun */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">

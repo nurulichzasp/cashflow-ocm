@@ -4,6 +4,7 @@ import { getPeronList } from './actions'
 import { PeronTable } from './peron-table'
 import { PeronFormDialog } from './peron-form-dialog'
 import { Button } from '@/components/ui/button'
+import { FloatingFab } from '@/components/fab'
 import { formatRupiah } from '@/lib/format'
 import { Plus } from 'lucide-react'
 import { db } from '@/lib/db'
@@ -24,14 +25,14 @@ export default async function PeronPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-end gap-4 flex-wrap">
+      <div className="hidden md:flex items-center justify-end">
         <PeronFormDialog mode="create">
           <Button size="sm" className="gap-2 bg-orange-600 hover:bg-orange-700 text-white">
-            <Plus className="h-4 w-4" />
-            Tambah
+            <Plus className="h-4 w-4" />Tambah
           </Button>
         </PeronFormDialog>
       </div>
+      <PeronFormDialog mode="create"><FloatingFab /></PeronFormDialog>
 
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="surface press-card p-4">

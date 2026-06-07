@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { Search, CornerDownLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -20,6 +20,7 @@ export function CommandPalette({
   perms?: { pembelian?: boolean; penjualan?: boolean; kas?: boolean; biaya?: boolean }
 }) {
   const router = useRouter()
+  const pathname = usePathname()
   const [open, setOpen] = React.useState(false)
   const [query, setQuery] = React.useState('')
   const [active, setActive] = React.useState(0)
@@ -128,7 +129,8 @@ export function CommandPalette({
               ) : (
                 results.map((r, i) => {
                   const Icon = r.icon
-                  const isActive = i === active
+                  const isKeyActive = i === active
+                  const isCurrentPage = pathname === r.path || (r.path !== '/dashboard' && pathname.startsWith(r.path))
                   return (
                     <button
                       key={r.path}
@@ -137,19 +139,19 @@ export function CommandPalette({
                       onClick={() => go(r)}
                       className={cn(
                         'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors',
-                        isActive
+                        isKeyActive
                           ? 'bg-black/5 dark:bg-white/10'
                           : 'hover:bg-black/[0.03] dark:hover:bg-white/5',
                       )}
                     >
-                      <Icon className="h-[18px] w-[18px] shrink-0 text-stone-500 dark:text-zinc-300" />
-                      <span className="flex-1 text-sm font-medium text-stone-900 dark:text-zinc-100">
+                      <Icon className={cn('h-[18px] w-[18px] shrink-0', isCurrentPage ? 'text-orange-600 dark:text-orange-400' : 'text-stone-500 dark:text-zinc-300')} />
+                      <span className={cn('flex-1 text-sm font-medium', isCurrentPage ? 'text-orange-600 dark:text-orange-400' : 'text-stone-900 dark:text-zinc-100')}>
                         {r.label}
                       </span>
-                      <span className="text-[10px] uppercase tracking-wider text-stone-400 dark:text-zinc-500">
-                        {r.group}
-                      </span>
-                      {isActive && (
+                      {isCurrentPage && (
+                        <span className="h-1.5 w-1.5 rounded-full bg-orange-500 shrink-0" />
+                      )}
+                      {isKeyActive && !isCurrentPage && (
                         <CornerDownLeft className="h-3.5 w-3.5 text-stone-400 dark:text-zinc-500" />
                       )}
                     </button>

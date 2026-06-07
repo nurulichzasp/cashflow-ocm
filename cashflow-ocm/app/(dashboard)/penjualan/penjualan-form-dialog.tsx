@@ -62,7 +62,7 @@ export function PenjualanFormDialog({ children }: Props) {
 
       const filled = [data.tanggal, data.noInvoice, data.catatan].filter(Boolean).length
       if (filled > 0) {
-        const src = data.info === 'excel-bga-rekap' ? 'Rekap BGA' : data.info?.includes('excel') ? 'Excel' : 'PDF'
+        const src = data.info === 'excel-bga-rekap' ? 'Rekap' : data.info?.includes('excel') ? 'Excel' : 'PDF'
         toast.success(`Data berhasil diisi dari ${src}`)
       } else {
         toast.info('File terbaca tapi tidak ada field yang cocok — isi manual ya')
@@ -119,9 +119,9 @@ export function PenjualanFormDialog({ children }: Props) {
         <div className="rounded-lg border border-dashed border-border bg-muted/40 p-4 space-y-2">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-[#D97757]" />
-            <p className="text-sm font-medium text-foreground">Upload BAST / Invoice BGA</p>
+            <p className="text-sm font-medium text-foreground">Upload BAST / Invoice</p>
           </div>
-          <p className="text-xs text-muted-foreground">Upload PDF / Excel / Foto dari BGA — form terisi otomatis</p>
+          <p className="text-xs text-muted-foreground">Upload PDF / Excel / Foto — form terisi otomatis</p>
           <div className="flex items-center gap-2">
             <Button
               type="button"
@@ -151,7 +151,7 @@ export function PenjualanFormDialog({ children }: Props) {
             >
               <span className="flex items-center gap-2">
                 <Table2 className="h-3.5 w-3.5" />
-                Preview Rekap BGA
+                Preview Rekap
                 <span className="text-xs text-muted-foreground font-normal">({preview.rows.length} baris)</span>
               </span>
               {previewOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -239,7 +239,7 @@ export function PenjualanFormDialog({ children }: Props) {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Tanggal Bayar BGA</Label>
+              <Label>Tanggal Bayar</Label>
               <Input name="tanggalBayarBga" type="date" disabled={statusBayar === 'belum'} />
             </div>
           </div>
@@ -262,7 +262,7 @@ export function PenjualanFormDialog({ children }: Props) {
                 )}
               </div>
               <div className="space-y-1.5">
-                <Label className="text-sm">Total Dibayar BGA <span className="text-muted-foreground font-normal text-xs">(+PPN−PPH)</span></Label>
+                <Label className="text-sm">Total Dibayar <span className="text-muted-foreground font-normal text-xs">(+PPN−PPH)</span></Label>
                 <Input
                   type="number"
                   value={totalNilai}

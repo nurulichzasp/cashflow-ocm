@@ -100,37 +100,39 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
 
   return (
     <>
-      {/* Bottom bar */}
-      <motion.nav
-        initial={false}
-        animate={navVisible ? { y: 0, opacity: 1 } : { y: 100, opacity: 0 }}
-        transition={{ type: 'spring', stiffness: 380, damping: 34 }}
-        className="md:hidden fixed inset-x-0 bottom-0 z-40 border-t border-black/10 bg-white dark:border-white/10 dark:bg-black"
+      {/* Bottom bar — floating oval, transparent glass */}
+      <div
+        className="md:hidden fixed bottom-0 inset-x-0 z-40 px-4 pointer-events-none"
+        style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0.65rem)' }}
       >
-        <div
-          className="flex h-14 items-stretch justify-around px-2"
-          style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        <motion.nav
+          initial={false}
+          animate={navVisible ? { y: 0, opacity: 1 } : { y: 20, opacity: 0 }}
+          transition={{ type: 'spring', stiffness: 380, damping: 34 }}
+          className="pointer-events-auto relative mx-auto flex max-w-sm rounded-[2rem] bg-white/50 dark:bg-black/50 backdrop-blur-2xl border border-white/60 dark:border-white/10 shadow-lg shadow-black/10 p-1.5"
         >
-          {visiblePrimary.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-label={item.label}
+          <div className="flex flex-1">
+            {visiblePrimary.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-label={item.label}
+                className="flex flex-1 items-center justify-center"
+              >
+                <NavTab active={isActive(item.href)} label={item.label} icon={item.icon} />
+              </Link>
+            ))}
+
+            <button
+              onClick={() => setDrawerOpen(true)}
+              aria-label="Menu"
               className="flex flex-1 items-center justify-center"
             >
-              <NavTab active={isActive(item.href)} label={item.label} icon={item.icon} />
-            </Link>
-          ))}
-
-          <button
-            onClick={() => setDrawerOpen(true)}
-            aria-label="Menu"
-            className="flex flex-1 items-center justify-center"
-          >
-            <NavTab active={drawerOpen} label="Menu" icon={MenuIcon} />
-          </button>
-        </div>
-      </motion.nav>
+              <NavTab active={drawerOpen} label="Menu" icon={MenuIcon} />
+            </button>
+          </div>
+        </motion.nav>
+      </div>
 
       {/* Drawer pintasan */}
       <AnimatePresence>

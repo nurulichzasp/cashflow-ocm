@@ -5,6 +5,7 @@ import { getPembelianList } from '../pembelian/actions'
 import { PenjualanTable } from './penjualan-table'
 import { PenjualanFormDialog } from './penjualan-form-dialog'
 import { Button } from '@/components/ui/button'
+import { FloatingFab } from '@/components/fab'
 import { formatRupiah } from '@/lib/format'
 import { Plus } from 'lucide-react'
 
@@ -31,14 +32,14 @@ export default async function PenjualanPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-end gap-4 flex-wrap">
+      <div className="hidden md:flex items-center justify-end">
         <PenjualanFormDialog>
           <Button size="sm" className="gap-2 bg-orange-600 hover:bg-orange-700 text-white">
-            <Plus className="h-4 w-4" />
-            Tambah
+            <Plus className="h-4 w-4" />Tambah
           </Button>
         </PenjualanFormDialog>
       </div>
+      <PenjualanFormDialog><FloatingFab /></PenjualanFormDialog>
 
       <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
         <div className="surface press-card p-3 sm:p-4">

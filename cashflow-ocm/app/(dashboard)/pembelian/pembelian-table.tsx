@@ -39,11 +39,12 @@ interface Props {
   akunOptions: Array<{ id: string; nama: string; tipe: string }>
 }
 
-const kategoriBadge: Record<string, string> = {
-  'OCM R1':    'bg-blue-50 text-blue-700 border border-blue-200',
-  'OCM R2':    'bg-violet-50 text-violet-700 border border-violet-200',
-  'OCMP SAGU': 'bg-green-50 text-green-700 border border-green-200',
-  'OCM BRDL':  'bg-amber-50 text-amber-700 border border-amber-200',
+// kategori warna teks saja — tanpa badge/kotak
+const kategoriColor: Record<string, string> = {
+  'OCM R1':    'text-blue-600',
+  'OCM R2':    'text-violet-600',
+  'OCMP SAGU': 'text-green-700',
+  'OCM BRDL':  'text-amber-700',
 }
 
 function StatusBayar({ status }: { status: 'lunas' | 'belum' }) {
@@ -287,7 +288,7 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
                     Rp {p.hargaBeli.toLocaleString('id-ID')}
                   </td>
                   <td className="px-3 py-2.5">
-                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${kategoriBadge[p.kategori] ?? ''}`}>
+                    <span className={`text-xs font-medium ${kategoriColor[p.kategori] ?? 'text-stone-600'}`}>
                       {p.kategori}
                     </span>
                   </td>
@@ -356,42 +357,44 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
                 <p className="font-semibold text-stone-900">{p.peron?.nama ?? p.peronId}</p>
                 <p className="text-xs text-stone-500 mt-0.5">{formatTanggal(p.tanggal)}</p>
               </div>
-              <div className="flex gap-1.5 shrink-0">
-                <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${kategoriBadge[p.kategori] ?? ''}`}>{p.kategori}</span>
+              <div className="flex gap-1.5 shrink-0 items-center">
+                <span className={`text-xs font-medium ${kategoriColor[p.kategori] ?? 'text-stone-600'}`}>{p.kategori}</span>
                 <StatusBayar status={p.statusBayarPeron} />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2 text-sm mb-3">
-              <div className="rounded-lg bg-stone-50 border border-stone-100 p-2">
+              <div className="rounded-lg bg-stone-50 border border-stone-100 p-2 min-w-0">
                 <p className="text-xs text-stone-400 mb-0.5">Tonase</p>
-                <p className="font-medium num">{p.tonase.toLocaleString('id-ID')} kg</p>
+                <p className="font-medium num text-sm truncate">{p.tonase.toLocaleString('id-ID')} kg</p>
               </div>
-              <div className="rounded-lg bg-stone-50 border border-stone-100 p-2">
+              <div className="rounded-lg bg-stone-50 border border-stone-100 p-2 min-w-0">
                 <p className="text-xs text-stone-400 mb-0.5">Harga Beli</p>
-                <p className="font-medium num text-xs">
-                  Rp {p.hargaBeli.toLocaleString('id-ID')}/kg
-                </p>
+                <p className="font-medium num text-sm truncate">Rp {p.hargaBeli.toLocaleString('id-ID')}/kg</p>
               </div>
-              <div className="rounded-lg bg-stone-50 border border-stone-100 p-2">
+              <div className="rounded-lg bg-stone-50 border border-stone-100 p-2 min-w-0">
                 <p className="text-xs text-stone-400 mb-0.5">Total Beli</p>
-                <p className="font-semibold text-stone-900 num text-sm">{formatRupiah(p.totalBeli)}</p>
+                <p className="font-semibold text-stone-900 num text-sm truncate">{formatRupiah(p.totalBeli)}</p>
               </div>
-              <div className="rounded-lg bg-green-50 border border-green-100 p-2">
+              <div className="rounded-lg bg-green-50 border border-green-100 p-2 min-w-0">
                 <p className="text-xs text-stone-400 mb-0.5">Keuntungan</p>
-                <p className="font-bold text-green-600 num text-sm">{formatRupiah(p.keuntungan)}</p>
+                <p className="font-bold text-green-600 num text-sm truncate">{formatRupiah(p.keuntungan)}</p>
               </div>
             </div>
-
-            {p.fotos.length > 0 && (
-              <div className="mb-3">
-                <FotoBuktiGallery urls={p.fotos.map((f) => f.url)} maxThumbnails={3} />
-              </div>
-            )}
 
             {isOwner && (
               <div className="flex items-center gap-2 pt-2 border-t border-stone-100">
                 <PrintNotaButton pembelian={p} nomorUrut={nomorUrutMap.get(p.id) ?? 1} />
+                {p.fotos.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setExpandedFotoId(expandedFotoId === p.id ? null : p.id)}
+                    className="inline-flex items-center gap-1 text-xs text-stone-500 hover:text-stone-700 transition-colors"
+                  >
+                    <ImageIcon className="h-4 w-4" />
+                    {p.fotos.length}
+                  </button>
+                )}
                 <Button
                   variant="outline" size="sm"
                   className="gap-1.5 border-stone-200 text-stone-700 hover:bg-stone-50"
@@ -421,6 +424,11 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
+              </div>
+            )}
+            {expandedFotoId === p.id && p.fotos.length > 0 && (
+              <div className="mt-2 pt-2 border-t border-stone-100">
+                <FotoBuktiGallery urls={p.fotos.map((f) => f.url)} />
               </div>
             )}
           </div>

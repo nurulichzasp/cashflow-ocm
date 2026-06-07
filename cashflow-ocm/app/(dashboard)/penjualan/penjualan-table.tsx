@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { deletePenjualan, updatePenjualanStatus } from './actions'
 import { formatTanggal, formatRupiah, todayString } from '@/lib/format'
-import { Trash2, FileText, CheckCircle2, Clock, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { Trash2, FileText, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import { DateRangeFilter } from '@/components/date-range-filter'
 import type { Penjualan } from '@/lib/db/schema'
 
@@ -28,8 +28,8 @@ interface Props {
 function StatusBadge({ status, onToggle, loading }: { status: 'lunas' | 'belum'; onToggle?: () => void; loading?: boolean }) {
   if (status === 'lunas') {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-[#3B82F6]/10 px-2.5 py-0.5 text-xs font-medium text-[#3B82F6] dark:text-[#3B82F6] border border-[#3B82F6]/25">
-        <CheckCircle2 className="h-3 w-3" />
+      <span className="inline-flex items-center gap-1.5 text-xs text-stone-600 dark:text-stone-400">
+        <span className="h-2 w-2 rounded-full bg-[#3B82F6] shrink-0" />
         Lunas
       </span>
     )
@@ -40,21 +40,21 @@ function StatusBadge({ status, onToggle, loading }: { status: 'lunas' | 'belum';
         onClick={onToggle}
         disabled={loading}
         title="Klik untuk tandai Lunas"
-        className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 border border-amber-200 hover:bg-amber-100 hover:border-amber-300 transition-colors disabled:opacity-50 cursor-pointer"
+        className="inline-flex items-center gap-1.5 text-xs text-stone-600 dark:text-stone-400 hover:text-stone-900 transition-colors disabled:opacity-50 cursor-pointer"
       >
         {loading ? (
-          <span className="h-3 w-3 border border-amber-500 border-t-transparent rounded-full animate-spin" />
+          <span className="h-2 w-2 border border-red-500 border-t-transparent rounded-full animate-spin shrink-0" />
         ) : (
-          <Clock className="h-3 w-3" />
+          <span className="h-2 w-2 rounded-full bg-red-500 shrink-0" />
         )}
-        Belum Lunas
+        Belum
       </button>
     )
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 border border-amber-200">
-      <Clock className="h-3 w-3" />
-      Belum Lunas
+    <span className="inline-flex items-center gap-1.5 text-xs text-stone-600 dark:text-stone-400">
+      <span className="h-2 w-2 rounded-full bg-red-500 shrink-0" />
+      Belum
     </span>
   )
 }
@@ -149,7 +149,7 @@ export function PenjualanTable({ penjualanList, isOwner }: Props) {
                 <span className="inline-flex items-center gap-1 justify-end">Nilai Bersih <SortIcon active={sortBy === 'totalBersih'} dir={sortDir} /></span>
               </th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Tgl Bayar BGA</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Tgl Bayar</th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Catatan</th>
               {isOwner && <th className="px-4 py-3 w-10" />}
             </tr>
@@ -241,13 +241,13 @@ export function PenjualanTable({ penjualanList, isOwner }: Props) {
                   </div>
                 )}
                 {item.totalNilai && item.totalNilai > 0 && item.totalNilai !== item.totalBersih && (
-                  <p className="text-xs text-stone-400 num mt-1">Total Dibayar BGA: {formatRupiah(item.totalNilai)}</p>
+                  <p className="text-xs text-stone-400 num mt-1">Total Dibayar: {formatRupiah(item.totalNilai)}</p>
                 )}
               </div>
             )}
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
-                <p className="text-xs text-stone-400 mb-0.5">Tgl Bayar BGA</p>
+                <p className="text-xs text-stone-400 mb-0.5">Tgl Bayar</p>
                 <p className="text-stone-700">{item.tanggalBayarBga ? formatTanggal(item.tanggalBayarBga) : '—'}</p>
               </div>
               {item.catatan && (
