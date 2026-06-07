@@ -453,7 +453,7 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
                 </div>
 
                 <div className="pt-3">
-                  <Button type="submit" className="bg-orange-600 hover:bg-orange-700 text-white cursor-pointer">
+                  <Button type="submit" className="bg-stone-900 hover:bg-stone-800 dark:bg-white dark:hover:bg-zinc-200 dark:text-stone-900 text-white cursor-pointer">
                     Simpan Profil Perusahaan
                   </Button>
                 </div>
@@ -472,7 +472,7 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
               {isOwner && (
                 <Dialog open={addUserOpen} onOpenChange={setAddUserOpen}>
                   <DialogTrigger asChild>
-                    <Button size="sm" className="bg-orange-600 hover:bg-orange-700 text-white cursor-pointer gap-1.5">
+                    <Button size="sm" className="bg-stone-900 hover:bg-stone-800 dark:bg-white dark:hover:bg-zinc-200 dark:text-stone-900 text-white cursor-pointer gap-1.5">
                       <UserPlus className="h-4 w-4" /> Tambah Pengguna
                     </Button>
                   </DialogTrigger>
@@ -614,7 +614,7 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
                         <Button type="button" variant="outline" onClick={() => setAddUserOpen(false)} className="border-stone-200">
                           Batal
                         </Button>
-                        <Button type="submit" disabled={submittingUser} className="bg-orange-600 hover:bg-orange-700 text-white">
+                        <Button type="submit" disabled={submittingUser} className="bg-stone-900 hover:bg-stone-800 dark:bg-white dark:hover:bg-zinc-200 dark:text-stone-900 text-white">
                           {submittingUser ? 'Menyimpan...' : 'Tambahkan'}
                         </Button>
                       </DialogFooter>
@@ -703,7 +703,7 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
                                       <Button type="button" variant="outline" onClick={() => setResetPassOpen(false)} className="border-stone-200">
                                         Batal
                                       </Button>
-                                      <Button type="submit" disabled={resettingPass} className="bg-orange-600 hover:bg-orange-700 text-white">
+                                      <Button type="submit" disabled={resettingPass} className="bg-stone-900 hover:bg-stone-800 dark:bg-white dark:hover:bg-zinc-200 dark:text-stone-900 text-white">
                                         {resettingPass ? 'Memproses...' : 'Ubah Sandi'}
                                       </Button>
                                     </DialogFooter>
@@ -796,7 +796,7 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
                   </div>
                 </div>
                 <div className="pt-3">
-                  <Button type="submit" className="bg-orange-600 hover:bg-orange-700 text-white cursor-pointer">
+                  <Button type="submit" className="bg-stone-900 hover:bg-stone-800 dark:bg-white dark:hover:bg-zinc-200 dark:text-stone-900 text-white cursor-pointer">
                     Simpan Konfigurasi Pajak
                   </Button>
                 </div>

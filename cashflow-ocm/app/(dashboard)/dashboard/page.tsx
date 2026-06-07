@@ -131,7 +131,7 @@ async function getSmartInsights(): Promise<Insight[]> {
       id: 'piutang-lama',
       tone: 'warn',
       icon: 'piutang',
-      label: `${piutangLama.length} piutang &gt; 30 hari`,
+      label: `${piutangLama.length} piutang > 30 hari`,
       detail: formatRupiah(total),
       href: '/penjualan',
     })
@@ -344,19 +344,19 @@ export default async function DashboardPage() {
       label: 'Pembelian Hari Ini',
       value: formatRupiah(today.pembelianHariIni),
       icon: ShoppingCart,
-      color: 'text-orange-600 dark:text-[#D97757]',
+      color: 'text-stone-700 dark:text-zinc-300',
     },
     {
       label: 'Penjualan Hari Ini',
       value: formatRupiah(today.penjualanHariIni),
       icon: TrendingUp,
-      color: 'text-[#3B82F6] dark:text-[#3B82F6]',
+      color: 'text-[#60A5FA]',
     },
     {
       label: 'Biaya Hari Ini',
       value: formatRupiah(today.biayaHariIni),
       icon: Receipt,
-      color: 'text-stone-600 dark:text-[#9CA3AF]',
+      color: 'text-stone-500 dark:text-zinc-500',
     },
   ]
 
@@ -369,12 +369,26 @@ export default async function DashboardPage() {
     <div className="space-y-4 sm:space-y-5 pt-1 md:pt-0">
 
       {/* SMART INSIGHTS — alerts kontekstual real-time (auto-hide bila aman) */}
-      {insights.length > 0 && <SmartInsights items={insights} />}
+      {insights.length > 0 && (
+        <section className="rounded-2xl border border-black/[0.06] dark:border-white/[0.07] bg-white/95 dark:bg-[#0B1220]/95 p-4 shadow-sm">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.24em] text-stone-400 dark:text-zinc-500 font-semibold">Tindakan cepat</p>
+              <h2 className="mt-2 text-sm font-semibold text-stone-900 dark:text-zinc-100">Smart Insights</h2>
+            </div>
+            <p className="text-[11px] text-stone-500 dark:text-zinc-500">Hanya kondisi yang perlu tindak lanjut.</p>
+          </div>
+          <div className="mt-4">
+            <SmartInsights items={insights} />
+          </div>
+        </section>
+      )}
 
-      {/* HERO — Modal Berputar (full width, gradient subtle, breakdown inline) */}
+      {/* HERO — Modal Berputar + mini sparkline 14d */}
       <ModalHero
         total={metrics.totalModalBerputar}
         breakdown={modalBreakdown}
+        trend={charts.trend}
       />
 
       {/* TODAY STRIP — kompak horizontal, bukan card besar */}
@@ -461,10 +475,17 @@ export default async function DashboardPage() {
 function ModalHero({
   total,
   breakdown,
+  trend,
 }: {
   total: number
   breakdown: { label: string; value: string }[]
+  trend: { date: string; total: number }[]
 }) {
+  // Hitung pct change 14d ke nilai sekarang
+  const first = trend[0]?.total ?? total
+  const pctChange = first > 0 ? ((total - first) / first) * 100 : 0
+  const up = pctChange >= 0
+
   return (
     <div className="relative overflow-hidden rounded-2xl border border-black/[0.06] dark:border-white/[0.07] bg-white dark:bg-[#0F0F0F] p-5 sm:p-6">
       {/* Subtle radial accent — dark plum/indigo, sangat halus */}
@@ -479,24 +500,82 @@ function ModalHero({
         style={{ background: 'radial-gradient(circle, #10B981 0%, transparent 70%)' }}
       />
 
-      <div className="relative">
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-zinc-500">Total Modal Berputar</p>
-        <p className="mt-3 text-[2.25rem] sm:text-[2.75rem] leading-none font-bold num tabular-nums tracking-[-0.035em] text-stone-900 dark:text-zinc-50">
-          {formatRupiah(total)}
-        </p>
-
-        {/* Inline breakdown — chip style, bukan grid card */}
-        <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 pt-4 border-t border-stone-100 dark:border-white/[0.06]">
-          {breakdown.map((b, i) => (
-            <div key={b.label} className="flex items-center gap-2">
-              {i > 0 && <span className="hidden sm:inline h-3 w-px bg-stone-200 dark:bg-white/10" />}
-              <span className="text-[10px] uppercase tracking-wider text-stone-400 dark:text-zinc-500 font-medium">{b.label}</span>
-              <span className="text-[13px] font-semibold num tabular-nums text-stone-800 dark:text-zinc-200">{b.value}</span>
-            </div>
-          ))}
+      <div className="relative flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-zinc-500">Total Modal Berputar</p>
+          <p className="mt-3 text-[2.25rem] sm:text-[2.75rem] leading-none font-bold num tabular-nums tracking-[-0.035em] text-stone-900 dark:text-zinc-50">
+            {formatRupiah(total)}
+          </p>
+          <div className="mt-2 inline-flex items-center gap-1.5">
+            <span className={`inline-flex items-center text-[11px] font-semibold num tabular-nums ${up ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}>
+              {up ? '▲' : '▼'} {Math.abs(pctChange).toFixed(2)}%
+            </span>
+            <span className="text-[11px] text-stone-400 dark:text-zinc-500">vs 14 hari lalu</span>
+          </div>
         </div>
+
+        {/* Mini sparkline 14d */}
+        <Sparkline data={trend.map((t) => t.total)} up={up} />
+      </div>
+
+      {/* Inline breakdown — chip style, bukan grid card */}
+      <div className="relative mt-5 flex flex-wrap gap-x-5 gap-y-2 pt-4 border-t border-stone-100 dark:border-white/[0.06]">
+        {breakdown.map((b, i) => (
+          <div key={b.label} className="flex items-center gap-2">
+            {i > 0 && <span className="hidden sm:inline h-3 w-px bg-stone-200 dark:bg-white/10" />}
+            <span className="text-[10px] uppercase tracking-wider text-stone-400 dark:text-zinc-500 font-medium">{b.label}</span>
+            <span className="text-[13px] font-semibold num tabular-nums text-stone-800 dark:text-zinc-200">{b.value}</span>
+          </div>
+        ))}
       </div>
     </div>
+  )
+}
+
+/* SVG sparkline — pure inline, tanpa dependency tambahan. */
+function Sparkline({ data, up }: { data: number[]; up: boolean }) {
+  if (data.length < 2) return null
+  const w = 120
+  const h = 44
+  const min = Math.min(...data)
+  const max = Math.max(...data)
+  const range = max - min || 1
+  const step = w / (data.length - 1)
+
+  const points = data.map((v, i) => {
+    const x = i * step
+    const y = h - ((v - min) / range) * h
+    return `${x.toFixed(1)},${y.toFixed(1)}`
+  })
+
+  const path = `M ${points.join(' L ')}`
+  const areaPath = `${path} L ${w},${h} L 0,${h} Z`
+  const stroke = up ? '#10B981' : '#F43F5E'
+  const id = `sl-grad-${up ? 'up' : 'dn'}`
+
+  return (
+    <svg
+      viewBox={`0 0 ${w} ${h}`}
+      width={w}
+      height={h}
+      className="w-[120px] h-[44px] shrink-0"
+      preserveAspectRatio="none"
+    >
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={stroke} stopOpacity="0.28" />
+          <stop offset="100%" stopColor={stroke} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={areaPath} fill={`url(#${id})`} />
+      <path d={path} fill="none" stroke={stroke} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+      <circle
+        cx={(data.length - 1) * step}
+        cy={h - ((data[data.length - 1] - min) / range) * h}
+        r={2.5}
+        fill={stroke}
+      />
+    </svg>
   )
 }
 
@@ -731,19 +810,19 @@ function SmartInsights({ items }: { items: Insight[] }) {
   }
   const toneMap = {
     warn: {
-      bg: 'bg-amber-500/[0.08] dark:bg-amber-500/[0.07]',
+      bg: 'bg-amber-500/[0.10] dark:bg-amber-500/[0.08]',
       border: 'border-amber-500/20',
       icon: 'text-amber-600 dark:text-amber-400',
       dot: 'bg-amber-500',
     },
     info: {
-      bg: 'bg-blue-500/[0.07] dark:bg-blue-500/[0.06]',
+      bg: 'bg-blue-500/[0.10] dark:bg-blue-500/[0.08]',
       border: 'border-blue-500/15',
       icon: 'text-blue-600 dark:text-blue-400',
       dot: 'bg-blue-500',
     },
     good: {
-      bg: 'bg-emerald-500/[0.07] dark:bg-emerald-500/[0.06]',
+      bg: 'bg-emerald-500/[0.10] dark:bg-emerald-500/[0.08]',
       border: 'border-emerald-500/15',
       icon: 'text-emerald-600 dark:text-emerald-400',
       dot: 'bg-emerald-500',
@@ -751,7 +830,7 @@ function SmartInsights({ items }: { items: Insight[] }) {
   } as const
 
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+    <div className="grid gap-2 sm:grid-cols-3">
       {items.map((it) => {
         const Icon = iconMap[it.icon]
         const tone = toneMap[it.tone]
@@ -760,19 +839,16 @@ function SmartInsights({ items }: { items: Insight[] }) {
           <Wrapper
             key={it.id}
             href={it.href}
-            className={`group flex-1 min-w-0 flex items-center gap-3 rounded-xl border ${tone.border} ${tone.bg} px-3.5 py-2.5 transition-all ${it.href ? 'hover:translate-y-[-1px] cursor-pointer' : ''}`}
+            className={`group flex min-w-0 items-center gap-3 rounded-2xl border ${tone.border} ${tone.bg} px-3.5 py-3 transition duration-200 ease-out ${it.href ? 'hover:-translate-y-0.5 cursor-pointer hover:bg-white/90 dark:hover:bg-slate-950/90' : ''}`}
           >
-            <div className={`relative flex h-7 w-7 items-center justify-center rounded-lg ${tone.bg} shrink-0`}>
-              <Icon className={`h-3.5 w-3.5 ${tone.icon}`} strokeWidth={2.25} />
+            <div className={`relative flex h-8 w-8 items-center justify-center rounded-xl ${tone.bg} shrink-0`}>
+              <Icon className={`h-4 w-4 ${tone.icon}`} strokeWidth={2.25} />
               <span className={`absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full ${tone.dot}`} />
             </div>
-            <div className="flex-1 min-w-0">
-              <p
-                className="text-[12px] font-medium text-stone-800 dark:text-zinc-200 truncate leading-tight"
-                dangerouslySetInnerHTML={{ __html: it.label }}
-              />
+            <div className="min-w-0">
+              <p className="text-[12px] font-semibold text-stone-900 dark:text-zinc-100 truncate leading-tight">{it.label}</p>
               {it.detail && (
-                <p className="text-[11px] text-stone-500 dark:text-zinc-500 num tabular-nums truncate mt-0.5">{it.detail}</p>
+                <p className="text-[11px] text-stone-500 dark:text-zinc-400 tabular-nums truncate mt-0.5">{it.detail}</p>
               )}
             </div>
             {it.href && (

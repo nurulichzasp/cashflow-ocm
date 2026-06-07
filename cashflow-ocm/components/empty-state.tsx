@@ -39,7 +39,9 @@ export function EmptyState({
       {description && (
         <p className="mt-1 text-[12px] text-stone-500 dark:text-zinc-500 max-w-[28ch] leading-relaxed">{description}</p>
       )}
-      {action && <div className="mt-5">{action}</div>}
+      {action && (
+        <div className="mt-5 flex justify-center w-full">{action}</div>
+      )}
     </div>
   )
 }
