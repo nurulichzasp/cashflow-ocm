@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { EmptyState } from '@/components/empty-state'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -77,15 +78,11 @@ export function KasTable({ transaksiList, isOwner }: Props) {
 
   if (transaksiList.length === 0) {
     return (
-      <div className="surface">
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-stone-100">
-            <Wallet className="h-6 w-6 text-stone-400" />
-          </div>
-          <p className="text-sm font-medium text-stone-700">Belum ada transaksi kas</p>
-          <p className="text-xs text-stone-400 mt-1">Tambahkan transaksi untuk mulai mencatat arus kas.</p>
-        </div>
-      </div>
+      <EmptyState
+        icon={Wallet}
+        title="Belum ada transaksi kas"
+        description="Tambahkan transaksi untuk mulai mencatat arus kas."
+      />
     )
   }
 

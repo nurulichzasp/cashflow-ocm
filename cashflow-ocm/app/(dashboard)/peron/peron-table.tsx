@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { EmptyState } from '@/components/empty-state'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -138,15 +139,11 @@ export function PeronTable({ peronList, isOwner, akunOptions = [] }: Props) {
 
   if (peronList.length === 0) {
     return (
-      <div className="rounded-xl border border-stone-200 bg-white shadow-sm">
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-stone-100">
-            <Users className="h-6 w-6 text-stone-400" />
-          </div>
-          <p className="text-sm font-medium text-stone-700">Belum ada data peron</p>
-          <p className="text-xs text-stone-400 mt-1">Tambahkan peron untuk mulai mencatat pembelian dari mitra.</p>
-        </div>
-      </div>
+      <EmptyState
+        icon={Users}
+        title="Belum ada peron"
+        description="Tambahkan peron untuk mulai mencatat pembelian dari mitra."
+      />
     )
   }
 

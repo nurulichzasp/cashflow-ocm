@@ -18,6 +18,7 @@ import { deletePenjualan, updatePenjualanStatus } from './actions'
 import { formatTanggal, formatRupiah, todayString } from '@/lib/format'
 import { Trash2, FileText, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import { DateRangeFilter } from '@/components/date-range-filter'
+import { EmptyState } from '@/components/empty-state'
 import type { Penjualan } from '@/lib/db/schema'
 
 interface Props {
@@ -121,15 +122,11 @@ export function PenjualanTable({ penjualanList, isOwner }: Props) {
 
   if (penjualanList.length === 0) {
     return (
-      <div className="surface">
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-stone-100">
-            <FileText className="h-6 w-6 text-stone-400" />
-          </div>
-          <p className="text-sm font-medium text-stone-700">Belum ada data penjualan</p>
-          <p className="text-xs text-stone-400 mt-1">Tambahkan transaksi untuk memantau piutang dan invoice.</p>
-        </div>
-      </div>
+      <EmptyState
+        icon={FileText}
+        title="Belum ada penjualan"
+        description="Tambahkan transaksi pertama untuk mulai memantau piutang dan invoice."
+      />
     )
   }
 

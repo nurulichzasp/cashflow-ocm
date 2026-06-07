@@ -15,7 +15,7 @@ import {
   pphBulanan,
   hargaAcuan,
 } from '@/lib/db/schema'
-import { eq, sum, and, gte, like, desc } from 'drizzle-orm'
+import { eq, sum, and, gte, like, desc, lte } from 'drizzle-orm'
 import { formatRupiah, formatTanggal } from '@/lib/format'
 import {
   TrendingUp,
@@ -24,6 +24,9 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Sparkles,
+  AlertCircle,
+  Clock,
+  CircleDollarSign,
 } from 'lucide-react'
 import CashflowChart from '@/components/charts/CashflowChart'
 
@@ -91,6 +94,91 @@ async function getMetrics() {
     totalPenjualanLunas, totalModalBerputar, estimasiLaba,
     totalPembelian, totalRevenue, netMarginPct,
   }
+}
+
+/**
+ * Smart Insights — analitik kontekstual real-time untuk owner.
+ * Hanya munculkan kondisi yang BENAR-BENAR actionable. Sembunyi bila aman.
+ */
+type Insight = {
+  id: string
+  tone: 'warn' | 'info' | 'good'
+  icon: 'piutang' | 'harga' | 'pajak' | 'margin'
+  label: string
+  detail?: string
+  href?: string
+}
+
+async function getSmartInsights(): Promise<Insight[]> {
+  const today = new Date()
+  const todayStr = today.toISOString().slice(0, 10)
+  const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
+    .toISOString().slice(0, 10)
+  const fourteenDaysAgo = new Date(today.getTime() - 14 * 24 * 60 * 60 * 1000)
+    .toISOString().slice(0, 10)
+
+  const insights: Insight[] = []
+
+  // 1. Piutang umur > 30 hari
+  const piutangLama = await db
+    .select({ jumlah: penjualan.totalBersih, tanggal: penjualan.tanggal })
+    .from(penjualan)
+    .where(and(eq(penjualan.statusBayar, 'belum'), lte(penjualan.tanggal, thirtyDaysAgo)))
+
+  if (piutangLama.length > 0) {
+    const total = piutangLama.reduce((s, p) => s + (p.jumlah ?? 0), 0)
+    insights.push({
+      id: 'piutang-lama',
+      tone: 'warn',
+      icon: 'piutang',
+      label: `${piutangLama.length} piutang &gt; 30 hari`,
+      detail: formatRupiah(total),
+      href: '/penjualan',
+    })
+  }
+
+  // 2. Harga acuan stale (TBS > 14 hari tidak update)
+  const tbsLatest = await db
+    .select({ tanggal: hargaAcuan.tanggalBerlaku })
+    .from(hargaAcuan)
+    .where(eq(hargaAcuan.produk, 'TBS'))
+    .orderBy(desc(hargaAcuan.tanggalBerlaku))
+    .limit(1)
+
+  if (tbsLatest[0] && tbsLatest[0].tanggal < fourteenDaysAgo) {
+    const daysSince = Math.floor(
+      (today.getTime() - new Date(tbsLatest[0].tanggal).getTime()) / (24 * 60 * 60 * 1000),
+    )
+    insights.push({
+      id: 'harga-stale',
+      tone: 'info',
+      icon: 'harga',
+      label: `Harga TBS belum diupdate ${daysSince} hari`,
+      detail: 'Perbarui acuan pasar',
+      href: '/harga',
+    })
+  }
+
+  // 3. PPN bulan lalu belum disetor & sudah mendekati akhir bulan
+  const lastMonthDate = new Date(today.getFullYear(), today.getMonth() - 1, 1)
+  const lastMonth = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth() + 1).padStart(2, '0')}`
+  const ppnLast = await db.query.ppnBulanan.findFirst({ where: eq(ppnBulanan.bulan, lastMonth) })
+  const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate()
+  const dayOfMonth = today.getDate()
+  const daysLeft = lastDay - dayOfMonth
+
+  if (ppnLast && ppnLast.statusSetor !== 'sudah' && daysLeft <= 7) {
+    insights.push({
+      id: 'ppn-jt',
+      tone: 'warn',
+      icon: 'pajak',
+      label: `PPN bulan lalu belum disetor`,
+      detail: `JT ${daysLeft} hari lagi`,
+      href: '/laporan',
+    })
+  }
+
+  return insights
 }
 
 /** Harga acuan terbaru per produk + selisih hari (untuk Quick Reference card). */
@@ -235,13 +323,14 @@ async function getChartSeries(days = 14) {
 }
 
 export default async function DashboardPage() {
-  const [session, metrics, today, charts, tax, hargaLatest] = await Promise.all([
+  const [session, metrics, today, charts, tax, hargaLatest, insights] = await Promise.all([
     auth.api.getSession({ headers: await headers() }),
     getMetrics(),
     getTodayStats(),
     getChartSeries(14),
     getTaxStatus(),
     getHargaAcuanLatest(),
+    getSmartInsights(),
   ])
 
   const modalBreakdown = [
@@ -278,6 +367,9 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-4 sm:space-y-5 pt-1 md:pt-0">
+
+      {/* SMART INSIGHTS — alerts kontekstual real-time (auto-hide bila aman) */}
+      {insights.length > 0 && <SmartInsights items={insights} />}
 
       {/* HERO — Modal Berputar (full width, gradient subtle, breakdown inline) */}
       <ModalHero
@@ -621,6 +713,76 @@ function NetMarginAndHarga({
           })}
         </div>
       </div>
+    </div>
+  )
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   Smart Insights — strip alerts kontekstual (max 3 chip).
+   Tampilkan hanya bila ada kondisi actionable. Aman = sembunyi total.
+   ────────────────────────────────────────────────────────────── */
+
+function SmartInsights({ items }: { items: Insight[] }) {
+  const iconMap = {
+    piutang: Clock,
+    harga: CircleDollarSign,
+    pajak: AlertCircle,
+    margin: TrendingUp,
+  }
+  const toneMap = {
+    warn: {
+      bg: 'bg-amber-500/[0.08] dark:bg-amber-500/[0.07]',
+      border: 'border-amber-500/20',
+      icon: 'text-amber-600 dark:text-amber-400',
+      dot: 'bg-amber-500',
+    },
+    info: {
+      bg: 'bg-blue-500/[0.07] dark:bg-blue-500/[0.06]',
+      border: 'border-blue-500/15',
+      icon: 'text-blue-600 dark:text-blue-400',
+      dot: 'bg-blue-500',
+    },
+    good: {
+      bg: 'bg-emerald-500/[0.07] dark:bg-emerald-500/[0.06]',
+      border: 'border-emerald-500/15',
+      icon: 'text-emerald-600 dark:text-emerald-400',
+      dot: 'bg-emerald-500',
+    },
+  } as const
+
+  return (
+    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+      {items.map((it) => {
+        const Icon = iconMap[it.icon]
+        const tone = toneMap[it.tone]
+        const Wrapper: any = it.href ? 'a' : 'div'
+        return (
+          <Wrapper
+            key={it.id}
+            href={it.href}
+            className={`group flex-1 min-w-0 flex items-center gap-3 rounded-xl border ${tone.border} ${tone.bg} px-3.5 py-2.5 transition-all ${it.href ? 'hover:translate-y-[-1px] cursor-pointer' : ''}`}
+          >
+            <div className={`relative flex h-7 w-7 items-center justify-center rounded-lg ${tone.bg} shrink-0`}>
+              <Icon className={`h-3.5 w-3.5 ${tone.icon}`} strokeWidth={2.25} />
+              <span className={`absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full ${tone.dot}`} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p
+                className="text-[12px] font-medium text-stone-800 dark:text-zinc-200 truncate leading-tight"
+                dangerouslySetInnerHTML={{ __html: it.label }}
+              />
+              {it.detail && (
+                <p className="text-[11px] text-stone-500 dark:text-zinc-500 num tabular-nums truncate mt-0.5">{it.detail}</p>
+              )}
+            </div>
+            {it.href && (
+              <span className="text-[10px] uppercase tracking-wider font-semibold text-stone-400 dark:text-zinc-500 group-hover:text-stone-700 dark:group-hover:text-zinc-300 transition-colors shrink-0">
+                →
+              </span>
+            )}
+          </Wrapper>
+        )
+      })}
     </div>
   )
 }

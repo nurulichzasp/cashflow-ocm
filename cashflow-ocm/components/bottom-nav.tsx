@@ -33,6 +33,15 @@ function getInitials(name?: string) {
   return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
 }
 
+/** Greeting berdasarkan jam lokal — touchpoint personal singkat. */
+function getGreeting(): string {
+  const h = new Date().getHours()
+  if (h >= 4 && h < 11) return 'Selamat pagi'
+  if (h >= 11 && h < 15) return 'Selamat siang'
+  if (h >= 15 && h < 18) return 'Selamat sore'
+  return 'Selamat malam'
+}
+
 function NavTab({
   active,
   label,
@@ -164,26 +173,26 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
 
               {/* User */}
               {user && (
-                <div className="flex items-center gap-3 px-5 py-3 border-b border-black/[0.06] dark:border-white/[0.06]">
+                <div className="flex items-center gap-3 px-5 py-4 border-b border-black/[0.06] dark:border-white/[0.06]">
                   <ProfileDialog user={user}>
-                    <button className="flex flex-1 items-center gap-3 text-left outline-none cursor-pointer">
+                    <button className="flex flex-1 items-center gap-3 text-left outline-none cursor-pointer min-w-0">
                       {user.image ? (
-                        <img src={fotoUrl(user.image)} className="h-9 w-9 rounded-full object-cover shrink-0" alt="Avatar" />
+                        <img src={fotoUrl(user.image)} className="h-10 w-10 rounded-full object-cover shrink-0" alt="Avatar" />
                       ) : (
-                        <div className="h-9 w-9 rounded-full bg-orange-600 flex items-center justify-center text-sm font-bold text-white shrink-0">
+                        <div className="h-10 w-10 rounded-full bg-stone-800 dark:bg-white/[0.1] border border-white/[0.08] flex items-center justify-center text-sm font-bold text-white dark:text-zinc-200 shrink-0">
                           {getInitials(displayName)}
                         </div>
                       )}
-                      <div>
-                        <p className="text-sm font-semibold text-stone-900 dark:text-zinc-100">{displayName}</p>
-                        <p className="text-xs text-stone-400 dark:text-zinc-500 capitalize">{user.role}</p>
+                      <div className="min-w-0">
+                        <p className="text-[11px] text-stone-400 dark:text-zinc-500">{getGreeting()},</p>
+                        <p className="text-sm font-semibold text-stone-900 dark:text-zinc-100 truncate -mt-0.5">{displayName}</p>
                       </div>
                     </button>
                   </ProfileDialog>
                   <button
                     onClick={() => setDrawerOpen(false)}
                     aria-label="Tutup"
-                    className="ml-auto p-2 rounded-lg text-stone-400 dark:text-zinc-500 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                    className="ml-auto p-2 rounded-lg text-stone-400 dark:text-zinc-500 hover:bg-black/5 dark:hover:bg-white/10 transition-colors shrink-0"
                   >
                     <X className="h-4 w-4" />
                   </button>
