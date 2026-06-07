@@ -1,6 +1,7 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
+import { CommandPalette } from '@/components/command-palette'
 
 const PAGE_TITLES: Record<string, string> = {
   '/dashboard': 'Dashboard',
@@ -23,7 +24,13 @@ function getPageTitle(pathname: string): string {
   return 'Dashboard'
 }
 
-export function MobileHeader() {
+export function MobileHeader({
+  isOwner,
+  perms,
+}: {
+  isOwner?: boolean
+  perms?: { pembelian?: boolean; penjualan?: boolean; kas?: boolean; biaya?: boolean }
+}) {
   const pathname = usePathname()
   const title = getPageTitle(pathname)
 
@@ -35,6 +42,7 @@ export function MobileHeader() {
       <span className="flex-1 text-base font-semibold text-stone-900 dark:text-stone-100 tracking-tight truncate">
         {title}
       </span>
+      <CommandPalette isOwner={isOwner} perms={perms} />
     </header>
   )
 }

@@ -2,16 +2,32 @@
 
 import { useState, useRef, useCallback } from 'react'
 import { MobileHeader } from '@/components/mobile-header'
+import { setNavVisible } from '@/lib/nav-visibility-store'
 
-export function ScrollShell({ children }: { children: React.ReactNode }) {
+export function ScrollShell({
+  children,
+  isOwner,
+  perms,
+}: {
+  children: React.ReactNode
+  isOwner?: boolean
+  perms?: { pembelian?: boolean; penjualan?: boolean; kas?: boolean; biaya?: boolean }
+}) {
   const [headerVisible, setHeaderVisible] = useState(true)
   const lastY = useRef(0)
 
   const onScroll = useCallback((e: React.UIEvent<HTMLElement>) => {
     const y = e.currentTarget.scrollTop
     const dy = y - lastY.current
-    if (dy > 8 && y > 56) setHeaderVisible(false)
-    else if (dy < -5 || y < 10) setHeaderVisible(true)
+    // Threshold ±8px supaya tidak flicker. Header & bottom-nav berbagi arah:
+    // scroll bawah → sembunyi, scroll atas → muncul (gaya Instagram).
+    if (dy > 8 && y > 56) {
+      setHeaderVisible(false)
+      setNavVisible(false)
+    } else if (dy < -5 || y < 10) {
+      setHeaderVisible(true)
+      setNavVisible(true)
+    }
     lastY.current = y
   }, [])
 
@@ -26,7 +42,7 @@ export function ScrollShell({ children }: { children: React.ReactNode }) {
           transition: 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease',
         }}
       >
-        <MobileHeader />
+        <MobileHeader isOwner={isOwner} perms={perms} />
       </div>
 
       <main
