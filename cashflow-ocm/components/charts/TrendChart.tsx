@@ -35,7 +35,7 @@ function CustomTooltip({ active, payload, label }: any) {
   return (
     <div className="rounded-lg bg-[#28282B] border border-white/10 px-3 py-2.5 shadow-xl text-xs">
       <p className="text-[#9CA3AF] mb-1.5 font-medium">{label}</p>
-      <p className="font-semibold num" style={{ color: '#D97757' }}>
+      <p className="font-semibold num" style={{ color: '#8B8680' }}>
         {fmtFull(Number(payload[0]?.value ?? 0))}
       </p>
     </div>
@@ -65,10 +65,10 @@ export function TrendChart({ data }: { data: Point[] }) {
           <Line
             type="monotone"
             dataKey="total"
-            stroke="#D97757"
+            stroke="#8B8680"
             strokeWidth={2.5}
             dot={false}
-            activeDot={{ r: 5, fill: '#D97757', stroke: '#28282B', strokeWidth: 2 }}
+            activeDot={{ r: 5, fill: '#8B8680', stroke: '#28282B', strokeWidth: 2 }}
           />
         </LineChart>
       </ResponsiveContainer>

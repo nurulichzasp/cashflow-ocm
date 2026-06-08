@@ -31,7 +31,7 @@ const fmtFull = (v: number) =>
 
 /* Palette — masuk biru, keluar oranye Claude */
 const C_MASUK = '#3B82F6'
-const C_KELUAR = '#D97757'
+const C_KELUAR = '#F87171'
 const C_GRID = 'rgba(255,255,255,0.06)'
 const C_AXIS = '#6B7280'
 
