@@ -18,7 +18,7 @@ import {
   hargaAcuan,
 } from '@/lib/db/schema'
 import { eq, sum, and, gte, like, desc, lte } from 'drizzle-orm'
-import { formatRupiah, formatTanggal } from '@/lib/format'
+import { formatRupiah, formatCompact, formatCompactValue, formatTanggal } from '@/lib/format'
 import {
   TrendingUp,
   ShoppingCart,
@@ -134,7 +134,7 @@ async function getSmartInsights(): Promise<Insight[]> {
       tone: 'warn',
       icon: 'piutang',
       label: `${piutangLama.length} piutang > 30 hari`,
-      detail: formatRupiah(total),
+      detail: formatCompact(total),
       href: '/penjualan',
     })
   }
@@ -344,27 +344,27 @@ export default async function DashboardPage() {
   ])
 
   const modalBreakdown = [
-    { label: 'Saldo Kas', value: formatRupiah(metrics.totalSaldo) },
-    { label: 'DP Peron', value: formatRupiah(metrics.totalDpPeron) },
-    { label: 'Piutang', value: formatRupiah(metrics.piutangBga) },
+    { label: 'Saldo Kas', value: formatCompact(metrics.totalSaldo) },
+    { label: 'DP Peron', value: formatCompact(metrics.totalDpPeron) },
+    { label: 'Piutang', value: formatCompact(metrics.piutangBga) },
   ]
 
   const todayItems = [
     {
       label: 'Pembelian Hari Ini',
-      value: formatRupiah(today.pembelianHariIni),
+      value: formatCompact(today.pembelianHariIni),
       icon: ShoppingCart,
       color: 'text-stone-700 dark:text-zinc-300',
     },
     {
       label: 'Penjualan Hari Ini',
-      value: formatRupiah(today.penjualanHariIni),
+      value: formatCompact(today.penjualanHariIni),
       icon: TrendingUp,
       color: 'text-stone-700 dark:text-zinc-300',
     },
     {
       label: 'Biaya Hari Ini',
-      value: formatRupiah(today.biayaHariIni),
+      value: formatCompact(today.biayaHariIni),
       icon: Receipt,
       color: 'text-stone-500 dark:text-zinc-500',
     },
@@ -419,7 +419,7 @@ export default async function DashboardPage() {
         <div className="lg:col-span-2 surface overflow-hidden">
           <div className="px-5 py-3 border-b border-stone-100 dark:border-border flex items-center justify-between">
             <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Saldo Rekening &amp; Kas</p>
-            <p className="text-xs font-semibold num tabular-nums text-stone-900 dark:text-stone-100">{formatRupiah(metrics.totalSaldo)}</p>
+            <p className="text-xs font-semibold num tabular-nums text-stone-900 dark:text-stone-100">{formatCompact(metrics.totalSaldo)}</p>
           </div>
           <div className="divide-y divide-stone-100 dark:divide-border">
             {akunCvOcm && (
@@ -498,27 +498,26 @@ function ModalHero({
   // Sembunyikan % bila baseline 14-hari-lalu mendekati nol — kalau tidak, angkanya
   // meledak (mis. "804%") dan menyesatkan, bukan menjawab "berapa" dalam 3 detik.
   const showPct = first > 0 && Math.abs(pctChange) < 100
+  const [heroNum, heroUnit] = formatCompactValue(total).split(' ')
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-black/[0.06] dark:border-white/[0.07] bg-white dark:bg-[#0F0F0F] p-5 sm:p-6">
       <div className="relative flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">
         <div className="min-w-0">
           <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-zinc-500">Total Modal Berputar</p>
-          <p className="mt-3 text-[2.25rem] sm:text-[2.75rem] leading-none font-bold num tabular-nums tracking-[-0.035em] text-stone-900 dark:text-zinc-50">
-            {formatRupiah(total)}
+          <p className="mt-3 leading-none num tabular-nums tracking-[-0.035em] text-stone-900 dark:text-zinc-50">
+            <span className="align-baseline text-lg sm:text-xl font-semibold text-stone-400 dark:text-zinc-500 mr-1.5">Rp</span>
+            <span className="text-[2.6rem] sm:text-[3.4rem] font-bold">{heroNum}</span>
+            {heroUnit && <span className="text-xl sm:text-2xl font-semibold text-stone-400 dark:text-zinc-500 ml-1.5">{heroUnit}</span>}
           </p>
-          <div className="mt-2 inline-flex items-center gap-1.5">
-            {showPct ? (
-              <>
-                <span className="inline-flex items-center text-[11px] font-semibold num tabular-nums text-stone-500 dark:text-zinc-400">
-                  {up ? '▲' : '▼'} {Math.abs(pctChange).toFixed(1)}%
-                </span>
-                <span className="text-[11px] text-stone-400 dark:text-zinc-500">vs 14 hari lalu</span>
-              </>
-            ) : (
-              <span className="text-[11px] text-stone-400 dark:text-zinc-500">Posisi modal berputar terkini</span>
-            )}
-          </div>
+          {showPct && (
+            <div className="mt-2.5 inline-flex items-center gap-1.5">
+              <span className="inline-flex items-center text-[11px] font-semibold num tabular-nums text-stone-500 dark:text-zinc-400">
+                {up ? '▲' : '▼'} {Math.abs(pctChange).toFixed(1)}%
+              </span>
+              <span className="text-[11px] text-stone-400 dark:text-zinc-500">vs 14 hari lalu</span>
+            </div>
+          )}
         </div>
 
         {/* Mini sparkline 14d */}
@@ -617,7 +616,7 @@ function TaxStrip({ tax }: { tax: any }) {
   const items = [
     {
       label: 'PPN Bulan Ini',
-      value: formatRupiah(tax.ppnThisMonth),
+      value: formatCompact(tax.ppnThisMonth),
       sub: 'Estimasi penjualan lunas',
       status: 'info' as const,
     },
@@ -726,13 +725,13 @@ function NetMarginAndHarga({
               <span className={`text-base font-semibold ${marginTone}`}>%</span>
             </div>
             <p className="mt-1.5 text-[11px] text-stone-400 dark:text-zinc-500">
-              {formatRupiah(estimasiLaba)} dari {formatRupiah(totalPembelian)} pembelian
+              {formatCompact(estimasiLaba)} dari {formatCompact(totalPembelian)} pembelian
             </p>
           </div>
           <div className="text-right">
             <p className="text-[10px] uppercase tracking-wider text-stone-400 dark:text-zinc-500 font-medium">Revenue</p>
             <p className="mt-1 text-[13px] font-semibold text-stone-700 dark:text-zinc-300 num tabular-nums">
-              {formatRupiah(totalRevenue)}
+              {formatCompact(totalRevenue)}
             </p>
           </div>
         </div>

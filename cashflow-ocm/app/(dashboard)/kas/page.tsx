@@ -5,7 +5,7 @@ import { KasTable } from './kas-table'
 import { KasFormDialog } from './kas-form-dialog'
 import { Button } from '@/components/ui/button'
 import { FloatingFab } from '@/components/fab'
-import { formatRupiah } from '@/lib/format'
+import { formatRupiah, formatCompact } from '@/lib/format'
 import { Plus } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -61,12 +61,12 @@ export default async function KasPage() {
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="surface p-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">Total Masuk</p>
-          <p className="text-2xl font-bold text-stone-900 dark:text-zinc-50 num">{formatRupiah(totalMasuk)}</p>
+          <p className="text-2xl font-bold text-stone-900 dark:text-zinc-50 num">{formatCompact(totalMasuk)}</p>
           <p className="text-xs text-stone-400 mt-1">Seluruh penerimaan tercatat</p>
         </div>
         <div className="surface p-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">Total Keluar</p>
-          <p className="text-2xl font-bold text-stone-900 dark:text-zinc-50 num">{formatRupiah(totalKeluar)}</p>
+          <p className="text-2xl font-bold text-stone-900 dark:text-zinc-50 num">{formatCompact(totalKeluar)}</p>
           <p className="text-xs text-stone-400 mt-1">Seluruh pengeluaran tercatat</p>
         </div>
       </div>

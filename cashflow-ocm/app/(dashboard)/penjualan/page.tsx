@@ -6,7 +6,7 @@ import { PenjualanTable } from './penjualan-table'
 import { PenjualanFormDialog } from './penjualan-form-dialog'
 import { Button } from '@/components/ui/button'
 import { FloatingFab } from '@/components/fab'
-import { formatRupiah } from '@/lib/format'
+import { formatCompact } from '@/lib/format'
 import { Plus } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -42,17 +42,17 @@ export default async function PenjualanPage() {
         </div>
         <div className="surface press-card p-3 sm:p-4">
           <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-[#6B7280] mb-1">Total Penjualan</p>
-          <p className="text-lg sm:text-2xl font-bold text-stone-900 dark:text-stone-100 num tabular-nums">{formatRupiah(totalPenjualan)}</p>
+          <p className="text-lg sm:text-2xl font-bold text-stone-900 dark:text-stone-100 num tabular-nums">{formatCompact(totalPenjualan)}</p>
           <p className="text-[10px] sm:text-xs text-stone-400 dark:text-[#6B7280] mt-0.5 sm:mt-1">Nilai bersih (tanpa pajak)</p>
         </div>
         <div className="surface press-card p-3 sm:p-4">
           <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-[#6B7280] mb-1">Total PPN</p>
-          <p className="text-lg sm:text-2xl font-bold text-stone-900 dark:text-stone-100 num tabular-nums">{formatRupiah(totalPpn)}</p>
+          <p className="text-lg sm:text-2xl font-bold text-stone-900 dark:text-stone-100 num tabular-nums">{formatCompact(totalPpn)}</p>
           <p className="text-[10px] sm:text-xs text-stone-400 dark:text-[#6B7280] mt-0.5 sm:mt-1">Selisih PPN-PPH</p>
         </div>
         <div className="surface press-card p-3 sm:p-4">
           <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-[#6B7280] mb-1">Estimasi Laba</p>
-          <p className="text-lg sm:text-2xl font-bold text-stone-900 dark:text-stone-100 num tabular-nums">{formatRupiah(estimasiLaba)}</p>
+          <p className="text-lg sm:text-2xl font-bold text-stone-900 dark:text-stone-100 num tabular-nums">{formatCompact(estimasiLaba)}</p>
           <p className="text-[10px] sm:text-xs text-stone-400 dark:text-[#6B7280] mt-0.5 sm:mt-1">Margin dari pembelian</p>
         </div>
       </div>

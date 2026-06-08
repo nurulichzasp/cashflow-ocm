@@ -5,7 +5,7 @@ import { PeronTable } from './peron-table'
 import { PeronFormDialog } from './peron-form-dialog'
 import { Button } from '@/components/ui/button'
 import { FloatingFab } from '@/components/fab'
-import { formatRupiah } from '@/lib/format'
+import { formatCompact } from '@/lib/format'
 import { Plus } from 'lucide-react'
 import { db } from '@/lib/db'
 import { akunKas } from '@/lib/db/schema'
@@ -40,7 +40,7 @@ export default async function PeronPage() {
         </div>
         <div className="surface press-card p-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500 mb-1.5">Total DP Beredar</p>
-          <p className="text-2xl font-bold text-primary num tabular-nums">{formatRupiah(totalDp)}</p>
+          <p className="text-2xl font-bold text-primary num tabular-nums">{formatCompact(totalDp)}</p>
           <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Modal yang sedang di peron</p>
         </div>
       </div>

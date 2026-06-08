@@ -5,7 +5,7 @@ import { BiayaTable } from './biaya-table'
 import { BiayaFormDialog } from './biaya-form-dialog'
 import { Button } from '@/components/ui/button'
 import { FloatingFab } from '@/components/fab'
-import { formatRupiah } from '@/lib/format'
+import { formatCompact } from '@/lib/format'
 import { Plus } from 'lucide-react'
 import { db } from '@/lib/db'
 import { akunKas } from '@/lib/db/schema'
@@ -43,13 +43,13 @@ export default async function BiayaPage() {
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <div className="surface press-card p-3 sm:p-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">Total Pengeluaran</p>
-          <p className="text-2xl font-bold text-stone-900 dark:text-zinc-50 num">{formatRupiah(totalBiaya)}</p>
+          <p className="text-2xl font-bold text-stone-900 dark:text-zinc-50 num">{formatCompact(totalBiaya)}</p>
           <p className="text-xs text-stone-400 mt-1">{biayaList.length} entri tercatat</p>
         </div>
         {perKategori.slice(0, 2).map((k) => (
           <div key={k.label} className="surface p-4">
             <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">{k.label}</p>
-            <p className="text-2xl font-bold text-stone-900 dark:text-stone-100 num tabular-nums">{formatRupiah(k.total)}</p>
+            <p className="text-2xl font-bold text-stone-900 dark:text-stone-100 num tabular-nums">{formatCompact(k.total)}</p>
             <p className="text-xs text-stone-400 mt-1">Total biaya {k.label.toLowerCase()}</p>
           </div>
         ))}
