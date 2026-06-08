@@ -110,7 +110,7 @@ export async function notifyNewPenjualan(data: {
       `📄 <b>No. Invoice:</b> ${data.noInvoice || '-'}`,
       `📄 <b>No. BAST:</b> ${data.noBast || '-'}`,
       `⚖️ <b>Total Bersih:</b> ${data.totalBersih ? `Rp ${data.totalBersih.toLocaleString('id-ID')}` : '-'}`,
-      `💰 <b>Total Nilai BGA:</b> ${data.totalNilai ? `Rp ${data.totalNilai.toLocaleString('id-ID')}` : '-'}`,
+      `💰 <b>Total Nilai:</b> ${data.totalNilai ? `Rp ${data.totalNilai.toLocaleString('id-ID')}` : '-'}`,
       `💳 <b>Status Bayar:</b> ${data.statusBayar === 'lunas' ? '✅ Lunas' : '⏳ Belum Lunas'}`,
       `📝 <b>Catatan:</b> ${data.catatan || '-'}`,
     ].filter(Boolean).join('\n')

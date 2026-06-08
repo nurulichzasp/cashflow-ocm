@@ -1,7 +1,11 @@
 {
   "crons": [
     {
-      "path": "/api/cron/daily-summary",
+      "path": "/api/cron/daily-summary?mode=morning",
+      "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/daily-summary?mode=evening",
       "schedule": "0 11 * * *"
     }
   ]
