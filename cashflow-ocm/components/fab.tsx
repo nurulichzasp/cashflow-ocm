@@ -25,7 +25,11 @@ export const FloatingFab = React.forwardRef<
       aria-label="Tambah"
       {...props}
       className={cn(
-        'fixed z-[60] flex items-center justify-center transition-all duration-200 ease-out',
+        'fixed z-[45] flex items-center justify-center transition-all duration-200 ease-out',
+        // z-45: di atas konten + bottom-nav (z-40) tapi DI BAWAH overlay dialog/drawer (z-50),
+        // jadi otomatis tertutup saat menu/drawer lain terbuka. Plus fade mulus saat
+        // dialog miliknya sendiri terbuka (FAB = trigger → dapat data-state="open").
+        'data-[state=open]:opacity-0 data-[state=open]:scale-90 data-[state=open]:pointer-events-none',
         // posisi
         'right-5 md:right-8',
         'bottom-[max(calc(env(safe-area-inset-bottom)+4.75rem),5rem)] md:bottom-8',

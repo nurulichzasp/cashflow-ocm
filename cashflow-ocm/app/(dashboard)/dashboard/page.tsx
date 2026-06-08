@@ -18,7 +18,7 @@ import {
   hargaAcuan,
 } from '@/lib/db/schema'
 import { eq, sum, and, gte, like, desc, lte } from 'drizzle-orm'
-import { formatRupiah, formatCompact, formatCompactValue, formatTanggal } from '@/lib/format'
+import { formatRupiah, formatCompact, formatTanggal } from '@/lib/format'
 import {
   TrendingUp,
   ShoppingCart,
@@ -31,6 +31,7 @@ import {
   CircleDollarSign,
 } from 'lucide-react'
 import CashflowChart from '@/components/charts/CashflowChart'
+import { AnimatedRupiah } from '@/components/animated-rupiah'
 
 async function getMetrics() {
   const [akunList, transaksiRows, modalRows, piutangBelumRaw, penjualanLunasRaw, pembelianKeuntungan] =
@@ -498,7 +499,6 @@ function ModalHero({
   // Sembunyikan % bila baseline 14-hari-lalu mendekati nol — kalau tidak, angkanya
   // meledak (mis. "804%") dan menyesatkan, bukan menjawab "berapa" dalam 3 detik.
   const showPct = first > 0 && Math.abs(pctChange) < 100
-  const [heroNum, heroUnit] = formatCompactValue(total).split(' ')
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-black/[0.06] dark:border-white/[0.07] bg-white dark:bg-[#0F0F0F] p-5 sm:p-6">
@@ -506,9 +506,7 @@ function ModalHero({
         <div className="min-w-0">
           <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-zinc-500">Total Modal Berputar</p>
           <p className="mt-3 leading-none num tabular-nums tracking-[-0.035em] text-stone-900 dark:text-zinc-50">
-            <span className="align-baseline text-lg sm:text-xl font-semibold text-stone-400 dark:text-zinc-500 mr-1.5">Rp</span>
-            <span className="text-[2.6rem] sm:text-[3.4rem] font-bold">{heroNum}</span>
-            {heroUnit && <span className="text-xl sm:text-2xl font-semibold text-stone-400 dark:text-zinc-500 ml-1.5">{heroUnit}</span>}
+            <AnimatedRupiah value={total} />
           </p>
           {showPct && (
             <div className="mt-2.5 inline-flex items-center gap-1.5">
@@ -575,13 +573,14 @@ function Sparkline({ data, up }: { data: number[]; up: boolean }) {
           <stop offset="100%" stopColor={stroke} stopOpacity="0" />
         </linearGradient>
       </defs>
-      <path d={areaPath} fill={`url(#${id})`} />
-      <path d={path} fill="none" stroke={stroke} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+      <path d={areaPath} fill={`url(#${id})`} className="sl-fade" />
+      <path d={path} fill="none" stroke={stroke} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" pathLength={1} className="sl-draw" />
       <circle
         cx={(data.length - 1) * step}
         cy={h - ((data[data.length - 1] - min) / range) * h}
         r={2.5}
         fill={stroke}
+        className="sl-dot"
       />
     </svg>
   )

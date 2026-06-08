@@ -466,6 +466,21 @@ html.dark [class~="hover:bg-orange-700"]:hover       { background-color: #c8654a
     font-feature-settings: "tnum";
   }
 
+  /* ── Sparkline hero: garis "menggambar sendiri" + area & dot fade-in ── */
+  .sl-draw {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: sl-draw 1.1s var(--ease-out-expo) 0.1s forwards;
+  }
+  @keyframes sl-draw { to { stroke-dashoffset: 0; } }
+  .sl-fade { opacity: 0; animation: sl-fade 0.7s ease-out 0.65s forwards; }
+  .sl-dot  { opacity: 0; animation: sl-fade 0.45s var(--ease-spring) 1.0s forwards; }
+  @keyframes sl-fade { to { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) {
+    .sl-draw { animation: none; stroke-dashoffset: 0; }
+    .sl-fade, .sl-dot { animation: none; opacity: 1; }
+  }
+
   /* ── Press card: mobile-only tap feedback ── */
   @media (hover: none) {
     .press-card {
