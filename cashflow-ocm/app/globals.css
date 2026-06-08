@@ -92,10 +92,11 @@
   /* Easing tactile — smooth ease-out (elegan, tanpa overshoot/bounce) */
   --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
 
-  /* Aksen brand — iris/indigo, SATU-SATUNYA warna di sistem netral. Dipakai
-     hemat (≤10%): aksi utama, focus, nav aktif, link, sparkline, monogram. */
-  --brand: #5048D4;        /* iris untuk teks/ikon/stroke/ring di light */
-  --brand-solid: #5B57E0;  /* iris solid untuk tombol (teks putih ≈ 5.8:1, kedua tema) */
+  /* Aksen brand — HIJAU SAWIT (emerald/pine dalam), SATU-SATUNYA warna di sistem
+     netral. On-genre (kebun sawit) + premium. Dipakai hemat (≤10%): aksi utama,
+     focus, nav aktif, link, sparkline, monogram. */
+  --brand: #0B6E4F;        /* emerald dalam untuk teks/ikon/stroke/ring di light (~5,5:1 di putih) */
+  --brand-solid: #0E7A57;  /* emerald solid untuk tombol (teks putih ≈ 5:1, kedua tema) */
 
   /* Semantic financial tokens (mirror .text-masuk/.text-keluar/.text-warning) */
   --masuk: #16A34A;
@@ -130,7 +131,7 @@ html.dark {
   --popover: #28282B;
   --popover-foreground: #F3F4F6;
   --primary: #FAFAFA;            /* neutral high-contrast white */
-  --brand: #9D98FF;             /* iris lebih terang agar pop di charcoal */
+  --brand: #35C892;             /* emerald lebih terang agar pop di charcoal */
   --primary-foreground: #1C1917;
   --secondary: #28282B;
   --secondary-foreground: #F3F4F6;
@@ -178,6 +179,25 @@ html.dark {
     min-height: 100dvh;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+  /* Hilangkan background KUNING autofill browser — ikuti tema (mask via inset shadow) */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  textarea:-webkit-autofill {
+    -webkit-text-fill-color: var(--foreground);
+    -webkit-box-shadow: 0 0 0 1000px var(--card) inset;
+    caret-color: var(--foreground);
+    border-radius: inherit;
+    transition: background-color 9999s ease-in-out 0s;
+  }
+  /* Halaman login SELALU gelap (apapun tema app) → mask gelap + teks terang */
+  .login-input:-webkit-autofill,
+  .login-input:-webkit-autofill:hover,
+  .login-input:-webkit-autofill:focus {
+    -webkit-text-fill-color: #F4F4F5;
+    -webkit-box-shadow: 0 0 0 1000px #141417 inset;
+    caret-color: #F4F4F5;
   }
   html {
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",

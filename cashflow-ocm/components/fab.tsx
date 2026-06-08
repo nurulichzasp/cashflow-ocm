@@ -39,12 +39,12 @@ export const FloatingFab = React.forwardRef<
         'bg-[var(--brand-solid)]',
         'backdrop-blur-xl',
         'border border-white/[0.16]',
-        'shadow-[0_10px_30px_rgba(80,72,212,0.40)] md:shadow-[0_14px_40px_rgba(80,72,212,0.45)]',
+        'shadow-[0_10px_30px_rgba(14,122,87,0.40)] md:shadow-[0_14px_40px_rgba(14,122,87,0.45)]',
         // teks
         'text-white',
         'text-sm font-semibold tracking-tight',
         // interaksi
-        'hover:brightness-110 md:hover:translate-y-[-1px] md:hover:shadow-[0_18px_48px_rgba(80,72,212,0.5)]',
+        'hover:brightness-110 md:hover:translate-y-[-1px] md:hover:shadow-[0_18px_48px_rgba(14,122,87,0.5)]',
         'active:scale-95 md:active:scale-[0.97]',
         'focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         className,

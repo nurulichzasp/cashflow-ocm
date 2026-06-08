@@ -50,7 +50,7 @@ export default function LoginPage() {
 
         {/* Brand mark */}
         <div className="flex items-center gap-2.5 mb-9">
-          <div className="h-9 w-9 rounded-xl flex items-center justify-center text-white font-bold text-[11px] tracking-wide bg-[var(--brand-solid)] border border-white/[0.14] shadow-[0_4px_14px_rgba(80,72,212,0.45)]">
+          <div className="h-9 w-9 rounded-xl flex items-center justify-center text-white font-bold text-[11px] tracking-wide bg-[var(--brand-solid)] border border-white/[0.14] shadow-[0_4px_14px_rgba(14,122,87,0.45)]">
             OCM
           </div>
           <span className="font-semibold text-sm text-zinc-100 tracking-tight">
@@ -83,7 +83,7 @@ export default function LoginPage() {
               onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
               required
               autoComplete="email"
-              className="w-full h-11 rounded-xl px-4 text-sm text-zinc-100 placeholder:text-zinc-500 bg-white/[0.03] border border-white/[0.10] outline-none transition-colors duration-200 hover:border-white/[0.16] focus-visible:border-white/40 focus-visible:ring-2 focus-visible:ring-white/15"
+              className="login-input w-full h-11 rounded-xl px-4 text-sm text-zinc-100 placeholder:text-zinc-500 bg-white/[0.03] border border-white/[0.10] outline-none transition-colors duration-200 hover:border-white/[0.16] focus-visible:border-white/40 focus-visible:ring-2 focus-visible:ring-white/15"
             />
           </div>
 
@@ -104,7 +104,7 @@ export default function LoginPage() {
                 onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
                 required
                 autoComplete="current-password"
-                className="w-full h-11 rounded-xl px-4 pr-12 text-sm text-zinc-100 placeholder:text-zinc-500 bg-white/[0.03] border border-white/[0.10] outline-none transition-colors duration-200 hover:border-white/[0.16] focus-visible:border-white/40 focus-visible:ring-2 focus-visible:ring-white/15"
+                className="login-input w-full h-11 rounded-xl px-4 pr-12 text-sm text-zinc-100 placeholder:text-zinc-500 bg-white/[0.03] border border-white/[0.10] outline-none transition-colors duration-200 hover:border-white/[0.16] focus-visible:border-white/40 focus-visible:ring-2 focus-visible:ring-white/15"
               />
               <button
                 type="button"
@@ -122,7 +122,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-11 rounded-xl font-semibold text-sm tracking-tight transition-all duration-200 flex items-center justify-center gap-2.5 bg-[var(--brand-solid)] text-white hover:brightness-110 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60 shadow-[0_8px_28px_rgba(80,72,212,0.45)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
+              className="w-full h-11 rounded-xl font-semibold text-sm tracking-tight transition-all duration-200 flex items-center justify-center gap-2.5 bg-[var(--brand-solid)] text-white hover:brightness-110 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60 shadow-[0_8px_28px_rgba(14,122,87,0.45)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
             >
               {loading ? (
                 <>
