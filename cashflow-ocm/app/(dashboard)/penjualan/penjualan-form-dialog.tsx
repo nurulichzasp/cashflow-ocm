@@ -20,6 +20,7 @@ type Props = { children: React.ReactNode }
 export function PenjualanFormDialog({ children }: Props) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [idemKey, setIdemKey] = useState(() => crypto.randomUUID())
   const [parsing, setParsing] = useState(false)
   const [statusBayar, setStatusBayar] = useState<'belum' | 'lunas'>('belum')
   const [tanggal, setTanggal] = useState(todayString())
@@ -86,8 +87,10 @@ export function PenjualanFormDialog({ children }: Props) {
       formData.set('totalBersih', totalBersih)
       formData.set('totalNilai', totalNilai)
       formData.set('catatan', catatan)
+      formData.set('idempotencyKey', idemKey)
       await createPenjualan(formData)
       toast.success('Penjualan berhasil ditambahkan')
+      setIdemKey(crypto.randomUUID())
       setOpen(false)
       resetForm()
     } catch (error) {

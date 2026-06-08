@@ -11,8 +11,8 @@ import {
 
 type Slice = { name: string; value: number }
 
-/* Palette Claude — biru, oranye, abu, abu gelap */
-const COLORS = ['#60A5FA', '#8B8680', '#9CA3AF', '#6B7280']
+/* Ramp netral (terang→gelap) — dibedakan lewat lightness, bukan hue. */
+const COLORS = ['#F3F4F6', '#A8A29E', '#78716C', '#57534E']
 
 const fmtFull = (v: number) =>
   new Intl.NumberFormat('id-ID', {

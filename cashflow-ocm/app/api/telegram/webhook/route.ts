@@ -22,9 +22,19 @@ import {
   snapshotDailyRecap,
   snapshotHelp,
 } from '@/lib/telegram-snapshots'
+import { timingSafeEqual } from 'node:crypto'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
+
+// Bandingkan secret secara timing-safe untuk mempersempit timing attack.
+function safeEqual(a: string | null | undefined, b: string | null | undefined): boolean {
+  if (!a || !b) return false
+  const ab = Buffer.from(a)
+  const bb = Buffer.from(b)
+  if (ab.length !== bb.length) return false
+  return timingSafeEqual(ab, bb)
+}
 
 /** Reply via Bot API. */
 async function reply(chatId: number | string, text: string) {
@@ -78,12 +88,14 @@ async function handleCommand(cmd: string): Promise<string> {
 }
 
 export async function POST(req: Request) {
-  // 1. Verifikasi secret di query string
+  // 1. Verifikasi secret: terima header resmi Telegram
+  //    (X-Telegram-Bot-Api-Secret-Token) ATAU ?secret= (legacy), timing-safe.
   const url = new URL(req.url)
   const secret = url.searchParams.get('secret')
+  const headerSecret = req.headers.get('x-telegram-bot-api-secret-token')
   const expected = process.env.TELEGRAM_WEBHOOK_SECRET
 
-  if (!expected || secret !== expected) {
+  if (!expected || (!safeEqual(headerSecret, expected) && !safeEqual(secret, expected))) {
     return new Response('Unauthorized', { status: 401 })
   }
 
@@ -133,7 +145,7 @@ export async function GET(req: Request) {
   const action = url.searchParams.get('action')
   const secret = url.searchParams.get('secret')
 
-  if (secret !== process.env.TELEGRAM_WEBHOOK_SECRET) {
+  if (!safeEqual(secret, process.env.TELEGRAM_WEBHOOK_SECRET)) {
     return new Response('Unauthorized', { status: 401 })
   }
 

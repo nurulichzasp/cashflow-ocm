@@ -10,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { FotoBuktiUploader } from '@/components/foto-bukti-uploader'
 import { Textarea } from '@/components/ui/textarea'
 import { createPembelian, updatePembelian, getLatestHargaAcuan, type KategoriPembelian, type DetailInput } from './actions'
-import { savePembelianFotos, replacePembelianFotos } from './foto-actions'
 import { formatRupiah, todayString } from '@/lib/format'
 import { Plus, Trash2, CalendarDays } from 'lucide-react'
 
@@ -50,6 +49,8 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
   const open = openProp ?? openInternal
   const setOpen = (v: boolean) => { onOpenChange ? onOpenChange(v) : setOpenInternal(v) }
   const [loading, setLoading] = useState(false)
+  // Idempotency key per pembukaan form — kunci anti-dobel race-proof di server.
+  const [idemKey, setIdemKey] = useState(() => crypto.randomUUID())
 
   const [tanggal, setTanggal] = useState(todayString())
   const [kategori, setKategori] = useState<KategoriPembelian>('OCM R1')
@@ -167,23 +168,22 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
         sumberBayarId: sumberBayarId || undefined,
         catatan: catatan || undefined,
         details: detailInputs,
+        fotoUrls: fotos,
+        idempotencyKey: idemKey,
       }
 
       if (initialData?.id) {
         await updatePembelian(initialData.id, payload)
-        await replacePembelianFotos(initialData.id, fotos)
         toast.success('Pembelian berhasil diperbarui')
       } else {
-        const result = await createPembelian(payload)
-        if (result.id && fotos.length > 0) {
-          await savePembelianFotos(result.id, fotos)
-        }
+        await createPembelian(payload)
         toast.success('Pembelian berhasil ditambahkan')
       }
 
       setOpen(false)
       onOpenChange?.(false)
       if (!initialData) resetForm()
+      setIdemKey(crypto.randomUUID()) // entri berikutnya pakai key baru
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Gagal menyimpan pembelian')
     } finally {

@@ -29,8 +29,10 @@ interface Props {
 /** Status dot konsisten — muted text, blue/red dot 6px. */
 export function StatusDot({ status, onToggle, loading }: { status: 'lunas' | 'belum'; onToggle?: () => void; loading?: boolean }) {
   const isLunas = status === 'lunas'
-  const dotClass = isLunas ? 'bg-[#60A5FA]' : 'bg-[#F87171]'
-  const textClass = isLunas ? 'text-[#93C5FD]' : 'text-[#FCA5A5]'
+  // Netral: lunas = titik terisi (foreground), belum = titik berongga (ring).
+  // Status terbaca dari bentuk + label, bukan warna.
+  const dotClass = isLunas ? 'bg-foreground' : 'bg-transparent border border-muted-foreground'
+  const textClass = 'text-muted-foreground'
   const label = isLunas ? 'Lunas' : 'Belum'
 
   const inner = (

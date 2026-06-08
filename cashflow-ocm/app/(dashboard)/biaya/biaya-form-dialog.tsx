@@ -11,7 +11,6 @@ import { NumberInput } from '@/components/number-input'
 import { FotoBuktiUploader } from '@/components/foto-bukti-uploader'
 import { Textarea } from '@/components/ui/textarea'
 import { createBiayaOperasional } from './actions'
-import { saveBiayaFotos } from './foto-actions'
 import { todayString } from '@/lib/format'
 
 type BiayaKategori = 'gaji' | 'solar' | 'transport' | 'lainnya'
@@ -25,6 +24,7 @@ type Props = {
 export function BiayaFormDialog({ children, akunOptions }: Props) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [idemKey, setIdemKey] = useState(() => crypto.randomUUID())
   const [kategori, setKategori] = useState<BiayaKategori>('gaji')
   const [akunSumberId, setAkunSumberId] = useState(akunOptions?.[0]?.id ?? '')
   const [jumlah, setJumlah] = useState(0)
@@ -44,13 +44,13 @@ export function BiayaFormDialog({ children, akunOptions }: Props) {
       formData.set('kategori', kategori)
       formData.set('akunSumberId', akunSumberId)
       formData.set('jumlah', String(jumlah))
+      formData.set('fotoUrls', JSON.stringify(fotos))
+      formData.set('idempotencyKey', idemKey)
 
-      const result = await createBiayaOperasional(formData)
-      if (result.id && fotos.length > 0) {
-        await saveBiayaFotos(result.id, fotos)
-      }
+      await createBiayaOperasional(formData)
 
       toast.success('Biaya operasional berhasil ditambahkan')
+      setIdemKey(crypto.randomUUID())
       setOpen(false)
       setKategori('gaji')
       setAkunSumberId(akunOptions?.[0]?.id ?? '')

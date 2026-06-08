@@ -42,18 +42,18 @@ interface Props {
 
 // kategori warna teks saja — tanpa badge/kotak
 const kategoriColor: Record<string, string> = {
-  'OCM R1':    'text-blue-600',
-  'OCM R2':    'text-violet-600',
-  'OCMP SAGU': 'text-green-700',
-  'OCM BRDL':  'text-amber-700',
+  'OCM R1':    'text-stone-700 dark:text-zinc-300',
+  'OCM R2':    'text-stone-700 dark:text-zinc-300',
+  'OCMP SAGU': 'text-stone-700 dark:text-zinc-300',
+  'OCM BRDL':  'text-stone-700 dark:text-zinc-300',
 }
 
 function StatusBayar({ status }: { status: 'lunas' | 'belum' }) {
   const isLunas = status === 'lunas'
   return (
     <span className="inline-flex items-center gap-1.5">
-      <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${isLunas ? 'bg-[#60A5FA]' : 'bg-[#F87171]'}`} />
-      <span className={`text-[11px] font-medium ${isLunas ? 'text-[#93C5FD]' : 'text-[#FCA5A5]'}`}>
+      <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${isLunas ? 'bg-foreground' : 'bg-transparent border border-muted-foreground'}`} />
+      <span className="text-[11px] font-medium text-muted-foreground">
         {isLunas ? 'Lunas' : 'Belum'}
       </span>
     </span>
@@ -378,7 +378,7 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
               </div>
               <div className="text-right shrink-0">
                 <p className="text-[10px] uppercase tracking-widest text-stone-400 dark:text-zinc-500 font-medium">Margin</p>
-                <p className="mt-1 text-[15px] font-semibold text-emerald-500 dark:text-emerald-400 num tabular-nums leading-none">
+                <p className="mt-1 text-[15px] font-semibold text-stone-900 dark:text-zinc-50 num tabular-nums leading-none">
                   +{margin.toFixed(1)}%
                 </p>
               </div>
@@ -396,7 +396,7 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
               </div>
               <div className="min-w-0">
                 <p className="text-stone-400 dark:text-zinc-500 uppercase tracking-wider text-[10px]">Untung</p>
-                <p className="mt-0.5 font-semibold text-emerald-600 dark:text-emerald-400 num tabular-nums truncate">{formatRupiah(p.keuntungan)}</p>
+                <p className="mt-0.5 font-semibold text-stone-800 dark:text-zinc-200 num tabular-nums truncate">{formatRupiah(p.keuntungan)}</p>
               </div>
             </div>
 

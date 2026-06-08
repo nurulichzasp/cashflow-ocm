@@ -32,23 +32,25 @@ export default function LoginPage() {
 
   return (
     <div className="relative min-h-[100dvh] flex items-center justify-center p-6 bg-[#0A0A0A] overflow-hidden">
-      {/* Subtle ambient radial accents — premium feel */}
+      {/* Satu sumber cahaya netral dari atas — kedalaman tanpa warna dekoratif
+          (selaras palet netral; menggantikan blur indigo/emerald yang terlalu samar). */}
       <div
         aria-hidden
-        className="absolute -top-32 -right-32 h-[28rem] w-[28rem] rounded-full opacity-[0.10] blur-3xl pointer-events-none"
-        style={{ background: 'radial-gradient(circle, #6366F1 0%, transparent 70%)' }}
-      />
-      <div
-        aria-hidden
-        className="absolute -bottom-40 -left-32 h-[30rem] w-[30rem] rounded-full opacity-[0.08] blur-3xl pointer-events-none"
-        style={{ background: 'radial-gradient(circle, #10B981 0%, transparent 70%)' }}
+        className="pointer-events-none absolute left-1/2 -top-44 h-[34rem] w-[44rem] -translate-x-1/2 rounded-full opacity-[0.07] blur-3xl"
+        style={{ background: 'radial-gradient(circle, #FFFFFF 0%, transparent 70%)' }}
       />
 
       {/* Centered glass card */}
-      <div className="relative w-full max-w-[400px] rounded-2xl p-8 sm:p-10 bg-white/[0.025] backdrop-blur-xl border border-white/[0.07] shadow-[0_24px_60px_rgba(0,0,0,0.4)]">
+      <div className="relative w-full max-w-[400px] rounded-2xl p-8 sm:p-10 bg-white/[0.03] backdrop-blur-xl border border-white/[0.10] shadow-[0_24px_60px_rgba(0,0,0,0.45)]">
+        {/* Highlight tipis di tepi atas kartu — detail kaca yang presisi */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-px rounded-t-2xl bg-gradient-to-r from-transparent via-white/25 to-transparent"
+        />
+
         {/* Brand mark */}
         <div className="flex items-center gap-2.5 mb-9">
-          <div className="h-9 w-9 rounded-xl flex items-center justify-center text-zinc-200 font-bold text-[11px] tracking-wide bg-white/[0.06] border border-white/[0.08]">
+          <div className="h-9 w-9 rounded-xl flex items-center justify-center text-white font-bold text-[11px] tracking-wide bg-[var(--brand-solid)] border border-white/[0.14] shadow-[0_4px_14px_rgba(80,72,212,0.45)]">
             OCM
           </div>
           <span className="font-semibold text-sm text-zinc-100 tracking-tight">
@@ -60,7 +62,7 @@ export default function LoginPage() {
         <h2 className="text-[26px] font-bold leading-tight tracking-[-0.02em] text-zinc-50">
           Selamat datang
         </h2>
-        <p className="text-sm text-zinc-500 mt-1.5 mb-8">
+        <p className="text-sm text-zinc-400 mt-1.5 mb-8">
           Masuk untuk melanjutkan ke dashboard.
         </p>
 
@@ -69,7 +71,7 @@ export default function LoginPage() {
           <div className="space-y-1.5">
             <label
               htmlFor="email"
-              className="text-[11px] font-semibold uppercase tracking-widest block text-zinc-500"
+              className="text-[11px] font-semibold uppercase tracking-widest block text-zinc-400"
             >
               Email
             </label>
@@ -81,7 +83,7 @@ export default function LoginPage() {
               onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
               required
               autoComplete="email"
-              className="w-full h-11 rounded-xl px-4 text-sm outline-none transition-all duration-200 bg-white/[0.025] border border-white/[0.08] text-zinc-100 placeholder:text-zinc-600 focus:border-white/[0.20] focus:bg-white/[0.04]"
+              className="w-full h-11 rounded-xl px-4 text-sm text-zinc-100 placeholder:text-zinc-500 bg-white/[0.03] border border-white/[0.10] outline-none transition-colors duration-200 hover:border-white/[0.16] focus-visible:border-white/40 focus-visible:ring-2 focus-visible:ring-white/15"
             />
           </div>
 
@@ -89,7 +91,7 @@ export default function LoginPage() {
           <div className="space-y-1.5">
             <label
               htmlFor="password"
-              className="text-[11px] font-semibold uppercase tracking-widest block text-zinc-500"
+              className="text-[11px] font-semibold uppercase tracking-widest block text-zinc-400"
             >
               Password
             </label>
@@ -102,13 +104,13 @@ export default function LoginPage() {
                 onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
                 required
                 autoComplete="current-password"
-                className="w-full h-11 rounded-xl px-4 pr-11 text-sm outline-none transition-all duration-200 bg-white/[0.025] border border-white/[0.08] text-zinc-100 placeholder:text-zinc-600 focus:border-white/[0.20] focus:bg-white/[0.04]"
+                className="w-full h-11 rounded-xl px-4 pr-12 text-sm text-zinc-100 placeholder:text-zinc-500 bg-white/[0.03] border border-white/[0.10] outline-none transition-colors duration-200 hover:border-white/[0.16] focus-visible:border-white/40 focus-visible:ring-2 focus-visible:ring-white/15"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                aria-label={showPassword ? 'Sembunyikan' : 'Tampilkan'}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md text-zinc-500 hover:text-zinc-300 transition-colors"
+                aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 grid h-9 w-9 place-items-center rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-white/[0.06] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-white/15"
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
@@ -120,11 +122,11 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-11 rounded-xl font-semibold text-sm tracking-tight transition-all duration-200 flex items-center justify-center gap-2.5 bg-white text-stone-900 hover:bg-zinc-200 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 shadow-[0_8px_24px_rgba(255,255,255,0.08)]"
+              className="w-full h-11 rounded-xl font-semibold text-sm tracking-tight transition-all duration-200 flex items-center justify-center gap-2.5 bg-[var(--brand-solid)] text-white hover:brightness-110 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60 shadow-[0_8px_28px_rgba(80,72,212,0.45)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
             >
               {loading ? (
                 <>
-                  <span className="h-4 w-4 rounded-full border-2 border-stone-900/25 border-t-stone-900 animate-spin" />
+                  <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
                   Memproses...
                 </>
               ) : 'Masuk'}
@@ -132,7 +134,7 @@ export default function LoginPage() {
           </div>
         </form>
 
-        <p className="text-center text-[11px] mt-8 text-zinc-600">
+        <p className="text-center text-[11px] mt-8 text-zinc-400">
           Supplier TBS &amp; BRDL
         </p>
       </div>

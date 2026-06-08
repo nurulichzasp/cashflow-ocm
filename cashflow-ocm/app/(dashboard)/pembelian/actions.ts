@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { eq, and } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { auth } from '@/lib/auth'
-import { pembelian, pembelianDetail, transaksiKas, akunKas, peron, hargaAcuan } from '@/lib/db/schema'
+import { pembelian, pembelianDetail, transaksiKas, akunKas, peron, hargaAcuan, pembelianFoto } from '@/lib/db/schema'
 import { z } from 'zod'
 import { notifyNewPembelian } from '@/lib/notification'
 import { requirePermission } from '@/lib/permissions'
@@ -45,6 +45,8 @@ const pembelianSchema = z.object({
     hargaLapangan: z.number().positive(),
     tanggalReplas: z.string().optional(),
   })).min(1, 'Minimal 1 baris detail'),
+  fotoUrls: z.array(z.string()).optional(),
+  idempotencyKey: z.string().optional(),
 })
 
 function computeTotals(details: DetailInput[], keuntunganPerKg: number) {
@@ -73,6 +75,8 @@ export async function createPembelian(data: {
   sumberBayarId?: string
   catatan?: string
   details: DetailInput[]
+  fotoUrls?: string[]
+  idempotencyKey?: string
 }) {
   const session = await requireSession()
   requirePermission(session.user.role as any, 'canCreate')
@@ -83,6 +87,22 @@ export async function createPembelian(data: {
 
   const { computed, totalTonase, totalBeli, totalJual, totalKeuntungan } = computeTotals(parsed.details, peronData.keuntunganPerKg)
   const firstDetail = computed[0]
+
+  // Anti-dobel: tolak pembelian identik dari user yang sama dalam ~60 detik terakhir
+  // (retry saat sinyal lapangan jelek / double-submit). Match sangat spesifik
+  // (peron + tanggal + total + tonase sama persis) agar tak memblokir transaksi sah.
+  const recentCutoff = new Date(Date.now() - 60_000)
+  const dup = await db.query.pembelian.findFirst({
+    where: (t, { and, eq, gte }) => and(
+      eq(t.createdBy, session.user.id),
+      eq(t.peronId, parsed.peronId),
+      eq(t.tanggal, parsed.tanggal),
+      eq(t.totalBeli, totalBeli),
+      eq(t.tonase, totalTonase),
+      gte(t.createdAt, recentCutoff),
+    ),
+  })
+  if (dup) throw new Error('Pembelian identik baru saja tercatat (~1 menit lalu). Bila ini transaksi berbeda, ubah sedikit (mis. catatan) lalu simpan lagi.')
 
   // Semua penulisan uang (header + detail + mutasi kas) dibungkus dalam satu
   // transaksi agar atomic — tidak ada kemungkinan data parsial bila gagal di tengah.
@@ -101,7 +121,11 @@ export async function createPembelian(data: {
       sumberBayarId: parsed.sumberBayarId,
       catatan: parsed.catatan,
       createdBy: session.user.id,
-    }).returning()
+      idempotencyKey: parsed.idempotencyKey,
+    }).onConflictDoNothing({ target: pembelian.idempotencyKey }).returning()
+    // Race-proof: bila key sama sudah masuk (double-submit benar-benar bersamaan),
+    // onConflict mengembalikan kosong → tolak agar tak ada baris dobel.
+    if (inserted.length === 0) throw new Error('Pembelian ini sudah tercatat (pengiriman ganda terdeteksi). Cek daftar, jangan input ulang.')
     const id = inserted[0].id
 
     await tx.insert(pembelianDetail).values(
@@ -131,6 +155,12 @@ export async function createPembelian(data: {
         catatan: `Bayar peron ${peronData.nama}${tids ? ` TID ${tids}` : ''}`,
         createdBy: session.user.id,
       })
+    }
+
+    // Foto bukti ditulis di dalam transaksi yang sama agar tidak ada foto orphan
+    // bila proses gagal di tengah (mis. sinyal lapangan putus).
+    if (parsed.fotoUrls && parsed.fotoUrls.length > 0) {
+      await tx.insert(pembelianFoto).values(parsed.fotoUrls.map((url) => ({ pembelianId: id, url })))
     }
 
     return id
@@ -183,6 +213,7 @@ export async function updatePembelian(id: string, data: {
   sumberBayarId?: string
   catatan?: string
   details: DetailInput[]
+  fotoUrls?: string[]
 }) {
   const session = await requireSession()
   requirePermission(session.user.role as any, 'canEdit')
@@ -242,6 +273,28 @@ export async function updatePembelian(id: string, data: {
         createdBy: session.user.id,
       })
     }
+
+    // Ganti foto bukti di dalam transaksi yang sama (atomic dengan update uang)
+    await tx.delete(pembelianFoto).where(eq(pembelianFoto.pembelianId, id))
+    if (parsed.fotoUrls && parsed.fotoUrls.length > 0) {
+      await tx.insert(pembelianFoto).values(parsed.fotoUrls.map((url) => ({ pembelianId: id, url })))
+    }
+  })
+
+  await logActivity({
+    userId: session.user.id,
+    action: 'update',
+    entityType: 'pembelian',
+    entityId: id,
+    description: describeActivity('update', 'pembelian', `${parsed.kategori} dari ${peronData.nama}`),
+    newValues: {
+      kategori: parsed.kategori,
+      peronId: parsed.peronId,
+      totalBeli,
+      totalJual,
+      keuntungan: totalKeuntungan,
+      statusBayarPeron: parsed.statusBayarPeron,
+    },
   })
 
   revalidatePath('/pembelian')
@@ -251,8 +304,41 @@ export async function updatePembelian(id: string, data: {
 export async function deletePembelian(id: string) {
   const session = await requireSession()
   requirePermission(session.user.role as any, 'canDelete')
-  await db.delete(transaksiKas).where(and(eq(transaksiKas.refTabel, 'pembelian'), eq(transaksiKas.refId, id)))
-  await db.delete(pembelian).where(eq(pembelian.id, id))
+
+  // Ambil data lama dulu untuk jejak audit
+  const existing = await db.query.pembelian.findFirst({
+    where: eq(pembelian.id, id),
+    with: { peron: true },
+  })
+
+  // Atomic: hapus kas terkait + header pembelian dalam satu transaksi.
+  // Detail ikut terhapus via ON DELETE CASCADE. Kalau koneksi putus di tengah
+  // (sinyal lapangan jelek), tidak ada lagi state setengah-jadi yang bikin
+  // saldo kas tidak cocok dengan data pembelian.
+  await db.transaction(async (tx) => {
+    await tx.delete(transaksiKas).where(and(eq(transaksiKas.refTabel, 'pembelian'), eq(transaksiKas.refId, id)))
+    await tx.delete(pembelian).where(eq(pembelian.id, id))
+  })
+
+  await logActivity({
+    userId: session.user.id,
+    action: 'delete',
+    entityType: 'pembelian',
+    entityId: id,
+    description: describeActivity('delete', 'pembelian', existing ? `${existing.peron?.nama ?? ''} • Rp${existing.totalBeli}` : id),
+    oldValues: existing
+      ? {
+          tanggal: existing.tanggal,
+          peron: existing.peron?.nama,
+          tonase: existing.tonase,
+          totalBeli: existing.totalBeli,
+          totalJual: existing.totalJual,
+          keuntungan: existing.keuntungan,
+          statusBayarPeron: existing.statusBayarPeron,
+        }
+      : undefined,
+  })
+
   revalidatePath('/pembelian')
   return { success: true }
 }

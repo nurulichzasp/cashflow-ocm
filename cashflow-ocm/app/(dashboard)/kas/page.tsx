@@ -42,12 +42,11 @@ export default async function KasPage() {
 
       {/* Saldo per akun */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        {akunSaldo.map((a, i) => {
-          const colors = ['border-l-green-500', 'border-l-blue-500', 'border-l-violet-500', 'border-l-amber-500', 'border-l-stone-400']
+        {akunSaldo.map((a) => {
           return (
             <div key={a.id} className="surface lift p-4">
               <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500 mb-1.5 truncate">{a.nama}</p>
-              <p className={`text-xl font-bold num tabular-nums ${a.saldo >= 0 ? 'text-stone-900 dark:text-stone-100' : 'text-[#F87171] dark:text-red-400'}`}>
+              <p className={`text-xl font-bold num tabular-nums ${a.saldo >= 0 ? 'text-stone-900 dark:text-stone-100' : 'text-stone-900 dark:text-zinc-50'}`}>
                 {formatRupiah(a.saldo)}
               </p>
               <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">
@@ -62,7 +61,7 @@ export default async function KasPage() {
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="surface p-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">Total Masuk</p>
-          <p className="text-2xl font-bold text-[#60A5FA] num">{formatRupiah(totalMasuk)}</p>
+          <p className="text-2xl font-bold text-stone-900 dark:text-zinc-50 num">{formatRupiah(totalMasuk)}</p>
           <p className="text-xs text-stone-400 mt-1">Seluruh penerimaan tercatat</p>
         </div>
         <div className="surface p-4">

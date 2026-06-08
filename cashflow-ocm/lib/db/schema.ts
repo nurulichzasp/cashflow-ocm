@@ -1,5 +1,5 @@
 import { relations, sql } from 'drizzle-orm'
-import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
 // ─── Better Auth Tables ──────────────────────────────────────────────────────
 
@@ -87,8 +87,11 @@ export const modalPeron = sqliteTable('modal_peron', {
   jumlah: integer('jumlah').notNull(),
   catatan: text('catatan'),
   createdBy: text('created_by').notNull().references(() => user.id),
+  idempotencyKey: text('idempotency_key'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
-})
+}, (t) => ({
+  idempotencyIdx: uniqueIndex('modal_peron_idempotency_key_idx').on(t.idempotencyKey),
+}))
 
 export const hargaAcuan = sqliteTable('harga_acuan', {
   id: text('id').primaryKey().default(sql`(lower(hex(randomblob(8))))`),
@@ -122,8 +125,11 @@ export const pembelian = sqliteTable('pembelian', {
   sumberBayarId: text('sumber_bayar_id').references(() => akunKas.id),
   catatan: text('catatan'),
   createdBy: text('created_by').notNull().references(() => user.id),
+  idempotencyKey: text('idempotency_key'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
-})
+}, (t) => ({
+  idempotencyIdx: uniqueIndex('pembelian_idempotency_key_idx').on(t.idempotencyKey),
+}))
 
 // Detail per line item (satu TID = satu baris)
 export const pembelianDetail = sqliteTable('pembelian_detail', {
@@ -152,8 +158,11 @@ export const penjualan = sqliteTable('penjualan', {
   totalNilai: integer('total_nilai'),
   catatan: text('catatan'),
   createdBy: text('created_by').notNull().references(() => user.id),
+  idempotencyKey: text('idempotency_key'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
-})
+}, (t) => ({
+  idempotencyIdx: uniqueIndex('penjualan_idempotency_key_idx').on(t.idempotencyKey),
+}))
 
 export const penjualanDetail = sqliteTable('penjualan_detail', {
   id: text('id').primaryKey().default(sql`(lower(hex(randomblob(8))))`),
@@ -172,8 +181,11 @@ export const biayaOperasional = sqliteTable('biaya_operasional', {
   akunSumberId: text('akun_sumber_id').notNull().references(() => akunKas.id),
   catatan: text('catatan'),
   createdBy: text('created_by').notNull().references(() => user.id),
+  idempotencyKey: text('idempotency_key'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
-})
+}, (t) => ({
+  idempotencyIdx: uniqueIndex('biaya_operasional_idempotency_key_idx').on(t.idempotencyKey),
+}))
 
 export const pembelianFoto = sqliteTable('pembelian_foto', {
   id: text('id').primaryKey().default(sql`(lower(hex(randomblob(8))))`),
@@ -214,8 +226,11 @@ export const transaksiKas = sqliteTable('transaksi_kas', {
   transferGrup: text('transfer_grup'),
   catatan: text('catatan'),
   createdBy: text('created_by').notNull().references(() => user.id),
+  idempotencyKey: text('idempotency_key'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
-})
+}, (t) => ({
+  idempotencyIdx: uniqueIndex('transaksi_kas_idempotency_key_idx').on(t.idempotencyKey),
+}))
 
 export const ppnBulanan = sqliteTable('ppn_bulanan', {
   id: text('id').primaryKey().default(sql`(lower(hex(randomblob(8))))`),

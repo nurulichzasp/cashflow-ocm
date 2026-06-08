@@ -35,6 +35,8 @@
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
+  --color-brand: var(--brand);
+  --color-brand-solid: var(--brand-solid);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -90,6 +92,11 @@
   /* Spring — high-damping elastic release for tactile press */
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
+  /* Aksen brand — iris/indigo, SATU-SATUNYA warna di sistem netral. Dipakai
+     hemat (≤10%): aksi utama, focus, nav aktif, link, sparkline, monogram. */
+  --brand: #5048D4;        /* iris untuk teks/ikon/stroke/ring di light */
+  --brand-solid: #5B57E0;  /* iris solid untuk tombol (teks putih ≈ 5.8:1, kedua tema) */
+
   /* Semantic financial tokens (mirror .text-masuk/.text-keluar/.text-warning) */
   --masuk: #16A34A;
   --keluar: #DC2626;
@@ -123,6 +130,7 @@ html.dark {
   --popover: #28282B;
   --popover-foreground: #F3F4F6;
   --primary: #FAFAFA;            /* neutral high-contrast white */
+  --brand: #9D98FF;             /* iris lebih terang agar pop di charcoal */
   --primary-foreground: #1C1917;
   --secondary: #28282B;
   --secondary-foreground: #F3F4F6;
@@ -270,7 +278,7 @@ html.dark [class~="text-stone-700"]  { color: #D1D5DB !important; }
 /* ── Text — secondary/muted ── */
 html.dark [class~="text-stone-600"]  { color: #9CA3AF !important; }
 html.dark [class~="text-stone-500"]  { color: #9CA3AF !important; }
-html.dark [class~="text-stone-400"]  { color: #6B7280 !important; }
+html.dark [class~="text-stone-400"]  { color: #9CA3AF !important; }  /* WCAG AA: #6B7280 (3.0:1) → #9CA3AF (5.8:1) */
 html.dark [class~="text-stone-300"]  { color: #4B5563 !important; }
 
 /* ── Text semantik → NETRAL (tanpa hijau/merah mencolok) ── */
@@ -337,6 +345,9 @@ html:not(.dark) [class~="text-violet-700"] { color: #78716C !important; }
 html:not(.dark) [class~="text-blue-500"]   { color: #78716C !important; }
 html:not(.dark) [class~="text-blue-700"]   { color: #78716C !important; }
 html:not(.dark) [class~="text-blue-800"]   { color: #44403C !important; }
+/* Label muted di LIGHT: stone-400 default (#A8A29E ~2.5:1) gagal AA, kritis untuk
+   layar HP di bawah sinar matahari lapangan → naikkan ke 4.8:1 */
+html:not(.dark) [class~="text-stone-400"]  { color: #78716C !important; }
 
 /* Badge/bg berwarna → netral stone */
 html:not(.dark) [class~="bg-green-50"]   { background-color: #F5F5F4 !important; }
@@ -537,27 +548,34 @@ html.dark [class~="hover:bg-orange-700"]:hover       { background-color: #c8654a
 
   /* ── 3. Focus — subtle thin border, no glow ──────────────────────────────── */
   .neural-focus {
-    transition: border-color 150ms ease;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
   }
+  /* Mouse focus: tetap halus (border saja). */
   .neural-focus:focus,
-  .neural-focus:focus-within,
-  .neural-focus:focus-visible {
+  .neural-focus:focus-within {
     border-color: #D6D3D1;
     outline: none;
     box-shadow: none;
   }
+  /* Keyboard focus: ring netral yang JELAS terlihat (WCAG 2.4.7) — sebelumnya tak ada. */
+  .neural-focus:focus-visible {
+    border-color: var(--brand);
+    outline: none;
+    /* 2px gap (bg) + 2px ring iris brand → identitas focus premium, kontras non-text >=3:1 (WCAG 1.4.11) */
+    box-shadow: 0 0 0 2px var(--background), 0 0 0 4px color-mix(in oklab, var(--brand) 60%, transparent);
+  }
 
   /* Semantic border-only focus for financial fields */
-  .glow-masuk:focus,   .glow-masuk:focus-within   { border-color: color-mix(in oklab, var(--masuk) 50%, #D6D3D1); outline: none; box-shadow: none; }
-  .glow-keluar:focus,  .glow-keluar:focus-within  { border-color: color-mix(in oklab, var(--keluar) 50%, #D6D3D1); outline: none; box-shadow: none; }
+  .glow-masuk:focus,   .glow-masuk:focus-within   { border-color: #D6D3D1; outline: none; box-shadow: none; }
+  .glow-keluar:focus,  .glow-keluar:focus-within  { border-color: #D6D3D1; outline: none; box-shadow: none; }
   .glow-warning:focus, .glow-warning:focus-within { border-color: color-mix(in oklab, var(--warning) 50%, #D6D3D1); outline: none; box-shadow: none; }
 
   /* One-shot pulse saat transaksi sukses tercatat */
   .pulse-success { animation: pulse-success 900ms var(--ease-out-expo) 1; }
   @keyframes pulse-success {
-    0%   { box-shadow: 0 0 0 0 color-mix(in oklab, var(--masuk) 45%, transparent); }
-    70%  { box-shadow: 0 0 0 12px color-mix(in oklab, var(--masuk) 0%, transparent); }
-    100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--masuk) 0%, transparent); }
+    0%   { box-shadow: 0 0 0 0 color-mix(in oklab, var(--foreground) 35%, transparent); }
+    70%  { box-shadow: 0 0 0 12px color-mix(in oklab, var(--foreground) 0%, transparent); }
+    100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--foreground) 0%, transparent); }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -583,16 +601,10 @@ html.dark [class~="hover:bg-orange-700"]:hover       { background-color: #c8654a
 }
 
 /* ── Neural glow pada toast (sonner) — feedback finansial yang intuitif ──── */
-[data-sonner-toast][data-type="success"] {
-  box-shadow:
-    inset 0 0 0 0.5px color-mix(in oklab, var(--masuk) 45%, transparent),
-    0 0 24px -8px color-mix(in oklab, var(--masuk) 55%, transparent),
-    0 10px 30px -12px oklch(0.2 0 0 / 0.30) !important;
-}
+[data-sonner-toast][data-type="success"],
 [data-sonner-toast][data-type="error"] {
   box-shadow:
-    inset 0 0 0 0.5px color-mix(in oklab, var(--keluar) 45%, transparent),
-    0 0 24px -8px color-mix(in oklab, var(--keluar) 50%, transparent),
+    inset 0 0 0 0.5px color-mix(in oklab, var(--foreground) 16%, transparent),
     0 10px 30px -12px oklch(0.2 0 0 / 0.30) !important;
 }
 [data-sonner-toast][data-type="warning"] {

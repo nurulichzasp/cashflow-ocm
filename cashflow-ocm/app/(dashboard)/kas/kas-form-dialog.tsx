@@ -26,6 +26,7 @@ interface Props {
 export function KasFormDialog({ children, akunOptions }: Props) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [idemKey, setIdemKey] = useState(() => crypto.randomUUID())
   const [akunId, setAkunId] = useState(akunOptions?.[0]?.id ?? '')
   const [arah, setArah] = useState<'masuk' | 'keluar'>('masuk')
   const [kategori, setKategori] = useState<KasKategori>('penerimaan_bga')
@@ -44,8 +45,10 @@ export function KasFormDialog({ children, akunOptions }: Props) {
       formData.set('arah', arah)
       formData.set('kategori', kategori)
       formData.set('jumlah', String(jumlah))
+      formData.set('idempotencyKey', idemKey)
       await createTransaksiKas(formData)
       toast.success('Transaksi kas berhasil ditambahkan')
+      setIdemKey(crypto.randomUUID())
       setOpen(false)
       setAkunId(akunOptions?.[0]?.id ?? '')
       setArah('masuk')

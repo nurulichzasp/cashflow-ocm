@@ -1,7 +1,9 @@
 export const dynamic = 'force-dynamic'
 
 import { headers } from 'next/headers'
+import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
+import { hasPermission } from '@/lib/permissions'
 import { db } from '@/lib/db'
 import {
   transaksiKas,
@@ -323,8 +325,16 @@ async function getChartSeries(days = 14) {
 }
 
 export default async function DashboardPage() {
-  const [session, metrics, today, charts, tax, hargaLatest, insights] = await Promise.all([
-    auth.api.getSession({ headers: await headers() }),
+  // Dashboard menampilkan seluruh angka keuangan (saldo, piutang, laba, pajak).
+  // Peran tanpa hak finance (mis. kasir) tidak boleh melihatnya — arahkan ke
+  // halaman input yang boleh mereka akses. Tanpa gate ini, /dashboard (landing
+  // default setelah login) membocorkan finansial ke non-finance. Cek dilakukan
+  // SEBELUM getMetrics() agar datanya tidak ikut dihitung untuk yang tak berhak.
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) redirect('/login')
+  if (!hasPermission(session.user.role, 'canViewFinance')) redirect('/pembelian')
+
+  const [metrics, today, charts, tax, hargaLatest, insights] = await Promise.all([
     getMetrics(),
     getTodayStats(),
     getChartSeries(14),
@@ -350,7 +360,7 @@ export default async function DashboardPage() {
       label: 'Penjualan Hari Ini',
       value: formatRupiah(today.penjualanHariIni),
       icon: TrendingUp,
-      color: 'text-[#60A5FA]',
+      color: 'text-stone-700 dark:text-zinc-300',
     },
     {
       label: 'Biaya Hari Ini',
@@ -370,7 +380,7 @@ export default async function DashboardPage() {
 
       {/* SMART INSIGHTS — alerts kontekstual real-time (auto-hide bila aman) */}
       {insights.length > 0 && (
-        <section className="rounded-2xl border border-black/[0.06] dark:border-white/[0.07] bg-white/95 dark:bg-[#0B1220]/95 p-4 shadow-sm">
+        <section className="rounded-2xl border border-black/[0.06] dark:border-white/[0.07] bg-white/95 dark:bg-card p-4 shadow-sm">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-[10px] uppercase tracking-[0.24em] text-stone-400 dark:text-zinc-500 font-semibold">Tindakan cepat</p>
@@ -485,21 +495,12 @@ function ModalHero({
   const first = trend[0]?.total ?? total
   const pctChange = first > 0 ? ((total - first) / first) * 100 : 0
   const up = pctChange >= 0
+  // Sembunyikan % bila baseline 14-hari-lalu mendekati nol — kalau tidak, angkanya
+  // meledak (mis. "804%") dan menyesatkan, bukan menjawab "berapa" dalam 3 detik.
+  const showPct = first > 0 && Math.abs(pctChange) < 100
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-black/[0.06] dark:border-white/[0.07] bg-white dark:bg-[#0F0F0F] p-5 sm:p-6">
-      {/* Subtle radial accent — dark plum/indigo, sangat halus */}
-      <div
-        aria-hidden
-        className="absolute -top-24 -right-24 h-64 w-64 rounded-full opacity-[0.10] dark:opacity-[0.18] blur-3xl"
-        style={{ background: 'radial-gradient(circle, #6366F1 0%, transparent 70%)' }}
-      />
-      <div
-        aria-hidden
-        className="absolute -bottom-32 -left-20 h-72 w-72 rounded-full opacity-[0.06] dark:opacity-[0.10] blur-3xl"
-        style={{ background: 'radial-gradient(circle, #10B981 0%, transparent 70%)' }}
-      />
-
       <div className="relative flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">
         <div className="min-w-0">
           <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-zinc-500">Total Modal Berputar</p>
@@ -507,10 +508,16 @@ function ModalHero({
             {formatRupiah(total)}
           </p>
           <div className="mt-2 inline-flex items-center gap-1.5">
-            <span className={`inline-flex items-center text-[11px] font-semibold num tabular-nums ${up ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}>
-              {up ? '▲' : '▼'} {Math.abs(pctChange).toFixed(2)}%
-            </span>
-            <span className="text-[11px] text-stone-400 dark:text-zinc-500">vs 14 hari lalu</span>
+            {showPct ? (
+              <>
+                <span className="inline-flex items-center text-[11px] font-semibold num tabular-nums text-stone-500 dark:text-zinc-400">
+                  {up ? '▲' : '▼'} {Math.abs(pctChange).toFixed(1)}%
+                </span>
+                <span className="text-[11px] text-stone-400 dark:text-zinc-500">vs 14 hari lalu</span>
+              </>
+            ) : (
+              <span className="text-[11px] text-stone-400 dark:text-zinc-500">Posisi modal berputar terkini</span>
+            )}
           </div>
         </div>
 
@@ -550,7 +557,9 @@ function Sparkline({ data, up }: { data: number[]; up: boolean }) {
 
   const path = `M ${points.join(' L ')}`
   const areaPath = `${path} L ${w},${h} L 0,${h} Z`
-  const stroke = up ? '#10B981' : '#F43F5E'
+  // Stroke netral via currentColor — konsisten dengan palet (arah sudah terbaca
+  // dari bentuk garis, jadi warna hijau/merah hanya dekorasi).
+  const stroke = 'currentColor'
   const id = `sl-grad-${up ? 'up' : 'dn'}`
 
   return (
@@ -558,7 +567,7 @@ function Sparkline({ data, up }: { data: number[]; up: boolean }) {
       viewBox={`0 0 ${w} ${h}`}
       width={w}
       height={h}
-      className="w-[120px] h-[44px] shrink-0"
+      className="w-[120px] h-[44px] shrink-0 text-[var(--brand)]"
       preserveAspectRatio="none"
     >
       <defs>
@@ -629,21 +638,23 @@ function TaxStrip({ tax }: { tax: any }) {
   return (
     <div className="surface overflow-hidden">
       <div className="px-5 py-3 border-b border-stone-100 dark:border-border flex items-center justify-between">
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Pajak</p>
-        <p className="text-[10px] text-stone-400 dark:text-zinc-500">PPN 11% · PPh 25</p>
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400">Pajak</p>
+        <p className="text-[10px] text-stone-400">PPN 11% · PPh 25</p>
       </div>
       <div className="divide-y divide-stone-100 dark:divide-border">
         {items.map((it) => {
+          // Netral: sudah = titik terisi, belum = titik berongga (ring). Status
+          // terbaca dari bentuk + label ("Sudah/Belum Disetor"), bukan warna.
           const dotColor = it.status === 'done'
-            ? 'bg-[#60A5FA]'
+            ? 'bg-foreground'
             : it.status === 'pending'
-              ? 'bg-[#F87171]'
+              ? 'bg-transparent border border-muted-foreground'
               : 'bg-stone-300 dark:bg-zinc-600'
           return (
             <div key={it.label} className="px-5 py-2.5 flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-[11px] text-stone-400 dark:text-zinc-500 font-medium">{it.label}</p>
-                <p className="text-[10px] text-stone-400 dark:text-zinc-600 mt-0.5">{it.sub}</p>
+                <p className="text-[11px] text-stone-400 font-medium">{it.label}</p>
+                <p className="text-[10px] text-stone-400 mt-0.5">{it.sub}</p>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 <span className={`h-1.5 w-1.5 rounded-full ${dotColor}`} />
@@ -686,16 +697,14 @@ function NetMarginAndHarga({
   // Klasifikasi warna margin — health visual
   const healthy = netMarginPct >= 1.5
   const moderate = netMarginPct >= 0.5 && netMarginPct < 1.5
-  const marginTone = healthy
-    ? 'text-emerald-500 dark:text-emerald-400'
-    : moderate
-      ? 'text-amber-500 dark:text-amber-400'
-      : 'text-stone-500 dark:text-zinc-400'
+  // Palet netral: angka mendominasi lewat ukuran/berat, bukan warna. Tingkat sehat
+  // tetap terbaca dari lebar bar + skala 0 / 1.5 / 3%+.
+  const marginTone = 'text-stone-900 dark:text-zinc-50'
   const marginBar = healthy
-    ? 'bg-emerald-500/80'
+    ? 'bg-stone-900 dark:bg-zinc-100'
     : moderate
-      ? 'bg-amber-500/80'
-      : 'bg-stone-400/60'
+      ? 'bg-stone-500 dark:bg-zinc-400'
+      : 'bg-stone-300 dark:bg-zinc-600'
 
   // Skala bar — 3% margin = 100% bar (TBS trading umumnya tipis)
   const barWidth = Math.max(4, Math.min(100, (netMarginPct / 3) * 100))
@@ -747,7 +756,7 @@ function NetMarginAndHarga({
           <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Harga Lapangan</p>
           <a
             href="/harga"
-            className="text-[10px] uppercase tracking-wider text-stone-500 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white font-medium transition-colors"
+            className="text-[10px] uppercase tracking-wider text-stone-500 dark:text-zinc-400 hover:text-[var(--brand)] font-medium transition-colors"
           >
             Kelola →
           </a>
@@ -758,9 +767,9 @@ function NetMarginAndHarga({
             const down = delta < 0
             const DeltaIcon = up ? ArrowUpRight : down ? ArrowDownRight : null
             const deltaTone = up
-              ? 'text-emerald-500 dark:text-emerald-400'
+              ? 'text-stone-600 dark:text-zinc-300'
               : down
-                ? 'text-rose-500 dark:text-rose-400'
+                ? 'text-stone-500 dark:text-zinc-400'
                 : 'text-stone-400 dark:text-zinc-500'
             return (
               <div key={produk} className="flex items-center justify-between px-5 py-2.5">
@@ -816,16 +825,16 @@ function SmartInsights({ items }: { items: Insight[] }) {
       dot: 'bg-amber-500',
     },
     info: {
-      bg: 'bg-blue-500/[0.10] dark:bg-blue-500/[0.08]',
-      border: 'border-blue-500/15',
-      icon: 'text-blue-600 dark:text-blue-400',
-      dot: 'bg-blue-500',
+      bg: 'bg-muted',
+      border: 'border-border',
+      icon: 'text-muted-foreground',
+      dot: 'bg-muted-foreground',
     },
     good: {
-      bg: 'bg-emerald-500/[0.10] dark:bg-emerald-500/[0.08]',
-      border: 'border-emerald-500/15',
-      icon: 'text-emerald-600 dark:text-emerald-400',
-      dot: 'bg-emerald-500',
+      bg: 'bg-muted',
+      border: 'border-border',
+      icon: 'text-foreground',
+      dot: 'bg-foreground',
     },
   } as const
 
@@ -839,7 +848,7 @@ function SmartInsights({ items }: { items: Insight[] }) {
           <Wrapper
             key={it.id}
             href={it.href}
-            className={`group flex min-w-0 items-center gap-3 rounded-2xl border ${tone.border} ${tone.bg} px-3.5 py-3 transition duration-200 ease-out ${it.href ? 'hover:-translate-y-0.5 cursor-pointer hover:bg-white/90 dark:hover:bg-slate-950/90' : ''}`}
+            className={`group flex min-w-0 items-center gap-3 rounded-2xl border ${tone.border} ${tone.bg} px-3.5 py-3 transition duration-200 ease-out ${it.href ? 'hover:-translate-y-0.5 cursor-pointer hover:bg-stone-50 dark:hover:bg-white/[0.04]' : ''}`}
           >
             <div className={`relative flex h-8 w-8 items-center justify-center rounded-xl ${tone.bg} shrink-0`}>
               <Icon className={`h-4 w-4 ${tone.icon}`} strokeWidth={2.25} />

@@ -8,6 +8,7 @@ import { auth } from '@/lib/auth'
 import { transaksiKas, akunKas } from '@/lib/db/schema'
 import { z } from 'zod'
 import { requirePermission } from '@/lib/permissions'
+import { logActivity, describeActivity } from '@/lib/audit'
 
 async function requireSession() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -56,9 +57,35 @@ export async function createTransaksiKas(formData: FormData) {
     refId: formData.get('refId') || undefined,
   })
 
-  await db.insert(transaksiKas).values({
+  // Anti-dobel: tolak transaksi kas manual identik dari user yang sama dalam ~60 detik.
+  const recentCutoff = new Date(Date.now() - 60_000)
+  const dup = await db.query.transaksiKas.findFirst({
+    where: (t, { and, eq, gte }) => and(
+      eq(t.createdBy, session.user.id),
+      eq(t.tanggal, data.tanggal),
+      eq(t.akunId, data.akunId),
+      eq(t.arah, data.arah),
+      eq(t.jumlah, data.jumlah),
+      eq(t.kategori, data.kategori),
+      gte(t.createdAt, recentCutoff),
+    ),
+  })
+  if (dup) throw new Error('Transaksi kas identik baru saja tercatat (~1 menit lalu). Bila berbeda, ubah sedikit (mis. catatan) lalu simpan lagi.')
+
+  const inserted = await db.insert(transaksiKas).values({
     ...data,
     createdBy: session.user.id,
+    idempotencyKey: formData.get('idempotencyKey')?.toString() || undefined,
+  }).onConflictDoNothing({ target: transaksiKas.idempotencyKey }).returning()
+  if (inserted.length === 0) throw new Error('Transaksi kas ini sudah tercatat (pengiriman ganda terdeteksi). Cek daftar, jangan input ulang.')
+
+  await logActivity({
+    userId: session.user.id,
+    action: 'create',
+    entityType: 'transaksi_kas',
+    entityId: inserted[0]?.id,
+    description: describeActivity('create', 'transaksi_kas', `${data.arah} ${data.kategori} • Rp${data.jumlah}`),
+    newValues: { tanggal: data.tanggal, akunId: data.akunId, arah: data.arah, jumlah: data.jumlah, kategori: data.kategori },
   })
 
   revalidatePath('/kas')
@@ -66,8 +93,22 @@ export async function createTransaksiKas(formData: FormData) {
 }
 
 export async function deleteTransaksiKas(id: string) {
-  await requireOwner()
+  const session = await requireOwner()
+
+  const existing = await db.query.transaksiKas.findFirst({ where: (t, { eq }) => eq(t.id, id) })
   await db.delete(transaksiKas).where(eq(transaksiKas.id, id))
+
+  await logActivity({
+    userId: session.user.id,
+    action: 'delete',
+    entityType: 'transaksi_kas',
+    entityId: id,
+    description: describeActivity('delete', 'transaksi_kas', existing ? `${existing.arah} ${existing.kategori} • Rp${existing.jumlah}` : id),
+    oldValues: existing
+      ? { tanggal: existing.tanggal, akunId: existing.akunId, arah: existing.arah, jumlah: existing.jumlah, kategori: existing.kategori }
+      : undefined,
+  })
+
   revalidatePath('/kas')
   return { success: true }
 }

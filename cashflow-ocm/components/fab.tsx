@@ -31,18 +31,18 @@ export const FloatingFab = React.forwardRef<
         'bottom-[max(calc(env(safe-area-inset-bottom)+4.75rem),5rem)] md:bottom-8',
         // bentuk: mobile square / desktop pill
         'h-14 w-14 rounded-2xl md:h-12 md:w-auto md:gap-2 md:px-5 md:rounded-full',
-        // surface — mobile glass tipis, desktop solid premium
-        'bg-white/[0.08] md:bg-stone-900/95 dark:md:bg-white/[0.95]',
-        'backdrop-blur-2xl md:backdrop-blur-xl',
-        'border border-white/[0.14] md:border-white/[0.08] dark:md:border-black/[0.08]',
-        'shadow-[0_10px_30px_rgba(0,0,0,0.4)] md:shadow-[0_12px_36px_rgba(0,0,0,0.35)]',
+        // surface — iris solid premium (aksen brand, satu titik fokus aksi)
+        'bg-[var(--brand-solid)]',
+        'backdrop-blur-xl',
+        'border border-white/[0.16]',
+        'shadow-[0_10px_30px_rgba(80,72,212,0.40)] md:shadow-[0_14px_40px_rgba(80,72,212,0.45)]',
         // teks
-        'text-stone-900 dark:text-white md:text-white dark:md:text-stone-900',
+        'text-white',
         'text-sm font-semibold tracking-tight',
         // interaksi
-        'hover:bg-white/[0.14] md:hover:translate-y-[-1px] md:hover:shadow-[0_16px_44px_rgba(0,0,0,0.4)]',
+        'hover:brightness-110 md:hover:translate-y-[-1px] md:hover:shadow-[0_18px_48px_rgba(80,72,212,0.5)]',
         'active:scale-95 md:active:scale-[0.97]',
-        'focus:outline-none focus-visible:ring-1 focus-visible:ring-white/30 md:focus-visible:ring-2 md:focus-visible:ring-stone-400',
+        'focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         className,
       )}
     >

@@ -2,6 +2,7 @@ import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { headers } from 'next/headers'
 import { eq, sum, and, gte } from 'drizzle-orm'
+import { hasPermission } from '@/lib/permissions'
 import {
   transaksiKas,
   pembelian,
@@ -18,6 +19,12 @@ export async function GET() {
     const session = await auth.api.getSession({ headers: await headers() })
     if (!session) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    // Metrik ini berisi seluruh angka keuangan (saldo, piutang, laba). Batasi
+    // ke peran yang memang boleh melihat data keuangan — role tanpa hak
+    // (mis. kasir / peran tak dikenal) tidak boleh menariknya.
+    if (!hasPermission(session.user.role, 'canViewFinance')) {
+      return Response.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     // Get current metrics

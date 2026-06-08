@@ -9,6 +9,7 @@ import {
   ppnBulanan, pphBulanan,
 } from '@/lib/db/schema'
 import { eq, sum, and, gte, lte, lt, asc, like } from 'drizzle-orm'
+import { requirePermission } from '@/lib/permissions'
 
 async function requireSession() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -16,8 +17,17 @@ async function requireSession() {
   return session
 }
 
+// Semua laporan di sini menampilkan angka keuangan. Hanya peran dengan hak
+// canViewFinance yang boleh — cegah kasir/peran tak dikenal membaca laba-rugi,
+// neraca, pajak, dan buku kas.
+async function requireFinanceAccess() {
+  const session = await requireSession()
+  requirePermission(session.user.role as any, 'canViewFinance')
+  return session
+}
+
 export async function getLaporanData(dari: string, sampai: string) {
-  await requireSession()
+  await requireFinanceAccess()
 
   const [
     penjualanTotalRow,
@@ -28,12 +38,13 @@ export async function getLaporanData(dari: string, sampai: string) {
     dpRows,
     allPeron,
   ] = await Promise.all([
-    // Penjualan dijumlah dari kolom totalBersih di header. Impor REKAP BGA
-    // mengisi totalBersih (bukan baris penjualan_detail), jadi memakai detail
-    // akan mengurangi-hitung. Samakan dengan sumber data dashboard.
+    // Basis AKRUAL: hitung SEMUA penjualan dalam periode (lunas maupun belum),
+    // simetris dengan pembelian yang juga dihitung semua, agar laba tidak bias.
+    // Penjualan dijumlah dari kolom totalBersih header (impor REKAP BGA mengisi
+    // totalBersih, bukan penjualan_detail, jadi pakai detail akan mengurangi-hitung).
     db.select({ total: sum(penjualan.totalBersih) })
       .from(penjualan)
-      .where(and(eq(penjualan.statusBayar, 'lunas'), gte(penjualan.tanggal, dari), lte(penjualan.tanggal, sampai))),
+      .where(and(gte(penjualan.tanggal, dari), lte(penjualan.tanggal, sampai))),
 
     db.select({ total: sum(biayaOperasional.jumlah) })
       .from(biayaOperasional)
@@ -125,7 +136,7 @@ export async function getLaporanData(dari: string, sampai: string) {
 }
 
 export async function getPajakData(tahun: string) {
-  await requireSession()
+  await requireFinanceAccess()
 
   const [ppnRows, pphRows, penjualanRows] = await Promise.all([
     db.select().from(ppnBulanan).where(like(ppnBulanan.bulan, `${tahun}-%`)).orderBy(asc(ppnBulanan.bulan)),
@@ -168,15 +179,17 @@ export async function getPajakData(tahun: string) {
 }
 
 export async function getLabaRugiTahunan(tahun: string) {
-  await requireSession()
+  await requireFinanceAccess()
 
   const dari = `${tahun}-01-01`
   const sampai = `${tahun}-12-31`
 
   const [penjualanTotal, pembelianTotal, biayaTotal, pphRows] = await Promise.all([
+    // Basis AKRUAL: semua penjualan & semua pembelian dalam tahun berjalan,
+    // simetris (tidak menyaring 'lunas') agar laba & estimasi PPh tidak bias.
     db.select({ total: sum(penjualan.totalBersih) })
       .from(penjualan)
-      .where(and(eq(penjualan.statusBayar, 'lunas'), gte(penjualan.tanggal, dari), lte(penjualan.tanggal, sampai))),
+      .where(and(gte(penjualan.tanggal, dari), lte(penjualan.tanggal, sampai))),
     db.select({ total: sum(pembelian.totalBeli) })
       .from(pembelian)
       .where(and(gte(pembelian.tanggal, dari), lte(pembelian.tanggal, sampai))),
@@ -203,7 +216,7 @@ export async function getLabaRugiTahunan(tahun: string) {
 }
 
 export async function getNeracaData() {
-  await requireSession()
+  await requireFinanceAccess()
 
   const [allAkun, allTransaksi, piutangRows, dpRows, ppnRows, pphRows, pembelianTotal, penjualanTotal, biayaTotal] = await Promise.all([
     db.select().from(akunKas).orderBy(akunKas.urutan),
@@ -217,7 +230,10 @@ export async function getNeracaData() {
     db.select().from(ppnBulanan).where(eq(ppnBulanan.statusSetor, 'belum')),
     db.select().from(pphBulanan).where(eq(pphBulanan.statusBayar, 'belum')),
     db.select({ total: sum(pembelian.totalBeli) }).from(pembelian),
-    db.select({ total: sum(penjualan.totalBersih) }).from(penjualan).where(eq(penjualan.statusBayar, 'lunas')),
+    // Basis AKRUAL: laba ditahan pakai SEMUA penjualan (lunas + belum). Piutang
+    // (penjualan belum lunas) tetap jadi aset terpisah di atas — konsisten
+    // dengan akrual (jurnal: debit piutang, kredit pendapatan), bukan dobel-hitung.
+    db.select({ total: sum(penjualan.totalBersih) }).from(penjualan),
     db.select({ total: sum(biayaOperasional.jumlah) }).from(biayaOperasional),
   ])
 

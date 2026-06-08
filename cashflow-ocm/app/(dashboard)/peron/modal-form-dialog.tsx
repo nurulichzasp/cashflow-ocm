@@ -35,6 +35,7 @@ export function ModalFormDialog({ peronId, peronNama, akunOptions = [], children
   const open = openProp ?? openInternal
   const setOpen = (v: boolean) => { onOpenChange ? onOpenChange(v) : setOpenInternal(v) }
   const [loading, setLoading] = useState(false)
+  const [idemKey, setIdemKey] = useState(() => crypto.randomUUID())
   const [jenis, setJenis] = useState<'tambah' | 'kurang' | 'kembali'>('tambah')
   const [jumlah, setJumlah] = useState(0)
   const [akunSumberId, setAkunSumberId] = useState('')
@@ -50,8 +51,10 @@ export function ModalFormDialog({ peronId, peronNama, akunOptions = [], children
       fd.set('jenis', jenis)
       fd.set('jumlah', String(jumlah))
       if (akunSumberId) fd.set('akunSumberId', akunSumberId)
+      fd.set('idempotencyKey', idemKey)
       await addModalPeron(fd)
       toast.success('Mutasi modal berhasil disimpan')
+      setIdemKey(crypto.randomUUID())
       setOpen(false)
       setJumlah(0)
       setJenis('tambah')

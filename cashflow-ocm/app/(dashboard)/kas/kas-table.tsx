@@ -121,12 +121,12 @@ export function KasTable({ transaksiList, isOwner }: Props) {
                 <td className="px-4 py-3 text-stone-700">{kategoriLabels[item.kategori]}</td>
                 <td className="px-4 py-3">
                   {item.arah === 'masuk' ? (
-                    <span className="inline-flex rounded-full bg-[#60A5FA]/10 px-2.5 py-0.5 text-xs font-medium text-[#60A5FA] border border-[#60A5FA]/25">Masuk</span>
+                    <span className="inline-flex rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground border border-border">Masuk</span>
                   ) : (
-                    <span className="inline-flex rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-700 border border-red-200">Keluar</span>
+                    <span className="inline-flex rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground border border-border">Keluar</span>
                   )}
                 </td>
-                <td className={`px-4 py-3 text-right font-semibold num ${item.arah === 'masuk' ? 'text-[#60A5FA]' : 'text-[#F87171]'}`}>
+                <td className={`px-4 py-3 text-right font-semibold num ${item.arah === 'masuk' ? 'text-stone-900 dark:text-zinc-50' : 'text-stone-500 dark:text-zinc-400'}`}>
                   {item.arah === 'masuk' ? '+' : '-'}{formatRupiah(item.jumlah)}
                 </td>
                 <td className="px-4 py-3 text-stone-500 max-w-[180px] truncate">{item.catatan ?? <span className="text-stone-400">—</span>}</td>
@@ -176,12 +176,12 @@ export function KasTable({ transaksiList, isOwner }: Props) {
                 <p className="text-xs text-stone-500 mt-0.5">{formatTanggal(item.tanggal)} · {item.akun?.nama ?? item.akunId}</p>
               </div>
               {item.arah === 'masuk' ? (
-                <span className="inline-flex rounded-full bg-[#60A5FA]/10 px-2 py-0.5 text-xs font-medium text-[#60A5FA] border border-[#60A5FA]/25 shrink-0">Masuk</span>
+                <span className="inline-flex rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-foreground border border-border shrink-0">Masuk</span>
               ) : (
-                <span className="inline-flex rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 border border-red-200 shrink-0">Keluar</span>
+                <span className="inline-flex rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground border border-border shrink-0">Keluar</span>
               )}
             </div>
-            <p className={`text-base font-bold num ${item.arah === 'masuk' ? 'text-[#60A5FA]' : 'text-[#F87171]'}`}>
+            <p className={`text-base font-bold num ${item.arah === 'masuk' ? 'text-stone-900 dark:text-zinc-50' : 'text-stone-500 dark:text-zinc-400'}`}>
               {item.arah === 'masuk' ? '+' : '-'}{formatRupiah(item.jumlah)}
             </p>
             {item.catatan && <p className="text-xs text-stone-500 mt-2">{item.catatan}</p>}

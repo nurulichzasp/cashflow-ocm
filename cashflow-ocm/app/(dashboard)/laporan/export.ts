@@ -6,6 +6,7 @@ import { db } from '@/lib/db'
 import { pembelian, penjualan, biayaOperasional, transaksiKas } from '@/lib/db/schema'
 import { gte, lte } from 'drizzle-orm'
 import { logActivity } from '@/lib/audit'
+import { requirePermission } from '@/lib/permissions'
 
 async function requireSession() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -13,11 +14,19 @@ async function requireSession() {
   return session
 }
 
+// Ekspor membongkar seluruh riwayat keuangan ke Excel. Batasi hanya ke peran
+// yang boleh melihat data keuangan (owner/admin/akuntan/viewer), bukan kasir.
+async function requireFinanceAccess(): Promise<Awaited<ReturnType<typeof requireSession>>> {
+  const session = await requireSession()
+  requirePermission(session.user.role as any, 'canViewFinance')
+  return session
+}
+
 /**
  * Export pembelian data to JSON for client-side Excel export
  */
 export async function exportPembelianData(startDate?: string, endDate?: string) {
-  const session = await requireSession()
+  const session = await requireFinanceAccess()
 
   // Log export activity
   await logActivity({
@@ -55,7 +64,7 @@ export async function exportPembelianData(startDate?: string, endDate?: string) 
  * Export penjualan data to JSON for client-side Excel export
  */
 export async function exportPenjualanData(startDate?: string, endDate?: string) {
-  const session = await requireSession()
+  const session = await requireFinanceAccess()
 
   // Log export activity
   await logActivity({
@@ -92,7 +101,7 @@ export async function exportPenjualanData(startDate?: string, endDate?: string) 
  * Export biaya operasional data
  */
 export async function exportBiayaData(startDate?: string, endDate?: string) {
-  const session = await requireSession()
+  const session = await requireFinanceAccess()
 
   await logActivity({
     userId: session.user.id,
@@ -125,7 +134,7 @@ export async function exportBiayaData(startDate?: string, endDate?: string) {
  * Get summary statistics for export
  */
 export async function getExportSummary(startDate?: string, endDate?: string) {
-  const session = await requireSession()
+  const session = await requireFinanceAccess()
 
   const allPembelian = await db.query.pembelian.findMany({
     where:

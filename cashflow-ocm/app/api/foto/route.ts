@@ -8,11 +8,20 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const u = searchParams.get('u')
 
-  if (!u || !u.includes('blob.vercel-storage.com')) {
+  // Validasi host yang SUDAH di-parse, bukan substring. Substring `.includes()`
+  // bisa ditembus URL seperti https://evil.com/?x=blob.vercel-storage.com,
+  // yang membuat server mem-fetch situs penyerang sambil membawa token Blob.
+  let target: URL
+  try {
+    target = new URL(u ?? '')
+  } catch {
+    return new Response('URL tidak valid', { status: 400 })
+  }
+  if (target.protocol !== 'https:' || !target.hostname.endsWith('.blob.vercel-storage.com')) {
     return new Response('URL tidak valid', { status: 400 })
   }
 
-  const blobRes = await fetch(u, {
+  const blobRes = await fetch(target.toString(), {
     headers: {
       Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`,
     },

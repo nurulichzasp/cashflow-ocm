@@ -55,7 +55,11 @@ function NavTab({
     <motion.div
       whileTap={{ scale: 0.9 }}
       animate={active ? { scale: [1, 1.08, 1] } : { scale: 1 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+      transition={
+        active
+          ? { duration: 0.35, ease: 'easeOut', times: [0, 0.45, 1] }
+          : { type: 'spring', stiffness: 300, damping: 20 }
+      }
       className={cn(
         'flex h-11 w-11 items-center justify-center rounded-full transition-colors',
         active && 'bg-white/[0.06] dark:bg-white/[0.08]',
@@ -64,7 +68,7 @@ function NavTab({
       <Icon
         className={cn(
           'h-[22px] w-[22px] transition-colors',
-          active ? 'text-stone-900 dark:text-[#FAFAFA]' : 'text-stone-400 dark:text-zinc-500',
+          active ? 'text-[var(--brand)]' : 'text-stone-400 dark:text-zinc-500',
         )}
         fill={active ? 'currentColor' : 'none'}
         strokeWidth={active ? 2.25 : 2}
@@ -211,7 +215,7 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
               <div className="px-4 pb-4 pt-1 border-t border-black/[0.06] dark:border-white/[0.06]">
                 <button
                   onClick={handleLogout}
-                  className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-[#F87171] hover:bg-[#F87171]/10 transition-colors"
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-[#9CA3AF] hover:text-white hover:bg-white/[0.06] transition-colors"
                 >
                   <LogOut className="h-5 w-5 shrink-0" />
                   <span className="text-sm font-medium">Keluar</span>

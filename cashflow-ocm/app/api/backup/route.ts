@@ -2,9 +2,19 @@ import { auth } from '@/lib/auth'
 import { headers } from 'next/headers'
 import { createBackup, exportBackupToExcel, exportBackupToJSON, getBackupFilename } from '@/lib/backup'
 import { logActivity } from '@/lib/audit'
+import { timingSafeEqual } from 'node:crypto'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60 // 60 second timeout for backup
+
+// Bandingkan token secara timing-safe untuk mempersempit timing attack.
+function safeEqual(a: string | null | undefined, b: string | null | undefined): boolean {
+  if (!a || !b) return false
+  const ab = Buffer.from(a)
+  const bb = Buffer.from(b)
+  if (ab.length !== bb.length) return false
+  return timingSafeEqual(ab, bb)
+}
 
 export async function GET(request: Request) {
   try {
@@ -74,8 +84,8 @@ export async function POST(request: Request) {
     const authHeader = request.headers.get('authorization') ?? ''
     const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null
 
-    // Verify backup token from environment (timing-safe-ish: tolak bila kosong)
-    if (!process.env.BACKUP_TOKEN || !token || token !== process.env.BACKUP_TOKEN) {
+    // Verify backup token (timing-safe) dari header Authorization: Bearer <token>
+    if (!process.env.BACKUP_TOKEN || !safeEqual(token, process.env.BACKUP_TOKEN)) {
       return Response.json({ error: 'Invalid backup token' }, { status: 401 })
     }
 

@@ -29,11 +29,12 @@ const fmtFull = (v: number) =>
     maximumFractionDigits: 0,
   }).format(v)
 
-/* Palette — masuk biru, keluar oranye Claude */
-const C_MASUK = '#60A5FA'
-const C_KELUAR = '#F87171'
-const C_GRID = 'rgba(255,255,255,0.06)'
-const C_AXIS = '#6B7280'
+/* Netral: masuk = foreground (tegas), keluar = muted (abu) — dibedakan lewat
+   terang + garis putus-putus, bukan warna (selaras palet netral). */
+const C_MASUK = 'var(--foreground)'
+const C_KELUAR = 'var(--muted-foreground)'
+const C_GRID = 'var(--chart-grid)'
+const C_AXIS = 'var(--chart-axis)'
 
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null
@@ -98,6 +99,7 @@ export function CashflowChart({ data }: { data: Point[] }) {
             dataKey="keluar"
             stroke={C_KELUAR}
             strokeWidth={2}
+            strokeDasharray="4 3"
             fill="url(#gradKeluar)"
             name="Keluar"
             dot={false}

@@ -5,9 +5,19 @@ import {
   snapshotHarga,
   snapshotPiutang,
 } from '@/lib/telegram-snapshots'
+import { timingSafeEqual } from 'node:crypto'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
+
+// Bandingkan secret secara timing-safe untuk mempersempit timing attack.
+function safeEqual(a: string | null | undefined, b: string | null | undefined): boolean {
+  if (!a || !b) return false
+  const ab = Buffer.from(a)
+  const bb = Buffer.from(b)
+  if (ab.length !== bb.length) return false
+  return timingSafeEqual(ab, bb)
+}
 
 /**
  * Cron daily summary. Fires automatically dari vercel.json:
@@ -26,8 +36,8 @@ export async function GET(request: Request) {
   const mode = (searchParams.get('mode') ?? 'evening') as 'morning' | 'evening'
 
   const cronSecret = process.env.CRON_SECRET
-  const isCronSecretValid = cronSecret && authHeader === `Bearer ${cronSecret}`
-  const isManualSecretValid = cronSecret && secretParam === cronSecret
+  const isCronSecretValid = !!cronSecret && safeEqual(authHeader, `Bearer ${cronSecret}`)
+  const isManualSecretValid = !!cronSecret && safeEqual(secretParam, cronSecret)
 
   if (process.env.NODE_ENV === 'production' && !isCronSecretValid && !isManualSecretValid) {
     return new Response('Unauthorized', { status: 401 })
