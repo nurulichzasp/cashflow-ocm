@@ -249,7 +249,7 @@ function KasTab({
                   <td className="px-4 py-3">{kategoriLabels[t.kategori]}</td>
                   <td className="px-4 py-3">
                     {t.arah === 'masuk' ? (
-                      <span className="inline-flex rounded-full bg-[#3B82F6]/10 px-2 py-0.5 text-xs font-medium text-[#3B82F6] dark:text-[#3B82F6] border border-[#3B82F6]/25">
+                      <span className="inline-flex rounded-full bg-[#60A5FA]/10 px-2 py-0.5 text-xs font-medium text-[#60A5FA] border border-[#60A5FA]/25">
                         Masuk
                       </span>
                     ) : (
@@ -258,7 +258,7 @@ function KasTab({
                       </span>
                     )}
                   </td>
-                  <td className={cn('px-4 py-3 text-right tabular-nums font-semibold', t.arah === 'masuk' ? 'text-[#3B82F6] dark:text-[#3B82F6]' : 'text-red-500')}>
+                  <td className={cn('px-4 py-3 text-right tabular-nums font-semibold', t.arah === 'masuk' ? 'text-[#60A5FA]' : 'text-[#F87171]')}>
                     {t.arah === 'masuk' ? '+' : '-'}{formatRupiah(t.jumlah)}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums font-medium">{formatRupiah(t.saldo)}</td>
@@ -553,7 +553,7 @@ export function LaporanClient({
             <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">Penjualan Lunas</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xl font-semibold text-[#3B82F6] dark:text-[#3B82F6]">{formatRupiah(data.labaRugi.totalPenjualan)}</p>
+            <p className="text-xl font-semibold text-[#60A5FA]">{formatRupiah(data.labaRugi.totalPenjualan)}</p>
           </CardContent>
         </Card>
         <Card>

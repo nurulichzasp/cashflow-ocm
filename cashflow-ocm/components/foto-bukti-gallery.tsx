@@ -30,7 +30,7 @@ export function FotoBuktiGallery({ urls, maxThumbnails = 4 }: Props) {
             key={url}
             type="button"
             onClick={() => openLightbox(i)}
-            className="relative h-14 w-14 rounded-md overflow-hidden border border-stone-200 hover:border-stone-400 dark:hover:border-stone-500 transition-colors focus:outline-none focus:ring-2 focus:ring-[#3B82F6]"
+            className="relative h-14 w-14 rounded-md overflow-hidden border border-stone-200 hover:border-stone-400 dark:hover:border-stone-500 transition-colors focus:outline-none focus:ring-2 focus:ring-[#60A5FA]"
           >
             <img src={fotoUrl(url)} alt={`Foto ${i + 1}`} className="h-full w-full object-cover" />
           </button>

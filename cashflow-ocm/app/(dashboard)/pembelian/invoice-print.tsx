@@ -83,7 +83,7 @@ function buildNotaHTML(p: PembelianRow, nomorUrut: number): string {
   body{font-family:Arial,sans-serif;font-size:11px;color:#1c1917;background:#fff}
   .wrap{max-width:460px;margin:0 auto;padding:24px 20px}
   .hd{text-align:center;padding-bottom:10px;border-bottom:2px solid #ea580c;margin-bottom:14px}
-  .brand{font-size:18px;font-weight:700;color:#ea580c}
+  .brand{font-size:18px;font-weight:700;color:#1c1917}
   .brand-sub{font-size:8.5px;color:#78716c;margin-top:1px}
   .nota-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#44403c;margin-top:6px}
   .meta{display:flex;justify-content:space-between;margin-bottom:12px;font-size:10.5px;color:#57534e}
@@ -119,7 +119,7 @@ function buildNotaHTML(p: PembelianRow, nomorUrut: number): string {
   .foto-thumb{height:72px;width:72px;object-fit:cover;border-radius:4px;border:1px solid #e7e5e4}
   .footer{text-align:center;font-size:8.5px;color:#a8a29e;margin-top:14px;padding-top:10px;border-top:1px solid #e7e5e4}
   .no-print{margin-bottom:14px}
-  .print-btn{background:#ea580c;color:#fff;border:none;padding:6px 16px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer}
+  .print-btn{background:#1c1917;color:#fff;border:none;padding:6px 16px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer}
   @media print{.no-print{display:none}@page{margin:8mm;size:A5}body{background:#fff}}
 </style>
 </head>
@@ -240,7 +240,7 @@ function buildThermalHTML(p: PembelianRow, paperWidthMm: number, nomorUrut: numb
   .status-belum{font-weight:bold}
   .no-print{margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap}
   .print-btn{background:#1c1917;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-size:12pt;cursor:pointer;font-family:Arial,sans-serif;flex:1}
-  .share-btn{background:#ea580c;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-size:12pt;cursor:pointer;font-family:Arial,sans-serif;flex:1}
+  .share-btn{background:#1c1917;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-size:12pt;cursor:pointer;font-family:Arial,sans-serif;flex:1}
   @media print{
     .no-print{display:none}
     body{background:#fff;font-size:${paperWidthMm === 80 ? '9.5' : '8.5'}pt}
@@ -369,7 +369,7 @@ function buildRekapHTML(list: PembelianRow[]): string {
   body{font-family:Arial,sans-serif;font-size:11px;color:#1c1917;background:#fff}
   .wrap{max-width:960px;margin:0 auto;padding:28px 24px}
   .hd{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:12px;border-bottom:2.5px solid #ea580c;margin-bottom:18px}
-  .brand{font-size:20px;font-weight:700;color:#ea580c}
+  .brand{font-size:20px;font-weight:700;color:#1c1917}
   .brand-sub{font-size:9px;color:#78716c;margin-top:2px}
   .title-block{text-align:right}
   .title{font-size:13px;font-weight:700;color:#44403c;text-transform:uppercase;letter-spacing:0.04em}
@@ -396,7 +396,7 @@ function buildRekapHTML(list: PembelianRow[]): string {
   .scard .sv{font-size:13px;font-weight:700;color:#1c1917}
   .scard.green .sv{color:#15803d}
   .no-print{margin-bottom:16px}
-  .print-btn{background:#ea580c;color:#fff;border:none;padding:7px 18px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer}
+  .print-btn{background:#1c1917;color:#fff;border:none;padding:7px 18px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer}
   .foto-row td{padding:4px 8px 10px 8px;border-bottom:1.5px solid #e7e5e4}
   .foto-strip{display:flex;flex-wrap:wrap;gap:6px}
   .foto-thumb{height:80px;width:80px;object-fit:cover;border-radius:4px;border:1px solid #e7e5e4}
@@ -537,7 +537,7 @@ export function PrintNotaButton({ pembelian, nomorUrut }: { pembelian: Pembelian
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="inline-flex items-center justify-center h-7 w-7 rounded-md text-stone-500 hover:text-orange-600 hover:bg-orange-50 transition-colors focus:outline-none" title="Cetak Nota">
+      <DropdownMenuTrigger className="inline-flex items-center justify-center h-7 w-7 rounded-md text-stone-500 hover:text-stone-700 dark:text-zinc-300 hover:bg-stone-100 dark:hover:bg-white/[0.06] transition-colors focus:outline-none" title="Cetak Nota">
         <Printer className="h-3.5 w-3.5" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
@@ -549,7 +549,7 @@ export function PrintNotaButton({ pembelian, nomorUrut }: { pembelian: Pembelian
           <Thermometer className="h-3.5 w-3.5" />
           Print Thermal (preview)
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={handlePrintThermer} className="gap-2 cursor-pointer text-orange-600 focus:text-orange-600 focus:bg-orange-50">
+        <DropdownMenuItem onClick={handlePrintThermer} className="gap-2 cursor-pointer text-stone-700 dark:text-zinc-200 focus:text-stone-900 dark:focus:text-white focus:bg-stone-100 dark:focus:bg-white/[0.06]">
           <Zap className="h-3.5 w-3.5" />
           Thermer (langsung)
         </DropdownMenuItem>

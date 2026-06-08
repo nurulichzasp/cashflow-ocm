@@ -304,7 +304,7 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
           onClick={() => setActiveTab('company')}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors text-left outline-none cursor-pointer ${
             activeTab === 'company'
-              ? 'bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400'
+              ? 'bg-stone-100 dark:bg-white/[0.06] text-stone-900 dark:text-zinc-100'
               : 'text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-900/60'
           }`}
         >
@@ -316,7 +316,7 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
           onClick={() => setActiveTab('users')}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors text-left outline-none cursor-pointer ${
             activeTab === 'users'
-              ? 'bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400'
+              ? 'bg-stone-100 dark:bg-white/[0.06] text-stone-900 dark:text-zinc-100'
               : 'text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-900/60'
           }`}
         >
@@ -328,7 +328,7 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
           onClick={() => setActiveTab('pajak')}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors text-left outline-none cursor-pointer ${
             activeTab === 'pajak'
-              ? 'bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400'
+              ? 'bg-stone-100 dark:bg-white/[0.06] text-stone-900 dark:text-zinc-100'
               : 'text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-900/60'
           }`}
         >
@@ -340,7 +340,7 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
           onClick={() => setActiveTab('printer')}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors text-left outline-none cursor-pointer ${
             activeTab === 'printer'
-              ? 'bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400'
+              ? 'bg-stone-100 dark:bg-white/[0.06] text-stone-900 dark:text-zinc-100'
               : 'text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-900/60'
           }`}
         >
@@ -352,7 +352,7 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
           onClick={() => setActiveTab('theme')}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors text-left outline-none cursor-pointer ${
             activeTab === 'theme'
-              ? 'bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400'
+              ? 'bg-stone-100 dark:bg-white/[0.06] text-stone-900 dark:text-zinc-100'
               : 'text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-900/60'
           }`}
         >
@@ -364,7 +364,7 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
           onClick={() => setActiveTab('backup')}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors text-left outline-none cursor-pointer ${
             activeTab === 'backup'
-              ? 'bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400'
+              ? 'bg-stone-100 dark:bg-white/[0.06] text-stone-900 dark:text-zinc-100'
               : 'text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-900/60'
           }`}
         >
@@ -434,7 +434,7 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
 
                 <div className="space-y-2">
                   <h3 className="text-sm font-semibold flex items-center gap-1.5 text-stone-900 dark:text-stone-100">
-                    <Wallet2 className="h-4 w-4 text-orange-600" />
+                    <Wallet2 className="h-4 w-4 text-stone-700 dark:text-zinc-300" />
                     Kebijakan Transaksi
                   </h3>
                   <div className="grid gap-4 md:grid-cols-2">
@@ -563,7 +563,7 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
                               type="checkbox"
                               checked={accessPembelian}
                               onChange={(e) => setAccessPembelian(e.target.checked)}
-                              className="h-4 w-4 rounded border-stone-300 dark:border-stone-700 text-orange-600 focus:ring-orange-500 accent-orange-600 cursor-pointer"
+                              className="h-4 w-4 rounded border-stone-300 dark:border-stone-700 text-stone-900 dark:text-zinc-100 focus:ring-stone-400 accent-stone-900 dark:accent-zinc-100 cursor-pointer"
                             />
                             <span>Akses Modul Pembelian (Tiket Sawit)</span>
                           </label>
@@ -573,7 +573,7 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
                               type="checkbox"
                               checked={accessPenjualan}
                               onChange={(e) => setAccessPenjualan(e.target.checked)}
-                              className="h-4 w-4 rounded border-stone-300 dark:border-stone-700 text-orange-600 focus:ring-orange-500 accent-orange-600 cursor-pointer"
+                              className="h-4 w-4 rounded border-stone-300 dark:border-stone-700 text-stone-900 dark:text-zinc-100 focus:ring-stone-400 accent-stone-900 dark:accent-zinc-100 cursor-pointer"
                             />
                             <span>Akses Modul Penjualan (Invoice BGA)</span>
                           </label>
@@ -583,7 +583,7 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
                               type="checkbox"
                               checked={accessKas}
                               onChange={(e) => setAccessKas(e.target.checked)}
-                              className="h-4 w-4 rounded border-stone-300 dark:border-stone-700 text-orange-600 focus:ring-orange-500 accent-orange-600 cursor-pointer"
+                              className="h-4 w-4 rounded border-stone-300 dark:border-stone-700 text-stone-900 dark:text-zinc-100 focus:ring-stone-400 accent-stone-900 dark:accent-zinc-100 cursor-pointer"
                             />
                             <span>Akses Modul Buku Kas (Mutasi Rekening)</span>
                           </label>
@@ -593,7 +593,7 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
                               type="checkbox"
                               checked={accessBiaya}
                               onChange={(e) => setAccessBiaya(e.target.checked)}
-                              className="h-4 w-4 rounded border-stone-300 dark:border-stone-700 text-orange-600 focus:ring-orange-500 accent-orange-600 cursor-pointer"
+                              className="h-4 w-4 rounded border-stone-300 dark:border-stone-700 text-stone-900 dark:text-zinc-100 focus:ring-stone-400 accent-stone-900 dark:accent-zinc-100 cursor-pointer"
                             />
                             <span>Akses Modul Biaya Operasional</span>
                           </label>
@@ -603,7 +603,7 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
                               type="checkbox"
                               checked={accessDelete}
                               onChange={(e) => setAccessDelete(e.target.checked)}
-                              className="h-4 w-4 rounded border-stone-300 dark:border-stone-700 text-orange-600 focus:ring-orange-500 accent-orange-600 cursor-pointer"
+                              className="h-4 w-4 rounded border-stone-300 dark:border-stone-700 text-stone-900 dark:text-zinc-100 focus:ring-stone-400 accent-stone-900 dark:accent-zinc-100 cursor-pointer"
                             />
                             <span className="text-red-500 dark:text-red-400 font-medium">Akses Hapus Transaksi (Hapus Data)</span>
                           </label>
@@ -636,7 +636,7 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
                   </TableHeader>
                   <TableBody className="divide-y divide-stone-100 dark:divide-stone-800">
                     {initialUsers.map((user) => (
-                      <TableRow key={user.id} className="hover:bg-orange-50/10 dark:hover:bg-white/[0.02]">
+                      <TableRow key={user.id} className="hover:bg-stone-50/30 dark:hover:bg-white/[0.02] dark:hover:bg-white/[0.02]">
                         <TableCell className="font-medium">{user.name}</TableCell>
                         <TableCell className="text-stone-500">{user.email}</TableCell>
                         <TableCell className="text-center">
@@ -828,7 +828,7 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
           <Card className="dark:bg-card">
             <CardHeader>
               <CardTitle className="text-lg font-bold tracking-tight flex items-center gap-1.5">
-                <Download className="h-5 w-5 text-orange-600" />
+                <Download className="h-5 w-5 text-stone-700 dark:text-zinc-300" />
                 Ekspor &amp; Pemulihan Data
               </CardTitle>
               <CardDescription>Cadangkan seluruh database konfigurasi atau bersihkan sistem keuangan.</CardDescription>

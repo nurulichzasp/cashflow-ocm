@@ -121,12 +121,12 @@ export function KasTable({ transaksiList, isOwner }: Props) {
                 <td className="px-4 py-3 text-stone-700">{kategoriLabels[item.kategori]}</td>
                 <td className="px-4 py-3">
                   {item.arah === 'masuk' ? (
-                    <span className="inline-flex rounded-full bg-[#3B82F6]/10 px-2.5 py-0.5 text-xs font-medium text-[#3B82F6] dark:text-[#3B82F6] border border-[#3B82F6]/25">Masuk</span>
+                    <span className="inline-flex rounded-full bg-[#60A5FA]/10 px-2.5 py-0.5 text-xs font-medium text-[#60A5FA] border border-[#60A5FA]/25">Masuk</span>
                   ) : (
                     <span className="inline-flex rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-700 border border-red-200">Keluar</span>
                   )}
                 </td>
-                <td className={`px-4 py-3 text-right font-semibold num ${item.arah === 'masuk' ? 'text-[#3B82F6] dark:text-[#3B82F6]' : 'text-red-600'}`}>
+                <td className={`px-4 py-3 text-right font-semibold num ${item.arah === 'masuk' ? 'text-[#60A5FA]' : 'text-[#F87171]'}`}>
                   {item.arah === 'masuk' ? '+' : '-'}{formatRupiah(item.jumlah)}
                 </td>
                 <td className="px-4 py-3 text-stone-500 max-w-[180px] truncate">{item.catatan ?? <span className="text-stone-400">—</span>}</td>
@@ -134,7 +134,7 @@ export function KasTable({ transaksiList, isOwner }: Props) {
                   <td className="px-4 py-3 text-right">
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-stone-400 hover:text-red-600 hover:bg-red-50">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-stone-400 hover:text-[#F87171] hover:bg-red-50">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </AlertDialogTrigger>
@@ -176,12 +176,12 @@ export function KasTable({ transaksiList, isOwner }: Props) {
                 <p className="text-xs text-stone-500 mt-0.5">{formatTanggal(item.tanggal)} · {item.akun?.nama ?? item.akunId}</p>
               </div>
               {item.arah === 'masuk' ? (
-                <span className="inline-flex rounded-full bg-[#3B82F6]/10 px-2 py-0.5 text-xs font-medium text-[#3B82F6] dark:text-[#3B82F6] border border-[#3B82F6]/25 shrink-0">Masuk</span>
+                <span className="inline-flex rounded-full bg-[#60A5FA]/10 px-2 py-0.5 text-xs font-medium text-[#60A5FA] border border-[#60A5FA]/25 shrink-0">Masuk</span>
               ) : (
                 <span className="inline-flex rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 border border-red-200 shrink-0">Keluar</span>
               )}
             </div>
-            <p className={`text-base font-bold num ${item.arah === 'masuk' ? 'text-[#3B82F6] dark:text-[#3B82F6]' : 'text-red-600'}`}>
+            <p className={`text-base font-bold num ${item.arah === 'masuk' ? 'text-[#60A5FA]' : 'text-[#F87171]'}`}>
               {item.arah === 'masuk' ? '+' : '-'}{formatRupiah(item.jumlah)}
             </p>
             {item.catatan && <p className="text-xs text-stone-500 mt-2">{item.catatan}</p>}
@@ -189,7 +189,7 @@ export function KasTable({ transaksiList, isOwner }: Props) {
               <div className="flex justify-end mt-2 pt-2 border-t border-stone-100">
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50 gap-1.5">
+                    <Button variant="ghost" size="sm" className="text-[#F87171] hover:text-red-700 hover:bg-red-50 gap-1.5">
                       <Trash2 className="h-3.5 w-3.5" />
                       Hapus
                     </Button>

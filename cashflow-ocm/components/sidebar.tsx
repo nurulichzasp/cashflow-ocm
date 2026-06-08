@@ -159,7 +159,7 @@ export function Sidebar({ user, isOwner, onToggle }: { user?: any; isOwner?: boo
         )}
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-[#9CA3AF] hover:text-red-400 hover:bg-red-500/8 transition-colors duration-150 font-medium cursor-pointer"
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-[#9CA3AF] hover:text-[#F87171] hover:bg-[#F87171]/10 transition-colors duration-150 font-medium cursor-pointer"
         >
           <LogOut className="h-4 w-4 shrink-0" />
           Keluar
@@ -289,7 +289,7 @@ export function MobileSidebar({ user, isOwner }: { user?: any; isOwner?: boolean
             )}
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-stone-500 hover:text-red-400 hover:bg-stone-800/60 transition-colors duration-150 font-medium cursor-pointer"
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-stone-500 hover:text-[#F87171] hover:bg-[#F87171]/10 transition-colors duration-150 font-medium cursor-pointer"
             >
               <LogOut className="h-4 w-4 shrink-0" />
               Keluar

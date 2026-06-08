@@ -211,7 +211,7 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
               <div className="px-4 pb-4 pt-1 border-t border-black/[0.06] dark:border-white/[0.06]">
                 <button
                   onClick={handleLogout}
-                  className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-red-500 hover:bg-red-500/10 transition-colors"
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-[#F87171] hover:bg-[#F87171]/10 transition-colors"
                 >
                   <LogOut className="h-5 w-5 shrink-0" />
                   <span className="text-sm font-medium">Keluar</span>

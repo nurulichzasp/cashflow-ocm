@@ -31,7 +31,7 @@ export function ThermalPrinterSettings() {
     <Card>
       <CardHeader>
         <CardTitle className="text-base flex items-center gap-2">
-          <Printer className="h-4 w-4 text-orange-600" />
+          <Printer className="h-4 w-4 text-stone-700 dark:text-zinc-200" />
           Printer Thermal
         </CardTitle>
       </CardHeader>
@@ -50,7 +50,7 @@ export function ThermalPrinterSettings() {
                 onClick={() => setPaperWidth(pw.value as '58' | '80')}
                 className={`text-left rounded-lg border p-3 transition-colors ${
                   paperWidth === pw.value
-                    ? 'border-orange-500 bg-orange-50'
+                    ? 'border-stone-400 dark:border-white/[0.15] bg-stone-50 dark:bg-white/[0.04]'
                     : 'border-stone-200 hover:border-stone-300 hover:bg-stone-50'
                 }`}
               >

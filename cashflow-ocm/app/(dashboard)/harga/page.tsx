@@ -41,7 +41,7 @@ export default async function HargaPage() {
           {brdlKtwmTerbaru && (
             <div className="surface press-card p-3 sm:p-4">
               <p className="text-[10px] font-semibold uppercase tracking-widest text-stone-400 mb-2">BRDL KTWM — Harga Terbaru</p>
-              <p className="text-2xl font-bold text-stone-900 num">
+              <p className="text-2xl font-bold text-stone-900 dark:text-zinc-50 num">
                 {formatRupiah(brdlKtwmTerbaru.hargaLapangan)}<span className="text-sm font-normal text-stone-400 ml-1">/kg</span>
               </p>
               <p className="text-xs text-stone-400 mt-1.5">

@@ -190,7 +190,7 @@ export function ProfileDialog({ user, children }: ProfileDialogProps) {
               <button
                 type="button"
                 onClick={() => setShowPhotoOptions(!showPhotoOptions)}
-                className="relative group cursor-pointer select-none rounded-full outline-none focus:ring-2 focus:ring-orange-500 border-none bg-transparent p-0"
+                className="relative group cursor-pointer select-none rounded-full outline-none focus:ring-2 focus:ring-stone-400 dark:focus:ring-white/30 border-none bg-transparent p-0"
               >
                 <div className="h-20 w-20 rounded-full overflow-hidden border-2 border-stone-200 dark:border-stone-800 bg-stone-100 dark:bg-stone-900 flex items-center justify-center transition-all group-hover:opacity-85">
                   {image ? (
