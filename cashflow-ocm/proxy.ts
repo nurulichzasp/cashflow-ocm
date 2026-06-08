@@ -1,7 +1,18 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-const publicPaths = ['/login', '/api/auth']
+/**
+ * Public paths — TIDAK perlu session cookie.
+ * Cron & webhook endpoint diamankan via secret token (query/header),
+ * bukan via session — jadi harus dilewatkan dari auth proxy ini.
+ */
+const publicPaths = [
+  '/login',
+  '/api/auth',          // better-auth internal
+  '/api/cron',          // Vercel cron (auth: Bearer CRON_SECRET)
+  '/api/telegram',      // Telegram webhook (auth: ?secret=...)
+  '/api/parse-bast',    // Parser publik (auth: rate-limited)
+]
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
