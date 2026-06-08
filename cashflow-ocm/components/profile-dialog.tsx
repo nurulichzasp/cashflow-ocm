@@ -4,15 +4,14 @@ import React, { useRef, useState } from 'react'
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter,
+  DialogClose,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Camera, Loader2, Eye, Info } from 'lucide-react'
+import { Camera, Loader2, Eye, Info, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { updateProfile } from '@/app/(dashboard)/pengaturan/actions'
 import { useRouter } from 'next/navigation'
@@ -179,11 +178,19 @@ export function ProfileDialog({ user, children }: ProfileDialogProps) {
     <>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>{children}</DialogTrigger>
-        <DialogContent className="sm:max-w-[500px] dark:bg-card">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-bold tracking-tight">Akun Saya</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleSave} className="space-y-5 py-1">
+        <DialogContent showCloseButton={false} className="sm:max-w-[500px] dark:bg-card p-0 gap-0 max-h-[90dvh] flex flex-col overflow-hidden">
+          {/* Header lengket — judul + tombol Tutup selalu terlihat & mudah ditekan */}
+          <div className="flex items-center justify-between gap-3 px-5 py-3.5 border-b border-border shrink-0">
+            <DialogTitle className="text-base font-bold tracking-tight">Akun Saya</DialogTitle>
+            <DialogClose asChild>
+              <Button variant="ghost" size="icon" aria-label="Tutup" className="size-10 -mr-2 shrink-0">
+                <X className="h-5 w-5" />
+              </Button>
+            </DialogClose>
+          </div>
+          <form onSubmit={handleSave} className="flex min-h-0 flex-1 flex-col">
+            {/* Body bisa di-scroll; header & footer tetap di tempat */}
+            <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5">
             
             {/* Custom Avatar Trigger & Choices */}
             <div className="relative flex flex-col items-center gap-2 mb-2">
@@ -342,13 +349,14 @@ export function ProfileDialog({ user, children }: ProfileDialogProps) {
               </div>
             </div>
 
-            <DialogFooter className="pt-2">
+            </div>
+            {/* Footer lengket — aksi selalu terlihat tanpa perlu scroll ke bawah */}
+            <div className="flex justify-end gap-2 px-5 py-3 border-t border-border bg-muted/40 shrink-0">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setOpen(false)}
                 disabled={saving || uploading}
-                className="border-stone-200"
               >
                 Batal
               </Button>
@@ -362,7 +370,7 @@ export function ProfileDialog({ user, children }: ProfileDialogProps) {
                   'Simpan Perubahan'
                 )}
               </Button>
-            </DialogFooter>
+            </div>
           </form>
         </DialogContent>
       </Dialog>
