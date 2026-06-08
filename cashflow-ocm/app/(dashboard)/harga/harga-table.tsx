@@ -31,7 +31,7 @@ type SortCol = 'tanggal' | 'harga'
 function ProdukBadge({ produk }: { produk: string }) {
   if (produk === 'TBS') {
     return (
-      <span className="inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold bg-orange-50 text-orange-700 border border-orange-200">
+      <span className="inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold bg-white/[0.06] text-stone-700 dark:text-zinc-200 border border-black/[0.08] dark:border-white/[0.08]">
         {produk}
       </span>
     )

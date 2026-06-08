@@ -328,7 +328,7 @@ export function ProfileDialog({ user, children }: ProfileDialogProps) {
             {/* System Info Block */}
             <div className="rounded-lg bg-stone-50 dark:bg-stone-900/40 border border-stone-100 dark:border-stone-800/80 p-3 text-xs space-y-1 text-stone-500">
               <p className="font-semibold text-stone-700 dark:text-stone-300 flex items-center gap-1">
-                <Info className="h-3.5 w-3.5 text-orange-600 shrink-0" /> Akun Sistem (Hanya-Baca)
+                <Info className="h-3.5 w-3.5 text-stone-500 dark:text-zinc-400 shrink-0" /> Akun Sistem (Hanya-Baca)
               </p>
               <div className="grid grid-cols-2 gap-2 mt-1.5">
                 <div>

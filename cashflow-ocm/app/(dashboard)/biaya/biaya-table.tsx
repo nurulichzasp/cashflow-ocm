@@ -107,14 +107,14 @@ export function BiayaTable({ biayaList, isOwner }: Props) {
           <thead>
             <tr className="bg-stone-50 border-b border-stone-200">
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">
-                <button onClick={() => handleSort('tanggal')} className={`inline-flex items-center gap-1 hover:text-orange-600 transition-colors ${sortBy === 'tanggal' ? 'text-orange-600' : ''}`}>
+                <button onClick={() => handleSort('tanggal')} className={`inline-flex items-center gap-1 hover:text-stone-900 dark:hover:text-zinc-200 transition-colors ${sortBy === 'tanggal' ? 'text-stone-900 dark:text-zinc-100' : ''}`}>
                   Tanggal <SortIcon col="tanggal" />
                 </button>
               </th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Kategori</th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Sumber</th>
               <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">
-                <button onClick={() => handleSort('jumlah')} className={`inline-flex items-center gap-1 hover:text-orange-600 transition-colors ${sortBy === 'jumlah' ? 'text-orange-600' : ''}`}>
+                <button onClick={() => handleSort('jumlah')} className={`inline-flex items-center gap-1 hover:text-stone-900 dark:hover:text-zinc-200 transition-colors ${sortBy === 'jumlah' ? 'text-stone-900 dark:text-zinc-100' : ''}`}>
                   Jumlah <SortIcon col="jumlah" />
                 </button>
               </th>

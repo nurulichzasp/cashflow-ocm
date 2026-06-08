@@ -30,61 +30,46 @@ export default function LoginPage() {
     }
   }
 
-  const inputStyle = {
-    background: '#1E1E1E',
-    border: '1px solid rgba(255,255,255,0.08)',
-    color: '#F3F4F6',
-  } as React.CSSProperties
-
-  function focusIn(e: React.FocusEvent<HTMLInputElement>) {
-    e.currentTarget.style.borderColor = '#D97757'
-  }
-  function focusOut(e: React.FocusEvent<HTMLInputElement>) {
-    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
-  }
-
   return (
-    <div
-      className="min-h-[100dvh] flex items-center justify-center p-6"
-      style={{ background: '#1E1E1E' }}
-    >
-      {/* Centered card */}
+    <div className="relative min-h-[100dvh] flex items-center justify-center p-6 bg-[#0A0A0A] overflow-hidden">
+      {/* Subtle ambient radial accents — premium feel */}
       <div
-        className="w-full max-w-[380px] rounded-2xl p-8 sm:p-10"
-        style={{
-          background: '#28282B',
-          border: '1px solid rgba(255,255,255,0.06)',
-        }}
-      >
+        aria-hidden
+        className="absolute -top-32 -right-32 h-[28rem] w-[28rem] rounded-full opacity-[0.10] blur-3xl pointer-events-none"
+        style={{ background: 'radial-gradient(circle, #6366F1 0%, transparent 70%)' }}
+      />
+      <div
+        aria-hidden
+        className="absolute -bottom-40 -left-32 h-[30rem] w-[30rem] rounded-full opacity-[0.08] blur-3xl pointer-events-none"
+        style={{ background: 'radial-gradient(circle, #10B981 0%, transparent 70%)' }}
+      />
+
+      {/* Centered glass card */}
+      <div className="relative w-full max-w-[400px] rounded-2xl p-8 sm:p-10 bg-white/[0.025] backdrop-blur-xl border border-white/[0.07] shadow-[0_24px_60px_rgba(0,0,0,0.4)]">
         {/* Brand mark */}
-        <div className="flex items-center gap-2.5 mb-8">
-          <div
-            className="h-9 w-9 rounded-xl flex items-center justify-center text-white font-bold text-xs tracking-wide"
-            style={{ background: '#D97757' }}
-          >
+        <div className="flex items-center gap-2.5 mb-9">
+          <div className="h-9 w-9 rounded-xl flex items-center justify-center text-zinc-200 font-bold text-[11px] tracking-wide bg-white/[0.06] border border-white/[0.08]">
             OCM
           </div>
-          <span className="font-semibold text-sm" style={{ color: '#F3F4F6' }}>
+          <span className="font-semibold text-sm text-zinc-100 tracking-tight">
             CV OCM Cashflow
           </span>
         </div>
 
         {/* Heading */}
-        <h2 className="text-2xl font-bold leading-tight tracking-tight" style={{ color: '#F3F4F6' }}>
+        <h2 className="text-[26px] font-bold leading-tight tracking-[-0.02em] text-zinc-50">
           Selamat datang
         </h2>
-        <p className="text-sm mt-1.5 mb-8" style={{ color: '#9CA3AF' }}>
+        <p className="text-sm text-zinc-500 mt-1.5 mb-8">
           Masuk untuk melanjutkan ke dashboard.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-
           {/* Email */}
           <div className="space-y-1.5">
             <label
               htmlFor="email"
-              className="text-[11px] font-semibold uppercase tracking-widest block"
-              style={{ color: '#9CA3AF' }}
+              className="text-[11px] font-semibold uppercase tracking-widest block text-zinc-500"
             >
               Email
             </label>
@@ -96,10 +81,7 @@ export default function LoginPage() {
               onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
               required
               autoComplete="email"
-              className="w-full h-11 rounded-xl px-4 text-sm outline-none transition-colors duration-150 placeholder:text-[#5b5b5b]"
-              style={inputStyle}
-              onFocus={focusIn}
-              onBlur={focusOut}
+              className="w-full h-11 rounded-xl px-4 text-sm outline-none transition-all duration-200 bg-white/[0.025] border border-white/[0.08] text-zinc-100 placeholder:text-zinc-600 focus:border-white/[0.20] focus:bg-white/[0.04]"
             />
           </div>
 
@@ -107,8 +89,7 @@ export default function LoginPage() {
           <div className="space-y-1.5">
             <label
               htmlFor="password"
-              className="text-[11px] font-semibold uppercase tracking-widest block"
-              style={{ color: '#9CA3AF' }}
+              className="text-[11px] font-semibold uppercase tracking-widest block text-zinc-500"
             >
               Password
             </label>
@@ -121,20 +102,13 @@ export default function LoginPage() {
                 onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
                 required
                 autoComplete="current-password"
-                className="w-full h-11 rounded-xl px-4 pr-11 text-sm outline-none transition-colors duration-150 placeholder:text-[#5b5b5b]"
-                style={inputStyle}
-                onFocus={focusIn}
-                onBlur={focusOut}
+                className="w-full h-11 rounded-xl px-4 pr-11 text-sm outline-none transition-all duration-200 bg-white/[0.025] border border-white/[0.08] text-zinc-100 placeholder:text-zinc-600 focus:border-white/[0.20] focus:bg-white/[0.04]"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                tabIndex={-1}
-                aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md transition-colors duration-150"
-                style={{ color: '#6B7280' }}
-                onMouseEnter={(e) => { e.currentTarget.style.color = '#9CA3AF' }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = '#6B7280' }}
+                aria-label={showPassword ? 'Sembunyikan' : 'Tampilkan'}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md text-zinc-500 hover:text-zinc-300 transition-colors"
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
@@ -142,18 +116,15 @@ export default function LoginPage() {
           </div>
 
           {/* Submit */}
-          <div className="pt-2">
+          <div className="pt-3">
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-11 rounded-xl font-semibold text-sm text-white transition-all duration-150 flex items-center justify-center gap-2.5 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
-              style={{ background: '#D97757' }}
-              onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = '#c8654a' }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = '#D97757' }}
+              className="w-full h-11 rounded-xl font-semibold text-sm tracking-tight transition-all duration-200 flex items-center justify-center gap-2.5 bg-white text-stone-900 hover:bg-zinc-200 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 shadow-[0_8px_24px_rgba(255,255,255,0.08)]"
             >
               {loading ? (
                 <>
-                  <span className="h-4 w-4 rounded-full border-2 border-white/25 border-t-white animate-spin" />
+                  <span className="h-4 w-4 rounded-full border-2 border-stone-900/25 border-t-stone-900 animate-spin" />
                   Memproses...
                 </>
               ) : 'Masuk'}
@@ -161,8 +132,8 @@ export default function LoginPage() {
           </div>
         </form>
 
-        <p className="text-center text-[11px] mt-8" style={{ color: '#5b5b5b' }}>
-          Supplier TBS &amp; BRDL — PKS PT. BGA
+        <p className="text-center text-[11px] mt-8 text-zinc-600">
+          Supplier TBS &amp; BRDL
         </p>
       </div>
     </div>

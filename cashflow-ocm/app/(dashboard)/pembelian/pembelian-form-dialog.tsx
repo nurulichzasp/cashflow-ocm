@@ -236,7 +236,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
             <div className="rounded-lg border border-stone-200 dark:border-border bg-stone-50 dark:bg-white/[0.03] px-4 py-3 text-sm">
               <div className="flex items-center justify-between mb-1.5">
                 <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-[#6B7280]">Harga Otomatis ({derivedProduk})</p>
-                <button type="button" onClick={() => setHargaOverride(!hargaOverride)} className="text-xs text-orange-600 hover:underline">
+                <button type="button" onClick={() => setHargaOverride(!hargaOverride)} className="text-xs text-stone-600 dark:text-zinc-400 hover:underline">
                   {hargaOverride ? 'Pakai otomatis' : 'Override manual'}
                 </button>
               </div>
@@ -300,7 +300,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
                     {subtotal > 0 && (
                       <div className="px-3 pb-1.5 text-xs text-stone-500 flex gap-4">
                         <span>Subtotal: <span className="font-semibold text-stone-800">{formatRupiah(subtotal)}</span></span>
-                        {keuntunganPerKg > 0 && <span>H. BGA: <span className="font-medium">{(harga + keuntunganPerKg).toLocaleString('id-ID')}/kg</span></span>}
+                        {keuntunganPerKg > 0 && <span>H. Jual: <span className="font-medium">{(harga + keuntunganPerKg).toLocaleString('id-ID')}/kg</span></span>}
                       </div>
                     )}
                   </div>
@@ -310,7 +310,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
               <button
                 type="button"
                 onClick={addDetail}
-                className="w-full px-3 py-2 text-xs text-orange-600 hover:text-orange-700 hover:bg-orange-50 flex items-center gap-1.5 transition-colors"
+                className="w-full px-3 py-2 text-xs text-stone-700 dark:text-zinc-300 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-white/[0.05] flex items-center gap-1.5 transition-colors"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Tambah baris

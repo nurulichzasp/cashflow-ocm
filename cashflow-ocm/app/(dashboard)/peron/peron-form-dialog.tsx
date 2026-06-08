@@ -109,7 +109,7 @@ export function PeronFormDialog({ mode, peron, children, open: openProp, onOpenC
           {keuntunganPerKg > 0 && (
             <div className="rounded-lg bg-stone-50 dark:bg-white/[0.03] border border-stone-200 dark:border-border px-3 py-2 text-xs text-stone-500 dark:text-stone-400">
               Kelebihan peron: <strong className="text-stone-700 dark:text-stone-200">Rp {(120 - keuntunganPerKg).toLocaleString('id-ID')}/kg</strong>
-              <span className="text-stone-400 ml-1">(selisih BGA 120 - untung {keuntunganPerKg})</span>
+              <span className="text-stone-400 ml-1">(selisih jual 120 - untung {keuntunganPerKg})</span>
             </div>
           )}
 

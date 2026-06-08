@@ -28,13 +28,13 @@ export function ThemeSelector() {
             className={cn(
               'flex flex-1 flex-col items-center gap-2.5 p-4 rounded-xl border-2 transition-all duration-200',
               active
-                ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/20'
+                ? 'border-stone-300 dark:border-white/[0.18] bg-stone-50 dark:bg-white/[0.06]'
                 : 'border-stone-100 dark:border-stone-800 bg-white dark:bg-stone-900 hover:border-stone-200 dark:hover:border-stone-700'
             )}
           >
-            <Icon className={cn('h-5 w-5', active ? 'text-orange-500' : 'text-stone-400 dark:text-stone-500')} />
+            <Icon className={cn('h-5 w-5', active ? 'text-stone-900 dark:text-white' : 'text-stone-400 dark:text-stone-500')} />
             <div className="text-center">
-              <p className={cn('text-xs font-semibold', active ? 'text-orange-600 dark:text-orange-400' : 'text-stone-700 dark:text-stone-300')}>
+              <p className={cn('text-xs font-semibold', active ? 'text-stone-900 dark:text-white' : 'text-stone-700 dark:text-stone-300')}>
                 {label}
               </p>
               <p className="text-[10px] text-stone-400 dark:text-stone-500 mt-0.5">{desc}</p>
@@ -62,7 +62,7 @@ export function ThemeToggle() {
           className={cn(
             'flex items-center justify-center h-6 w-6 rounded-md transition-all duration-150',
             theme === val
-              ? 'bg-orange-600 text-white shadow-sm'
+              ? 'bg-white text-stone-900 shadow-sm'
               : 'text-stone-500 hover:text-stone-300'
           )}
         >

@@ -57,14 +57,14 @@ function NavLink({
       className={cn(
         'relative flex items-center gap-3 mx-2 rounded-lg px-3 py-2.5 text-sm transition-all duration-150',
         active
-          ? 'bg-[#D97757]/12 text-[#D97757] font-semibold'
-          : 'text-[#9CA3AF] font-medium hover:bg-white/[0.06] hover:text-[#F3F4F6]'
+          ? 'bg-white/[0.08] text-zinc-50 font-semibold'
+          : 'text-zinc-400 font-medium hover:bg-white/[0.04] hover:text-zinc-100'
       )}
     >
       {active && (
-        <span className="absolute left-0 top-[7px] bottom-[7px] w-[3px] rounded-full bg-[#D97757]" style={{ boxShadow: '0 0 6px oklch(0.65 0.2 41 / 0.5)' }} />
+        <span className="absolute left-0 top-[7px] bottom-[7px] w-[2px] rounded-full bg-zinc-50" />
       )}
-      <Icon className={cn('h-[17px] w-[17px] shrink-0 transition-colors', active ? 'text-[#D97757]' : '')} />
+      <Icon className={cn('h-[17px] w-[17px] shrink-0 transition-colors', active ? 'text-zinc-50' : '')} />
       {label}
     </Link>
   )
@@ -106,7 +106,7 @@ export function Sidebar({ user, isOwner, onToggle }: { user?: any; isOwner?: boo
     <aside className="flex h-full w-60 flex-col bg-[#1E1E1E] border-r border-white/[0.06]">
       {/* Brand */}
       <div className="flex h-14 items-center border-b border-white/[0.06] px-4 gap-3 shrink-0">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#D97757] text-white text-[11px] font-bold shrink-0">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.06] border border-white/[0.08] text-zinc-200 text-[11px] font-bold shrink-0">
           OCM
         </div>
         <span className="font-semibold text-sm text-[#F3F4F6] truncate tracking-wide">CV OCM Cashflow</span>
@@ -146,7 +146,7 @@ export function Sidebar({ user, isOwner, onToggle }: { user?: any; isOwner?: boo
               {user.image ? (
                 <img src={fotoUrl(user.image)} className="h-7 w-7 rounded-full object-cover shrink-0" alt="Avatar" />
               ) : (
-                <div className="h-7 w-7 rounded-full bg-[#D97757] flex items-center justify-center text-[11px] font-bold text-white shrink-0">
+                <div className="h-7 w-7 rounded-full bg-stone-800 border border-white/[0.08] flex items-center justify-center text-[11px] font-bold text-zinc-200 shrink-0">
                   {getInitials(user.nickname || user.name)}
                 </div>
               )}
@@ -238,7 +238,7 @@ export function MobileSidebar({ user, isOwner }: { user?: any; isOwner?: boolean
           {/* Brand */}
           <div className="flex h-14 items-center justify-between border-b border-white/[0.06] px-4 shrink-0">
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#D97757] text-white text-[11px] font-bold shrink-0">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.06] border border-white/[0.08] text-zinc-200 text-[11px] font-bold shrink-0">
                 OCM
               </div>
               <span className="font-semibold text-sm text-stone-100">CV OCM Cashflow</span>
@@ -276,7 +276,7 @@ export function MobileSidebar({ user, isOwner }: { user?: any; isOwner?: boolean
                   {user.image ? (
                     <img src={fotoUrl(user.image)} className="h-7 w-7 rounded-full object-cover shrink-0" alt="Avatar" />
                   ) : (
-                    <div className="h-7 w-7 rounded-full bg-[#D97757] flex items-center justify-center text-[11px] font-bold text-white shrink-0">
+                    <div className="h-7 w-7 rounded-full bg-stone-800 border border-white/[0.08] flex items-center justify-center text-[11px] font-bold text-zinc-200 shrink-0">
                       {getInitials(user.nickname || user.name)}
                     </div>
                   )}

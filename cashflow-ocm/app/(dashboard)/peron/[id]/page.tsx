@@ -68,7 +68,7 @@ export default async function PeronDetailPage({ params }: { params: Promise<{ id
             <CardTitle className="text-xs text-muted-foreground uppercase tracking-wide">DP/Modal Aktif</CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-4">
-            <p className="text-xl font-bold text-orange-600">{formatRupiah(data.dpAktif)}</p>
+            <p className="text-xl font-bold text-stone-900 dark:text-zinc-50">{formatRupiah(data.dpAktif)}</p>
           </CardContent>
         </Card>
         <Card>

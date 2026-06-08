@@ -561,7 +561,7 @@ export function LaporanClient({
             <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">Pembelian Lunas</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xl font-semibold text-orange-600 dark:text-[#D97757]">{formatRupiah(data.labaRugi.totalPembelian)}</p>
+            <p className="text-xl font-semibold text-stone-900 dark:text-zinc-50">{formatRupiah(data.labaRugi.totalPembelian)}</p>
           </CardContent>
         </Card>
         <Card>

@@ -156,18 +156,18 @@ export function PeronTable({ peronList, isOwner, akunOptions = [] }: Props) {
             <tr className="bg-stone-50 border-b border-stone-200">
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Kode</th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">
-                <button onClick={() => handleSort('nama')} className={`inline-flex items-center gap-1 hover:text-orange-600 transition-colors ${sortBy === 'nama' ? 'text-orange-600' : ''}`}>
+                <button onClick={() => handleSort('nama')} className={`inline-flex items-center gap-1 hover:text-stone-900 dark:hover:text-zinc-200 transition-colors ${sortBy === 'nama' ? 'text-stone-900 dark:text-zinc-100' : ''}`}>
                   Nama <SortIcon col="nama" />
                 </button>
               </th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Kontak</th>
               <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">
-                <button onClick={() => handleSort('keuntungan')} className={`inline-flex items-center gap-1 hover:text-orange-600 transition-colors ${sortBy === 'keuntungan' ? 'text-orange-600' : ''}`}>
+                <button onClick={() => handleSort('keuntungan')} className={`inline-flex items-center gap-1 hover:text-stone-900 dark:hover:text-zinc-200 transition-colors ${sortBy === 'keuntungan' ? 'text-stone-900 dark:text-zinc-100' : ''}`}>
                   Untung/kg <SortIcon col="keuntungan" />
                 </button>
               </th>
               <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">
-                <button onClick={() => handleSort('dp')} className={`inline-flex items-center gap-1 hover:text-orange-600 transition-colors ${sortBy === 'dp' ? 'text-orange-600' : ''}`}>
+                <button onClick={() => handleSort('dp')} className={`inline-flex items-center gap-1 hover:text-stone-900 dark:hover:text-zinc-200 transition-colors ${sortBy === 'dp' ? 'text-stone-900 dark:text-zinc-100' : ''}`}>
                   DP Aktif <SortIcon col="dp" />
                 </button>
               </th>

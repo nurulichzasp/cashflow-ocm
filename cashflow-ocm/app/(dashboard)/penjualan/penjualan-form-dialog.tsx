@@ -118,7 +118,7 @@ export function PenjualanFormDialog({ children }: Props) {
         {/* Upload PDF */}
         <div className="rounded-lg border border-dashed border-border bg-muted/40 p-4 space-y-2">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-[#D97757]" />
+            <Sparkles className="h-4 w-4 text-stone-400 dark:text-zinc-500" />
             <p className="text-sm font-medium text-foreground">Upload BAST / Invoice</p>
           </div>
           <p className="text-xs text-muted-foreground">Upload PDF / Excel / Foto — form terisi otomatis</p>

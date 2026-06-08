@@ -24,7 +24,7 @@ import type { TransaksiKas, AkunKas } from '@/lib/db/schema'
 type TransaksiRow = TransaksiKas & { akun: AkunKas | null }
 
 const kategoriLabels: Record<TransaksiKas['kategori'], string> = {
-  penerimaan_bga: 'Penerimaan BGA',
+  penerimaan_bga: 'Penerimaan Penjualan',
   tarik_bri: 'Tarik / Transfer',
   bayar_peron: 'Bayar Peron',
   modal_peron: 'Modal Peron',

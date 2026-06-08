@@ -226,7 +226,7 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
         {summaryCards.map((c) => (
           <div key={c.label} className="surface press-card p-3 sm:p-4">
             <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-[#6B7280] mb-1">{c.label}</p>
-            <p className={`text-lg sm:text-2xl font-bold num tabular-nums ${c.accent ? 'text-orange-600 dark:text-[#D97757]' : 'text-stone-900 dark:text-stone-100'}`}>{c.value}</p>
+            <p className={`text-lg sm:text-2xl font-bold num tabular-nums ${c.accent ? 'text-stone-900 dark:text-zinc-50' : 'text-stone-900 dark:text-stone-100'}`}>{c.value}</p>
             <p className="text-[10px] sm:text-xs text-stone-400 dark:text-[#6B7280] mt-0.5 sm:mt-1">{c.sub}</p>
           </div>
         ))}
@@ -263,7 +263,7 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
                 const Icon = active ? (sortDir === 'asc' ? ArrowUp : ArrowDown) : ArrowUpDown
                 return (
                   <th key={col} className={`px-3 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 ${isRight ? 'text-right' : 'text-left'}`}>
-                    <button onClick={() => handleSort(col)} className={`inline-flex items-center gap-1 hover:text-orange-600 transition-colors ${active ? 'text-orange-600' : ''}`}>
+                    <button onClick={() => handleSort(col)} className={`inline-flex items-center gap-1 hover:text-stone-900 dark:hover:text-zinc-200 transition-colors ${active ? 'text-stone-900 dark:text-zinc-100' : ''}`}>
                       {labels[col]}
                       <Icon className="h-3 w-3" />
                     </button>

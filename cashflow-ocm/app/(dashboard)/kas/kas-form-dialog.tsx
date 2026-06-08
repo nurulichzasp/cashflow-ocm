@@ -101,7 +101,7 @@ export function KasFormDialog({ children, akunOptions }: Props) {
               <Select value={kategori} onValueChange={(v) => setKategori(v as KasKategori)}>
                 <SelectTrigger><SelectValue placeholder="Pilih kategori" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="penerimaan_bga">Penerimaan BGA</SelectItem>
+                  <SelectItem value="penerimaan_bga">Penerimaan Penjualan</SelectItem>
                   <SelectItem value="tarik_bri">Tarik / Transfer</SelectItem>
                   <SelectItem value="bayar_peron">Bayar Peron</SelectItem>
                   <SelectItem value="modal_peron">Modal Peron</SelectItem>
