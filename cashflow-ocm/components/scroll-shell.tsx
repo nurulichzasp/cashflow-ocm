@@ -48,10 +48,12 @@ export function ScrollShell({
             'transform 280ms cubic-bezier(0.22, 0.61, 0.36, 1), opacity 220ms cubic-bezier(0.22, 0.61, 0.36, 1)',
         }}
       >
-        {/* paddingTop = safe-area-inset-top: glass mengisi BELAKANG status bar /
-            Dynamic Island (full-bleed), tapi isi header turun ke bawahnya. */}
+        {/* paddingTop = safe-area-inset-top: header mengisi BELAKANG status bar /
+            Dynamic Island (full-bleed), isi header turun ke bawahnya. Bg SOLID
+            `bg-background` = sama persis dgn body/html → status bar ↔ header
+            seamless, tanpa beda shade/garis (bukan glass translucent lagi). */}
         <div
-          className="pointer-events-auto bg-stone-50/70 dark:bg-[#0A0A0A]/75 backdrop-blur-xl border-b border-black/5 dark:border-white/[0.06]"
+          className="pointer-events-auto bg-background border-b border-black/5 dark:border-white/[0.06]"
           style={{ paddingTop: 'env(safe-area-inset-top)' }}
         >
           <MobileHeader isOwner={isOwner} perms={perms} />

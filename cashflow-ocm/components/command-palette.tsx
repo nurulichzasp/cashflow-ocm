@@ -85,9 +85,9 @@ export function CommandPalette({
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Cari halaman"
-        className="tactile flex h-9 w-9 items-center justify-center rounded-full text-stone-500 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+        className="tactile flex h-11 w-11 items-center justify-center rounded-full text-stone-500 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
       >
-        <Search className="h-[18px] w-[18px]" />
+        <Search className="h-[21px] w-[21px]" />
       </button>
 
       <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
