@@ -46,6 +46,9 @@ const kategoriColor: Record<string, string> = {
   'OCM R2':    'text-stone-700 dark:text-zinc-300',
   'OCMP SAGU': 'text-stone-700 dark:text-zinc-300',
   'OCM BRDL':  'text-stone-700 dark:text-zinc-300',
+  'OCM BRDL KTWM': 'text-stone-700 dark:text-zinc-300',
+  'OCM BRDL TRYM': 'text-stone-700 dark:text-zinc-300',
+  'OCM BRDL LMDM': 'text-stone-700 dark:text-zinc-300',
 }
 
 function StatusBayar({ status }: { status: 'lunas' | 'belum' }) {

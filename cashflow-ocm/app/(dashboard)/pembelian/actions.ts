@@ -23,7 +23,7 @@ async function requireOwner() {
   return session
 }
 
-export type KategoriPembelian = 'OCM R1' | 'OCM R2' | 'OCMP SAGU' | 'OCM BRDL'
+export type KategoriPembelian = 'OCM R1' | 'OCM R2' | 'OCMP SAGU' | 'OCM BRDL' | 'OCM BRDL KTWM' | 'OCM BRDL TRYM' | 'OCM BRDL LMDM'
 
 export interface DetailInput {
   noTid?: string
@@ -34,7 +34,7 @@ export interface DetailInput {
 
 const pembelianSchema = z.object({
   tanggal: z.string().min(1),
-  kategori: z.enum(['OCM R1', 'OCM R2', 'OCMP SAGU', 'OCM BRDL']),
+  kategori: z.enum(['OCM R1', 'OCM R2', 'OCMP SAGU', 'OCM BRDL', 'OCM BRDL KTWM', 'OCM BRDL TRYM', 'OCM BRDL LMDM']),
   peronId: z.string().min(1),
   statusBayarPeron: z.enum(['belum', 'lunas']).default('belum'),
   sumberBayarId: z.string().optional(),

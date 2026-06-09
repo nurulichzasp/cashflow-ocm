@@ -114,7 +114,7 @@ export const pembelian = sqliteTable('pembelian', {
   hargaJual: integer('harga_jual').notNull().default(0),
   hargaBeli: integer('harga_beli').notNull().default(0),
   // aggregate fields
-  kategori: text('kategori', { enum: ['OCM R1', 'OCM R2', 'OCMP SAGU', 'OCM BRDL'] }).notNull().default('OCM R1'),
+  kategori: text('kategori', { enum: ['OCM R1', 'OCM R2', 'OCMP SAGU', 'OCM BRDL', 'OCM BRDL KTWM', 'OCM BRDL TRYM', 'OCM BRDL LMDM'] }).notNull().default('OCM R1'),
   peronId: text('peron_id').notNull().references(() => peron.id),
   tonase: real('tonase').notNull().default(0), // tetap real (berat kg bisa pecahan)
   totalJual: integer('total_jual').notNull().default(0),

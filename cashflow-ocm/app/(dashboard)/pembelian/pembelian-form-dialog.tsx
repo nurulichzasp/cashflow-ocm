@@ -91,7 +91,13 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
   const [hargaLoading, setHargaLoading] = useState(false)
   const [hargaOverride, setHargaOverride] = useState(false)
 
-  const derivedProduk: 'TBS' | 'BRDL KTWM' = kategori === 'OCM BRDL' ? 'BRDL KTWM' : 'TBS'
+  // Kategori BRDL merujuk ke Harga Acuan produknya. LMDM mengikuti harga TRYM.
+  const derivedProduk: 'TBS' | 'BRDL KTWM' | 'BRDL TRYM' =
+    kategori === 'OCM BRDL KTWM' || kategori === 'OCM BRDL'
+      ? 'BRDL KTWM'
+      : kategori === 'OCM BRDL TRYM' || kategori === 'OCM BRDL LMDM'
+        ? 'BRDL TRYM'
+        : 'TBS'
   const kelebihan = hargaAcuanData ? hargaAcuanData.selisihJualBga - keuntunganPerKg : 0
   const autoHarga = hargaAcuanData ? hargaAcuanData.hargaLapangan + kelebihan : 0
 
@@ -207,7 +213,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
               <Label>Tanggal *</Label>
               <Input type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} required />
             </div>
-            <div className="space-y-1.5">
+            <div className="col-span-2 sm:col-span-1 space-y-1.5">
               <Label>Kategori *</Label>
               <Select value={kategori} onValueChange={(v) => setKategori(v as KategoriPembelian)}>
                 <SelectTrigger><SelectValue placeholder="Pilih kategori" /></SelectTrigger>
@@ -215,11 +221,13 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
                   <SelectItem value="OCM R1">OCM R1</SelectItem>
                   <SelectItem value="OCM R2">OCM R2</SelectItem>
                   <SelectItem value="OCMP SAGU">OCMP SAGU</SelectItem>
-                  <SelectItem value="OCM BRDL">OCM BRDL</SelectItem>
+                  <SelectItem value="OCM BRDL KTWM">OCM BRDL KTWM</SelectItem>
+                  <SelectItem value="OCM BRDL TRYM">OCM BRDL TRYM</SelectItem>
+                  <SelectItem value="OCM BRDL LMDM">OCM BRDL LMDM</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5">
+            <div className="col-span-2 sm:col-span-1 space-y-1.5">
               <Label>Peron *</Label>
               <Select value={peronId} onValueChange={(v) => { if (v) setPeronId(v) }}>
                 <SelectTrigger><SelectValue placeholder="Pilih peron" /></SelectTrigger>
