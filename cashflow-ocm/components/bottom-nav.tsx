@@ -54,21 +54,21 @@ function NavTab({
 }) {
   return (
     <motion.div
-      whileTap={{ scale: 0.9 }}
-      animate={active ? { scale: [1, 1.08, 1] } : { scale: 1 }}
-      transition={
-        active
-          ? { duration: 0.35, ease: 'easeOut', times: [0, 0.45, 1] }
-          : { type: 'spring', stiffness: 300, damping: 20 }
-      }
-      className={cn(
-        'flex h-11 w-11 items-center justify-center rounded-full transition-colors',
-        active && 'bg-white/[0.06] dark:bg-white/[0.08]',
-      )}
+      whileTap={{ scale: 0.82 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 22 }}
+      className="relative flex h-11 w-11 items-center justify-center"
     >
+      {/* Oval aktif yang MELUNCUR antar tab (shared layout id) — efek hidup */}
+      {active && (
+        <motion.span
+          layoutId="nav-active-pill"
+          className="absolute inset-0 rounded-full bg-white/[0.06] dark:bg-white/[0.08]"
+          transition={{ type: 'spring', stiffness: 480, damping: 34 }}
+        />
+      )}
       <Icon
         className={cn(
-          'h-[22px] w-[22px] transition-colors',
+          'relative z-10 h-[22px] w-[22px] transition-colors',
           active ? 'text-[var(--brand)]' : 'text-stone-400 dark:text-zinc-500',
         )}
         fill={active ? 'currentColor' : 'none'}
@@ -77,7 +77,7 @@ function NavTab({
       {SHOW_LABELS && (
         <span
           className={cn(
-            'text-[10px] leading-none',
+            'relative z-10 text-[10px] leading-none',
             active
               ? 'font-semibold text-stone-900 dark:text-[#FAFAFA]'
               : 'font-medium text-stone-400 dark:text-zinc-500',
@@ -172,7 +172,7 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
                 aria-label="Profil"
                 className="flex h-11 w-11 items-center justify-center"
               >
-                <NavTab active={drawerOpen} label="Profil" icon={UserCircle} />
+                <NavTab active={false} label="Profil" icon={UserCircle} />
               </button>
             </div>
           </nav>

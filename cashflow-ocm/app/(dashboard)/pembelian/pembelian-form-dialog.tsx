@@ -201,7 +201,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
   return (
     <Dialog open={open} onOpenChange={(v) => { setOpen(v); onOpenChange?.(v) }}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{initialData ? 'Edit Pembelian' : 'Tiket Pembelian'}</DialogTitle>
         </DialogHeader>
