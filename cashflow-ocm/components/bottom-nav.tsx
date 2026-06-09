@@ -127,21 +127,11 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
       {/* Command palette (search) — dibuka via tombol Search di bawah / Cmd+K */}
       <CommandPalette showTrigger={false} isOwner={isOwner} perms={perms} />
 
-      {/* Bottom bar — transparan + blur + gradient shadow, SELALU terlihat */}
+      {/* Bottom bar — TANPA gradient/shadow di belakang; cuma pill oval "glass liquid" (backdrop-blur) yang melayang. SELALU terlihat */}
       <div
         className="md:hidden fixed bottom-0 inset-x-0 z-40 pointer-events-none"
         style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0.75rem)' }}
       >
-        {/* Gradient shadow di atas bottom nav — fade ke warna BACKGROUND app (var --background),
-            bukan hitam → konten "memudar masuk" ke app, tanpa blok gelap. 28px, halus. */}
-        <div
-          aria-hidden
-          className="absolute inset-x-0 bottom-full h-[28px]"
-          style={{
-            background:
-              'linear-gradient(to bottom, transparent 0%, color-mix(in srgb, var(--background) 50%, transparent) 50%, color-mix(in srgb, var(--background) 90%, transparent) 100%)',
-          }}
-        />
         <div className="flex justify-center px-5">
           <nav className="pointer-events-auto relative flex w-fit gap-0.5 rounded-full backdrop-blur-md bg-black/[0.20] shadow-[0_8px_28px_rgba(0,0,0,0.28)] p-1">
             <div className="flex gap-0.5">
