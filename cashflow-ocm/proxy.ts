@@ -12,6 +12,9 @@ const publicPaths = [
   '/api/cron',          // Vercel cron (auth: Bearer CRON_SECRET)
   '/api/telegram',      // Telegram webhook (auth: ?secret=...)
   '/api/parse-bast',    // Parser publik (auth: rate-limited)
+  '/manifest.webmanifest', // PWA manifest — browser baca tanpa login (install)
+  '/sw.js',             // Service worker — wajib publik biar bisa di-register
+  '/offline',           // Fallback offline (di-precache SW) — tak boleh redirect
 ]
 
 export function proxy(request: NextRequest) {
