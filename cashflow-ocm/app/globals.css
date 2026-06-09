@@ -194,10 +194,14 @@ html.dark {
   /* Halaman login SELALU gelap (apapun tema app) → mask gelap + teks terang */
   .login-input:-webkit-autofill,
   .login-input:-webkit-autofill:hover,
-  .login-input:-webkit-autofill:focus {
-    -webkit-text-fill-color: #F4F4F5;
-    -webkit-box-shadow: 0 0 0 1000px #141417 inset;
-    caret-color: #F4F4F5;
+  .login-input:-webkit-autofill:focus,
+  .login-input:-webkit-autofill:active {
+    -webkit-text-fill-color: #F4F4F5 !important;
+    -webkit-box-shadow: 0 0 0 1000px #141417 inset !important;
+    box-shadow: 0 0 0 1000px #141417 inset !important;
+    caret-color: #F4F4F5 !important;
+    /* tunda background autofill ~tak terhingga → kuning tak pernah ter-render */
+    transition: background-color 9999s ease-in-out 0s !important;
   }
   /* Normalisasi input tanggal (iOS/Safari) agar tingginya = input lain & teks rata kiri */
   input[type="date"] {

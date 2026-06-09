@@ -54,7 +54,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
   const [idemKey, setIdemKey] = useState(() => crypto.randomUUID())
 
   const [tanggal, setTanggal] = useState(todayString())
-  const [kategori, setKategori] = useState<KategoriPembelian>('OCM R1')
+  const [kategori, setKategori] = useState<KategoriPembelian>('OCM R2')
   const [peronId, setPeronId] = useState(peronOptions?.[0]?.id ?? '')
   const [statusBayar, setStatusBayar] = useState<'belum' | 'lunas'>('belum')
   const [sumberBayarId, setSumberBayarId] = useState('')
@@ -142,7 +142,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
 
   function resetForm() {
     setTanggal(todayString())
-    setKategori('OCM R1')
+    setKategori('OCM R2')
     setPeronId(peronOptions?.[0]?.id ?? '')
     setStatusBayar('belum')
     setSumberBayarId('')
@@ -218,7 +218,6 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
               <Select value={kategori} onValueChange={(v) => setKategori(v as KategoriPembelian)}>
                 <SelectTrigger><SelectValue placeholder="Pilih kategori" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="OCM R1">OCM R1</SelectItem>
                   <SelectItem value="OCM R2">OCM R2</SelectItem>
                   <SelectItem value="OCMP SAGU">OCMP SAGU</SelectItem>
                   <SelectItem value="OCM BRDL KTWM">OCM BRDL KTWM</SelectItem>

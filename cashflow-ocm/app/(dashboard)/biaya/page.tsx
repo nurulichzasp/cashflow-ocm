@@ -40,19 +40,23 @@ export default async function BiayaPage() {
     <div className="space-y-5">
       <BiayaFormDialog akunOptions={akunOptions}><FloatingFab /></BiayaFormDialog>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="surface press-card p-3 sm:p-4">
+      <div className="space-y-2.5">
+        {/* Hero: Total Pengeluaran */}
+        <div className="surface press-card p-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">Total Pengeluaran</p>
           <p className="text-2xl font-bold text-stone-900 dark:text-zinc-50 num">{formatCompact(totalBiaya)}</p>
           <p className="text-xs text-stone-400 mt-1">{biayaList.length} entri tercatat</p>
         </div>
-        {perKategori.slice(0, 2).map((k) => (
-          <div key={k.label} className="surface p-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">{k.label}</p>
-            <p className="text-2xl font-bold text-stone-900 dark:text-stone-100 num tabular-nums">{formatCompact(k.total)}</p>
-            <p className="text-xs text-stone-400 mt-1">Total biaya {k.label.toLowerCase()}</p>
+        {/* Rincian per kategori — teks ringkas, bukan card */}
+        {perKategori.length > 0 && (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-[13px] text-stone-500 dark:text-stone-400">
+            {perKategori.map((k) => (
+              <span key={k.label}>
+                {k.label} <span className="font-semibold text-stone-800 dark:text-zinc-200 num">{formatCompact(k.total)}</span>
+              </span>
+            ))}
           </div>
-        ))}
+        )}
       </div>
 
       <BiayaTable biayaList={biayaList} isOwner={isOwner} />

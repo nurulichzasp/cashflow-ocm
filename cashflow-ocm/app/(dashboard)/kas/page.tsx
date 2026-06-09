@@ -57,17 +57,15 @@ export default async function KasPage() {
         })}
       </div>
 
-      {/* Total masuk / keluar */}
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="surface p-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">Total Masuk</p>
-          <p className="text-2xl font-bold text-stone-900 dark:text-zinc-50 num">{formatCompact(totalMasuk)}</p>
-          <p className="text-xs text-stone-400 mt-1">Seluruh penerimaan tercatat</p>
+      {/* Total masuk / keluar — ringkas, berdampingan */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="surface p-3.5">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-stone-400 mb-1.5">Masuk</p>
+          <p className="text-xl font-bold text-stone-900 dark:text-zinc-50 num">{formatCompact(totalMasuk)}</p>
         </div>
-        <div className="surface p-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">Total Keluar</p>
-          <p className="text-2xl font-bold text-stone-900 dark:text-zinc-50 num">{formatCompact(totalKeluar)}</p>
-          <p className="text-xs text-stone-400 mt-1">Seluruh pengeluaran tercatat</p>
+        <div className="surface p-3.5">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-stone-400 mb-1.5">Keluar</p>
+          <p className="text-xl font-bold text-stone-900 dark:text-zinc-50 num">{formatCompact(totalKeluar)}</p>
         </div>
       </div>
 
