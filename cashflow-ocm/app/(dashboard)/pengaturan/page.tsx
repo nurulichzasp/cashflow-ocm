@@ -84,20 +84,17 @@ export default async function PengaturanPage() {
             {group.label}
           </h2>
           <div className="surface overflow-hidden p-0 divide-y divide-stone-100 dark:divide-white/[0.06]">
-            {group.items.map(({ href, icon: Icon, title, desc }) => (
+            {group.items.map(({ href, icon: Icon, title }) => (
               <Link
                 key={href}
                 href={href}
-                className="group flex items-center gap-4 px-4 py-3.5 transition-colors hover:bg-stone-50 dark:hover:bg-white/[0.03] active:bg-stone-100 dark:active:bg-white/[0.05]"
+                className="group flex items-center gap-3.5 px-4 py-3.5 transition-colors hover:bg-stone-50 dark:hover:bg-white/[0.03] active:bg-stone-100 dark:active:bg-white/[0.05]"
               >
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-stone-100 text-stone-600 dark:bg-white/[0.06] dark:text-stone-300">
-                  <Icon className="h-5 w-5" />
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-stone-100 text-stone-600 dark:bg-white/[0.06] dark:text-stone-300">
+                  <Icon className="h-[18px] w-[18px]" />
                 </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-semibold text-stone-900 dark:text-zinc-100">{title}</span>
-                  <span className="block truncate text-[13px] text-stone-500 dark:text-stone-400">{desc}</span>
-                </span>
-                <ChevronRight className="h-5 w-5 shrink-0 text-stone-300 transition-transform group-hover:translate-x-0.5 group-hover:text-stone-500 dark:text-stone-600 dark:group-hover:text-stone-400" />
+                <span className="min-w-0 flex-1 text-sm font-medium text-stone-900 dark:text-zinc-100">{title}</span>
+                <ChevronRight className="h-[18px] w-[18px] shrink-0 text-stone-300 transition-transform group-hover:translate-x-0.5 group-hover:text-stone-500 dark:text-stone-600 dark:group-hover:text-stone-400" />
               </Link>
             ))}
           </div>

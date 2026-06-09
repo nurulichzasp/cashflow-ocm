@@ -18,7 +18,7 @@ import {
   hargaAcuan,
 } from '@/lib/db/schema'
 import { eq, sum, and, gte, like, desc, lte } from 'drizzle-orm'
-import { formatRupiah, formatCompact, formatTanggal } from '@/lib/format'
+import { formatRupiah, formatCompact } from '@/lib/format'
 import {
   TrendingUp,
   ShoppingCart,
@@ -502,28 +502,29 @@ function ModalHero({
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-black/[0.06] dark:border-white/[0.07] bg-white dark:bg-[#0F0F0F] p-5 sm:p-6">
-      <div className="relative flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">
-        <div className="min-w-0">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-zinc-500">Total Modal Berputar</p>
-          <p className="mt-3 leading-none num tabular-nums tracking-[-0.035em] text-stone-900 dark:text-zinc-50">
-            <AnimatedRupiah value={total} />
-          </p>
-          {showPct && (
-            <div className="mt-2.5 inline-flex items-center gap-1.5">
-              <span className="inline-flex items-center text-[11px] font-semibold num tabular-nums text-stone-500 dark:text-zinc-400">
-                {up ? '▲' : '▼'} {Math.abs(pctChange).toFixed(1)}%
-              </span>
-              <span className="text-[11px] text-stone-400 dark:text-zinc-500">vs 14 hari lalu</span>
-            </div>
-          )}
-        </div>
+      {/* Baris atas: label + delta */}
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-zinc-500">Total Modal Berputar</p>
+        {showPct && (
+          <span className="inline-flex items-center gap-1 text-[11px] font-semibold num tabular-nums text-stone-500 dark:text-zinc-400 shrink-0">
+            {up ? '▲' : '▼'} {Math.abs(pctChange).toFixed(1)}%
+            <span className="font-normal text-stone-400 dark:text-zinc-500">14h</span>
+          </span>
+        )}
+      </div>
 
-        {/* Mini sparkline 14d */}
+      {/* Angka utama */}
+      <p className="mt-2.5 leading-none num tabular-nums tracking-[-0.035em] text-stone-900 dark:text-zinc-50">
+        <AnimatedRupiah value={total} />
+      </p>
+
+      {/* Sparkline full-width — isi ruang kosong & jadi anchor visual */}
+      <div className="mt-4 -mx-1">
         <Sparkline data={trend.map((t) => t.total)} up={up} />
       </div>
 
       {/* Inline breakdown — chip style, bukan grid card */}
-      <div className="relative mt-5 flex flex-wrap gap-x-5 gap-y-2 pt-4 border-t border-stone-100 dark:border-white/[0.06]">
+      <div className="relative mt-4 flex flex-wrap gap-x-5 gap-y-2 pt-4 border-t border-stone-100 dark:border-white/[0.06]">
         {breakdown.map((b, i) => (
           <div key={b.label} className="flex items-center gap-2">
             {i > 0 && <span className="hidden sm:inline h-3 w-px bg-stone-200 dark:bg-white/10" />}
@@ -536,11 +537,12 @@ function ModalHero({
   )
 }
 
-/* SVG sparkline — pure inline, tanpa dependency tambahan. */
+/* SVG sparkline full-width — pure inline, tanpa dependency tambahan. */
 function Sparkline({ data, up }: { data: number[]; up: boolean }) {
   if (data.length < 2) return null
-  const w = 120
-  const h = 44
+  const w = 300
+  const h = 56
+  const pad = 4 // padding atas/bawah supaya puncak/lembah tidak terpotong
   const min = Math.min(...data)
   const max = Math.max(...data)
   const range = max - min || 1
@@ -548,39 +550,40 @@ function Sparkline({ data, up }: { data: number[]; up: boolean }) {
 
   const points = data.map((v, i) => {
     const x = i * step
-    const y = h - ((v - min) / range) * h
+    const y = h - pad - ((v - min) / range) * (h - pad * 2)
     return `${x.toFixed(1)},${y.toFixed(1)}`
   })
 
   const path = `M ${points.join(' L ')}`
   const areaPath = `${path} L ${w},${h} L 0,${h} Z`
-  // Stroke netral via currentColor — konsisten dengan palet (arah sudah terbaca
-  // dari bentuk garis, jadi warna hijau/merah hanya dekorasi).
+  // Stroke netral via currentColor — konsisten dengan palet (arah terbaca dari bentuk).
   const stroke = 'currentColor'
   const id = `sl-grad-${up ? 'up' : 'dn'}`
 
   return (
     <svg
       viewBox={`0 0 ${w} ${h}`}
-      width={w}
-      height={h}
-      className="w-[120px] h-[44px] shrink-0 text-[var(--brand)]"
+      className="w-full h-14 sm:h-16 text-[var(--brand)]"
       preserveAspectRatio="none"
+      aria-hidden
     >
       <defs>
         <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={stroke} stopOpacity="0.28" />
+          <stop offset="0%" stopColor={stroke} stopOpacity="0.22" />
           <stop offset="100%" stopColor={stroke} stopOpacity="0" />
         </linearGradient>
       </defs>
       <path d={areaPath} fill={`url(#${id})`} className="sl-fade" />
-      <path d={path} fill="none" stroke={stroke} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" pathLength={1} className="sl-draw" />
-      <circle
-        cx={(data.length - 1) * step}
-        cy={h - ((data[data.length - 1] - min) / range) * h}
-        r={2.5}
-        fill={stroke}
-        className="sl-dot"
+      <path
+        d={path}
+        fill="none"
+        stroke={stroke}
+        strokeWidth={1.75}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
+        pathLength={1}
+        className="sl-draw"
       />
     </svg>
   )
@@ -759,8 +762,8 @@ function NetMarginAndHarga({
             Kelola →
           </a>
         </div>
-        <div className="divide-y divide-stone-100 dark:divide-border">
-          {hargaLatest.map(({ produk, current, delta }) => {
+        <div className="grid grid-cols-2">
+          {hargaLatest.map(({ produk, current, delta }, idx) => {
             const up = delta > 0
             const down = delta < 0
             const DeltaIcon = up ? ArrowUpRight : down ? ArrowDownRight : null
@@ -770,30 +773,26 @@ function NetMarginAndHarga({
                 ? 'text-stone-500 dark:text-zinc-400'
                 : 'text-stone-400 dark:text-zinc-500'
             return (
-              <div key={produk} className="flex items-center justify-between px-5 py-2.5">
-                <div className="min-w-0">
-                  <p className="text-[12px] font-mono font-semibold text-stone-700 dark:text-zinc-200 truncate">{produk}</p>
-                  {current && (
-                    <p className="text-[10px] text-stone-400 dark:text-zinc-500 mt-0.5">{formatTanggal(current.tanggalBerlaku)}</p>
-                  )}
-                </div>
-                <div className="text-right shrink-0">
-                  {current ? (
-                    <>
-                      <p className="text-[14px] font-bold num tabular-nums text-stone-900 dark:text-zinc-50 leading-none">
-                        Rp {current.hargaLapangan.toLocaleString('id-ID')}
-                      </p>
-                      {delta !== 0 && DeltaIcon && (
-                        <p className={`inline-flex items-center gap-0.5 mt-1 text-[10px] font-semibold num tabular-nums ${deltaTone}`}>
-                          <DeltaIcon className="h-3 w-3" strokeWidth={2.5} />
-                          {Math.abs(delta).toLocaleString('id-ID')}
-                        </p>
-                      )}
-                    </>
-                  ) : (
-                    <p className="text-[11px] text-stone-400 dark:text-zinc-600">—</p>
-                  )}
-                </div>
+              <div
+                key={produk}
+                className={`px-4 py-3 border-stone-100 dark:border-border ${idx % 2 === 0 ? 'border-r' : ''} ${idx < hargaLatest.length - 2 ? 'border-b' : ''}`}
+              >
+                <p className="text-[11px] font-mono font-semibold text-stone-500 dark:text-zinc-300 truncate">{produk}</p>
+                {current ? (
+                  <div className="mt-1 flex items-baseline gap-1.5">
+                    <p className="text-[15px] font-bold num tabular-nums text-stone-900 dark:text-zinc-50 leading-none">
+                      Rp {current.hargaLapangan.toLocaleString('id-ID')}
+                    </p>
+                    {delta !== 0 && DeltaIcon && (
+                      <span className={`inline-flex items-center text-[10px] font-semibold num tabular-nums ${deltaTone}`}>
+                        <DeltaIcon className="h-3 w-3" strokeWidth={2.5} />
+                        {Math.abs(delta).toLocaleString('id-ID')}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <p className="mt-1 text-[13px] text-stone-400 dark:text-zinc-600">—</p>
+                )}
               </div>
             )
           })}
