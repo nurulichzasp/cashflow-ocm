@@ -66,6 +66,9 @@ import {
 import { useRouter } from 'next/navigation'
 import { ThermalPrinterSettings } from './thermal-printer-settings'
 import { ThemeSelector } from '@/components/theme-selector'
+import { Switch } from '@/components/ui/switch'
+
+type SettingsSection = 'company' | 'users' | 'pajak' | 'printer' | 'theme' | 'backup'
 
 interface UserItem {
   id: string
@@ -81,14 +84,17 @@ interface SettingsClientProps {
     role: string
   }
   initialUsers: UserItem[]
+  /** Bila diisi, hanya render satu section ini (mode halaman terpisah, tanpa nav). */
+  section?: SettingsSection
 }
 
-export function SettingsClient({ currentUser, initialUsers }: SettingsClientProps) {
+export function SettingsClient({ currentUser, initialUsers, section }: SettingsClientProps) {
   const router = useRouter()
   const isOwner = currentUser.role === 'owner'
 
-  // Tab state
-  const [activeTab, setActiveTab] = useState<'company' | 'users' | 'pajak' | 'printer' | 'theme' | 'backup'>('company')
+  // Tab state (dipakai hanya saat mode standalone tanpa `section`)
+  const [activeTab, setActiveTab] = useState<SettingsSection>('company')
+  const active: SettingsSection = section ?? activeTab
 
   // Company profile state
   const [companyName, setCompanyName] = useState('CV OCM')
@@ -297,8 +303,9 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
   }
 
   return (
-    <div className="flex flex-col md:flex-row gap-5">
-      {/* Settings Navigation Menu */}
+    <div className={section ? '' : 'flex flex-col md:flex-row gap-5'}>
+      {/* Settings Navigation Menu — hanya saat mode standalone (tanpa section) */}
+      {!section && (
       <div className="w-full md:w-64 shrink-0 space-y-1">
         <button
           onClick={() => setActiveTab('company')}
@@ -372,15 +379,18 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
           Pencadangan Data
         </button>
       </div>
+      )}
 
       {/* Main Settings Card Content */}
-      <div className="flex-1 min-w-0">
-        {activeTab === 'company' && (
+      <div className={section ? '' : 'flex-1 min-w-0'}>
+        {active === 'company' && (
           <Card className="dark:bg-card">
+            {!section && (
             <CardHeader>
               <CardTitle className="text-lg font-bold tracking-tight">Profil Perusahaan</CardTitle>
               <CardDescription>Atur data legalitas dan konfigurasi operasional sawit CV OCM.</CardDescription>
             </CardHeader>
+            )}
             <CardContent>
               <form onSubmit={handleSaveCompany} className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
@@ -462,17 +472,19 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
           </Card>
         )}
 
-        {activeTab === 'users' && (
+        {active === 'users' && (
           <Card className="dark:bg-card">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              {!section && (
               <div>
                 <CardTitle className="text-lg font-bold tracking-tight">Manajemen Pengguna</CardTitle>
                 <CardDescription>Kelola pengguna dengan akses sistem keuangan sawit.</CardDescription>
               </div>
+              )}
               {isOwner && (
                 <Dialog open={addUserOpen} onOpenChange={setAddUserOpen}>
                   <DialogTrigger asChild>
-                    <Button size="sm" className="bg-stone-900 hover:bg-stone-800 dark:bg-white dark:hover:bg-zinc-200 dark:text-stone-900 text-white cursor-pointer gap-1.5">
+                    <Button size="sm" className="ml-auto bg-stone-900 hover:bg-stone-800 dark:bg-white dark:hover:bg-zinc-200 dark:text-stone-900 text-white cursor-pointer gap-1.5">
                       <UserPlus className="h-4 w-4" /> Tambah Pengguna
                     </Button>
                   </DialogTrigger>
@@ -557,56 +569,32 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
                         <Label className="text-xs font-bold uppercase tracking-wider text-stone-500">
                           Pilihan Hak Akses
                         </Label>
-                        <div className="space-y-2.5 mt-1.5">
-                          <label className="flex items-center gap-2.5 text-sm text-stone-700 dark:text-stone-300 cursor-pointer select-none">
-                            <input
-                              type="checkbox"
-                              checked={accessPembelian}
-                              onChange={(e) => setAccessPembelian(e.target.checked)}
-                              className="h-4 w-4 rounded border-stone-300 dark:border-stone-700 text-stone-900 dark:text-zinc-100 focus:ring-stone-400 accent-stone-900 dark:accent-zinc-100 cursor-pointer"
-                            />
-                            <span>Akses Modul Pembelian (Tiket Sawit)</span>
-                          </label>
+                        <div className="space-y-2 mt-1.5">
+                          {([
+                            { key: 'pembelian', label: 'Modul Pembelian', desc: 'Tiket sawit & timbangan', checked: accessPembelian, set: setAccessPembelian },
+                            { key: 'penjualan', label: 'Modul Penjualan', desc: 'Invoice BGA', checked: accessPenjualan, set: setAccessPenjualan },
+                            { key: 'kas', label: 'Buku Kas', desc: 'Mutasi rekening', checked: accessKas, set: setAccessKas },
+                            { key: 'biaya', label: 'Biaya Operasional', desc: 'Pengeluaran harian', checked: accessBiaya, set: setAccessBiaya },
+                          ] as const).map((row) => (
+                            <div
+                              key={row.key}
+                              className="flex items-center justify-between gap-3 rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-white/[0.02] px-3.5 py-2.5"
+                            >
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-stone-800 dark:text-stone-200">{row.label}</p>
+                                <p className="text-[11px] text-stone-400 dark:text-stone-500">{row.desc}</p>
+                              </div>
+                              <Switch checked={row.checked} onCheckedChange={row.set} aria-label={`Akses ${row.label}`} />
+                            </div>
+                          ))}
 
-                          <label className="flex items-center gap-2.5 text-sm text-stone-700 dark:text-stone-300 cursor-pointer select-none">
-                            <input
-                              type="checkbox"
-                              checked={accessPenjualan}
-                              onChange={(e) => setAccessPenjualan(e.target.checked)}
-                              className="h-4 w-4 rounded border-stone-300 dark:border-stone-700 text-stone-900 dark:text-zinc-100 focus:ring-stone-400 accent-stone-900 dark:accent-zinc-100 cursor-pointer"
-                            />
-                            <span>Akses Modul Penjualan (Invoice BGA)</span>
-                          </label>
-
-                          <label className="flex items-center gap-2.5 text-sm text-stone-700 dark:text-stone-300 cursor-pointer select-none">
-                            <input
-                              type="checkbox"
-                              checked={accessKas}
-                              onChange={(e) => setAccessKas(e.target.checked)}
-                              className="h-4 w-4 rounded border-stone-300 dark:border-stone-700 text-stone-900 dark:text-zinc-100 focus:ring-stone-400 accent-stone-900 dark:accent-zinc-100 cursor-pointer"
-                            />
-                            <span>Akses Modul Buku Kas (Mutasi Rekening)</span>
-                          </label>
-
-                          <label className="flex items-center gap-2.5 text-sm text-stone-700 dark:text-stone-300 cursor-pointer select-none">
-                            <input
-                              type="checkbox"
-                              checked={accessBiaya}
-                              onChange={(e) => setAccessBiaya(e.target.checked)}
-                              className="h-4 w-4 rounded border-stone-300 dark:border-stone-700 text-stone-900 dark:text-zinc-100 focus:ring-stone-400 accent-stone-900 dark:accent-zinc-100 cursor-pointer"
-                            />
-                            <span>Akses Modul Biaya Operasional</span>
-                          </label>
-
-                          <label className="flex items-center gap-2.5 text-sm text-stone-700 dark:text-stone-300 cursor-pointer select-none">
-                            <input
-                              type="checkbox"
-                              checked={accessDelete}
-                              onChange={(e) => setAccessDelete(e.target.checked)}
-                              className="h-4 w-4 rounded border-stone-300 dark:border-stone-700 text-stone-900 dark:text-zinc-100 focus:ring-stone-400 accent-stone-900 dark:accent-zinc-100 cursor-pointer"
-                            />
-                            <span className="text-red-500 dark:text-red-400 font-medium">Akses Hapus Transaksi (Hapus Data)</span>
-                          </label>
+                          <div className="flex items-center justify-between gap-3 rounded-xl border border-red-200 dark:border-red-950/60 bg-red-50/40 dark:bg-red-950/10 px-3.5 py-2.5">
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-red-600 dark:text-red-400">Hapus Transaksi</p>
+                              <p className="text-[11px] text-red-400 dark:text-red-400/70">Izin menghapus data permanen</p>
+                            </div>
+                            <Switch checked={accessDelete} onCheckedChange={setAccessDelete} aria-label="Akses Hapus Transaksi" />
+                          </div>
                         </div>
                       </div>
 
@@ -755,12 +743,14 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
           </Card>
         )}
 
-        {activeTab === 'pajak' && (
+        {active === 'pajak' && (
           <Card className="dark:bg-card">
+            {!section && (
             <CardHeader>
               <CardTitle className="text-lg font-bold tracking-tight">Konfigurasi Pajak &amp; Neraca</CardTitle>
               <CardDescription>Atur tarif pajak dan modal awal untuk laporan keuangan.</CardDescription>
             </CardHeader>
+            )}
             <CardContent>
               <form
                 onSubmit={(e) => {
@@ -805,16 +795,18 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
           </Card>
         )}
 
-        {activeTab === 'printer' && (
+        {active === 'printer' && (
           <ThermalPrinterSettings />
         )}
 
-        {activeTab === 'theme' && (
+        {active === 'theme' && (
           <Card className="dark:bg-card">
+            {!section && (
             <CardHeader>
               <CardTitle className="text-lg font-bold tracking-tight">Tampilan &amp; Tema</CardTitle>
               <CardDescription>Pilih tema tampilan aplikasi yang paling nyaman untuk Anda.</CardDescription>
             </CardHeader>
+            )}
             <CardContent className="space-y-3">
               <p className="text-sm text-stone-500 dark:text-stone-400">
                 Mode otomatis mengikuti pengaturan tema perangkat komputer atau HP kamu.
@@ -824,8 +816,9 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
           </Card>
         )}
 
-        {activeTab === 'backup' && (
+        {active === 'backup' && (
           <Card className="dark:bg-card">
+            {!section && (
             <CardHeader>
               <CardTitle className="text-lg font-bold tracking-tight flex items-center gap-1.5">
                 <Download className="h-5 w-5 text-stone-700 dark:text-zinc-300" />
@@ -833,6 +826,7 @@ export function SettingsClient({ currentUser, initialUsers }: SettingsClientProp
               </CardTitle>
               <CardDescription>Cadangkan seluruh database konfigurasi atau bersihkan sistem keuangan.</CardDescription>
             </CardHeader>
+            )}
             <CardContent className="space-y-6">
               {/* Export backup section */}
               <div className="space-y-3">
