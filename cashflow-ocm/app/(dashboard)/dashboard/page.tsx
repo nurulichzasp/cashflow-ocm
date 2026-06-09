@@ -395,15 +395,18 @@ export default async function DashboardPage() {
         </section>
       )}
 
-      {/* HERO — Modal Berputar + mini sparkline 14d */}
-      <ModalHero
-        total={metrics.totalModalBerputar}
-        breakdown={modalBreakdown}
-        trend={charts.trend}
-      />
-
-      {/* TODAY STRIP — kompak horizontal, bukan card besar */}
-      <TodayStrip items={todayItems} />
+      {/* HERO + TODAY — Modal Berputar besar + 3 statistik hari ini di sampingnya.
+          Layar sempit (< lg): today strip otomatis turun ke bawah jadi baris 3 kolom. */}
+      <div className="grid gap-4 lg:grid-cols-3 lg:items-stretch">
+        <div className="lg:col-span-2">
+          <ModalHero
+            total={metrics.totalModalBerputar}
+            breakdown={modalBreakdown}
+            trend={charts.trend}
+          />
+        </div>
+        <TodayStrip items={todayItems} />
+      </div>
 
       {/* GLANCE — Net Margin + Harga Acuan */}
       <NetMarginAndHarga
@@ -537,25 +540,41 @@ function ModalHero({
   )
 }
 
-/* SVG sparkline full-width — pure inline, tanpa dependency tambahan. */
+/* SVG sparkline full-width — kurva mulus, garis menyatu (tak "terputus"), tanpa dependency. */
 function Sparkline({ data, up }: { data: number[]; up: boolean }) {
   if (data.length < 2) return null
   const w = 300
   const h = 56
-  const pad = 4 // padding atas/bawah supaya puncak/lembah tidak terpotong
+  // Ruang atas/bawah lega: hari-hari flat (tanpa aktivitas) tak menempel ke dasar SVG,
+  // jadi garis datar + bagian naik terbaca sebagai SATU garis, bukan baseline terpisah.
+  const padTop = 8
+  const padBottom = 16
   const min = Math.min(...data)
   const max = Math.max(...data)
   const range = max - min || 1
   const step = w / (data.length - 1)
+  const usableH = h - padTop - padBottom
+  const pts = data.map((v, i): [number, number] => [
+    i * step,
+    padTop + (1 - (v - min) / range) * usableH,
+  ])
 
-  const points = data.map((v, i) => {
-    const x = i * step
-    const y = h - pad - ((v - min) / range) * (h - pad * 2)
-    return `${x.toFixed(1)},${y.toFixed(1)}`
-  })
+  // Catmull-Rom → cubic bezier (tension rendah, tanpa overshoot) untuk garis mengalir.
+  const t = 0.16
+  let line = `M ${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`
+  for (let i = 1; i < pts.length; i++) {
+    const p0 = pts[i - 1]
+    const p1 = pts[i]
+    const prev = pts[i - 2] ?? p0
+    const next = pts[i + 1] ?? p1
+    const c1x = p0[0] + (p1[0] - prev[0]) * t
+    const c1y = p0[1] + (p1[1] - prev[1]) * t
+    const c2x = p1[0] - (next[0] - p0[0]) * t
+    const c2y = p1[1] - (next[1] - p0[1]) * t
+    line += ` C ${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ${p1[0].toFixed(1)},${p1[1].toFixed(1)}`
+  }
 
-  const path = `M ${points.join(' L ')}`
-  const areaPath = `${path} L ${w},${h} L 0,${h} Z`
+  const areaPath = `${line} L ${w},${h} L 0,${h} Z`
   // Stroke netral via currentColor — konsisten dengan palet (arah terbaca dari bentuk).
   const stroke = 'currentColor'
   const id = `sl-grad-${up ? 'up' : 'dn'}`
@@ -569,16 +588,16 @@ function Sparkline({ data, up }: { data: number[]; up: boolean }) {
     >
       <defs>
         <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={stroke} stopOpacity="0.22" />
+          <stop offset="0%" stopColor={stroke} stopOpacity="0.20" />
           <stop offset="100%" stopColor={stroke} stopOpacity="0" />
         </linearGradient>
       </defs>
       <path d={areaPath} fill={`url(#${id})`} className="sl-fade" />
       <path
-        d={path}
+        d={line}
         fill="none"
         stroke={stroke}
-        strokeWidth={1.75}
+        strokeWidth={2}
         strokeLinecap="round"
         strokeLinejoin="round"
         vectorEffect="non-scaling-stroke"
@@ -596,11 +615,11 @@ function TodayStrip({
   items: { label: string; value: string; icon: React.ElementType; color: string }[]
 }) {
   return (
-    <div className="grid grid-cols-3 gap-2 sm:gap-3">
+    <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:flex lg:flex-col lg:gap-3 lg:h-full">
       {items.map((item) => (
         <div
           key={item.label}
-          className="rounded-xl border border-black/[0.06] dark:border-white/[0.06] bg-stone-50/60 dark:bg-white/[0.025] px-3 py-3 sm:px-4 sm:py-3.5 min-w-0"
+          className="rounded-xl border border-black/[0.06] dark:border-white/[0.06] bg-stone-50/60 dark:bg-white/[0.025] px-3 py-3 sm:px-4 sm:py-3.5 min-w-0 lg:flex-1 lg:flex lg:flex-col lg:justify-center"
         >
           <div className="flex items-center gap-1.5">
             <item.icon className="h-3 w-3 text-stone-400 dark:text-zinc-500" strokeWidth={2} />

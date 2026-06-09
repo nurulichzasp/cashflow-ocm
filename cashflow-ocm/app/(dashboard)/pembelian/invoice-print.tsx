@@ -69,10 +69,6 @@ function buildNotaHTML(p: PembelianRow, nomorUrut: number): string {
     ${d.nopol || d.supir ? `<tr class="sub"><td colspan="3" class="sub-td">${[d.nopol, d.supir].filter(Boolean).join(' · ')}</td></tr>` : ''}
   `).join('')
 
-  const fotoHtml = p.fotos && p.fotos.length > 0
-    ? `<div class="foto-section"><p class="section-label">Foto Bukti</p><div class="foto-strip">${p.fotos.map((f) => `<img src="${fotoUrl(f.url, { absolute: true })}" alt="Foto" class="foto-thumb" />`).join('')}</div></div>`
-    : ''
-
   return `<!DOCTYPE html>
 <html lang="id">
 <head>
@@ -82,7 +78,7 @@ function buildNotaHTML(p: PembelianRow, nomorUrut: number): string {
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family:Arial,sans-serif;font-size:11px;color:#1c1917;background:#fff}
   .wrap{max-width:460px;margin:0 auto;padding:24px 20px}
-  .hd{text-align:center;padding-bottom:10px;border-bottom:2px solid #ea580c;margin-bottom:14px}
+  .hd{text-align:center;padding-bottom:10px;border-bottom:2px solid #0B6E4F;margin-bottom:14px}
   .brand{font-size:18px;font-weight:700;color:#1c1917}
   .brand-sub{font-size:8.5px;color:#78716c;margin-top:1px}
   .nota-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#44403c;margin-top:6px}
@@ -119,7 +115,7 @@ function buildNotaHTML(p: PembelianRow, nomorUrut: number): string {
   .foto-thumb{height:72px;width:72px;object-fit:cover;border-radius:4px;border:1px solid #e7e5e4}
   .footer{text-align:center;font-size:8.5px;color:#a8a29e;margin-top:14px;padding-top:10px;border-top:1px solid #e7e5e4}
   .no-print{margin-bottom:14px}
-  .print-btn{background:#1c1917;color:#fff;border:none;padding:6px 16px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer}
+  .print-btn{background:#0E7A57;color:#fff;border:none;padding:6px 16px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer}
   @media print{.no-print{display:none}@page{margin:8mm;size:A5}body{background:#fff}}
 </style>
 </head>
@@ -181,9 +177,7 @@ function buildNotaHTML(p: PembelianRow, nomorUrut: number): string {
 
   ${p.catatan ? `<div class="catatan"><div class="catatan-lbl">Catatan</div>${p.catatan}</div>` : ''}
 
-  ${fotoHtml}
-
-  <div class="footer">Dicetak oleh sistem Cashflow CV OCM &bull; ${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
+  <div class="footer">CV Omanda Cerli Mandiri &bull; ${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
 </div>
 </body>
 </html>`
@@ -239,8 +233,8 @@ function buildThermalHTML(p: PembelianRow, paperWidthMm: number, nomorUrut: numb
   .status-lunas{font-weight:bold}
   .status-belum{font-weight:bold}
   .no-print{margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap}
-  .print-btn{background:#1c1917;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-size:12pt;cursor:pointer;font-family:Arial,sans-serif;flex:1}
-  .share-btn{background:#1c1917;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-size:12pt;cursor:pointer;font-family:Arial,sans-serif;flex:1}
+  .print-btn{background:#0E7A57;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-size:12pt;cursor:pointer;font-family:Arial,sans-serif;flex:1}
+  .share-btn{background:#0E7A57;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-size:12pt;cursor:pointer;font-family:Arial,sans-serif;flex:1}
   @media print{
     .no-print{display:none}
     body{background:#fff;font-size:${paperWidthMm === 80 ? '9.5' : '8.5'}pt}
@@ -318,7 +312,7 @@ function buildThermalHTML(p: PembelianRow, paperWidthMm: number, nomorUrut: numb
 
   <div class="solid"></div>
   <div class="center small" style="margin-top:2px">${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
-  <div class="center small">Cashflow CV OCM</div>
+  <div class="center small">CV Omanda Cerli Mandiri</div>
 </div>
 </body>
 </html>`
@@ -368,7 +362,7 @@ function buildRekapHTML(list: PembelianRow[]): string {
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family:Arial,sans-serif;font-size:11px;color:#1c1917;background:#fff}
   .wrap{max-width:960px;margin:0 auto;padding:28px 24px}
-  .hd{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:12px;border-bottom:2.5px solid #ea580c;margin-bottom:18px}
+  .hd{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:12px;border-bottom:2.5px solid #0B6E4F;margin-bottom:18px}
   .brand{font-size:20px;font-weight:700;color:#1c1917}
   .brand-sub{font-size:9px;color:#78716c;margin-top:2px}
   .title-block{text-align:right}
@@ -396,7 +390,7 @@ function buildRekapHTML(list: PembelianRow[]): string {
   .scard .sv{font-size:13px;font-weight:700;color:#1c1917}
   .scard.green .sv{color:#15803d}
   .no-print{margin-bottom:16px}
-  .print-btn{background:#1c1917;color:#fff;border:none;padding:7px 18px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer}
+  .print-btn{background:#0E7A57;color:#fff;border:none;padding:7px 18px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer}
   .foto-row td{padding:4px 8px 10px 8px;border-bottom:1.5px solid #e7e5e4}
   .foto-strip{display:flex;flex-wrap:wrap;gap:6px}
   .foto-thumb{height:80px;width:80px;object-fit:cover;border-radius:4px;border:1px solid #e7e5e4}

@@ -53,8 +53,9 @@ export default function LoginPage() {
           <div className="h-9 w-9 rounded-xl flex items-center justify-center text-white font-bold text-[11px] tracking-wide bg-[var(--brand-solid)] border border-white/[0.14] shadow-[0_4px_14px_rgba(14,122,87,0.45)]">
             OCM
           </div>
-          <span className="font-semibold text-sm text-zinc-100 tracking-tight">
-            CV OCM Cashflow
+          <span className="flex flex-col leading-tight">
+            <span className="font-semibold text-sm text-zinc-100 tracking-tight">CV OCM</span>
+            <span className="text-[9px] uppercase tracking-[0.28em] text-zinc-500 mt-0.5">Cashflow</span>
           </span>
         </div>
 

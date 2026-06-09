@@ -106,10 +106,15 @@ export function Sidebar({ user, isOwner, onToggle }: { user?: any; isOwner?: boo
     <aside className="flex h-full w-60 flex-col bg-[#1E1E1E] border-r border-white/[0.06]">
       {/* Brand */}
       <div className="flex h-14 items-center border-b border-white/[0.06] px-4 gap-3 shrink-0">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.06] border border-white/[0.08] text-zinc-200 text-[11px] font-bold shrink-0">
-          OCM
-        </div>
-        <span className="font-semibold text-sm text-[#F3F4F6] truncate tracking-wide">CV OCM Cashflow</span>
+        <Link href="/dashboard" className="flex items-center gap-2.5 min-w-0 flex-1">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--brand-solid)] text-white text-[11px] font-bold shrink-0 shadow-sm">
+            OCM
+          </div>
+          <span className="flex min-w-0 flex-col">
+            <span className="font-semibold text-[13px] leading-tight text-[#F3F4F6] tracking-wide truncate">CV OCM</span>
+            <span className="text-[9px] leading-tight uppercase tracking-[0.28em] text-[#7A7D85] truncate">Cashflow</span>
+          </span>
+        </Link>
         {onToggle && (
           <button
             onClick={onToggle}
@@ -237,12 +242,15 @@ export function MobileSidebar({ user, isOwner }: { user?: any; isOwner?: boolean
         >
           {/* Brand */}
           <div className="flex h-14 items-center justify-between border-b border-white/[0.06] px-4 shrink-0">
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/[0.06] border border-white/[0.08] text-zinc-200 text-[11px] font-bold shrink-0">
+            <Link href="/dashboard" onClick={() => setOpen(false)} className="flex items-center gap-2.5 min-w-0">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--brand-solid)] text-white text-[11px] font-bold shrink-0 shadow-sm">
                 OCM
               </div>
-              <span className="font-semibold text-sm text-stone-100">CV OCM Cashflow</span>
-            </div>
+              <span className="flex min-w-0 flex-col">
+                <span className="font-semibold text-[13px] leading-tight text-stone-100 tracking-wide truncate">CV OCM</span>
+                <span className="text-[9px] leading-tight uppercase tracking-[0.28em] text-stone-500 truncate">Cashflow</span>
+              </span>
+            </Link>
             <button
               onClick={() => setOpen(false)}
               className="p-1.5 rounded-lg text-stone-400 hover:text-stone-100 hover:bg-stone-800/60 transition-colors duration-150 -mr-1"
