@@ -48,14 +48,19 @@ export function ScrollShell({
             'transform 280ms cubic-bezier(0.22, 0.61, 0.36, 1), opacity 220ms cubic-bezier(0.22, 0.61, 0.36, 1)',
         }}
       >
-        <div className="pointer-events-auto bg-stone-50/70 dark:bg-[#0A0A0A]/75 backdrop-blur-xl border-b border-black/5 dark:border-white/[0.06]">
+        {/* paddingTop = safe-area-inset-top: glass mengisi BELAKANG status bar /
+            Dynamic Island (full-bleed), tapi isi header turun ke bawahnya. */}
+        <div
+          className="pointer-events-auto bg-stone-50/70 dark:bg-[#0A0A0A]/75 backdrop-blur-xl border-b border-black/5 dark:border-white/[0.06]"
+          style={{ paddingTop: 'env(safe-area-inset-top)' }}
+        >
           <MobileHeader isOwner={isOwner} perms={perms} />
         </div>
       </div>
 
       <main
         onScroll={onScroll}
-        className="flex-1 overflow-y-auto bg-background px-4 pt-[64px] pb-32 md:p-6"
+        className="flex-1 overflow-y-auto bg-background px-4 pt-[calc(64px+env(safe-area-inset-top))] pb-32 md:p-6"
       >
         <div className="app-container">{children}</div>
       </main>
