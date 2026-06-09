@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { NumberInput } from '@/components/number-input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { FotoBuktiUploader } from '@/components/foto-bukti-uploader'
@@ -262,7 +263,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
 
             <div className="rounded-lg border border-stone-200 overflow-hidden">
               {/* Header */}
-              <div className="grid grid-cols-[2fr_2fr_2fr_auto] gap-0 bg-stone-50 border-b border-stone-200 text-xs font-semibold uppercase text-stone-500 tracking-wide">
+              <div className="grid grid-cols-[1fr_1fr_1.3fr_auto] gap-0 bg-stone-50 border-b border-stone-200 text-xs font-semibold uppercase text-stone-500 tracking-wide">
                 <div className="px-3 py-2">Tonase (kg) *</div>
                 <div className="px-3 py-2">Harga (Rp/kg) *</div>
                 <div className="px-3 py-2 flex items-center gap-1">
@@ -279,15 +280,27 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
                 const subtotal = ton * harga
                 return (
                   <div key={idx} className="border-b border-stone-100 last:border-b-0">
-                    <div className="grid grid-cols-[2fr_2fr_2fr_auto] gap-0 items-center">
-                      <div className="px-2 py-1.5">
-                        <Input type="number" step="0.01" value={d.tonase} onChange={(e) => updateDetail(idx, 'tonase', e.target.value)} placeholder="0" className="h-8 text-sm" />
+                    <div className="grid grid-cols-[1fr_1fr_1.3fr_auto] gap-0 items-center">
+                      <div className="px-1.5 py-1.5 min-w-0">
+                        <Input
+                          type="text"
+                          inputMode="decimal"
+                          value={d.tonase}
+                          onChange={(e) => updateDetail(idx, 'tonase', e.target.value.replace(/[^0-9.]/g, ''))}
+                          placeholder="0"
+                          className="h-8 text-sm text-right min-w-0 px-2"
+                        />
                       </div>
-                      <div className="px-2 py-1.5">
-                        <Input type="number" value={d.hargaLapangan} onChange={(e) => updateDetail(idx, 'hargaLapangan', e.target.value)} placeholder="0" className="h-8 text-sm" />
+                      <div className="px-1.5 py-1.5 min-w-0">
+                        <NumberInput
+                          value={d.hargaLapangan}
+                          onChange={(n) => updateDetail(idx, 'hargaLapangan', String(n))}
+                          placeholder="0"
+                          className="h-8 text-sm min-w-0 px-2"
+                        />
                       </div>
-                      <div className="px-2 py-1.5">
-                        <Input type="date" value={d.tanggalReplas} onChange={(e) => updateDetail(idx, 'tanggalReplas', e.target.value)} className="h-8 text-sm text-stone-500" />
+                      <div className="px-1.5 py-1.5 min-w-0">
+                        <Input type="date" value={d.tanggalReplas} onChange={(e) => updateDetail(idx, 'tanggalReplas', e.target.value)} className="h-8 text-sm text-stone-500 min-w-0 px-2" />
                       </div>
                       <div className="px-2 py-1.5 w-10 flex justify-center">
                         {details.length > 1 && (

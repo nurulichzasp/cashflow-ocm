@@ -2,7 +2,6 @@
 
 import { useState, useMemo } from 'react'
 import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { CalendarDays, X } from 'lucide-react'
 
@@ -57,71 +56,64 @@ export function DateRangeFilter({ dari, sampai, onChange }: Props) {
   }, [dari])
 
   return (
-    <div className="flex items-center gap-2 flex-wrap">
-      <div className="flex items-center gap-1.5 text-xs text-stone-400">
-        <CalendarDays className="h-3.5 w-3.5" />
-      </div>
-
+    <div className="flex flex-col gap-1 w-full sm:w-auto min-w-0">
       {mode === 'bulan' ? (
-        <>
-          <Select value={selectedMonthValue} onValueChange={handleMonthSelect}>
-            <SelectTrigger className="w-[180px] h-8 text-xs">
-              <SelectValue placeholder="Pilih bulan" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="semua">Semua</SelectItem>
-              {yearOptions.map(year =>
-                Array.from({ length: year === currentYear ? currentMonth : 12 }, (_, i) => {
-                  const m = year === currentYear ? currentMonth - i : 12 - i
-                  return (
-                    <SelectItem key={`${year}-${m}`} value={`${year}-${m}`}>
-                      {MONTHS[m - 1]} {year}
-                    </SelectItem>
-                  )
-                })
-              )}
-            </SelectContent>
-          </Select>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 text-xs text-stone-400 hover:text-stone-600"
-            onClick={() => setMode('rentang')}
-          >
-            Rentang
-          </Button>
-        </>
+        <Select value={selectedMonthValue} onValueChange={handleMonthSelect}>
+          <SelectTrigger className="w-full sm:w-[200px] h-9 text-xs">
+            <CalendarDays className="h-3.5 w-3.5 shrink-0 text-stone-400" />
+            <SelectValue placeholder="Pilih bulan" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="semua">Semua</SelectItem>
+            {yearOptions.map(year =>
+              Array.from({ length: year === currentYear ? currentMonth : 12 }, (_, i) => {
+                const m = year === currentYear ? currentMonth - i : 12 - i
+                return (
+                  <SelectItem key={`${year}-${m}`} value={`${year}-${m}`}>
+                    {MONTHS[m - 1]} {year}
+                  </SelectItem>
+                )
+              })
+            )}
+          </SelectContent>
+        </Select>
       ) : (
-        <>
+        <div className="flex items-center gap-1.5 w-full sm:w-auto min-w-0">
           <Input
             type="date"
             value={dari}
             onChange={(e) => onChange(e.target.value, sampai)}
-            className="w-[140px] h-8 text-xs"
+            className="flex-1 sm:flex-none sm:w-[150px] min-w-0 h-9 text-xs"
           />
-          <span className="text-xs text-stone-400">s/d</span>
+          <span className="shrink-0 text-xs text-stone-400">s/d</span>
           <Input
             type="date"
             value={sampai}
             onChange={(e) => onChange(dari, e.target.value)}
-            className="w-[140px] h-8 text-xs"
+            className="flex-1 sm:flex-none sm:w-[150px] min-w-0 h-9 text-xs"
           />
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 text-xs text-stone-400 hover:text-stone-600"
-            onClick={() => setMode('bulan')}
-          >
-            Bulan
-          </Button>
-        </>
+        </div>
       )}
 
-      {dari && (
-        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleClear}>
-          <X className="h-3 w-3" />
-        </Button>
-      )}
+      {/* Aksi sekunder: ganti mode + reset (tidak mengganggu lebar dropdown) */}
+      <div className="flex items-center gap-3 px-0.5">
+        <button
+          type="button"
+          onClick={() => setMode(mode === 'bulan' ? 'rentang' : 'bulan')}
+          className="text-[11px] font-medium text-stone-400 hover:text-stone-700 dark:hover:text-stone-300 transition-colors"
+        >
+          {mode === 'bulan' ? 'Pakai rentang tanggal' : 'Pilih per bulan'}
+        </button>
+        {dari && (
+          <button
+            type="button"
+            onClick={handleClear}
+            className="inline-flex items-center gap-0.5 text-[11px] font-medium text-stone-400 hover:text-red-500 transition-colors"
+          >
+            <X className="h-3 w-3" /> Reset
+          </button>
+        )}
+      </div>
     </div>
   )
 }

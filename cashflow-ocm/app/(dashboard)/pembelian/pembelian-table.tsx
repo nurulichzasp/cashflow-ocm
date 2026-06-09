@@ -233,20 +233,24 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
       </div>
 
       {/* Filter */}
-      <div className="flex flex-wrap gap-2 items-center">
-        <DateRangeFilter
-          dari={filterDari}
-          sampai={filterSampai}
-          onChange={(d, s) => { setFilterDari(d); setFilterSampai(s) }}
-        />
-        <Select value={filterPeronId} onValueChange={(v) => { if (v) setFilterPeronId(v) }}>
-          <SelectTrigger className="w-[140px] h-8 text-xs"><SelectValue placeholder="Semua Peron" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Semua Peron</SelectItem>
-            {peronOptions.map((p) => <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <div className="ml-auto">
+      <div className="flex flex-wrap items-start gap-2">
+        <div className="basis-[calc(50%-0.25rem)] grow sm:grow-0 sm:basis-auto min-w-0">
+          <DateRangeFilter
+            dari={filterDari}
+            sampai={filterSampai}
+            onChange={(d, s) => { setFilterDari(d); setFilterSampai(s) }}
+          />
+        </div>
+        <div className="basis-[calc(50%-0.25rem)] grow sm:grow-0 sm:basis-auto min-w-0">
+          <Select value={filterPeronId} onValueChange={(v) => { if (v) setFilterPeronId(v) }}>
+            <SelectTrigger className="w-full sm:w-[160px] h-9 text-xs"><SelectValue placeholder="Semua Peron" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Peron</SelectItem>
+              {peronOptions.map((p) => <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="basis-full sm:basis-auto sm:ml-auto">
           <PrintRekapButton pembelianList={filtered} />
         </div>
       </div>

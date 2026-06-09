@@ -262,7 +262,6 @@ function PenjualanCard({
   const moreInvoices = invoices.length > 1 ? invoices.length - 1 : 0
 
   const catatan = item.catatan ?? ''
-  const catatanShort = catatan.length > 60 ? catatan.slice(0, 60).trim() + '…' : catatan
 
   function handleShare() {
     const lines = [
@@ -341,24 +340,24 @@ function PenjualanCard({
             <span className="text-stone-700 dark:text-zinc-300">{formatTanggal(item.tanggalBayarBga)}</span>
           </span>
         )}
+        {catatan && (
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="inline-flex items-center gap-1 rounded-full bg-black/[0.04] dark:bg-white/[0.06] px-2 py-0.5 text-[10px] font-medium text-stone-600 dark:text-zinc-300 hover:bg-black/[0.07] dark:hover:bg-white/[0.1] transition-colors"
+          >
+            <FileText className="h-2.5 w-2.5" /> Catatan {expanded ? '↑' : '↓'}
+          </button>
+        )}
       </div>
 
-      {/* Catatan — clamped */}
-      {catatan && (
+      {/* Catatan — disembunyikan, tampil hanya saat diperluas */}
+      {catatan && expanded && (
         <div className="mt-3 pt-3 border-t border-black/[0.05] dark:border-white/[0.05]">
           <p className="text-[11px] uppercase tracking-widest text-stone-400 dark:text-zinc-500 font-medium mb-1">Catatan</p>
           <p className="text-[12px] text-stone-600 dark:text-zinc-400 whitespace-pre-line leading-relaxed">
-            {expanded ? catatan : catatanShort}
+            {catatan}
           </p>
-          {catatan.length > 60 && (
-            <button
-              type="button"
-              onClick={() => setExpanded((v) => !v)}
-              className="mt-1.5 text-[11px] font-medium text-stone-700 dark:text-zinc-300 hover:text-stone-900 dark:hover:text-white transition-colors"
-            >
-              {expanded ? 'Sembunyikan' : 'Selengkapnya'}
-            </button>
-          )}
         </div>
       )}
 
