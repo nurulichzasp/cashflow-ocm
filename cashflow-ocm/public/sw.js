@@ -1,170 +1,88 @@
-const CACHE_NAME = 'cashflow-ocm-v1'
-const OFFLINE_QUEUE_KEY = 'offline-queue'
+/* Service Worker — "tahan sinyal jelek" untuk CV OCM Cashflow (Level 2).
+ * Cache app-shell + fallback offline. TIDAK menyimpan/queue tulisan offline:
+ * mutasi (POST/server action) & /api SELALU ke jaringan — kalau offline ia
+ * GAGAL JUJUR (app tampilkan error), bukan pura-pura sukses. Aset berhash =
+ * cache-first; navigasi = network-first (data segar saat online) → cache →
+ * halaman /offline. No-op di localhost agar dev (HMR) tak terganggu.
+ * Bump VERSION untuk paksa cache baru di rilis berikutnya.
+ */
+const VERSION = 'v1'
+const CACHE = `ocm-${VERSION}`
+const PRECACHE = ['/offline', '/icon-192.png', '/icon-512.png', '/icon.svg']
 
-// Files to cache on install
-const STATIC_ASSETS = [
-  '/',
-  '/dashboard',
-  '/pembelian',
-  '/penjualan',
-  '/kas',
-  '/biaya',
-]
-
-// Install: cache static assets
 self.addEventListener('install', (event) => {
+  // Langsung ambil alih — penting agar SW lama (yang sempat "queue" POST palsu)
+  // segera tergantikan, tak menunggu semua tab ditutup.
+  self.skipWaiting()
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('[SW] Caching static assets')
-      return cache.addAll(STATIC_ASSETS).catch(() => {
-        // Gracefully handle failures (e.g., offline during install)
-        console.log('[SW] Some assets could not be cached')
-      })
-    })
+    caches.open(CACHE).then((c) => Promise.allSettled(PRECACHE.map((u) => c.add(u)))),
   )
 })
 
-// Activate: clean up old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('[SW] Deleting old cache:', cacheName)
-            return caches.delete(cacheName)
-          }
-        })
-      )
-    })
+    (async () => {
+      const keys = await caches.keys()
+      await Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
+      await self.clients.claim()
+    })(),
   )
 })
 
-// Fetch: serve from cache, fallback to network, queue POST for offline
 self.addEventListener('fetch', (event) => {
   const { request } = event
+  // Mutasi (POST/PUT/DELETE/server action) tidak disentuh — biar ke jaringan apa
+  // adanya; offline = error asli, TIDAK di-queue (cegah entri keuangan hilang/dobel).
+  if (request.method !== 'GET') return
+
   const url = new URL(request.url)
+  if (url.origin !== self.location.origin) return
+  // Dev: jangan ikut campur (hindari stale chunk & HMR rusak)
+  if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') return
+  // Auth, mutasi, cron, dsb. selalu ke jaringan
+  if (url.pathname.startsWith('/api/')) return
 
-  // Skip non-GET requests initially, handle POST/PUT/DELETE offline
-  if (request.method === 'POST' || request.method === 'PUT' || request.method === 'DELETE') {
+  const isStatic =
+    url.pathname.startsWith('/_next/static/') ||
+    url.pathname.startsWith('/__nextjs_font') ||
+    /\.(?:js|css|woff2?|png|jpe?g|svg|ico|webp|gif)$/.test(url.pathname)
+
+  if (isStatic) {
+    // Aset berhash → cache-first
     event.respondWith(
-      fetch(request).catch(() => {
-        // Queue the request for later
-        if (self.registration.sync) {
-          self.registration.sync.register('sync-offline-queue')
+      (async () => {
+        const cached = await caches.match(request)
+        if (cached) return cached
+        try {
+          const res = await fetch(request)
+          if (res.ok) (await caches.open(CACHE)).put(request, res.clone())
+          return res
+        } catch {
+          return cached || Response.error()
         }
-
-        // Return a response indicating offline
-        return new Response(
-          JSON.stringify({ offline: true, queued: true }),
-          {
-            status: 202,
-            statusText: 'Accepted - Queued for sync',
-            headers: { 'Content-Type': 'application/json' },
-          }
-        )
-      })
+      })(),
     )
     return
   }
 
-  // GET requests: network first, fallback to cache
+  // Navigasi & RSC → network-first, fallback cache, lalu /offline
   event.respondWith(
-    fetch(request)
-      .then((response) => {
-        // Cache successful responses
-        if (response.ok && request.method === 'GET') {
-          const cache = caches.open(CACHE_NAME)
-          cache.then((c) => c.put(request, response.clone()))
+    (async () => {
+      try {
+        const res = await fetch(request)
+        if (res.ok && request.mode === 'navigate') {
+          ;(await caches.open(CACHE)).put(request, res.clone())
         }
-        return response
-      })
-      .catch(() => {
-        // Network failed, try cache
-        return caches.match(request).then((cached) => {
-          if (cached) {
-            return cached
-          }
-
-          // No cache, return offline page
-          return new Response(
-            JSON.stringify({ offline: true, cached: false }),
-            {
-              status: 503,
-              statusText: 'Service Unavailable',
-              headers: { 'Content-Type': 'application/json' },
-            }
-          )
-        })
-      })
+        return res
+      } catch {
+        const cached = await caches.match(request)
+        if (cached) return cached
+        if (request.mode === 'navigate') {
+          const offline = await caches.match('/offline')
+          if (offline) return offline
+        }
+        return Response.error()
+      }
+    })(),
   )
 })
-
-// Background sync: retry queued requests
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'sync-offline-queue') {
-    event.waitUntil(syncOfflineQueue())
-  }
-})
-
-async function syncOfflineQueue() {
-  const db = await openIDB()
-  const queue = await getOfflineQueue(db)
-
-  for (const request of queue) {
-    try {
-      const response = await fetch(request.url, {
-        method: request.method,
-        headers: request.headers,
-        body: request.body,
-      })
-
-      if (response.ok) {
-        // Remove from queue on success
-        await removeFromQueue(db, request.id)
-      }
-    } catch (error) {
-      console.log('[SW] Sync failed, will retry later:', error)
-      // Keep in queue for next sync
-    }
-  }
-}
-
-// IndexedDB helpers for offline queue
-function openIDB() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open('cashflow-offline', 1)
-
-    request.onerror = () => reject(request.error)
-    request.onsuccess = () => resolve(request.result)
-
-    request.onupgradeneeded = (e) => {
-      const db = e.target.result
-      if (!db.objectStoreNames.contains('queue')) {
-        db.createObjectStore('queue', { keyPath: 'id', autoIncrement: true })
-      }
-    }
-  })
-}
-
-function getOfflineQueue(db) {
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(['queue'], 'readonly')
-    const store = transaction.objectStore('queue')
-    const request = store.getAll()
-
-    request.onerror = () => reject(request.error)
-    request.onsuccess = () => resolve(request.result)
-  })
-}
-
-function removeFromQueue(db, id) {
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(['queue'], 'readwrite')
-    const store = transaction.objectStore('queue')
-    const request = store.delete(id)
-
-    request.onerror = () => reject(request.error)
-    request.onsuccess = () => resolve()
-  })
-}

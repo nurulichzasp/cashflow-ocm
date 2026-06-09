@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
+import { OfflineIndicator } from "@/components/offline-indicator";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -38,6 +39,7 @@ export default function RootLayout({
         <ThemeProvider>
           {children}
           <Toaster position="top-right" />
+          <OfflineIndicator />
         </ThemeProvider>
       </body>
     </html>
