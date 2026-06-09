@@ -17,8 +17,11 @@ export function ScrollShell({ children }: { children: React.ReactNode }) {
           <MobileHeader />
           <div
             aria-hidden
-            className="absolute inset-x-0 bottom-[-60px] h-[60px]"
-            style={{ background: 'linear-gradient(to top, transparent, rgba(0,0,0,0.6))' }}
+            className="absolute inset-x-0 bottom-[-28px] h-[28px]"
+            style={{
+              background:
+                'linear-gradient(to top, transparent 0%, color-mix(in srgb, var(--background) 50%, transparent) 50%, color-mix(in srgb, var(--background) 90%, transparent) 100%)',
+            }}
           />
         </div>
       </div>

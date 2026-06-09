@@ -106,7 +106,15 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
 
   const perms = parsePerms(user?.permissions)
 
-  const visiblePrimary = primaryNav.filter((item) => {
+  // Search di TENGAH: 2 tab kiri (Dashboard, Pembelian) · Search · 1 tab kanan (Penjualan) · Profile
+  const leftNav = primaryNav.filter((item) => {
+    if (item.href === '/penjualan') return false
+    if (isOwner) return true
+    if (item.perm && perms[item.perm] === false) return false
+    return true
+  })
+  const rightNav = primaryNav.filter((item) => {
+    if (item.href !== '/penjualan') return false
     if (isOwner) return true
     if (item.perm && perms[item.perm] === false) return false
     return true
@@ -124,16 +132,20 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
         className="md:hidden fixed bottom-0 inset-x-0 z-40 pointer-events-none"
         style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0.75rem)' }}
       >
-        {/* Gradient shadow di atas bottom nav — kontras utk konten di belakang */}
+        {/* Gradient shadow di atas bottom nav — fade ke warna BACKGROUND app (var --background),
+            bukan hitam → konten "memudar masuk" ke app, tanpa blok gelap. 28px, halus. */}
         <div
           aria-hidden
-          className="absolute inset-x-0 bottom-full h-[60px]"
-          style={{ background: 'linear-gradient(to bottom, transparent, rgba(0,0,0,0.6))' }}
+          className="absolute inset-x-0 bottom-full h-[28px]"
+          style={{
+            background:
+              'linear-gradient(to bottom, transparent 0%, color-mix(in srgb, var(--background) 50%, transparent) 50%, color-mix(in srgb, var(--background) 90%, transparent) 100%)',
+          }}
         />
         <div className="flex justify-center px-5">
-          <nav className="pointer-events-auto relative flex w-fit gap-0.5 rounded-full backdrop-blur-md bg-black/[0.20] border border-white/[0.08] shadow-[0_8px_28px_rgba(0,0,0,0.28)] p-1">
+          <nav className="pointer-events-auto relative flex w-fit gap-0.5 rounded-full backdrop-blur-md bg-black/[0.20] shadow-[0_8px_28px_rgba(0,0,0,0.28)] p-1">
             <div className="flex gap-0.5">
-              {visiblePrimary.map((item) => (
+              {leftNav.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
@@ -144,7 +156,7 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
                 </Link>
               ))}
 
-              {/* Search — buka command palette */}
+              {/* Search — TENGAH (titik fokus bottom nav), buka command palette */}
               <button
                 onClick={() => window.dispatchEvent(new CustomEvent('ocm-open-search'))}
                 aria-label="Cari"
@@ -152,6 +164,17 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
               >
                 <NavTab active={false} label="Cari" icon={Search} />
               </button>
+
+              {rightNav.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-label={item.label}
+                  className="flex h-11 w-11 items-center justify-center"
+                >
+                  <NavTab active={isActive(item.href)} label={item.label} icon={item.icon} />
+                </Link>
+              ))}
 
               {/* Profile — buka menu akun */}
               <button
