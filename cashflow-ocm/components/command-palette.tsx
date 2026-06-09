@@ -15,9 +15,11 @@ import { visibleRoutes, type AppRoute } from '@/lib/nav-routes'
 export function CommandPalette({
   isOwner,
   perms,
+  showTrigger = true,
 }: {
   isOwner?: boolean
   perms?: { pembelian?: boolean; penjualan?: boolean; kas?: boolean; biaya?: boolean }
+  showTrigger?: boolean
 }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -46,6 +48,13 @@ export function CommandPalette({
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  // Buka dari luar (mis. tombol Search di bottom nav) via custom event.
+  React.useEffect(() => {
+    const onOpen = () => setOpen(true)
+    window.addEventListener('ocm-open-search', onOpen)
+    return () => window.removeEventListener('ocm-open-search', onOpen)
   }, [])
 
   React.useEffect(() => {
@@ -81,14 +90,16 @@ export function CommandPalette({
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label="Cari halaman"
-        className="tactile flex h-11 w-11 items-center justify-center rounded-full text-stone-500 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-      >
-        <Search className="h-[21px] w-[21px]" />
-      </button>
+      {showTrigger && (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label="Cari halaman"
+          className="tactile flex h-11 w-11 items-center justify-center rounded-full text-stone-500 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+        >
+          <Search className="h-[21px] w-[21px]" />
+        </button>
+      )}
 
       <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
         <DialogPrimitive.Portal>

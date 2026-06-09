@@ -10,14 +10,15 @@ import {
   LayoutDashboard,
   ShoppingCart,
   TrendingUp,
-  Menu as MenuIcon,
+  Search,
+  UserCircle,
   X,
   LogOut,
 } from 'lucide-react'
 import { ProfileDialog } from '@/components/profile-dialog'
 import { ShortcutGrid } from '@/components/shortcut-grid'
+import { CommandPalette } from '@/components/command-palette'
 import { fotoUrl } from '@/lib/foto-url'
-import { useNavVisible } from '@/lib/nav-visibility-store'
 import { parsePerms } from '@/lib/nav-routes'
 
 const SHOW_LABELS = false
@@ -93,7 +94,6 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
   const pathname = usePathname()
   const router = useRouter()
   const [drawerOpen, setDrawerOpen] = useState(false)
-  const navVisible = useNavVisible()
 
   const isActive = (href: string) =>
     pathname === href || (href !== '/dashboard' && pathname.startsWith(href))
@@ -116,38 +116,54 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
 
   return (
     <>
-      {/* Bottom bar — compact pill, premium glass */}
+      {/* Command palette (search) — dibuka via tombol Search di bawah / Cmd+K */}
+      <CommandPalette showTrigger={false} isOwner={isOwner} perms={perms} />
+
+      {/* Bottom bar — transparan + blur + gradient shadow, SELALU terlihat */}
       <div
-        className="md:hidden fixed bottom-0 inset-x-0 z-40 flex justify-center px-5 pointer-events-none"
+        className="md:hidden fixed bottom-0 inset-x-0 z-40 pointer-events-none"
         style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0.75rem)' }}
       >
-        <motion.nav
-          initial={false}
-          animate={navVisible ? { y: 0, opacity: 1 } : { y: 20, opacity: 0 }}
-          transition={{ type: 'spring', stiffness: 380, damping: 34 }}
-          className="pointer-events-auto relative flex w-fit gap-0.5 rounded-full bg-stone-100/70 dark:bg-[#111111]/80 backdrop-blur-2xl border border-black/[0.06] dark:border-white/[0.08] shadow-[0_8px_28px_rgba(0,0,0,0.28)] p-1"
-        >
-          <div className="flex gap-0.5">
-            {visiblePrimary.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-label={item.label}
+        {/* Gradient shadow di atas bottom nav — kontras utk konten di belakang */}
+        <div
+          aria-hidden
+          className="absolute inset-x-0 bottom-full h-[60px]"
+          style={{ background: 'linear-gradient(to bottom, transparent, rgba(0,0,0,0.6))' }}
+        />
+        <div className="flex justify-center px-5">
+          <nav className="pointer-events-auto relative flex w-fit gap-0.5 rounded-full backdrop-blur-md bg-black/[0.20] border border-white/[0.08] shadow-[0_8px_28px_rgba(0,0,0,0.28)] p-1">
+            <div className="flex gap-0.5">
+              {visiblePrimary.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-label={item.label}
+                  className="flex h-11 w-11 items-center justify-center"
+                >
+                  <NavTab active={isActive(item.href)} label={item.label} icon={item.icon} />
+                </Link>
+              ))}
+
+              {/* Search — buka command palette */}
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent('ocm-open-search'))}
+                aria-label="Cari"
                 className="flex h-11 w-11 items-center justify-center"
               >
-                <NavTab active={isActive(item.href)} label={item.label} icon={item.icon} />
-              </Link>
-            ))}
+                <NavTab active={false} label="Cari" icon={Search} />
+              </button>
 
-            <button
-              onClick={() => setDrawerOpen(true)}
-              aria-label="Menu"
-              className="flex h-11 w-11 items-center justify-center"
-            >
-              <NavTab active={drawerOpen} label="Menu" icon={MenuIcon} />
-            </button>
-          </div>
-        </motion.nav>
+              {/* Profile — buka menu akun */}
+              <button
+                onClick={() => setDrawerOpen(true)}
+                aria-label="Profil"
+                className="flex h-11 w-11 items-center justify-center"
+              >
+                <NavTab active={drawerOpen} label="Profil" icon={UserCircle} />
+              </button>
+            </div>
+          </nav>
+        </div>
       </div>
 
       {/* Drawer pintasan */}
