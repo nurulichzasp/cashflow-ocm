@@ -10,8 +10,9 @@ const publicPaths = [
   '/login',
   '/api/auth',          // better-auth internal
   '/api/cron',          // Vercel cron (auth: Bearer CRON_SECRET)
+  '/api/backup',        // Backup terjadwal POST (auth: Bearer BACKUP_TOKEN); GET cek session di route
   '/api/telegram',      // Telegram webhook (auth: ?secret=...)
-  '/api/parse-bast',    // Parser publik (auth: rate-limited)
+  '/api/parse-bast',    // Parser BAST (auth: cek session di dalam route handler)
   '/manifest.webmanifest', // PWA manifest — browser baca tanpa login (install)
   '/sw.js',             // Service worker — wajib publik biar bisa di-register
   '/offline',           // Fallback offline (di-precache SW) — tak boleh redirect
