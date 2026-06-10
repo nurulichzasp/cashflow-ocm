@@ -33,20 +33,18 @@ export const FloatingFab = React.forwardRef<
         // posisi
         'right-5 md:right-8',
         'bottom-[max(calc(env(safe-area-inset-bottom)+4.75rem),5rem)] md:bottom-8',
-        // bentuk: mobile square / desktop pill
-        'h-14 w-14 rounded-2xl md:h-12 md:w-auto md:gap-2 md:px-5 md:rounded-full',
-        // surface — liquid glass (transparan + blur), bukan hijau solid
-        'bg-white/[0.10]',
-        'backdrop-blur-md',
-        'border border-white/[0.15]',
-        'shadow-[0_8px_30px_rgba(0,0,0,0.35)]',
+        // bentuk: lingkaran iOS / desktop pill
+        'h-14 w-14 rounded-full md:h-12 md:w-auto md:gap-2 md:px-5',
+        // CTA utama — emerald solid (satu-satunya aksen hijau besar di layar)
+        'bg-[var(--brand-solid)]',
+        'shadow-[0_8px_24px_rgba(14,122,88,0.35)]',
         // teks
         'text-white',
         'text-sm font-semibold tracking-tight',
         // interaksi
-        'hover:bg-white/[0.16] md:hover:translate-y-[-1px]',
+        'hover:brightness-110 md:hover:translate-y-[-1px]',
         'active:scale-95 md:active:scale-[0.97]',
-        'focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+        'focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         className,
       )}
     >

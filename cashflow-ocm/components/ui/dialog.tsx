@@ -19,7 +19,7 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "depth-backdrop fixed inset-0 z-50 bg-black/25 backdrop-blur-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=open]:duration-300 data-[state=closed]:duration-200",
+      "fixed inset-0 z-50 bg-black/40 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=open]:duration-300 data-[state=closed]:duration-200",
       className
     )}
     {...props}
@@ -38,11 +38,18 @@ const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "glass-panel fixed left-1/2 top-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-3xl border-0 p-6 text-sm outline-none max-h-[90dvh] overflow-y-auto data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95 data-[state=open]:duration-300 data-[state=open]:ease-[cubic-bezier(0.34,1.56,0.64,1)] sm:max-w-lg",
+        // Mobile: sheet iOS dari bawah — solid, grabber, sudut atas 16px, safe area.
+        // Desktop (sm+): dialog terpusat seperti biasa.
+        "fixed z-50 grid w-full gap-4 border-0 bg-popover p-6 text-sm outline-none overflow-y-auto overscroll-contain",
+        "inset-x-0 bottom-0 top-auto max-h-[92dvh] rounded-t-2xl rounded-b-none pt-8 pb-[max(env(safe-area-inset-bottom),1.25rem)]",
+        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=open]:slide-in-from-bottom-1/2 data-[state=closed]:slide-out-to-bottom-1/2 data-[state=open]:duration-350 data-[state=closed]:duration-250 ease-[cubic-bezier(0.32,0.72,0,1)]",
+        "sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:max-w-lg sm:max-h-[90dvh] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl sm:p-6 sm:pt-6 sm:pb-6 sm:slide-in-from-bottom-0 sm:data-[state=open]:zoom-in-95 sm:data-[state=closed]:zoom-out-95",
         className
       )}
       {...props}
     >
+      {/* Grabber iOS — hanya mobile */}
+      <div aria-hidden className="absolute left-1/2 top-2 h-[5px] w-9 -translate-x-1/2 rounded-full bg-[rgba(120,120,128,0.35)] sm:hidden" />
       {children}
       {showCloseButton && (
         <DialogPrimitive.Close asChild>
@@ -66,7 +73,7 @@ function DialogHeader({ className, ...props }: React.ComponentPropsWithoutRef<"d
     <div
       data-slot="dialog-header"
       className={cn(
-        "-mx-6 -mt-6 mb-1 flex flex-col gap-2 border-b border-border px-6 pb-4 pt-6",
+        "relative -mx-6 -mt-8 sm:-mt-6 mb-1 flex flex-col gap-2 hairline-b px-6 pb-4 pt-7 sm:pt-6",
         className
       )}
       {...props}
@@ -79,7 +86,7 @@ function DialogFooter({ className, children, ...props }: React.ComponentPropsWit
     <div
       data-slot="dialog-footer"
       className={cn(
-        "-mx-6 -mb-6 flex flex-col-reverse gap-2 rounded-b-3xl border-t border-border bg-muted/50 p-6 sm:flex-row sm:justify-end",
+        "relative -mx-6 -mb-2 flex flex-col-reverse gap-2 hairline-t px-6 pt-4 sm:-mb-6 sm:rounded-b-2xl sm:bg-muted/50 sm:p-6 sm:flex-row sm:justify-end",
         className
       )}
       {...props}
@@ -92,7 +99,7 @@ function DialogFooter({ className, children, ...props }: React.ComponentPropsWit
 function DialogTitle({ className, ...props }: React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>) {
   return (
     <DialogPrimitive.Title
-      className={cn("text-lg font-semibold leading-none", className)}
+      className={cn("text-headline text-center sm:text-left sm:text-lg font-semibold leading-none", className)}
       {...props}
     />
   )

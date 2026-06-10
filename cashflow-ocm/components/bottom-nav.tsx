@@ -21,8 +21,6 @@ import { CommandPalette } from '@/components/command-palette'
 import { fotoUrl } from '@/lib/foto-url'
 import { parsePerms } from '@/lib/nav-routes'
 
-const SHOW_LABELS = false
-
 const primaryNav = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, perm: undefined },
   { href: '/pembelian', label: 'Pembelian', icon: ShoppingCart, perm: 'pembelian' as const },
@@ -43,6 +41,7 @@ function getGreeting(): string {
   return 'Selamat malam'
 }
 
+/** Tab iOS: ikon + label 10px, tint emerald saat aktif, abu saat tidak. */
 function NavTab({
   active,
   label,
@@ -54,38 +53,26 @@ function NavTab({
 }) {
   return (
     <motion.div
-      whileTap={{ scale: 0.82 }}
-      transition={{ type: 'spring', stiffness: 400, damping: 22 }}
-      className="relative flex h-11 w-11 items-center justify-center"
+      whileTap={{ scale: 0.9 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+      className="flex h-full w-full flex-col items-center justify-center gap-[3px] pt-1.5 pb-1"
     >
-      {/* Oval aktif yang MELUNCUR antar tab (shared layout id) — efek hidup */}
-      {active && (
-        <motion.span
-          layoutId="nav-active-pill"
-          className="absolute inset-0 rounded-full bg-white/[0.06] dark:bg-white/[0.08]"
-          transition={{ type: 'spring', stiffness: 480, damping: 34 }}
-        />
-      )}
       <Icon
         className={cn(
-          'relative z-10 h-[22px] w-[22px] transition-colors',
-          active ? 'text-[var(--brand)]' : 'text-stone-400 dark:text-zinc-500',
+          'h-6 w-6 transition-colors',
+          active ? 'text-[var(--brand)]' : 'text-muted-foreground',
         )}
         fill={active ? 'currentColor' : 'none'}
-        strokeWidth={active ? 2.25 : 2}
+        strokeWidth={active ? 2.1 : 1.8}
       />
-      {SHOW_LABELS && (
-        <span
-          className={cn(
-            'relative z-10 text-[10px] leading-none',
-            active
-              ? 'font-semibold text-stone-900 dark:text-[#FAFAFA]'
-              : 'font-medium text-stone-400 dark:text-zinc-500',
-          )}
-        >
-          {label}
-        </span>
-      )}
+      <span
+        className={cn(
+          'text-[10px] leading-none transition-colors',
+          active ? 'font-medium text-[var(--brand)]' : 'text-muted-foreground',
+        )}
+      >
+        {label}
+      </span>
     </motion.div>
   )
 }
@@ -106,7 +93,7 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
 
   const perms = parsePerms(user?.permissions)
 
-  // Search di TENGAH: 2 tab kiri (Dashboard, Pembelian) · Search · 1 tab kanan (Penjualan) · Profile
+  // Search di TENGAH: Dashboard · Pembelian · Cari · Penjualan · Profil
   const leftNav = primaryNav.filter((item) => {
     if (item.href === '/penjualan') return false
     if (isOwner) return true
@@ -124,62 +111,58 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
 
   return (
     <>
-      {/* Command palette (search) — dibuka via tombol Search di bawah / Cmd+K */}
+      {/* Command palette (search) — dibuka via tab Cari / Cmd+K */}
       <CommandPalette showTrigger={false} isOwner={isOwner} perms={perms} />
 
-      {/* Bottom bar — TANPA gradient/shadow di belakang; cuma pill oval "glass liquid" (backdrop-blur) yang melayang. SELALU terlihat */}
+      {/* Tab bar iOS: material blur full-width + hairline atas + safe area bawah */}
       <div
-        className="md:hidden fixed bottom-0 inset-x-0 z-40 pointer-events-none"
-        style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0.75rem)' }}
+        className="ios-bar hairline-t fixed bottom-0 inset-x-0 z-40 md:hidden"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
-        <div className="flex justify-center px-5">
-          <nav className="pointer-events-auto relative flex w-fit gap-0.5 rounded-full backdrop-blur-md bg-black/[0.20] shadow-[0_8px_28px_rgba(0,0,0,0.28)] p-1">
-            <div className="flex gap-0.5">
-              {leftNav.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  aria-label={item.label}
-                  className="flex h-11 w-11 items-center justify-center"
-                >
-                  <NavTab active={isActive(item.href)} label={item.label} icon={item.icon} />
-                </Link>
-              ))}
+        <nav className="flex h-[50px] items-stretch">
+          {leftNav.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-label={item.label}
+              aria-current={isActive(item.href) ? 'page' : undefined}
+              className="min-w-0 flex-1"
+            >
+              <NavTab active={isActive(item.href)} label={item.label} icon={item.icon} />
+            </Link>
+          ))}
 
-              {/* Search — TENGAH (titik fokus bottom nav), buka command palette */}
-              <button
-                onClick={() => window.dispatchEvent(new CustomEvent('ocm-open-search'))}
-                aria-label="Cari"
-                className="flex h-11 w-11 items-center justify-center"
-              >
-                <NavTab active={false} label="Cari" icon={Search} />
-              </button>
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('ocm-open-search'))}
+            aria-label="Cari"
+            className="min-w-0 flex-1"
+          >
+            <NavTab active={false} label="Cari" icon={Search} />
+          </button>
 
-              {rightNav.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  aria-label={item.label}
-                  className="flex h-11 w-11 items-center justify-center"
-                >
-                  <NavTab active={isActive(item.href)} label={item.label} icon={item.icon} />
-                </Link>
-              ))}
+          {rightNav.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-label={item.label}
+              aria-current={isActive(item.href) ? 'page' : undefined}
+              className="min-w-0 flex-1"
+            >
+              <NavTab active={isActive(item.href)} label={item.label} icon={item.icon} />
+            </Link>
+          ))}
 
-              {/* Profile — buka menu akun */}
-              <button
-                onClick={() => setDrawerOpen(true)}
-                aria-label="Profil"
-                className="flex h-11 w-11 items-center justify-center"
-              >
-                <NavTab active={false} label="Profil" icon={UserCircle} />
-              </button>
-            </div>
-          </nav>
-        </div>
+          <button
+            onClick={() => setDrawerOpen(true)}
+            aria-label="Profil"
+            className="min-w-0 flex-1"
+          >
+            <NavTab active={drawerOpen} label="Profil" icon={UserCircle} />
+          </button>
+        </nav>
       </div>
 
-      {/* Drawer pintasan */}
+      {/* Sheet akun — solid iOS, grabber, dari bawah */}
       <AnimatePresence>
         {drawerOpen && (
           <div className="fixed inset-0 z-50 md:hidden">
@@ -188,7 +171,7 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/40"
               onClick={() => setDrawerOpen(false)}
             />
             <motion.div
@@ -196,58 +179,58 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', stiffness: 320, damping: 32 }}
-              className="glass-panel absolute inset-x-0 bottom-0 rounded-t-3xl"
+              className="absolute inset-x-0 bottom-0 rounded-t-2xl bg-popover"
               style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
             >
-              {/* Handle */}
-              <div className="flex justify-center pt-3 pb-1">
-                <div className="h-1 w-10 rounded-full bg-stone-300 dark:bg-zinc-700" />
+              {/* Grabber */}
+              <div className="flex justify-center pt-2 pb-1">
+                <div className="h-[5px] w-9 rounded-full bg-[rgba(120,120,128,0.35)]" />
               </div>
 
               {/* User */}
               {user && (
-                <div className="flex items-center gap-3 px-5 py-4 border-b border-black/[0.06] dark:border-white/[0.06]">
+                <div className="hairline-b relative flex items-center gap-3 px-5 py-4">
                   <ProfileDialog user={user}>
-                    <button className="flex flex-1 items-center gap-3 text-left outline-none cursor-pointer min-w-0">
+                    <button className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left outline-none">
                       {user.image ? (
-                        <img src={fotoUrl(user.image)} className="h-10 w-10 rounded-full object-cover shrink-0" alt="Avatar" />
+                        <img src={fotoUrl(user.image)} className="h-10 w-10 shrink-0 rounded-full object-cover" alt="Avatar" />
                       ) : (
-                        <div className="h-10 w-10 rounded-full bg-stone-800 dark:bg-white/[0.1] border border-white/[0.08] flex items-center justify-center text-sm font-bold text-white dark:text-zinc-200 shrink-0">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--brand-solid)] text-sm font-bold text-white">
                           {getInitials(displayName)}
                         </div>
                       )}
                       <div className="min-w-0">
-                        <p className="text-[11px] text-stone-400 dark:text-zinc-500">{getGreeting()},</p>
-                        <p className="text-sm font-semibold text-stone-900 dark:text-zinc-100 truncate -mt-0.5">{displayName}</p>
+                        <p className="text-caption-1 text-muted-foreground">{getGreeting()},</p>
+                        <p className="-mt-0.5 truncate text-subhead font-semibold text-foreground">{displayName}</p>
                       </div>
                     </button>
                   </ProfileDialog>
                   <button
                     onClick={() => setDrawerOpen(false)}
                     aria-label="Tutup"
-                    className="ml-auto p-2 rounded-lg text-stone-400 dark:text-zinc-500 hover:bg-black/5 dark:hover:bg-white/10 transition-colors shrink-0"
+                    className="row-press ml-auto shrink-0 rounded-full bg-fill p-2 text-muted-foreground"
                   >
                     <X className="h-4 w-4" />
                   </button>
                 </div>
               )}
 
-              {/* Shortcut grid — hanya halaman yang tidak ada di bottom bar */}
+              {/* Shortcut grid — halaman yang tidak ada di tab bar */}
               <div className="px-4 py-4">
-                <p className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-zinc-500">
+                <p className="mb-3 text-footnote font-medium text-muted-foreground">
                   Pintasan
                 </p>
                 <ShortcutGrid isOwner={isOwner} perms={perms} onNavigate={() => setDrawerOpen(false)} excludePrimary />
               </div>
 
-              {/* Logout */}
-              <div className="px-4 pb-4 pt-1 border-t border-black/[0.06] dark:border-white/[0.06]">
+              {/* Logout — merah iOS, terpisah */}
+              <div className="hairline-t relative px-4 pb-4 pt-2">
                 <button
                   onClick={handleLogout}
-                  className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-[#9CA3AF] hover:text-white hover:bg-white/[0.06] transition-colors"
+                  className="row-press flex w-full items-center justify-center gap-2 rounded-xl bg-card px-3 py-3.5 text-body font-medium text-[var(--keluar)]"
                 >
                   <LogOut className="h-5 w-5 shrink-0" />
-                  <span className="text-sm font-medium">Keluar</span>
+                  Keluar
                 </button>
               </div>
             </motion.div>
