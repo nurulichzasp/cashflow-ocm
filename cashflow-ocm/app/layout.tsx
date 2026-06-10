@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeColorSync } from "@/components/theme-color-sync";
 import { OfflineIndicator } from "@/components/offline-indicator";
 import "./globals.css";
 
@@ -34,6 +35,7 @@ export default function RootLayout({
     <html lang="id" className="h-full antialiased bg-background" suppressHydrationWarning>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <ThemeProvider>
+          <ThemeColorSync />
           {children}
           <Toaster position="top-center" mobileOffset={{ top: "calc(env(safe-area-inset-top) + 8px)" }} />
           <OfflineIndicator />
