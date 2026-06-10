@@ -70,7 +70,7 @@ export default async function PengaturanPage() {
   ]
 
   return (
-    <div className="space-y-7 max-w-3xl">
+    <div className="space-y-7 max-w-3xl md:max-w-5xl">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-stone-900 dark:text-zinc-50">Pengaturan</h1>
         <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
@@ -78,6 +78,8 @@ export default async function PengaturanPage() {
         </p>
       </div>
 
+      {/* Desktop: grup tersusun 2 kolom (isi lebar, tak sprawl ke bawah). Mobile: 1 kolom. */}
+      <div className="space-y-7 md:grid md:grid-cols-2 md:items-start md:gap-x-5 md:gap-y-7 md:space-y-0">
       {groups.map((group) => (
         <section key={group.label} className="space-y-2">
           <h2 className="px-1 text-xs font-semibold uppercase tracking-widest text-stone-400 dark:text-stone-500">
@@ -100,6 +102,7 @@ export default async function PengaturanPage() {
           </div>
         </section>
       ))}
+      </div>
     </div>
   )
 }

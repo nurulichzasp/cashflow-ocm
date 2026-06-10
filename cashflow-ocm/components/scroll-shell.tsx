@@ -18,7 +18,7 @@ export function ScrollShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <main className="flex-1 overflow-y-auto bg-background px-4 pt-[calc(64px+env(safe-area-inset-top))] pb-32 md:p-6">
-        <div className="app-container">{children}</div>
+        <div className="app-container md:mx-auto md:max-w-[1320px]">{children}</div>
       </main>
     </div>
   )

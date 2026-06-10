@@ -87,7 +87,7 @@ function LabaRugiTab({ data, dari, sampai }: { data: LaporanData; dari: string; 
           onXLSX={() => exportXLSX(exportRows, `laba-rugi-${dari}-${sampai}.xlsx`)}
         />
       </div>
-      <div className="rounded-lg border overflow-x-auto max-w-md">
+      <div className="rounded-lg border overflow-x-auto max-w-md md:max-w-xl">
         <table className="w-full text-sm">
           <tbody>
             {[
@@ -420,7 +420,7 @@ function LabaRugiTahunanTab({ tahun, onTahunChange }: { tahun: string; onTahunCh
           </SelectContent>
         </Select>
       </div>
-      <div className="rounded-lg border overflow-x-auto max-w-lg">
+      <div className="rounded-lg border overflow-x-auto max-w-lg md:max-w-xl">
         <table className="w-full text-sm">
           <tbody>
             {rows.map((row, i) => (
