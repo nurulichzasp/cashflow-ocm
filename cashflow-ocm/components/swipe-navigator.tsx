@@ -51,9 +51,8 @@ export function SwipeNavigator({ children }: { children: React.ReactNode }) {
     if (Math.abs(dx) < THRESHOLD) return
     if (Math.abs(dx) <= Math.abs(dy) * DIRECTION_RATIO) return
 
-    // Konvensi iOS: geser KANAN dari tepi kiri = back, geser KIRI dari tepi kanan = forward
-    if (dx > 0) router.back()
-    else router.forward()
+    if (dx < 0) router.back() // geser kiri (mulai dari tepi kanan)
+    else router.forward() // geser kanan (mulai dari tepi kiri)
   }
 
   return (
