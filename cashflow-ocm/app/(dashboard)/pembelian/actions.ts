@@ -183,9 +183,10 @@ export async function createPembelian(data: {
     },
   })
 
-  // Trigger Telegram Notification (handled asynchronously so it doesn't block the UI response)
+  // Trigger Telegram Notification (di-await agar andal di serverless & error tertangkap;
+  // sendTelegramMessage punya try/catch internal sehingga tidak melempar)
   try {
-    notifyNewPembelian({
+    await notifyNewPembelian({
       tanggal: parsed.tanggal,
       kategori: parsed.kategori,
       peronId: parsed.peronId,
@@ -344,6 +345,7 @@ export async function deletePembelian(id: string) {
 }
 
 export async function getPembelianList() {
+  await requireSession()
   return db.query.pembelian.findMany({
     orderBy: (p, { desc }) => [desc(p.tanggal), desc(p.createdAt)],
     with: { peron: true, sumberBayar: true, fotos: true, details: { orderBy: (d, { asc }) => [asc(d.urutan)] } },
@@ -351,15 +353,18 @@ export async function getPembelianList() {
 }
 
 export async function getAkunKasList() {
+  await requireSession()
   return db.select().from(akunKas).orderBy(akunKas.urutan)
 }
 
 export async function getKeuntunganPerKg(peronId: string): Promise<number> {
+  await requireSession()
   const p = await db.query.peron.findFirst({ where: (t, { eq }) => eq(t.id, peronId) })
   return p?.keuntunganPerKg ?? 0
 }
 
 export async function getLatestHargaAcuan(produk: 'TBS' | 'BRDL KTWM' | 'BRDL TRYM' | 'BRDL LMDM', tanggal?: string) {
+  await requireSession()
   const targetDate = tanggal || new Date().toISOString().slice(0, 10)
   const result = await db.query.hargaAcuan.findFirst({
     where: (t, { and, eq, lte }) => and(

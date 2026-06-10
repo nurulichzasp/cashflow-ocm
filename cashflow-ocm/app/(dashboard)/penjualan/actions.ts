@@ -121,7 +121,7 @@ export async function createPenjualan(formData: FormData) {
 
   // Trigger Telegram Notification
   try {
-    notifyNewPenjualan({
+    await notifyNewPenjualan({
       tanggal: data.tanggal,
       noInvoice: data.noInvoice,
       noBast: data.noBast,
@@ -224,6 +224,7 @@ export async function deletePenjualan(id: string) {
 }
 
 export async function getPenjualanList() {
+  await requireSession()
   return db
     .select()
     .from(penjualan)

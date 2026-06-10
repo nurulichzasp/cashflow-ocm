@@ -251,6 +251,7 @@ export async function deleteModalPeron(id: string) {
 // ─── Data queries ─────────────────────────────────────────────────────────────
 
 export async function getPeronList() {
+  await requireSession()
   const peronList = await db.query.peron.findMany({
     orderBy: (p, { asc }) => [asc(p.nama)],
   })
@@ -272,6 +273,7 @@ export async function getPeronList() {
 }
 
 export async function getPeronById(id: string) {
+  await requireSession()
   const p = await db.query.peron.findFirst({ where: (t, { eq }) => eq(t.id, id) })
   if (!p) return null
 

@@ -110,7 +110,7 @@ export async function createBiayaOperasional(formData: FormData) {
 
   // Trigger Telegram Notification
   try {
-    notifyNewBiaya({
+    await notifyNewBiaya({
       tanggal: data.tanggal,
       kategori: data.kategori,
       jumlah: data.jumlah,
@@ -155,6 +155,7 @@ export async function deleteBiayaOperasional(id: string) {
 }
 
 export async function getBiayaList() {
+  await requireSession()
   return db.query.biayaOperasional.findMany({
     orderBy: (b, { desc }) => [desc(b.tanggal), desc(b.createdAt)],
     with: { akunSumber: true, fotos: true },

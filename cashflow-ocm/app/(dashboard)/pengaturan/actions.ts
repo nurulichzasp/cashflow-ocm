@@ -7,6 +7,7 @@ import { auth } from '@/lib/auth'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { hashPassword } from '@better-auth/utils/password'
+import { requirePermission } from '@/lib/permissions'
 
 // 1. Update profil user yang sedang login
 export async function updateProfile(data: {
@@ -213,9 +214,15 @@ export async function updatePphStatus(bulan: string, statusBayar: 'belum' | 'sud
 }
 
 export async function getPpnList() {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) throw new Error('Tidak terautentikasi')
+  requirePermission(session.user.role, 'canViewFinance')
   return db.select().from(ppnBulanan).orderBy(ppnBulanan.bulan)
 }
 
 export async function getPphList() {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) throw new Error('Tidak terautentikasi')
+  requirePermission(session.user.role, 'canViewFinance')
   return db.select().from(pphBulanan).orderBy(pphBulanan.bulan)
 }

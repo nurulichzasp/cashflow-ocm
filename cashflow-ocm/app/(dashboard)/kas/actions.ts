@@ -114,10 +114,12 @@ export async function deleteTransaksiKas(id: string) {
 }
 
 export async function getAkunKasList() {
+  await requireSession()
   return db.select().from(akunKas).orderBy(akunKas.urutan)
 }
 
 export async function getKasTransactions() {
+  await requireSession()
   const rows = await db.query.transaksiKas.findMany({
     orderBy: (t, { desc }) => [desc(t.tanggal), desc(t.createdAt)],
     with: { akun: true },

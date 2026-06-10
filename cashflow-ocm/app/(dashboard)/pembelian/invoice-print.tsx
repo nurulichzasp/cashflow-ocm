@@ -14,6 +14,29 @@ import type { Pembelian, Peron, AkunKas, PembelianFoto, PembelianDetail } from '
 
 type PembelianRow = Pembelian & { peron: Peron | null; sumberBayar: AkunKas | null; fotos: PembelianFoto[]; details: PembelianDetail[] }
 
+// Escape field bebas (nama peron, nopol, supir, catatan) sebelum ditulis ke window
+// cetak via document.write — cegah XSS tersimpan (window about:blank mewarisi origin app).
+function esc(v: string | null | undefined): string {
+  return String(v ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+// Escape untuk konteks string JS bertanda kutip tunggal di dalam <script> (tombol Bagikan
+// nota thermal). Juga netralkan < > agar tak bisa menutup tag </script>.
+function escJs(v: string | null | undefined): string {
+  return String(v ?? '')
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/\r/g, '\\r')
+    .replace(/\n/g, '\\n')
+    .replace(/</g, '\\u003C')
+    .replace(/>/g, '\\u003E')
+}
+
 function formatWaktu(date: Date | number | null | undefined): string {
   if (!date) return ''
   const d = typeof date === 'number' ? new Date(date * 1000) : date
@@ -66,14 +89,14 @@ function buildNotaHTML(p: PembelianRow, nomorUrut: number): string {
       <td class="r">Rp ${d.hargaLapangan.toLocaleString('id-ID')}</td>
       <td class="r b">${formatRupiah(d.subtotalBeli)}</td>
     </tr>
-    ${d.nopol || d.supir ? `<tr class="sub"><td colspan="3" class="sub-td">${[d.nopol, d.supir].filter(Boolean).join(' · ')}</td></tr>` : ''}
+    ${d.nopol || d.supir ? `<tr class="sub"><td colspan="3" class="sub-td">${[d.nopol, d.supir].filter(Boolean).map(esc).join(' · ')}</td></tr>` : ''}
   `).join('')
 
   return `<!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Nota Pembelian - ${p.peron?.nama ?? ''}</title>
+<title>Nota Pembelian - ${esc(p.peron?.nama ?? '')}</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family:Arial,sans-serif;font-size:11px;color:#1c1917;background:#fff}
@@ -139,7 +162,7 @@ function buildNotaHTML(p: PembelianRow, nomorUrut: number): string {
     </div>
     <div style="text-align:right">
       <span class="lbl">Peron</span>
-      <span class="val">${p.peron?.nama ?? p.peronId}</span>
+      <span class="val">${esc(p.peron?.nama ?? p.peronId)}</span>
     </div>
     <div style="text-align:right">
       <span class="lbl">Kategori</span>
@@ -175,7 +198,7 @@ function buildNotaHTML(p: PembelianRow, nomorUrut: number): string {
     ${p.sumberBayar ? `<div class="info-row"><span class="lbl">Pembayaran</span><span class="val">${sumberLabel}</span></div>` : ''}
   </div>
 
-  ${p.catatan ? `<div class="catatan"><div class="catatan-lbl">Catatan</div>${p.catatan}</div>` : ''}
+  ${p.catatan ? `<div class="catatan"><div class="catatan-lbl">Catatan</div>${esc(p.catatan)}</div>` : ''}
 
   <div class="footer">CV Omanda Cerli Mandiri &bull; ${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
 </div>
@@ -204,7 +227,7 @@ function buildThermalHTML(p: PembelianRow, paperWidthMm: number, nomorUrut: numb
     const harga = `${d.hargaLapangan.toLocaleString('id-ID')}`
     const sub = formatRupiah(d.subtotalBeli)
     const line1 = `${tonase} x ${harga}`
-    const nopolSupir = [d.nopol, d.supir].filter(Boolean).join(' / ')
+    const nopolSupir = [d.nopol, d.supir].filter(Boolean).map(esc).join(' / ')
     return `<div>${line1}</div><div style="text-align:right">${sub}</div>${nopolSupir ? `<div style="color:#666;font-size:8pt">${nopolSupir}</div>` : ''}`
   }).join('<div style="border-top:1px dashed #ccc;margin:2px 0"></div>')
 
@@ -213,7 +236,7 @@ function buildThermalHTML(p: PembelianRow, paperWidthMm: number, nomorUrut: numb
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Nota Thermal - ${p.peron?.nama ?? ''}</title>
+<title>Nota Thermal - ${esc(p.peron?.nama ?? '')}</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family:'Courier New',Courier,monospace;font-size:11pt;color:#000;background:#f2f2f2;min-height:100vh}
@@ -256,9 +279,9 @@ function buildThermalHTML(p: PembelianRow, paperWidthMm: number, nomorUrut: numb
     var html='<!DOCTYPE html>'+document.documentElement.outerHTML;
     btns.style.display='';
     var blob=new Blob([html],{type:'text/html'});
-    var file=new File([blob],'nota-pembelian-${p.peron?.nama?.replace(/\s/g,'-') ?? 'ocm'}.html',{type:'text/html'});
+    var file=new File([blob],'nota-pembelian-${escJs(p.peron?.nama?.replace(/\s/g,'-') ?? 'ocm')}.html',{type:'text/html'});
     if(navigator.share){
-      var shareData={title:'Nota Pembelian CV OCM - ${p.peron?.nama ?? ''}',text:'Nota pembelian ${formatTanggal(p.tanggal)} - ${formatRupiah(p.totalBeli)}'};
+      var shareData={title:'Nota Pembelian CV OCM - ${escJs(p.peron?.nama ?? '')}',text:'Nota pembelian ${formatTanggal(p.tanggal)} - ${formatRupiah(p.totalBeli)}'};
       if(navigator.canShare&&navigator.canShare({files:[file]})){
         shareData.files=[file];
       }
@@ -282,14 +305,14 @@ function buildThermalHTML(p: PembelianRow, paperWidthMm: number, nomorUrut: numb
 
   <div class="row"><span class="l">Tanggal</span><span class="r">${formatTanggal(p.tanggal)}</span></div>
   ${waktu ? `<div class="row"><span class="l">Waktu</span><span class="r">${waktu}</span></div>` : ''}
-  <div class="row"><span class="l">Peron</span><span class="r">${p.peron?.nama ?? p.peronId}</span></div>
+  <div class="row"><span class="l">Peron</span><span class="r">${esc(p.peron?.nama ?? p.peronId)}</span></div>
   <div class="row"><span class="l">Kategori</span><span class="r">${p.kategori}</span></div>
   <div class="divider"></div>
 
   <div style="font-size:7.5pt;margin-bottom:2px">RINCIAN TONASE</div>
   <div class="items">
     ${details.map((d) => {
-      const nopolSupir = [d.nopol, d.supir].filter(Boolean).join(' / ')
+      const nopolSupir = [d.nopol, d.supir].filter(Boolean).map(esc).join(' / ')
       return `<div class="item">
         <div class="row"><span class="l">${d.tonase.toLocaleString('id-ID')} kg x Rp ${d.hargaLapangan.toLocaleString('id-ID')}</span></div>
         <div class="row"><span class="l small">= subtotal</span><span class="r">${formatRupiah(d.subtotalBeli)}</span></div>
@@ -308,7 +331,7 @@ function buildThermalHTML(p: PembelianRow, paperWidthMm: number, nomorUrut: numb
   <div class="row"><span class="l">Status</span><span class="r status-${p.statusBayarPeron}">${p.statusBayarPeron === 'lunas' ? 'LUNAS' : 'BELUM DIBAYAR'}</span></div>
   ${p.sumberBayar ? `<div class="row"><span class="l">Pembayaran</span><span class="r">${sumberLabel}</span></div>` : ''}
 
-  ${p.catatan ? `<div class="divider"></div><div style="font-size:7.5pt;margin-bottom:1px">CATATAN:</div><div style="font-size:8pt">${p.catatan}</div>` : ''}
+  ${p.catatan ? `<div class="divider"></div><div style="font-size:7.5pt;margin-bottom:1px">CATATAN:</div><div style="font-size:8pt">${esc(p.catatan)}</div>` : ''}
 
   <div class="solid"></div>
   <div class="center small" style="margin-top:2px">${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
@@ -343,7 +366,7 @@ function buildRekapHTML(list: PembelianRow[]): string {
       <tr class="${i > 0 ? 'detail-extra' : ''}">
         ${i === 0 ? `<td rowspan="${details.length}">${formatTanggal(p.tanggal)}</td>` : ''}
         ${i === 0 ? `<td rowspan="${details.length}"><span class="kat kat-${p.kategori.replace(/\s/g,'')}">${p.kategori}</span></td>` : ''}
-        ${i === 0 ? `<td rowspan="${details.length}">${p.peron?.nama ?? p.peronId}</td>` : ''}
+        ${i === 0 ? `<td rowspan="${details.length}">${esc(p.peron?.nama ?? p.peronId)}</td>` : ''}
         <td class="r">${d.tonase.toLocaleString('id-ID')} kg</td>
         <td class="r">Rp ${d.hargaLapangan.toLocaleString('id-ID')}</td>
         <td class="r b">${formatRupiah(d.subtotalBeli)}</td>

@@ -53,6 +53,7 @@ export async function deleteHargaAcuan(id: string) {
 }
 
 export async function getHargaList() {
+  await requireSession()
   return db
     .select()
     .from(hargaAcuan)
@@ -61,6 +62,7 @@ export async function getHargaList() {
 
 /** Ambil harga acuan terbaru untuk produk tertentu pada/sebelum tanggal tertentu */
 export async function getHargaAktif(produk: 'TBS' | 'BRDL KTWM' | 'BRDL TRYM' | 'BRDL LMDM', tanggal: string) {
+  await requireSession()
   const rows = await db
     .select()
     .from(hargaAcuan)

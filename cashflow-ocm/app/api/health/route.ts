@@ -51,6 +51,7 @@ import {
   biayaFoto,
   transaksiKas,
 } from '@/lib/db/schema'
+import { logActivity } from '@/lib/audit'
 
 export async function POST(request: Request) {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -62,6 +63,22 @@ export async function POST(request: Request) {
   const clear = searchParams.get('clear')
 
   if (clear === '1') {
+    // GUARD aksi destruktif: hapus SEMUA transaksi tidak bisa dibatalkan. Wajib
+    // konfirmasi eksplisit di body agar tidak terpicu tak sengaja / oleh skrip.
+    let confirmPhrase: string | undefined
+    try {
+      const body = await request.json()
+      confirmPhrase = body?.confirm
+    } catch {
+      confirmPhrase = undefined
+    }
+    if (confirmPhrase !== 'HAPUS-SEMUA-DATA') {
+      return Response.json(
+        { error: 'Konfirmasi diperlukan. Kirim body JSON { "confirm": "HAPUS-SEMUA-DATA" } untuk menghapus seluruh data transaksi.' },
+        { status: 428 },
+      )
+    }
+
     try {
       await db.transaction(async (tx) => {
         await tx.delete(pembelianFoto)
@@ -72,6 +89,13 @@ export async function POST(request: Request) {
         await tx.delete(biayaFoto)
         await tx.delete(biayaOperasional)
         await tx.delete(transaksiKas)
+      })
+      // Catat siapa yang melakukan reset total ke audit trail.
+      await logActivity({
+        userId: session.user.id,
+        action: 'delete',
+        entityType: 'transaksi_kas',
+        description: 'RESET TOTAL: menghapus seluruh data transaksi (pembelian, penjualan, biaya, kas)',
       })
       return Response.json({ success: true, message: 'Seluruh data transaksi berhasil dibersihkan' })
     } catch (e: any) {

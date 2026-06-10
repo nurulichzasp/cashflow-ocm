@@ -9,7 +9,9 @@ const nextConfig: NextConfig = {
     'drizzle-orm',
     'xlsx',
   ],
-  typescript: { ignoreBuildErrors: true },
+  // Error TypeScript MENGGAGALKAN build — penting untuk app keuangan agar bug tipe
+  // tidak lolos ke produksi. Source sudah lulus `tsc --noEmit` strict.
+  typescript: { ignoreBuildErrors: false },
   turbopack: {},
 };
 export default nextConfig;
