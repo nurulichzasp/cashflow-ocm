@@ -1,7 +1,7 @@
 import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
 import { getPenjualanList } from './actions'
-import { getPembelianList } from '../pembelian/actions'
+import { getEstimasiLaba } from '../pembelian/actions'
 import { PenjualanTable } from './penjualan-table'
 import { PenjualanFormDialog } from './penjualan-form-dialog'
 import { Button } from '@/components/ui/button'
@@ -12,10 +12,10 @@ import { Plus } from 'lucide-react'
 export const dynamic = 'force-dynamic'
 
 export default async function PenjualanPage() {
-  const [session, penjualanList, pembelianList] = await Promise.all([
+  const [session, penjualanList, estimasiLaba] = await Promise.all([
     auth.api.getSession({ headers: await headers() }),
     getPenjualanList(),
-    getPembelianList(),
+    getEstimasiLaba(),
   ])
 
   const isOwner = session?.user.role === 'owner'
@@ -28,7 +28,6 @@ export default async function PenjualanPage() {
     const nilai = p.totalNilai ?? 0
     return s + (nilai > bersih ? nilai - bersih : 0)
   }, 0)
-  const estimasiLaba = pembelianList.reduce((s, p) => s + p.keuntungan, 0)
 
   return (
     <div className="space-y-5">

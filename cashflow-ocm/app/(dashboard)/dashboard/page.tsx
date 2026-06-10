@@ -30,7 +30,7 @@ import {
   Clock,
   CircleDollarSign,
 } from 'lucide-react'
-import CashflowChart from '@/components/charts/CashflowChart'
+import CashflowChart from '@/components/charts/CashflowChartLazy'
 import { AnimatedRupiah } from '@/components/animated-rupiah'
 
 async function getMetrics() {

@@ -2,7 +2,7 @@
 
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, sum } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { pembelian, pembelianDetail, transaksiKas, akunKas, peron, hargaAcuan, pembelianFoto } from '@/lib/db/schema'
@@ -355,6 +355,14 @@ export async function getPembelianList() {
 export async function getAkunKasList() {
   await requireSession()
   return db.select().from(akunKas).orderBy(akunKas.urutan)
+}
+
+// Ringan: jumlah keuntungan saja (untuk kartu "Estimasi Laba" di halaman Penjualan)
+// — tanpa menarik seluruh baris pembelian + relasi foto/detail.
+export async function getEstimasiLaba(): Promise<number> {
+  await requireSession()
+  const row = await db.select({ total: sum(pembelian.keuntungan) }).from(pembelian)
+  return Number(row[0]?.total ?? 0)
 }
 
 export async function getKeuntunganPerKg(peronId: string): Promise<number> {

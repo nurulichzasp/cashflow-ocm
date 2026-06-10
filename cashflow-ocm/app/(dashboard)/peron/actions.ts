@@ -252,14 +252,16 @@ export async function deleteModalPeron(id: string) {
 
 export async function getPeronList() {
   await requireSession()
-  const peronList = await db.query.peron.findMany({
-    orderBy: (p, { asc }) => [asc(p.nama)],
-  })
-
-  const dpRows = await db
-    .select({ peronId: modalPeron.peronId, jenis: modalPeron.jenis, total: sum(modalPeron.jumlah) })
-    .from(modalPeron)
-    .groupBy(modalPeron.peronId, modalPeron.jenis)
+  // Dua query independen → jalankan paralel (hemat 1 round-trip ke Turso).
+  const [peronList, dpRows] = await Promise.all([
+    db.query.peron.findMany({
+      orderBy: (p, { asc }) => [asc(p.nama)],
+    }),
+    db
+      .select({ peronId: modalPeron.peronId, jenis: modalPeron.jenis, total: sum(modalPeron.jumlah) })
+      .from(modalPeron)
+      .groupBy(modalPeron.peronId, modalPeron.jenis),
+  ])
 
   const dpMap: Record<string, number> = {}
   for (const row of dpRows) {
