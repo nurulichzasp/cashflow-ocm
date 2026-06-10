@@ -39,7 +39,9 @@ export async function GET(request: Request) {
   const isCronSecretValid = !!cronSecret && safeEqual(authHeader, `Bearer ${cronSecret}`)
   const isManualSecretValid = !!cronSecret && safeEqual(secretParam, cronSecret)
 
-  if (process.env.NODE_ENV === 'production' && !isCronSecretValid && !isManualSecretValid) {
+  // Selalu wajib secret (bukan hanya di production) — cegah endpoint ringkasan
+  // keuangan terbuka di environment non-production / lokal.
+  if (!isCronSecretValid && !isManualSecretValid) {
     return new Response('Unauthorized', { status: 401 })
   }
 

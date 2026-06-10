@@ -32,6 +32,8 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# kecuali template tanpa secret — berguna untuk onboarding
+!.env.example
 
 # credential / secret files — sabuk pengaman
 *RAHASIA*

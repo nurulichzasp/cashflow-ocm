@@ -2,6 +2,7 @@ import { auth } from '@/lib/auth'
 import { headers } from 'next/headers'
 import { createBackup, exportBackupToExcel, exportBackupToJSON, getBackupFilename } from '@/lib/backup'
 import { logActivity } from '@/lib/audit'
+import { put } from '@vercel/blob'
 import { timingSafeEqual } from 'node:crypto'
 
 export const dynamic = 'force-dynamic'
@@ -78,7 +79,6 @@ export async function GET(request: Request) {
  */
 export async function POST(request: Request) {
   try {
-    const url = new URL(request.url)
     // Token dibaca dari header Authorization: Bearer <token> agar tidak
     // ikut tercatat di access-log/proxy seperti bila lewat query string.
     const authHeader = request.headers.get('authorization') ?? ''
@@ -89,23 +89,31 @@ export async function POST(request: Request) {
       return Response.json({ error: 'Invalid backup token' }, { status: 401 })
     }
 
-    const format = (url.searchParams.get('format') || 'xlsx') as 'xlsx' | 'json'
     const backup = await createBackup()
 
-    // In production, you would upload this to cloud storage (Vercel Blob, S3, etc)
-    // For now, we'll just return the backup data
+    // Simpan backup ke Vercel Blob (access: private — data keuangan, hanya bisa
+    // diakses lewat token, sama seperti foto bukti). Selalu JSON: lengkap & mudah
+    // dipulihkan. Nama file sudah ber-timestamp (date+time) sehingga unik per run.
+    const json = exportBackupToJSON(backup)
+    const filename = `backups/${getBackupFilename('json')}`
+    const blob = await put(filename, json, {
+      access: 'private',
+      contentType: 'application/json',
+    })
+
     const metadata = {
       timestamp: backup.timestamp,
-      format,
-      size: JSON.stringify(backup).length,
+      size: json.length,
       summary: backup.summary,
+      url: blob.url,
+      pathname: blob.pathname,
     }
 
-    console.log('[Backup] Scheduled backup completed:', metadata)
+    console.log('[Backup] Backup terjadwal tersimpan ke Blob:', blob.pathname)
 
     return Response.json({
       success: true,
-      message: 'Backup created successfully',
+      message: 'Backup created and stored successfully',
       metadata,
     })
   } catch (error) {

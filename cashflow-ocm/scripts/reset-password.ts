@@ -16,6 +16,15 @@ async function resetPassword() {
   const email = 'admin@ocm.com'
   const newPassword = 'password123'
 
+  // GUARD: skrip ini menulis ke DB yang ditunjuk TURSO_CONNECTION_URL (BISA PRODUKSI).
+  // Wajib set CONFIRM_RESET=ya agar tidak terpicu tak sengaja.
+  const dbHost = (process.env.TURSO_CONNECTION_URL ?? '(tak diset)').replace(/^libsql:\/\//, '').split('?')[0]
+  if (process.env.CONFIRM_RESET !== 'ya') {
+    console.error(`⛔ Dibatalkan. Skrip akan reset password "${email}" di DB: ${dbHost}`)
+    console.error('   Jalankan ulang: CONFIRM_RESET=ya npx tsx scripts/reset-password.ts (pastikan DB benar).')
+    process.exit(1)
+  }
+
   console.log(`🔑 Reset password untuk ${email}...`)
 
   const user = await db.query.user.findFirst({ where: eq(schema.user.email, email) })

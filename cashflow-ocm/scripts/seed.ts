@@ -13,6 +13,15 @@ const db = drizzle({
 })
 
 async function seed() {
+  // GUARD: seed menulis user/peron/harga ke DB TURSO_CONNECTION_URL (BISA PRODUKSI).
+  // Wajib set CONFIRM_SEED=ya agar tidak terpicu tak sengaja.
+  const dbHost = (process.env.TURSO_CONNECTION_URL ?? '(tak diset)').replace(/^libsql:\/\//, '').split('?')[0]
+  if (process.env.CONFIRM_SEED !== 'ya') {
+    console.error(`⛔ Dibatalkan. Seed akan menulis ke DB: ${dbHost}`)
+    console.error('   Jalankan ulang: CONFIRM_SEED=ya npm run db:seed (pastikan DB benar).')
+    process.exit(1)
+  }
+
   console.log('🌱 Mulai seed data...')
 
   // Buat user owner via Better Auth

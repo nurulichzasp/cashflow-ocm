@@ -204,7 +204,8 @@ export async function getLabaRugiTahunan(tahun: string) {
   const totalBiaya = Number(biayaTotal[0]?.total ?? 0)
   const labaKotor = totalPenjualan - totalPembelian
   const labaOperasional = labaKotor - totalBiaya
-  const pphBadan = Math.round(labaOperasional * 0.22)
+  // Rugi → PPh Badan 0 (tidak boleh negatif; kerugian dikompensasi, bukan jadi "pajak negatif").
+  const pphBadan = Math.max(0, Math.round(labaOperasional * 0.22))
   const labaBersih = labaOperasional - pphBadan
   const totalPph25Dibayar = pphRows.filter(r => r.statusBayar === 'sudah').reduce((s, r) => s + r.nominal, 0)
   const pphKurangBayar = pphBadan - totalPph25Dibayar
