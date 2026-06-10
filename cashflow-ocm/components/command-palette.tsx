@@ -103,14 +103,13 @@ export function CommandPalette({
 
       <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
         <DialogPrimitive.Portal>
-          <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0" />
+          <DialogPrimitive.Overlay className="depth-backdrop fixed inset-0 z-50 bg-black/30 backdrop-blur-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0" />
           <DialogPrimitive.Content
             aria-describedby={undefined}
             className={cn(
-              'fixed left-1/2 top-[12%] z-50 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2',
-              'overflow-hidden rounded-2xl border border-black/10 dark:border-white/10',
-              'bg-white dark:bg-[#1E1E1E] shadow-2xl',
-              'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=open]:zoom-in-95',
+              'glass-panel fixed left-1/2 top-[12%] z-50 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2',
+              'overflow-hidden rounded-2xl',
+              'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=open]:zoom-in-95 data-[state=open]:duration-300 data-[state=open]:ease-[cubic-bezier(0.34,1.56,0.64,1)]',
             )}
           >
             <DialogPrimitive.Title className="sr-only">Cari halaman</DialogPrimitive.Title>
@@ -132,7 +131,7 @@ export function CommandPalette({
             </div>
 
             {/* Results */}
-            <div className="max-h-[50vh] overflow-y-auto p-2">
+            <div role="listbox" aria-label="Hasil pencarian halaman" className="max-h-[50vh] overflow-y-auto p-2">
               {results.length === 0 ? (
                 <p className="px-3 py-6 text-center text-sm text-stone-400 dark:text-zinc-500">
                   Tidak ada halaman cocok.
@@ -146,6 +145,8 @@ export function CommandPalette({
                     <button
                       key={r.path}
                       type="button"
+                      role="option"
+                      aria-selected={isKeyActive}
                       onMouseEnter={() => setActive(i)}
                       onClick={() => go(r)}
                       className={cn(

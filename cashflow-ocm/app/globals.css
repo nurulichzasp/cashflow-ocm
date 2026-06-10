@@ -601,6 +601,13 @@ html.dark [class~="hover:bg-orange-700"]:hover       { background-color: #c8654a
     -webkit-backdrop-filter: blur(8px) saturate(1.1) brightness(0.96);
   }
 
+  /* Toast (Sonner) — glass tipis selaras .glass-panel; --normal-bg di-set semi
+     transparan di components/ui/sonner.tsx sehingga blur ini tampil. Tetap legible. */
+  .cn-toast {
+    backdrop-filter: blur(12px) saturate(1.4);
+    -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  }
+
   /* ── 3. Focus — subtle thin border, no glow ──────────────────────────────── */
   .neural-focus {
     transition: border-color 150ms ease, box-shadow 150ms ease;

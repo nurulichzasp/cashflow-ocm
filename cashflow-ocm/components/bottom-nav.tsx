@@ -196,7 +196,7 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', stiffness: 320, damping: 32 }}
-              className="absolute inset-x-0 bottom-0 rounded-t-3xl border-t border-black/10 bg-white dark:border-white/10 dark:bg-[#1E1E1E]"
+              className="glass-panel absolute inset-x-0 bottom-0 rounded-t-3xl"
               style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
             >
               {/* Handle */}
