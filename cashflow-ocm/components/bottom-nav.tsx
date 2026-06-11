@@ -11,7 +11,7 @@ import {
   ShoppingCart,
   TrendingUp,
   Search,
-  UserCircle,
+  LayoutGrid,
   X,
   LogOut,
 } from 'lucide-react'
@@ -20,11 +20,10 @@ import { ShortcutGrid } from '@/components/shortcut-grid'
 import { CommandPalette } from '@/components/command-palette'
 import { fotoUrl } from '@/lib/foto-url'
 import { parsePerms } from '@/lib/nav-routes'
-
-const SHOW_LABELS = false
+import { formatTanggalLengkap } from '@/lib/format'
 
 const primaryNav = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, perm: undefined },
+  { href: '/dashboard', label: 'Beranda', icon: LayoutDashboard, perm: undefined },
   { href: '/pembelian', label: 'Pembelian', icon: ShoppingCart, perm: 'pembelian' as const },
   { href: '/penjualan', label: 'Penjualan', icon: TrendingUp, perm: 'penjualan' as const },
 ]
@@ -54,38 +53,36 @@ function NavTab({
 }) {
   return (
     <motion.div
-      whileTap={{ scale: 0.82 }}
-      transition={{ type: 'spring', stiffness: 400, damping: 22 }}
-      className="relative flex h-11 w-11 items-center justify-center"
+      whileTap={{ scale: 0.86 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 24 }}
+      className="relative flex h-full w-full flex-col items-center justify-center gap-[3px]"
     >
       {/* Oval aktif yang MELUNCUR antar tab (shared layout id) — efek hidup */}
       {active && (
         <motion.span
           layoutId="nav-active-pill"
-          className="absolute inset-0 rounded-full bg-white/[0.06] dark:bg-white/[0.08]"
+          className="absolute inset-0 rounded-2xl bg-white/[0.07] dark:bg-white/[0.08]"
           transition={{ type: 'spring', stiffness: 480, damping: 34 }}
         />
       )}
       <Icon
         className={cn(
-          'relative z-10 h-[22px] w-[22px] transition-colors',
+          'relative z-10 h-[21px] w-[21px] transition-colors',
           active ? 'text-[var(--brand)]' : 'text-stone-400 dark:text-zinc-500',
         )}
         fill={active ? 'currentColor' : 'none'}
         strokeWidth={active ? 2.25 : 2}
       />
-      {SHOW_LABELS && (
-        <span
-          className={cn(
-            'relative z-10 text-[10px] leading-none',
-            active
-              ? 'font-semibold text-stone-900 dark:text-[#FAFAFA]'
-              : 'font-medium text-stone-400 dark:text-zinc-500',
-          )}
-        >
-          {label}
-        </span>
-      )}
+      <span
+        className={cn(
+          'relative z-10 text-[9px] leading-none tracking-tight transition-colors',
+          active
+            ? 'font-semibold text-[var(--brand)]'
+            : 'font-medium text-stone-400 dark:text-zinc-500',
+        )}
+      >
+        {label}
+      </span>
     </motion.div>
   )
 }
@@ -140,7 +137,7 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
                   key={item.href}
                   href={item.href}
                   aria-label={item.label}
-                  className="flex h-11 w-11 items-center justify-center"
+                  className="flex h-[52px] w-[60px] items-center justify-center"
                 >
                   <NavTab active={isActive(item.href)} label={item.label} icon={item.icon} />
                 </Link>
@@ -150,7 +147,7 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
               <button
                 onClick={() => window.dispatchEvent(new CustomEvent('ocm-open-search'))}
                 aria-label="Cari"
-                className="flex h-11 w-11 items-center justify-center"
+                className="flex h-[52px] w-[60px] items-center justify-center"
               >
                 <NavTab active={false} label="Cari" icon={Search} />
               </button>
@@ -160,19 +157,19 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
                   key={item.href}
                   href={item.href}
                   aria-label={item.label}
-                  className="flex h-11 w-11 items-center justify-center"
+                  className="flex h-[52px] w-[60px] items-center justify-center"
                 >
                   <NavTab active={isActive(item.href)} label={item.label} icon={item.icon} />
                 </Link>
               ))}
 
-              {/* Profile — buka menu akun */}
+              {/* Lainnya — gerbang ke semua halaman sekunder + akun (drawer) */}
               <button
                 onClick={() => setDrawerOpen(true)}
-                aria-label="Profil"
-                className="flex h-11 w-11 items-center justify-center"
+                aria-label="Lainnya"
+                className="flex h-[52px] w-[60px] items-center justify-center"
               >
-                <NavTab active={false} label="Profil" icon={UserCircle} />
+                <NavTab active={drawerOpen} label="Lainnya" icon={LayoutGrid} />
               </button>
             </div>
           </nav>
@@ -219,6 +216,7 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
                       <div className="min-w-0">
                         <p className="text-[11px] text-stone-400 dark:text-zinc-500">{getGreeting()},</p>
                         <p className="text-sm font-semibold text-stone-900 dark:text-zinc-100 truncate -mt-0.5">{displayName}</p>
+                        <p className="text-[10px] text-stone-400 dark:text-zinc-500 truncate mt-0.5">{formatTanggalLengkap(new Date())}</p>
                       </div>
                     </button>
                   </ProfileDialog>

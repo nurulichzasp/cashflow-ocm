@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { NumberInput } from '@/components/number-input'
 import { Textarea } from '@/components/ui/textarea'
+import { FieldError, invalidFieldClass } from '@/components/ui/field-error'
+import { cn } from '@/lib/utils'
 import { createTransaksiKas } from './actions'
 import { todayString } from '@/lib/format'
 
@@ -31,13 +33,15 @@ export function KasFormDialog({ children, akunOptions }: Props) {
   const [arah, setArah] = useState<'masuk' | 'keluar'>('masuk')
   const [kategori, setKategori] = useState<KasKategori>('penerimaan_bga')
   const [jumlah, setJumlah] = useState(0)
+  const [errors, setErrors] = useState<{ jumlah?: string }>({})
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     if (jumlah <= 0) {
-      toast.error('Jumlah harus diisi dan lebih besar dari nol')
+      setErrors({ jumlah: 'Jumlah harus diisi dan lebih besar dari nol.' })
       return
     }
+    setErrors({})
     setLoading(true)
     try {
       const formData = new FormData(e.currentTarget)
@@ -119,7 +123,15 @@ export function KasFormDialog({ children, akunOptions }: Props) {
 
           <div className="space-y-1.5">
             <Label>Jumlah (Rp)</Label>
-            <NumberInput name="jumlah" value={jumlah} onChange={setJumlah} placeholder="0" />
+            <NumberInput
+              name="jumlah"
+              value={jumlah}
+              onChange={(v) => { setJumlah(v); if (errors.jumlah) setErrors({}) }}
+              placeholder="0"
+              aria-invalid={!!errors.jumlah}
+              className={cn(errors.jumlah && invalidFieldClass)}
+            />
+            <FieldError>{errors.jumlah}</FieldError>
           </div>
 
           <div className="space-y-1.5">

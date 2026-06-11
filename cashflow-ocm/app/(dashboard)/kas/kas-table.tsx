@@ -134,7 +134,7 @@ export function KasTable({ transaksiList, isOwner }: Props) {
                   <td className="px-4 py-3 text-right">
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" aria-label="Hapus" className="h-8 w-8 text-stone-400 hover:text-[#F87171] hover:bg-red-50">
+                        <Button variant="ghost" size="icon" aria-label="Hapus" className="tap-pad h-8 w-8 text-stone-400 hover:text-[#F87171] hover:bg-red-50">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </AlertDialogTrigger>

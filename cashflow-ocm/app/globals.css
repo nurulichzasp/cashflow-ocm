@@ -506,6 +506,17 @@ html.dark [class~="hover:bg-orange-700"]:hover       { background-color: #c8654a
     font-feature-settings: "tnum";
   }
 
+  /* ── Tap-pad: perluas area sentuh tombol ikon kecil ke ≥44px TANPA mengubah
+     ukuran visual. ::after transparan menambah 6px ke segala arah (32→44px).
+     Pakai di tombol ikon h-8/h-7 pada baris tabel. ── */
+  .tap-pad { position: relative; }
+  .tap-pad::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    /* z rendah agar tak menutupi konten lain; hanya menangkap sentuhan di area sendiri */
+  }
+
   /* ── Sparkline hero: garis "menggambar sendiri" + area & dot fade-in ── */
   .sl-draw {
     stroke-dasharray: 1;

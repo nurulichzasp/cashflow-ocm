@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { NumberInput } from '@/components/number-input'
 import { FotoBuktiUploader } from '@/components/foto-bukti-uploader'
 import { Textarea } from '@/components/ui/textarea'
+import { FieldError, invalidFieldClass } from '@/components/ui/field-error'
+import { cn } from '@/lib/utils'
 import { createBiayaOperasional } from './actions'
 import { todayString } from '@/lib/format'
 
@@ -29,14 +31,16 @@ export function BiayaFormDialog({ children, akunOptions }: Props) {
   const [akunSumberId, setAkunSumberId] = useState(akunOptions?.[0]?.id ?? '')
   const [jumlah, setJumlah] = useState(0)
   const [fotos, setFotos] = useState<string[]>([])
+  const [errors, setErrors] = useState<{ jumlah?: string }>({})
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
 
     if (jumlah <= 0) {
-      toast.error('Jumlah harus diisi dan lebih besar dari nol')
+      setErrors({ jumlah: 'Jumlah harus diisi dan lebih besar dari nol.' })
       return
     }
+    setErrors({})
 
     setLoading(true)
     try {
@@ -105,7 +109,15 @@ export function BiayaFormDialog({ children, akunOptions }: Props) {
             </div>
             <div className="space-y-1.5">
               <Label>Jumlah (Rp)</Label>
-              <NumberInput name="jumlah" value={jumlah} onChange={setJumlah} placeholder="0" className="glow-keluar" />
+              <NumberInput
+                name="jumlah"
+                value={jumlah}
+                onChange={(v) => { setJumlah(v); if (errors.jumlah) setErrors({}) }}
+                placeholder="0"
+                aria-invalid={!!errors.jumlah}
+                className={cn('glow-keluar', errors.jumlah && invalidFieldClass)}
+              />
+              <FieldError>{errors.jumlah}</FieldError>
             </div>
           </div>
 

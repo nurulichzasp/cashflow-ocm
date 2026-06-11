@@ -79,7 +79,7 @@ function PembelianRowMenu({ onEdit, onDelete, deleting, id }: { onEdit: () => vo
     <>
       <DropdownMenu>
         <DropdownMenuTrigger
-          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-stone-400 hover:text-stone-900 hover:bg-stone-100 dark:hover:bg-white/[0.06] transition-colors outline-none aria-expanded:bg-stone-100 dark:aria-expanded:bg-white/[0.06]"
+          className="tap-pad inline-flex h-7 w-7 items-center justify-center rounded-md text-stone-400 hover:text-stone-900 hover:bg-stone-100 dark:hover:bg-white/[0.06] transition-colors outline-none aria-expanded:bg-stone-100 dark:aria-expanded:bg-white/[0.06]"
           aria-label="Aksi"
         >
           <MoreVertical className="h-4 w-4" />

@@ -42,6 +42,21 @@ export function formatTanggal(date: string | Date): string {
   }).format(d)
 }
 
+/**
+ * Tanggal lengkap dengan nama hari: "Rabu, 10 Juni 2026".
+ * Untuk konteks tunggal (header detail, sapaan dashboard) — BUKAN tabel padat
+ * (terlalu lebar). Tabel tetap pakai formatTanggal().
+ */
+export function formatTanggalLengkap(date: string | Date): string {
+  const d = typeof date === 'string' ? new Date(date) : date
+  return new Intl.DateTimeFormat('id-ID', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(d)
+}
+
 export function todayString(): string {
   return new Date().toISOString().slice(0, 10)
 }

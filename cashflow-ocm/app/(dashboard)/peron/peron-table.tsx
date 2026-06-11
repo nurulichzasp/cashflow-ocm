@@ -40,7 +40,7 @@ function RowActions({ p, isOwner, onDelete, deleting, akunOptions = [] }: { p: P
     <>
       <DropdownMenu>
         <DropdownMenuTrigger
-          className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-stone-400 hover:text-stone-900 hover:bg-stone-100 dark:hover:bg-white/[0.06] transition-colors outline-none aria-expanded:bg-stone-100 dark:aria-expanded:bg-white/[0.06]"
+          className="tap-pad inline-flex h-8 w-8 items-center justify-center rounded-lg text-stone-400 hover:text-stone-900 hover:bg-stone-100 dark:hover:bg-white/[0.06] transition-colors outline-none aria-expanded:bg-stone-100 dark:aria-expanded:bg-white/[0.06]"
           aria-label="Aksi"
         >
           <MoreVertical className="h-4 w-4" />
