@@ -34,9 +34,6 @@ export function WelcomeScreen() {
 
         <h1 className="mt-7 text-2xl font-bold tracking-tight text-white">Cashflow OCM</h1>
         <p className="mt-1 text-sm font-medium text-zinc-400">Omanda Cerli Mandiri</p>
-        <p className="mt-5 max-w-[26ch] text-sm leading-relaxed text-zinc-500">
-          Kelola keuangan kebun sawit, rapi dalam satu tempat.
-        </p>
       </div>
 
       <button

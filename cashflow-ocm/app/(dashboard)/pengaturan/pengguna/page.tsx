@@ -19,6 +19,7 @@ export default async function PenggunaPage() {
     email: u.email,
     role: u.role,
     image: u.image || null,
+    permissions: u.permissions || null,
   }))
 
   return (
