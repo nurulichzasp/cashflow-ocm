@@ -3,10 +3,8 @@ import { auth } from '@/lib/auth'
 import { getHargaList } from './actions'
 import { HargaTable } from './harga-table'
 import { HargaFormDialog } from './harga-form-dialog'
-import { Button } from '@/components/ui/button'
 import { FloatingFab } from '@/components/fab'
 import { formatRupiah, formatTanggal } from '@/lib/format'
-import { Plus } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 

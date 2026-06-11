@@ -11,7 +11,6 @@
  */
 
 import { NextResponse } from 'next/server'
-import { sendTelegramMessage } from '@/lib/notification'
 import {
   snapshotHariIni,
   snapshotSaldo,

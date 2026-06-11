@@ -3,10 +3,8 @@ import { auth } from '@/lib/auth'
 import { getKasTransactions, getAkunKasList } from './actions'
 import { KasTable } from './kas-table'
 import { KasFormDialog } from './kas-form-dialog'
-import { Button } from '@/components/ui/button'
 import { FloatingFab } from '@/components/fab'
 import { formatRupiah, formatCompact } from '@/lib/format'
-import { Plus } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 

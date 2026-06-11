@@ -737,7 +737,7 @@ function NetMarginAndHarga({
           <div>
             <div className="flex items-center gap-1.5">
               <Sparkles className="h-3 w-3 text-stone-400 dark:text-zinc-500" strokeWidth={2} />
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Net Margin</p>
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Margin Dagang</p>
             </div>
             <div className="mt-3 flex items-baseline gap-1.5">
               <span className={`text-[2.25rem] sm:text-[2.6rem] leading-none font-bold num tabular-nums tracking-[-0.03em] ${marginTone}`}>
@@ -746,7 +746,7 @@ function NetMarginAndHarga({
               <span className={`text-base font-semibold ${marginTone}`}>%</span>
             </div>
             <p className="mt-1.5 text-[11px] text-stone-400 dark:text-zinc-500">
-              {formatCompact(estimasiLaba)} dari {formatCompact(totalPembelian)} pembelian
+              {formatCompact(estimasiLaba)} dari {formatCompact(totalPembelian)} pembelian · sebelum biaya operasional
             </p>
           </div>
           <div className="text-right">

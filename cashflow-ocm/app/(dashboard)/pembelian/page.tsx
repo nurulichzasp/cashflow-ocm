@@ -4,9 +4,7 @@ import { getPembelianList, getAkunKasList } from './actions'
 import { getPeronList } from '../peron/actions'
 import { PembelianTable } from './pembelian-table'
 import { PembelianFormDialog } from './pembelian-form-dialog'
-import { Button } from '@/components/ui/button'
 import { FloatingFab } from '@/components/fab'
-import { Plus } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 

@@ -6,7 +6,6 @@ import { formatRupiah, formatTanggal } from '@/lib/format'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Download, FileSpreadsheet } from 'lucide-react'
 import { updatePpnStatus, updatePphStatus } from '../pengaturan/actions'
@@ -75,7 +74,7 @@ function LabaRugiTab({ data, dari, sampai }: { data: LaporanData; dari: string; 
     { Keterangan: 'Laba Kotor', 'Jumlah (Rp)': labaKotor },
     { Keterangan: 'Biaya Operasional', 'Jumlah (Rp)': totalBiaya },
     { Keterangan: 'Laba Bersih', 'Jumlah (Rp)': labaBersih },
-    { Keterangan: 'Estimasi Laba Pembelian', 'Jumlah (Rp)': totalKeuntungan },
+    { Keterangan: 'Margin Dagang (markup peron)', 'Jumlah (Rp)': totalKeuntungan },
   ]
 
   return (
@@ -96,7 +95,7 @@ function LabaRugiTab({ data, dari, sampai }: { data: LaporanData; dari: string; 
               { label: 'Laba Kotor', value: labaKotor, cls: 'font-semibold text-foreground', bg: 'bg-muted/30', sep: true },
               { label: 'Biaya Operasional', value: totalBiaya, cls: 'text-muted-foreground' },
               { label: 'Laba Bersih', value: labaBersih, cls: 'font-semibold text-foreground', bg: 'bg-muted/30', sep: true },
-              { label: 'Estimasi Laba Pembelian', value: totalKeuntungan, cls: 'text-foreground font-semibold' },
+              { label: 'Margin Dagang (markup peron)', value: totalKeuntungan, cls: 'text-foreground font-semibold' },
             ].map((row, i) => (
               <tr key={i} className={cn('border-b last:border-0', row.sep ? 'border-t-2 border-t-border' : '', row.bg ?? '')}>
                 <td className={cn('px-4 py-3', row.cls)}>{row.label}</td>
