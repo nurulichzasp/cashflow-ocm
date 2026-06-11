@@ -4,70 +4,15 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
-import {
-  Building2,
-  Wallet2,
-  TrendingUp,
-  Users,
-  SunMoon,
-  Bell,
-  Printer,
-  DatabaseBackup,
-  Info,
-  ChevronRight,
-  type LucideIcon,
-} from 'lucide-react'
-
-type Item = {
-  href: string
-  icon: LucideIcon
-  title: string
-  desc: string
-}
-
-type Group = {
-  label: string
-  items: Item[]
-}
+import { ChevronRight } from 'lucide-react'
+import { getSettingsGroups } from '@/lib/settings-groups'
 
 export default async function PengaturanPage() {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session) redirect('/login')
   const isOwner = (session.user as { role?: string }).role === 'owner'
 
-  const groups: Group[] = [
-    {
-      label: 'Bisnis',
-      items: [
-        { href: '/pengaturan/perusahaan', icon: Building2, title: 'Profil Perusahaan', desc: 'Nama, alamat, NPWP & ambang transaksi besar' },
-        { href: '/pengaturan/pajak', icon: Wallet2, title: 'Pajak & Neraca', desc: 'Tarif PPN, PPh badan & modal awal' },
-        { href: '/pengaturan/harga', icon: TrendingUp, title: 'Harga & Margin', desc: 'Selisih jual BGA terbaru per produk' },
-      ],
-    },
-    ...(isOwner
-      ? [{
-          label: 'Pengguna & Akses',
-          items: [
-            { href: '/pengaturan/pengguna', icon: Users, title: 'Manajemen Pengguna', desc: 'Tambah pengguna & atur hak akses modul' },
-          ],
-        }]
-      : []),
-    {
-      label: 'Aplikasi',
-      items: [
-        { href: '/pengaturan/tampilan', icon: SunMoon, title: 'Tampilan & Tema', desc: 'Mode terang, gelap, atau otomatis' },
-        { href: '/pengaturan/notifikasi', icon: Bell, title: 'Notifikasi', desc: 'Status Telegram & laporan otomatis' },
-        { href: '/pengaturan/printer', icon: Printer, title: 'Printer Kasir', desc: 'Pengaturan struk thermal 58mm' },
-      ],
-    },
-    {
-      label: 'Data & Bantuan',
-      items: [
-        { href: '/pengaturan/cadangan', icon: DatabaseBackup, title: 'Pencadangan Data', desc: 'Ekspor konfigurasi & zona berbahaya' },
-        { href: '/pengaturan/tentang', icon: Info, title: 'Tentang Aplikasi', desc: 'Versi, teknologi & lisensi' },
-      ],
-    },
-  ]
+  const groups = getSettingsGroups(isOwner)
 
   return (
     <div className="space-y-7 max-w-3xl md:max-w-5xl">

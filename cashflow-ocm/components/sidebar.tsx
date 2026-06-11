@@ -24,7 +24,6 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
-import { ProfileDialog } from '@/components/profile-dialog'
 import { fotoUrl } from '@/lib/foto-url'
 
 const navItems = [
@@ -159,21 +158,22 @@ export function Sidebar({ user, isOwner, onToggle }: { user?: any; isOwner?: boo
       {/* Footer */}
       <div className="border-t border-white/[0.06] p-3 space-y-1 shrink-0">
         {user && (
-          <ProfileDialog user={user}>
-            <button className="w-full flex items-center gap-2.5 px-3 py-2 mb-0.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.08] transition-colors text-left outline-none cursor-pointer">
-              {user.image ? (
-                <img src={fotoUrl(user.image)} className="h-7 w-7 rounded-full object-cover shrink-0" alt="Avatar" />
-              ) : (
-                <div className="h-7 w-7 rounded-full bg-stone-800 border border-white/[0.08] flex items-center justify-center text-[11px] font-bold text-zinc-200 shrink-0">
-                  {getInitials(user.nickname || user.name)}
-                </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-[#F3F4F6] truncate">{user.nickname || user.name}</p>
-                <p className="text-[11px] text-[#9CA3AF] capitalize">{user.role}</p>
+          <Link
+            href="/profil"
+            className="w-full flex items-center gap-2.5 px-3 py-2 mb-0.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.08] transition-colors text-left outline-none cursor-pointer"
+          >
+            {user.image ? (
+              <img src={fotoUrl(user.image)} className="h-7 w-7 rounded-full object-cover shrink-0" alt="Avatar" />
+            ) : (
+              <div className="h-7 w-7 rounded-full bg-stone-800 border border-white/[0.08] flex items-center justify-center text-[11px] font-bold text-zinc-200 shrink-0">
+                {getInitials(user.nickname || user.name)}
               </div>
-            </button>
-          </ProfileDialog>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-[#F3F4F6] truncate">{user.nickname || user.name}</p>
+              <p className="text-[11px] text-[#9CA3AF] capitalize">{user.role}</p>
+            </div>
+          </Link>
         )}
         <button
           onClick={handleLogout}
@@ -291,21 +291,23 @@ export function MobileSidebar({ user, isOwner }: { user?: any; isOwner?: boolean
           {/* Footer */}
           <div className="border-t border-white/[0.06] p-3 space-y-1 shrink-0">
             {user && (
-              <ProfileDialog user={user}>
-                <button className="w-full flex items-center gap-2.5 px-3 py-1.5 mb-1 text-left outline-none cursor-pointer">
-                  {user.image ? (
-                    <img src={fotoUrl(user.image)} className="h-7 w-7 rounded-full object-cover shrink-0" alt="Avatar" />
-                  ) : (
-                    <div className="h-7 w-7 rounded-full bg-stone-800 border border-white/[0.08] flex items-center justify-center text-[11px] font-bold text-zinc-200 shrink-0">
-                      {getInitials(user.nickname || user.name)}
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-stone-200 truncate">{user.nickname || user.name}</p>
-                    <p className="text-[11px] text-stone-500 capitalize">{user.role}</p>
+              <Link
+                href="/profil"
+                onClick={() => setOpen(false)}
+                className="w-full flex items-center gap-2.5 px-3 py-1.5 mb-1 text-left outline-none cursor-pointer"
+              >
+                {user.image ? (
+                  <img src={fotoUrl(user.image)} className="h-7 w-7 rounded-full object-cover shrink-0" alt="Avatar" />
+                ) : (
+                  <div className="h-7 w-7 rounded-full bg-stone-800 border border-white/[0.08] flex items-center justify-center text-[11px] font-bold text-zinc-200 shrink-0">
+                    {getInitials(user.nickname || user.name)}
                   </div>
-                </button>
-              </ProfileDialog>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-stone-200 truncate">{user.nickname || user.name}</p>
+                  <p className="text-[11px] text-stone-500 capitalize">{user.role}</p>
+                </div>
+              </Link>
             )}
             <button
               onClick={handleLogout}

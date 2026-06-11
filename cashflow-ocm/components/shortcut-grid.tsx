@@ -17,14 +17,21 @@ export function ShortcutGrid({
   perms,
   onNavigate,
   excludePrimary,
+  excludePaths,
 }: {
   isOwner?: boolean
   perms?: { pembelian?: boolean; penjualan?: boolean; kas?: boolean; biaya?: boolean }
   onNavigate?: () => void
   excludePrimary?: boolean
+  /** Path tambahan yang disembunyikan (mis. ['/pengaturan'] — kini diakses via Profil). */
+  excludePaths?: string[]
 }) {
   const all = visibleRoutes(isOwner, perms)
-  const routes = excludePrimary ? all.filter((r) => !PRIMARY_PATHS.includes(r.path)) : all
+  const routes = all.filter((r) => {
+    if (excludePrimary && PRIMARY_PATHS.includes(r.path)) return false
+    if (excludePaths && excludePaths.includes(r.path)) return false
+    return true
+  })
   const pathname = usePathname()
 
   return (

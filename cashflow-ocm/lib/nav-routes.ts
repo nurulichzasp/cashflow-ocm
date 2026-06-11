@@ -81,10 +81,21 @@ export function isRouteActive(
 }
 
 /**
+ * Judul untuk halaman yang SENGAJA tak masuk APP_ROUTES (agar tak muncul di
+ * Shortcut Grid / Command Palette) tapi tetap butuh judul header. Mis. /profil.
+ */
+const EXTRA_TITLES: Record<string, string> = {
+  '/profil': 'Profil',
+}
+
+/**
  * Judul halaman dari entri rute hasil longest-match. Mengembalikan `null` bila
  * tak ada yang cocok agar pemanggil bisa menerapkan fallback-nya sendiri.
  */
 export function resolvePageTitle(pathname: string): string | null {
+  for (const path in EXTRA_TITLES) {
+    if (pathname === path || pathname.startsWith(path + '/')) return EXTRA_TITLES[path]
+  }
   const best = matchRoutePath(pathname)
   if (!best) return null
   return APP_ROUTES.find((r) => r.path === best)?.label ?? null

@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useNavCompact } from '@/lib/nav-visibility-store'
 
 /**
  * FloatingFab — liquid-glass "+ Tambah" trigger, responsive.
@@ -18,6 +19,7 @@ export const FloatingFab = React.forwardRef<
   HTMLButtonElement,
   React.ButtonHTMLAttributes<HTMLButtonElement>
 >(function FloatingFab({ className, ...props }, ref) {
+  const compact = useNavCompact()
   return (
     <button
       ref={ref}
@@ -25,14 +27,16 @@ export const FloatingFab = React.forwardRef<
       aria-label="Tambah"
       {...props}
       className={cn(
-        'fixed z-[45] flex items-center justify-center transition-all duration-200 ease-out',
+        'fixed z-[45] flex items-center justify-center transition-all duration-200 ease-out motion-reduce:transition-none',
         // z-45: di atas konten + bottom-nav (z-40) tapi DI BAWAH overlay dialog/drawer (z-50),
         // jadi otomatis tertutup saat menu/drawer lain terbuka. Plus fade mulus saat
         // dialog miliknya sendiri terbuka (FAB = trigger → dapat data-state="open").
         'data-[state=open]:opacity-0 data-[state=open]:scale-90 data-[state=open]:pointer-events-none',
-        // posisi
+        // posisi — saat bar compact (lebih pendek), FAB ikut turun sedikit agar rapat
         'right-5 md:right-8',
-        'bottom-[max(calc(env(safe-area-inset-bottom)+4.75rem),5rem)] md:bottom-8',
+        compact
+          ? 'bottom-[max(calc(env(safe-area-inset-bottom)+3.9rem),4.25rem)] md:bottom-8'
+          : 'bottom-[max(calc(env(safe-area-inset-bottom)+4.75rem),5rem)] md:bottom-8',
         // bentuk: mobile square / desktop pill
         'h-14 w-14 rounded-2xl md:h-12 md:w-auto md:gap-2 md:px-5 md:rounded-full',
         // surface — liquid glass (transparan + blur), bukan hijau solid

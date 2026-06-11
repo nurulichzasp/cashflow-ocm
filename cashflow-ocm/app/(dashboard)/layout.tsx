@@ -29,7 +29,7 @@ export default async function DashboardLayout({
       <DesktopSidebar user={session.user} isOwner={isOwner} />
 
       {/* Main content + mobile header. SwipeNavigator: geser kiri=back, kanan=forward */}
-      <ScrollShell>
+      <ScrollShell user={session.user}>
         <SwipeNavigator>{children}</SwipeNavigator>
       </ScrollShell>
 
