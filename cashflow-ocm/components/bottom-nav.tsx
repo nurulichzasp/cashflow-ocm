@@ -123,14 +123,14 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
       {/* Command palette (search) — dibuka via tombol Search di bawah / Cmd+K */}
       <CommandPalette showTrigger={false} isOwner={isOwner} perms={perms} />
 
-      {/* Bottom bar — pill oval "glass liquid": backdrop-blur kuat + tint pekat
-          supaya konten di belakang ter-blur (tak "tembus"/numpuk). SELALU terlihat */}
+      {/* Bottom bar — pill oval LIQUID GLASS: blur kuat + saturate + rim highlight
+          (inset putih) + drop shadow → konten ter-blur, terasa kaca. SELALU terlihat */}
       <div
         className="md:hidden fixed bottom-0 inset-x-0 z-40 pointer-events-none"
         style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0.75rem)' }}
       >
         <div className="flex justify-center px-5">
-          <nav className="pointer-events-auto relative flex w-fit gap-0.5 rounded-full backdrop-blur-xl backdrop-saturate-150 bg-zinc-900/70 shadow-[0_8px_28px_rgba(0,0,0,0.28)] p-1">
+          <nav className="pointer-events-auto relative flex w-fit gap-0.5 rounded-full backdrop-blur-2xl backdrop-saturate-150 bg-zinc-900/60 ring-1 ring-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.14),0_10px_30px_-6px_rgba(0,0,0,0.5)] p-1">
             <div className="flex gap-0.5">
               {leftNav.map((item) => (
                 <Link

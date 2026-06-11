@@ -36,17 +36,28 @@ export function DateRangePopover({ dari, sampai, onChange, warning, className }:
 
   const showSampai = !!(dari || sampai)
 
+  // Editor di-stack vertikal: "Dari" lebar penuh, lalu "s/d Sampai" lebar penuh.
+  // Input date native menolak menyusut <~115px → stacking = bebas overflow di
+  // semua lebar HP (dipakai sebagai editor on-demand di balik chip tanggal).
   return (
-    <div className={cn('flex items-center gap-1.5 min-w-0', className)}>
-      <Input
-        type="date"
-        value={dari}
-        onChange={(e) => setDari(e.target.value)}
-        className="h-8 text-xs px-2 min-w-0 flex-1 text-stone-600 dark:text-zinc-300"
-      />
+    <div className={cn('flex flex-col gap-1.5 min-w-0', className)}>
+      <div className="flex items-center gap-1.5 min-w-0">
+        <span className="w-7 shrink-0 text-[10px] font-medium uppercase text-stone-400 dark:text-zinc-500">Dari</span>
+        <Input
+          type="date"
+          value={dari}
+          onChange={(e) => setDari(e.target.value)}
+          className="h-8 text-xs px-2 min-w-0 flex-1 text-stone-600 dark:text-zinc-300"
+        />
+        {warning && (
+          <span title="Ada >1 harga di rentang ini — harga pakai tanggal awal. Pecah baris kalau perlu." className="shrink-0">
+            <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+          </span>
+        )}
+      </div>
       {showSampai && (
-        <>
-          <span className="text-[10px] font-medium text-stone-400 dark:text-zinc-500 shrink-0">s/d</span>
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="w-7 shrink-0 text-[10px] font-medium text-stone-400 dark:text-zinc-500">s/d</span>
           <Input
             type="date"
             value={sampai}
@@ -64,12 +75,7 @@ export function DateRangePopover({ dari, sampai, onChange, warning, className }:
               ×
             </button>
           )}
-        </>
-      )}
-      {warning && (
-        <span title="Ada >1 harga di rentang ini — harga pakai tanggal awal. Pecah baris kalau perlu." className="shrink-0">
-          <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
-        </span>
+        </div>
       )}
     </div>
   )

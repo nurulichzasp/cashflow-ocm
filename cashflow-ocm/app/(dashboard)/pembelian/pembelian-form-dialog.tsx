@@ -12,8 +12,9 @@ import { FotoBuktiUploader } from '@/components/foto-bukti-uploader'
 import { Textarea } from '@/components/ui/textarea'
 import { DateRangePopover } from '@/components/date-range-popover'
 import { createPembelian, updatePembelian, getHargaAcuanListForProduk, type KategoriPembelian, type DetailInput } from './actions'
-import { formatRupiah, formatRentangReplas, todayString } from '@/lib/format'
-import { Plus, Trash2, CalendarDays } from 'lucide-react'
+import { formatRupiah, formatRentangReplas, formatRentangKotak, todayString } from '@/lib/format'
+import { cn } from '@/lib/utils'
+import { Plus, Trash2, CalendarDays, AlertTriangle } from 'lucide-react'
 
 type PeronOption = { id: string; nama: string; keuntunganPerKg: number }
 type AkunOption = { id: string; nama: string; tipe: string }
@@ -69,6 +70,8 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
   const [keteranganManual, setKeteranganManual] = useState(false)
   const [fotos, setFotos] = useState<string[]>([])
   const [details, setDetails] = useState<DetailRow[]>([{ ...EMPTY_DETAIL }])
+  // Baris mana yang editor tanggalnya sedang terbuka (chip diketuk). null = semua tertutup.
+  const [editingDateIdx, setEditingDateIdx] = useState<number | null>(null)
 
   useEffect(() => {
     if (initialData && open) {
@@ -191,6 +194,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
 
   function removeDetail(idx: number) {
     setDetails((prev) => prev.filter((_, i) => i !== idx))
+    setEditingDateIdx(null)
   }
 
   // Keterangan otomatis: "Total {N} Replas ({rentang})" dari baris bertonase > 0.
@@ -230,6 +234,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
     setKeteranganManual(false)
     setFotos([])
     setDetails([{ ...EMPTY_DETAIL }])
+    setEditingDateIdx(null)
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -347,22 +352,22 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
             </div>
 
             <div className="rounded-lg border border-stone-200 dark:border-border overflow-hidden">
-              {/* Header — Replas | Tonase | Harga | hapus. Tgl Replas pindah ke baris penuh per item. */}
-              <div className="grid grid-cols-[44px_1fr_1fr_28px] gap-0 bg-stone-50 dark:bg-white/[0.03] border-b border-stone-200 dark:border-border text-[10px] sm:text-xs font-semibold uppercase text-stone-500 tracking-wide">
-                <div className="px-1.5 py-2 text-right">Replas</div>
+              {/* Header — Replas | Tonase | Rp/kg | Tgl | hapus. Tiap item = 1 baris ringkas. */}
+              <div className="grid grid-cols-[36px_minmax(0,1fr)_minmax(0,1fr)_104px_26px] gap-0 bg-stone-50 dark:bg-white/[0.03] border-b border-stone-200 dark:border-border text-[10px] sm:text-xs font-semibold uppercase text-stone-500 tracking-wide">
+                <div className="px-1 py-2 text-right">Replas</div>
                 <div className="px-1.5 py-2 text-right">Tonase</div>
-                <div className="px-1.5 py-2">Rp/kg *</div>
+                <div className="px-1.5 py-2 text-right">Rp/kg *</div>
+                <div className="px-1.5 py-2 text-center">Tgl</div>
                 <div className="px-1 py-2" />
               </div>
 
-              {/* Rows */}
+              {/* Rows — satu baris per item; tanggal = 1 chip ringkas (ketuk untuk pilih). */}
               {details.map((d, idx) => {
-                const ton = parseFloat(d.tonase) || 0
-                const harga = parseFloat(d.hargaLapangan) || 0
-                const subtotal = ton * harga
+                const hasDate = !!d.tanggalReplas
+                const isEditing = editingDateIdx === idx
                 return (
                   <div key={idx} className="border-b border-stone-100 dark:border-border last:border-b-0">
-                    <div className="grid grid-cols-[44px_1fr_1fr_28px] gap-0 items-center">
+                    <div className="grid grid-cols-[36px_minmax(0,1fr)_minmax(0,1fr)_104px_26px] gap-0 items-center">
                       <div className="px-1 py-1.5 min-w-0">
                         <Input
                           type="text"
@@ -391,6 +396,26 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
                           className="h-8 text-sm min-w-0 px-1.5"
                         />
                       </div>
+                      {/* Chip tanggal — 1 kotak ringkas; ketuk untuk buka editor native */}
+                      <div className="px-1 py-1.5 min-w-0">
+                        <button
+                          type="button"
+                          onClick={() => setEditingDateIdx(isEditing ? null : idx)}
+                          aria-label="Tanggal replas"
+                          className={cn(
+                            'flex h-8 w-full items-center justify-center gap-1 rounded-md border px-1 text-[11px] transition-colors',
+                            isEditing
+                              ? 'border-[var(--brand)] text-stone-800 dark:text-zinc-100'
+                              : hasDate
+                                ? 'border-stone-200 dark:border-border text-stone-600 dark:text-zinc-300'
+                                : 'border-stone-200 dark:border-border text-stone-400 dark:text-zinc-500',
+                          )}
+                        >
+                          <CalendarDays className="h-3 w-3 shrink-0" />
+                          <span className="truncate">{hasDate ? formatRentangKotak(d.tanggalReplas, d.tanggalReplasSampai) : 'Tgl'}</span>
+                          {warnRange(d) && <AlertTriangle className="h-3 w-3 shrink-0 text-amber-500" />}
+                        </button>
+                      </div>
                       <div className="px-0 py-1.5 flex justify-center">
                         {details.length > 1 && (
                           <button type="button" onClick={() => removeDetail(idx)} className="h-7 w-7 flex items-center justify-center rounded text-stone-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10">
@@ -399,24 +424,15 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
                         )}
                       </div>
                     </div>
-                    {/* Tgl Replas — baris penuh sendiri (1 kolom): label di atas,
-                        rentang Dari–Sampai dapat lebar penuh (tak lagi dijejal di grid) */}
-                    <div className="px-2 pb-2 pt-0.5 space-y-1">
-                      <span className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-stone-400 dark:text-zinc-500">
-                        <CalendarDays className="h-3 w-3" />
-                        Tgl Replas
-                      </span>
-                      <DateRangePopover
-                        dari={d.tanggalReplas}
-                        sampai={d.tanggalReplasSampai}
-                        onChange={(from, sampai) => setRowRange(idx, from, sampai)}
-                        warning={warnRange(d)}
-                      />
-                    </div>
-                    {subtotal > 0 && (
-                      <div className="px-3 pb-1.5 text-xs text-stone-500 flex gap-4">
-                        <span>Subtotal: <span className="font-semibold text-stone-800 dark:text-zinc-200">{formatRupiah(subtotal)}</span></span>
-                        {keuntunganPerKg > 0 && <span>H. Jual: <span className="font-medium">{(harga + keuntunganPerKg).toLocaleString('id-ID')}/kg</span></span>}
+                    {/* Editor tanggal native — muncul HANYA saat chip baris ini diketuk */}
+                    {isEditing && (
+                      <div className="px-2 pb-2 pt-0.5">
+                        <DateRangePopover
+                          dari={d.tanggalReplas}
+                          sampai={d.tanggalReplasSampai}
+                          onChange={(from, sampai) => setRowRange(idx, from, sampai)}
+                          warning={warnRange(d)}
+                        />
                       </div>
                     )}
                   </div>
