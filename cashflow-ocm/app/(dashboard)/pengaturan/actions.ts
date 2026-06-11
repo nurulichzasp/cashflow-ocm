@@ -181,6 +181,29 @@ export async function resetUserPassword(targetUserId: string, newPassword: strin
   return { success: true }
 }
 
+// 6. Update hak akses (permissions per modul) pengguna lain
+export async function updateUserPermissions(targetUserId: string, permissions: string) {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session || session.user.role !== 'owner') {
+    throw new Error('Hanya Owner yang dapat mengubah hak akses pengguna')
+  }
+
+  // Validasi: pastikan payload JSON yang valid sebelum disimpan.
+  try {
+    JSON.parse(permissions)
+  } catch {
+    throw new Error('Format hak akses tidak valid')
+  }
+
+  await db
+    .update(user)
+    .set({ permissions, updatedAt: new Date() })
+    .where(eq(user.id, targetUserId))
+
+  revalidatePath('/')
+  return { success: true }
+}
+
 // ─── PPN / PPh Tracking ──────────────────────────────────────────────────────
 
 export async function updatePpnStatus(bulan: string, statusSetor: 'belum' | 'sudah', tanggalSetor?: string) {

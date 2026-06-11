@@ -55,6 +55,7 @@ import {
   UserPlus,
   RefreshCw,
   Wallet2,
+  SlidersHorizontal,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -62,6 +63,7 @@ import {
   deleteUser,
   updateUserRole,
   resetUserPassword,
+  updateUserPermissions,
 } from './actions'
 import { useRouter } from 'next/navigation'
 import { ThermalPrinterSettings } from './thermal-printer-settings'
@@ -76,6 +78,33 @@ interface UserItem {
   email: string
   role: string
   image: string | null
+  permissions?: string | null
+}
+
+type ModulePerms = {
+  pembelian: boolean
+  penjualan: boolean
+  kas: boolean
+  biaya: boolean
+  delete: boolean
+}
+
+const DEFAULT_PERMS: ModulePerms = {
+  pembelian: true,
+  penjualan: true,
+  kas: true,
+  biaya: true,
+  delete: false,
+}
+
+/** Parse kolom permissions (JSON string) jadi objek, fallback default bila kosong/rusak. */
+function parseUserPerms(raw?: string | null): ModulePerms {
+  if (!raw) return { ...DEFAULT_PERMS }
+  try {
+    return { ...DEFAULT_PERMS, ...JSON.parse(raw) }
+  } catch {
+    return { ...DEFAULT_PERMS }
+  }
 }
 
 interface SettingsClientProps {
@@ -254,6 +283,36 @@ export function SettingsClient({ currentUser, initialUsers, section }: SettingsC
       toast.error(msg)
     } finally {
       setResettingPass(false)
+    }
+  }
+
+  // Edit access (permissions per modul) state
+  const [editAccessOpen, setEditAccessOpen] = useState(false)
+  const [editAccessTarget, setEditAccessTarget] = useState<UserItem | null>(null)
+  const [editPerms, setEditPerms] = useState<ModulePerms>(DEFAULT_PERMS)
+  const [savingAccess, setSavingAccess] = useState(false)
+
+  function openEditAccess(target: UserItem) {
+    setEditAccessTarget(target)
+    setEditPerms(parseUserPerms(target.permissions))
+    setEditAccessOpen(true)
+  }
+
+  async function handleSaveAccess(e: React.FormEvent) {
+    e.preventDefault()
+    if (!editAccessTarget) return
+
+    setSavingAccess(true)
+    try {
+      await updateUserPermissions(editAccessTarget.id, JSON.stringify(editPerms))
+      toast.success(`Hak akses ${editAccessTarget.name} berhasil diperbarui`)
+      setEditAccessOpen(false)
+      router.refresh()
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Gagal memperbarui hak akses'
+      toast.error(msg)
+    } finally {
+      setSavingAccess(false)
     }
   }
 
@@ -641,6 +700,17 @@ export function SettingsClient({ currentUser, initialUsers, section }: SettingsC
                         <TableCell className="text-right">
                           {isOwner && user.id !== currentUser.id ? (
                             <div className="flex items-center justify-end gap-1.5">
+                              {/* Edit Akses (hak akses per modul) */}
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 text-stone-500 hover:bg-stone-100 dark:hover:bg-stone-800"
+                                onClick={() => openEditAccess(user)}
+                                title="Atur Hak Akses"
+                              >
+                                <SlidersHorizontal className="h-3.5 w-3.5" />
+                              </Button>
+
                               {/* Change Role */}
                               <Button
                                 size="icon"
@@ -739,6 +809,70 @@ export function SettingsClient({ currentUser, initialUsers, section }: SettingsC
                   </TableBody>
                 </Table>
               </div>
+
+              {/* Dialog Atur Hak Akses — edit permissions modul untuk user terpilih */}
+              <Dialog open={editAccessOpen} onOpenChange={setEditAccessOpen}>
+                <DialogContent className="sm:max-w-[420px] dark:bg-card">
+                  <DialogHeader>
+                    <DialogTitle className="font-bold">Atur Hak Akses</DialogTitle>
+                    <DialogDescription>
+                      Tentukan modul yang bisa diakses oleh{' '}
+                      <strong>{editAccessTarget?.name}</strong>.
+                      {editAccessTarget?.role === 'owner' && (
+                        <span className="mt-1 block text-amber-600 dark:text-amber-400">
+                          Catatan: Owner selalu punya akses penuh, terlepas dari pengaturan ini.
+                        </span>
+                      )}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={handleSaveAccess} className="space-y-4 py-2">
+                    <div className="space-y-2">
+                      {([
+                        { key: 'pembelian', label: 'Modul Pembelian', desc: 'Tiket sawit & timbangan' },
+                        { key: 'penjualan', label: 'Modul Penjualan', desc: 'Invoice BGA' },
+                        { key: 'kas', label: 'Buku Kas', desc: 'Mutasi rekening' },
+                        { key: 'biaya', label: 'Biaya Operasional', desc: 'Pengeluaran harian' },
+                      ] as const).map((row) => (
+                        <div
+                          key={row.key}
+                          className="flex items-center justify-between gap-3 rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-white/[0.02] px-3.5 py-2.5"
+                        >
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-stone-800 dark:text-stone-200">{row.label}</p>
+                            <p className="text-[11px] text-stone-400 dark:text-stone-500">{row.desc}</p>
+                          </div>
+                          <Switch
+                            checked={editPerms[row.key]}
+                            onCheckedChange={(v) => setEditPerms((p) => ({ ...p, [row.key]: v }))}
+                            aria-label={`Akses ${row.label}`}
+                          />
+                        </div>
+                      ))}
+
+                      <div className="flex items-center justify-between gap-3 rounded-xl border border-red-200 dark:border-red-950/60 bg-red-50/40 dark:bg-red-950/10 px-3.5 py-2.5">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-red-600 dark:text-red-400">Hapus Transaksi</p>
+                          <p className="text-[11px] text-red-400 dark:text-red-400/70">Izin menghapus data permanen</p>
+                        </div>
+                        <Switch
+                          checked={editPerms.delete}
+                          onCheckedChange={(v) => setEditPerms((p) => ({ ...p, delete: v }))}
+                          aria-label="Akses Hapus Transaksi"
+                        />
+                      </div>
+                    </div>
+
+                    <DialogFooter className="pt-2">
+                      <Button type="button" variant="outline" onClick={() => setEditAccessOpen(false)} className="border-stone-200">
+                        Batal
+                      </Button>
+                      <Button type="submit" disabled={savingAccess} className="bg-stone-900 hover:bg-stone-800 dark:bg-white dark:hover:bg-zinc-200 dark:text-stone-900 text-white">
+                        {savingAccess ? 'Menyimpan...' : 'Simpan Akses'}
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
             </CardContent>
           </Card>
         )}
