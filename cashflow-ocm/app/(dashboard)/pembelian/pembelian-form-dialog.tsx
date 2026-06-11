@@ -133,9 +133,8 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
     return acuanList.some((a) => a.tanggalBerlaku > d.tanggalReplas && a.tanggalBerlaku <= d.tanggalReplasSampai)
   }
 
-  // Referensi harga untuk tanggal header (panel ringkasan)
+  // Referensi harga untuk tanggal header (panel ringkasan — acuan & kelebihan saja)
   const headerAcuan = lookupAcuan(tanggal)
-  const headerAuto = autoHargaForDate(tanggal)
 
   // Muat seluruh riwayat harga acuan produk saat dialog dibuka / produk berganti.
   useEffect(() => {
@@ -324,16 +323,15 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
             </div>
           </div>
 
-          {/* Referensi Harga Otomatis (tanggal header) — harga PER BARIS ikut tanggal replas masing-masing */}
+          {/* Referensi Harga Otomatis — sengaja TANPA harga beli & untung CV
+              (kadang form diisi di depan pemilik peron). Cukup acuan & kelebihan. */}
           {!initialData && headerAcuan && (
             <div className="rounded-lg border border-stone-200 dark:border-border bg-stone-50 dark:bg-white/[0.03] px-4 py-3 text-sm">
               <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-[#6B7280] mb-1.5">Harga Otomatis ({derivedProduk})</p>
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-600 dark:text-stone-300">
                 <span>Acuan: <strong className="num">Rp {headerAcuan.hargaLapangan.toLocaleString('id-ID')}</strong>/kg</span>
                 <span>Kelebihan: <strong className="num">Rp {(headerAcuan.selisihJualBga - keuntunganPerKg).toLocaleString('id-ID')}</strong></span>
-                <span className="text-stone-900 dark:text-stone-100 font-semibold">Harga Beli: <strong className="num">Rp {(headerAuto ?? 0).toLocaleString('id-ID')}</strong>/kg</span>
               </div>
-              <p className="text-[10px] text-stone-400 mt-1">Acuan tanggal header · tiap baris pakai tanggal replas-nya sendiri · Untung CV: Rp {keuntunganPerKg}/kg</p>
             </div>
           )}
           {!initialData && !headerAcuan && !hargaLoading && (

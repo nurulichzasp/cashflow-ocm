@@ -11,7 +11,7 @@ import {
   ShoppingCart,
   TrendingUp,
   Search,
-  LayoutGrid,
+  Menu,
   X,
   LogOut,
 } from 'lucide-react'
@@ -129,7 +129,7 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
         style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0.75rem)' }}
       >
         <div className="flex justify-center px-5">
-          <nav className="pointer-events-auto relative flex w-fit gap-0.5 rounded-full backdrop-blur-md bg-black/[0.20] shadow-[0_8px_28px_rgba(0,0,0,0.28)] p-1">
+          <nav className="pointer-events-auto relative flex w-fit gap-0.5 rounded-full bg-zinc-900/90 shadow-[0_8px_28px_rgba(0,0,0,0.28)] p-1">
             <div className="flex gap-0.5">
               {leftNav.map((item) => (
                 <Link
@@ -168,7 +168,7 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
                 aria-label="Lainnya"
                 className="flex h-[52px] w-[60px] items-center justify-center"
               >
-                <NavTab active={drawerOpen} label="Lainnya" icon={LayoutGrid} />
+                <NavTab active={drawerOpen} label="Lainnya" icon={Menu} />
               </button>
             </div>
           </nav>
