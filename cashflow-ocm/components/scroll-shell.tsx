@@ -1,8 +1,10 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { MobileHeader } from '@/components/mobile-header'
+import { usePathname } from 'next/navigation'
+import { MobileHeader, isFullscreenRoute } from '@/components/mobile-header'
 import { setNavCompact } from '@/lib/nav-visibility-store'
+import { cn } from '@/lib/utils'
 
 /**
  * ScrollShell — kontainer scroll konten + header mobile.
@@ -12,6 +14,8 @@ import { setNavCompact } from '@/lib/nav-visibility-store'
  */
 export function ScrollShell({ children, user }: { children: React.ReactNode; user?: { name?: string; nickname?: string | null; image?: string | null } }) {
   const mainRef = useRef<HTMLElement>(null)
+  const pathname = usePathname()
+  const fullscreen = isFullscreenRoute(pathname)
 
   // Bar bawah mengecil saat scroll ke bawah, kembali penuh saat scroll ke atas /
   // di puncak (gaya Instagram). Listener di <main> (wadah scroll, bukan window).
@@ -60,7 +64,13 @@ export function ScrollShell({ children, user }: { children: React.ReactNode; use
         </div>
       </div>
 
-      <main ref={mainRef} className="flex-1 overflow-y-auto bg-background px-4 pt-[calc(64px+env(safe-area-inset-top))] pb-32 md:p-6">
+      <main
+        ref={mainRef}
+        className={cn(
+          'flex-1 overflow-y-auto bg-background px-4 pt-[calc(64px+env(safe-area-inset-top))] md:p-6',
+          fullscreen ? 'pb-8' : 'pb-32',
+        )}
+      >
         <div className="app-container md:mx-auto md:max-w-[1320px]">{children}</div>
       </main>
     </div>

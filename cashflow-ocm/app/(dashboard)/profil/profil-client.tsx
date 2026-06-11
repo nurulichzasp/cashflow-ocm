@@ -6,7 +6,6 @@ import { signOut } from '@/lib/auth-client'
 import { ProfileDialog } from '@/components/profile-dialog'
 import { getSettingsGroups } from '@/lib/settings-groups'
 import { fotoUrl } from '@/lib/foto-url'
-import { cn } from '@/lib/utils'
 import { ChevronRight, User, LogOut } from 'lucide-react'
 
 function getInitials(name?: string | null): string {
@@ -27,6 +26,13 @@ type ProfilUser = {
   address?: string | null
 }
 
+// Baris list datar ala Settings Instagram: ikon tipis tanpa kotak + label + chevron.
+const rowCls = 'flex w-full items-center gap-3.5 py-3 text-left transition-opacity active:opacity-60'
+const iconCls = 'h-[22px] w-[22px] shrink-0 text-stone-500 dark:text-zinc-400'
+const labelCls = 'min-w-0 flex-1 text-[15px] font-medium text-stone-900 dark:text-zinc-100'
+const chevronCls = 'h-[17px] w-[17px] shrink-0 text-stone-300 dark:text-stone-600'
+const dividerCls = 'divide-y divide-black/[0.05] dark:divide-white/[0.06]'
+
 export function ProfilClient({ user, isOwner }: { user: ProfilUser; isOwner: boolean }) {
   const router = useRouter()
   const groups = getSettingsGroups(isOwner)
@@ -39,36 +45,34 @@ export function ProfilClient({ user, isOwner }: { user: ProfilUser; isOwner: boo
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 pb-4">
-      {/* Kartu profil */}
-      <div className="surface flex flex-col items-center px-6 py-7 text-center">
+    <div className="mx-auto max-w-2xl space-y-7">
+      {/* Kartu profil — dirampingkan */}
+      <div className="surface flex flex-col items-center px-5 py-5 text-center">
         {user.image ? (
-          <img src={fotoUrl(user.image)} alt="Avatar" className="h-20 w-20 rounded-full object-cover" />
+          <img src={fotoUrl(user.image)} alt="Avatar" className="h-16 w-16 rounded-full object-cover" />
         ) : (
-          <div className="grid h-20 w-20 place-items-center rounded-full bg-stone-200 text-2xl font-bold text-stone-600 dark:bg-white/[0.08] dark:text-zinc-200">
+          <div className="grid h-16 w-16 place-items-center rounded-full bg-stone-200 text-xl font-bold text-stone-600 dark:bg-white/[0.08] dark:text-zinc-200">
             {getInitials(displayName)}
           </div>
         )}
-        <p className="mt-3 text-lg font-bold tracking-tight text-stone-900 dark:text-zinc-50">{displayName}</p>
-        <p className="text-sm text-stone-500 dark:text-zinc-400">{user.email}</p>
+        <p className="mt-2.5 text-base font-bold tracking-tight text-stone-900 dark:text-zinc-50">{displayName}</p>
+        <p className="text-[13px] text-stone-500 dark:text-zinc-400">{user.email}</p>
         <ProfileDialog user={user}>
-          <button className="mt-4 rounded-full border border-stone-300 px-5 py-2 text-sm font-semibold text-stone-700 transition-colors hover:bg-stone-100 dark:border-white/[0.12] dark:text-zinc-200 dark:hover:bg-white/[0.06]">
+          <button className="mt-3 rounded-full border border-stone-300 px-4 py-1.5 text-[13px] font-semibold text-stone-700 transition-colors hover:bg-stone-100 dark:border-white/[0.12] dark:text-zinc-200 dark:hover:bg-white/[0.06]">
             Edit profil
           </button>
         </ProfileDialog>
       </div>
 
       {/* Akun */}
-      <section className="space-y-2">
-        <h2 className="px-1 text-xs font-semibold uppercase tracking-widest text-stone-400 dark:text-stone-500">Akun</h2>
-        <div className="surface overflow-hidden p-0 divide-y divide-stone-100 dark:divide-white/[0.06]">
+      <section className="space-y-1">
+        <h2 className="px-1 text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-stone-500">Akun</h2>
+        <div className={dividerCls}>
           <ProfileDialog user={user}>
-            <button className="group flex w-full items-center gap-3.5 px-4 py-3.5 text-left transition-colors hover:bg-stone-50 dark:hover:bg-white/[0.03] active:bg-stone-100 dark:active:bg-white/[0.05]">
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-stone-100 text-stone-600 dark:bg-white/[0.06] dark:text-stone-300">
-                <User className="h-[18px] w-[18px]" />
-              </span>
-              <span className="min-w-0 flex-1 text-sm font-medium text-stone-900 dark:text-zinc-100">Informasi pribadi</span>
-              <ChevronRight className="h-[18px] w-[18px] shrink-0 text-stone-300 transition-transform group-hover:translate-x-0.5 group-hover:text-stone-500 dark:text-stone-600 dark:group-hover:text-stone-400" />
+            <button className={rowCls}>
+              <User className={iconCls} strokeWidth={1.75} />
+              <span className={labelCls}>Informasi pribadi</span>
+              <ChevronRight className={chevronCls} />
             </button>
           </ProfileDialog>
         </div>
@@ -76,20 +80,14 @@ export function ProfilClient({ user, isOwner }: { user: ProfilUser; isOwner: boo
 
       {/* Grup pengaturan — link ke /pengaturan/* yang sudah ada */}
       {groups.map((group) => (
-        <section key={group.label} className="space-y-2">
-          <h2 className="px-1 text-xs font-semibold uppercase tracking-widest text-stone-400 dark:text-stone-500">{group.label}</h2>
-          <div className="surface overflow-hidden p-0 divide-y divide-stone-100 dark:divide-white/[0.06]">
+        <section key={group.label} className="space-y-1">
+          <h2 className="px-1 text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-stone-500">{group.label}</h2>
+          <div className={dividerCls}>
             {group.items.map(({ href, icon: Icon, title }) => (
-              <Link
-                key={href}
-                href={href}
-                className="group flex items-center gap-3.5 px-4 py-3.5 transition-colors hover:bg-stone-50 dark:hover:bg-white/[0.03] active:bg-stone-100 dark:active:bg-white/[0.05]"
-              >
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-stone-100 text-stone-600 dark:bg-white/[0.06] dark:text-stone-300">
-                  <Icon className="h-[18px] w-[18px]" />
-                </span>
-                <span className="min-w-0 flex-1 text-sm font-medium text-stone-900 dark:text-zinc-100">{title}</span>
-                <ChevronRight className="h-[18px] w-[18px] shrink-0 text-stone-300 transition-transform group-hover:translate-x-0.5 group-hover:text-stone-500 dark:text-stone-600 dark:group-hover:text-stone-400" />
+              <Link key={href} href={href} className={rowCls}>
+                <Icon className={iconCls} strokeWidth={1.75} />
+                <span className={labelCls}>{title}</span>
+                <ChevronRight className={chevronCls} />
               </Link>
             ))}
           </div>
@@ -99,12 +97,9 @@ export function ProfilClient({ user, isOwner }: { user: ProfilUser; isOwner: boo
       {/* Keluar — destruktif, hemat */}
       <button
         onClick={handleLogout}
-        className={cn(
-          'flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-semibold transition-colors',
-          'text-[#DC2626] hover:bg-[#DC2626]/[0.06] dark:text-[#F87171] dark:hover:bg-[#F87171]/[0.08]',
-        )}
+        className="flex w-full items-center justify-center gap-2 py-3.5 text-[15px] font-semibold text-[#DC2626] transition-opacity active:opacity-60 dark:text-[#F87171]"
       >
-        <LogOut className="h-4 w-4" />
+        <LogOut className="h-[18px] w-[18px]" />
         Keluar
       </button>
     </div>

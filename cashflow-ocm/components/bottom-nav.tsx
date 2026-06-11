@@ -3,65 +3,66 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react'
 import { cn } from '@/lib/utils'
 import {
   House,
   ShoppingCart,
-  TrendingUp,
+  Banknote,
   Search,
   Menu,
   X,
 } from 'lucide-react'
 import { ShortcutGrid } from '@/components/shortcut-grid'
 import { CommandPalette } from '@/components/command-palette'
+import { isFullscreenRoute } from '@/components/mobile-header'
 import { parsePerms, isRouteActive } from '@/lib/nav-routes'
 import { useNavCompact } from '@/lib/nav-visibility-store'
 
 const primaryNav = [
   { href: '/dashboard', label: 'Beranda', icon: House, perm: undefined },
   { href: '/pembelian', label: 'Pembelian', icon: ShoppingCart, perm: 'pembelian' as const },
-  { href: '/penjualan', label: 'Penjualan', icon: TrendingUp, perm: 'penjualan' as const },
+  // Penjualan = uang masuk → ikon Banknote (uang kertas). Bukan $ (kita Rupiah),
+  // jelas terbaca kecil, dan tak mirip cart/search/home/menu.
+  { href: '/penjualan', label: 'Penjualan', icon: Banknote, perm: 'penjualan' as const },
 ]
 
 function NavTab({
   active,
-  label,
   icon: Icon,
-  compact,
+  dot,
 }: {
   active: boolean
-  label: string
   icon: React.ElementType
-  compact?: boolean
+  /** Slot badge notifikasi (titik merah ala IG). Belum diwire — siap pakai. */
+  dot?: boolean
 }) {
   return (
     <motion.div
-      whileTap={{ scale: 0.86 }}
+      whileTap={{ scale: 0.9 }}
       transition={{ type: 'spring', stiffness: 400, damping: 24 }}
-      className="relative flex h-full w-full flex-col items-center justify-center gap-[3px]"
+      className="relative flex h-full w-full items-center justify-center"
     >
-      {/* Tanpa pill/kotak aktif — penanda cukup warna emerald pada ikon + label. */}
+      {/* Pill aktif gaya IG — oval putih translucent yang MELUNCUR antar tab (layoutId),
+          tanpa border tegas. */}
+      {active && (
+        <motion.span
+          layoutId="nav-active-pill"
+          transition={{ type: 'spring', stiffness: 460, damping: 36 }}
+          className="absolute inset-x-1 inset-y-[7px] rounded-full bg-white/[0.12] dark:bg-white/[0.14]"
+        />
+      )}
       <Icon
         className={cn(
-          'relative z-10 transition-all duration-200 motion-reduce:transition-none',
-          compact ? 'h-[19px] w-[19px]' : 'h-[21px] w-[21px]',
-          active ? 'text-[var(--brand)]' : 'text-stone-400 dark:text-zinc-500',
+          'relative z-10 transition-colors',
+          active ? 'text-[var(--brand)]' : 'text-stone-400 dark:text-zinc-400',
         )}
+        style={{ width: 25, height: 25 }}
         fill={active ? 'currentColor' : 'none'}
-        strokeWidth={active ? 2.25 : 2}
+        strokeWidth={active ? 1.9 : 1.6}
       />
-      {!compact && (
-        <span
-          className={cn(
-            'relative z-10 text-[9px] leading-none tracking-tight transition-colors',
-            active
-              ? 'font-semibold text-[var(--brand)]'
-              : 'font-medium text-stone-400 dark:text-zinc-500',
-          )}
-        >
-          {label}
-        </span>
+      {dot && (
+        <span className="absolute right-[9px] top-[9px] z-10 h-2 w-2 rounded-full bg-red-500 ring-2 ring-black/40" />
       )}
     </motion.div>
   )
@@ -75,6 +76,9 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
 
   const perms = parsePerms(user?.permissions)
   const compact = useNavCompact()
+  const prefersReduced = useReducedMotion()
+  // Profil & Pengaturan = full-screen → bar disembunyikan (CommandPalette tetap mount).
+  const hideBar = isFullscreenRoute(pathname)
 
   // Search di TENGAH: 2 tab kiri (Dashboard, Pembelian) · Search · 1 tab kanan (Penjualan) · Profile
   const leftNav = primaryNav.filter((item) => {
@@ -95,30 +99,32 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
       {/* Command palette (search) — dibuka via tombol Search di bawah / Cmd+K */}
       <CommandPalette showTrigger={false} isOwner={isOwner} perms={perms} />
 
-      {/* Bottom bar — pill LIQUID GLASS senada FAB (bg-white/10 + blur + rim border).
-          Scroll bawah → compact (label hilang, tab mengecil); scroll atas/puncak →
-          penuh. Transisi halus, hormati prefers-reduced-motion. SELALU terlihat. */}
+      {!hideBar && (
+      <>
+      {/* Bottom bar — LIQUID GLASS ala Instagram: SANGAT transparan (bg putih ~7%)
+          + blur kuat + highlight tepi atas (inset) → kesan kaca cembung; konten
+          samar tembus. Ikon-only + pill aktif geser. Scroll bawah → menyusut halus
+          (spring scale), scroll atas/puncak → penuh. SELALU terlihat. */}
       <div
         className="md:hidden fixed bottom-0 inset-x-0 z-40 pointer-events-none"
         style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0.75rem)' }}
       >
         <div className="flex justify-center px-5">
-          <nav className={cn(
-            'pointer-events-auto relative flex w-fit items-center gap-0.5 rounded-full backdrop-blur-xl backdrop-saturate-150 bg-white/[0.10] border border-white/[0.15] shadow-[0_8px_30px_rgba(0,0,0,0.35)] transition-all duration-200 motion-reduce:transition-none',
-            compact ? 'p-0.5' : 'p-1',
-          )}>
+          <motion.nav
+            animate={{ scale: compact ? 0.9 : 1 }}
+            transition={prefersReduced ? { duration: 0 } : { type: 'spring', stiffness: 300, damping: 30 }}
+            style={{ transformOrigin: 'bottom center' }}
+            className="pointer-events-auto relative flex w-fit items-center gap-0.5 rounded-full p-1 backdrop-blur-2xl backdrop-saturate-150 bg-white/[0.07] border border-white/[0.12] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.20),0_10px_30px_-6px_rgba(0,0,0,0.5)]"
+          >
             <div className="flex items-center gap-0.5">
               {leftNav.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
                   aria-label={item.label}
-                  className={cn(
-                    'flex items-center justify-center transition-all duration-200 motion-reduce:transition-none',
-                    compact ? 'h-11 w-12' : 'h-[52px] w-[60px]',
-                  )}
+                  className="flex h-12 w-14 items-center justify-center"
                 >
-                  <NavTab active={isActive(item.href)} label={item.label} icon={item.icon} compact={compact} />
+                  <NavTab active={isActive(item.href)} icon={item.icon} />
                 </Link>
               ))}
 
@@ -126,12 +132,9 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
               <button
                 onClick={() => window.dispatchEvent(new CustomEvent('ocm-open-search'))}
                 aria-label="Cari"
-                className={cn(
-                  'flex items-center justify-center transition-all duration-200 motion-reduce:transition-none',
-                  compact ? 'h-11 w-12' : 'h-[52px] w-[60px]',
-                )}
+                className="flex h-12 w-14 items-center justify-center"
               >
-                <NavTab active={false} label="Cari" icon={Search} compact={compact} />
+                <NavTab active={false} icon={Search} />
               </button>
 
               {rightNav.map((item) => (
@@ -139,12 +142,9 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
                   key={item.href}
                   href={item.href}
                   aria-label={item.label}
-                  className={cn(
-                    'flex items-center justify-center transition-all duration-200 motion-reduce:transition-none',
-                    compact ? 'h-11 w-12' : 'h-[52px] w-[60px]',
-                  )}
+                  className="flex h-12 w-14 items-center justify-center"
                 >
-                  <NavTab active={isActive(item.href)} label={item.label} icon={item.icon} compact={compact} />
+                  <NavTab active={isActive(item.href)} icon={item.icon} />
                 </Link>
               ))}
 
@@ -152,15 +152,12 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
               <button
                 onClick={() => setDrawerOpen(true)}
                 aria-label="Lainnya"
-                className={cn(
-                  'flex items-center justify-center transition-all duration-200 motion-reduce:transition-none',
-                  compact ? 'h-11 w-12' : 'h-[52px] w-[60px]',
-                )}
+                className="flex h-12 w-14 items-center justify-center"
               >
-                <NavTab active={drawerOpen} label="Lainnya" icon={Menu} compact={compact} />
+                <NavTab active={drawerOpen} icon={Menu} />
               </button>
             </div>
-          </nav>
+          </motion.nav>
         </div>
       </div>
 
@@ -218,6 +215,8 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
           </div>
         )}
       </AnimatePresence>
+      </>
+      )}
     </>
   )
 }
