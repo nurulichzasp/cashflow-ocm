@@ -314,6 +314,15 @@ export const peronHealth = sqliteTable('peron_health', {
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
 })
 
+// Token akses portal publik per peron (read-only, transparansi via link WA)
+export const peronAccess = sqliteTable('peron_access', {
+  peronId: text('peron_id').primaryKey().references(() => peron.id, { onDelete: 'cascade' }),
+  token: text('token').notNull().unique(), // crypto-random 64 hex char
+  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+  issuedAt: integer('issued_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+  lastViewedAt: integer('last_viewed_at', { mode: 'timestamp' }),
+})
+
 // Log tindak lanjut — deteksi tanpa aksi = percuma
 export const peronFollowup = sqliteTable('peron_followup', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -425,3 +434,4 @@ export type PphBulanan = typeof pphBulanan.$inferSelect
 export type PeronSnapshot = typeof peronSnapshot.$inferSelect
 export type PeronHealth = typeof peronHealth.$inferSelect
 export type PeronFollowup = typeof peronFollowup.$inferSelect
+export type PeronAccess = typeof peronAccess.$inferSelect

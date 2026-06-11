@@ -2,6 +2,8 @@ import { notFound } from 'next/navigation'
 import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
 import { getPeronById } from '../actions'
+import { getPeronAccess } from '../portal-actions'
+import { PortalLinkCard } from './portal-link-card'
 import { PeronFormDialog } from '../peron-form-dialog'
 import { ModalFormDialog } from '../modal-form-dialog'
 import { ModalHistoryTable } from './modal-history-table'
@@ -18,10 +20,11 @@ export const dynamic = 'force-dynamic'
 
 export default async function PeronDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const [session, data, akunList] = await Promise.all([
+  const [session, data, akunList, access] = await Promise.all([
     auth.api.getSession({ headers: await headers() }),
     getPeronById(id),
     db.select().from(akunKas).orderBy(akunKas.urutan),
+    getPeronAccess(id),
   ])
   const akunOptions = akunList.map(a => ({ id: a.id, nama: a.nama, tipe: a.tipe }))
 
@@ -96,6 +99,9 @@ export default async function PeronDetailPage({ params }: { params: Promise<{ id
           </CardContent>
         </Card>
       </div>
+
+      {/* Link portal peron (transparansi) */}
+      <PortalLinkCard peronId={data.id} peronNama={data.nama} initial={access} />
 
       {/* Riwayat modal */}
       <ModalHistoryTable modal={data.modal} isOwner={isOwner} />

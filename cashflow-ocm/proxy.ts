@@ -17,6 +17,8 @@ const publicPaths = [
   '/manifest.webmanifest', // PWA manifest — browser baca tanpa login (install)
   '/sw.js',             // Service worker — wajib publik biar bisa di-register
   '/offline',           // Fallback offline (di-precache SW) — tak boleh redirect
+  '/p/',                // Portal peron publik (read-only, validasi token di server).
+                        // WAJIB trailing slash — '/p' saja akan cocok /peron, /penjualan, dst.
 ]
 
 export function proxy(request: NextRequest) {
