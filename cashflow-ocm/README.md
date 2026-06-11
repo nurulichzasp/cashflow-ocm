@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Cashflow CV OCM
 
-## Getting Started
+Aplikasi manajemen cashflow untuk **CV Omanda Cerli Mandiri (OCM)** — supplier TBS & BRDL ke PKS PT. BGA. Mencatat pembelian dari peron, penjualan ke BGA, buku kas, biaya operasional, dan laporan laba rugi.
 
-First, run the development server:
+## Stack
+
+- **Next.js 16** (App Router) + **React 19** + **TypeScript** (strict)
+- **Tailwind CSS v4** + shadcn/ui (Radix + base-ui)
+- **Drizzle ORM** + **libSQL/Turso** (SQLite)
+- **Better Auth** (sesi email/password, 2 role: `admin` & `owner`)
+- **Vercel Blob** (foto bukti), **recharts**, **xlsx**, **Sonner**
+- Deploy: **Vercel** → [omandacerli.com](https://omandacerli.com)
+
+## Menjalankan lokal
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local   # isi kredensial (lihat di bawah)
+npm run dev                  # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Build
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run build                # next build (Turbopack)
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+> **Catatan iCloud:** folder ini ada di `Documents` (iCloud), yang kadang membuat
+> file duplikat `* 2.*` di `.next/`. Bila build/`tsc` lokal gagal karena itu,
+> jalankan `find .next -name "* 2.*" -delete` lalu build ulang. Vercel build dari
+> checkout bersih, jadi aman di produksi.
 
-## Learn More
+## Variabel environment
 
-To learn more about Next.js, take a look at the following resources:
+Wajib (lihat `.env.example` untuk daftar lengkap):
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Var | Fungsi |
+|---|---|
+| `TURSO_CONNECTION_URL`, `TURSO_AUTH_TOKEN` | Database Turso |
+| `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` | Sesi auth |
+| `NEXT_PUBLIC_APP_URL`, `ADDITIONAL_TRUSTED_ORIGINS` | Origin tepercaya auth |
+| `BLOB_READ_WRITE_TOKEN` | Upload foto (Vercel Blob) |
+| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `TELEGRAM_WEBHOOK_SECRET` | Notifikasi Telegram |
+| `CRON_SECRET`, `BACKUP_TOKEN` | Cron ringkasan harian & backup |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+> Produksi memakai env vars di dashboard Vercel — perubahan `.env.local` **tidak**
+> menyentuh produksi.
 
-## Deploy on Vercel
+## Domain & aturan kunci
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Uang disimpan sebagai integer Rupiah**; berat (tonase/qtyKg) sebagai `real`.
+- **Harga Beli = Harga Jual BGA − keuntungan/kg peron** (margin 40–100 Rp/kg).
+- Pembayaran BGA: Senin/Rabu/Jumat; spread BGA tetap 120 Rp/kg.
+- `proxy.ts` (bukan `middleware.ts` di Next 16) menggerbang route non-publik → `/login`.
+- Semua halaman `export const dynamic = 'force-dynamic'` (data keuangan harus fresh).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Skrip npm
+
+| Skrip | Fungsi |
+|---|---|
+| `npm run dev` | Dev server |
+| `npm run build` | Build produksi |
+| `npm run lint` | ESLint |
+| `npm run db:generate` / `db:migrate` / `db:studio` | Drizzle Kit |
+
+## Struktur
+
+```
+app/
+  (auth)/login           Halaman login
+  (dashboard)/           Modul: dashboard, peron, harga, pembelian, penjualan,
+                         kas, biaya, laporan, pengaturan
+  api/                   Auth, foto, metrics, cron, telegram, backup, health
+components/              UI bersama (shadcn + komponen app)
+lib/                     db, auth, format, permissions, audit, utils
+drizzle/                 Migrasi SQL
+```
+
+---
+Internal — CV Omanda Cerli Mandiri.
