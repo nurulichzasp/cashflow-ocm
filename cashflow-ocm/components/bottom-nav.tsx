@@ -19,7 +19,7 @@ import { ProfileDialog } from '@/components/profile-dialog'
 import { ShortcutGrid } from '@/components/shortcut-grid'
 import { CommandPalette } from '@/components/command-palette'
 import { fotoUrl } from '@/lib/foto-url'
-import { parsePerms } from '@/lib/nav-routes'
+import { parsePerms, isRouteActive } from '@/lib/nav-routes'
 import { formatTanggalLengkap } from '@/lib/format'
 
 const primaryNav = [
@@ -92,8 +92,7 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
   const router = useRouter()
   const [drawerOpen, setDrawerOpen] = useState(false)
 
-  const isActive = (href: string) =>
-    pathname === href || (href !== '/dashboard' && pathname.startsWith(href))
+  const isActive = (href: string) => isRouteActive(pathname, href)
 
   async function handleLogout() {
     await signOut()

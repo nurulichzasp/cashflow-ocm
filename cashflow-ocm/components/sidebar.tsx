@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { isRouteActive } from '@/lib/nav-routes'
 import { signOut } from '@/lib/auth-client'
 import { useRouter } from 'next/navigation'
 import {
@@ -39,17 +40,15 @@ const navItems = [
   { href: '/pengaturan',  label: 'Pengaturan',   icon: Settings },
 ]
 
+const navPaths = navItems.map((n) => n.href)
+
 /**
- * Aktif bila href cocok DAN tak ada item lain yang lebih spesifik juga cocok
- * (mis. di /peron/kesehatan, "Kesehatan Peron" aktif, "Peron" tidak).
+ * Aktif bila href adalah entri longest-match untuk pathname — entri yang lebih
+ * spesifik menang (mis. di /peron/kesehatan, "Kesehatan Peron" aktif, "Peron"
+ * tidak). Logika terpusat di lib/nav-routes.ts.
  */
 function isNavActive(pathname: string, href: string): boolean {
-  if (pathname === href) return true
-  if (href === '/dashboard') return false
-  if (!pathname.startsWith(href)) return false
-  return !navItems.some(
-    (n) => n.href !== href && n.href.startsWith(href + '/') && pathname.startsWith(n.href),
-  )
+  return isRouteActive(pathname, href, navPaths)
 }
 
 function NavLink({

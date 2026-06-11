@@ -48,6 +48,48 @@ export const APP_ROUTES: AppRoute[] = [
   { label: 'Pengaturan', path: '/pengaturan', group: 'Lainnya', icon: Settings, ownerOnly: true },
 ]
 
+/** Semua path rute yang diketahui — kandidat default untuk longest-match. */
+const ALL_ROUTE_PATHS = APP_ROUTES.map((r) => r.path)
+
+/**
+ * Longest-match: dari daftar path kandidat, kembalikan path terpanjang yang
+ * cocok sebagai segmen-prefix dari `pathname`. Entri yang lebih spesifik
+ * menang, sehingga `/peron` TIDAK ikut menang untuk `/peron/kesehatan`
+ * (gotcha yang sama dengan publicPaths `startsWith` di proxy.ts).
+ */
+export function matchRoutePath(pathname: string, candidatePaths: string[] = ALL_ROUTE_PATHS): string | null {
+  let best: string | null = null
+  for (const path of candidatePaths) {
+    const isMatch = pathname === path || pathname.startsWith(path + '/')
+    if (!isMatch) continue
+    if (best === null || path.length > best.length) best = path
+  }
+  return best
+}
+
+/**
+ * Apakah `href` adalah entri aktif untuk `pathname` (longest-match menang).
+ * Dashboard hanya aktif saat path persis `/dashboard` (bukan sebagai prefix).
+ */
+export function isRouteActive(
+  pathname: string,
+  href: string,
+  candidatePaths: string[] = ALL_ROUTE_PATHS,
+): boolean {
+  if (href === '/dashboard') return pathname === '/dashboard'
+  return matchRoutePath(pathname, candidatePaths) === href
+}
+
+/**
+ * Judul halaman dari entri rute hasil longest-match. Mengembalikan `null` bila
+ * tak ada yang cocok agar pemanggil bisa menerapkan fallback-nya sendiri.
+ */
+export function resolvePageTitle(pathname: string): string | null {
+  const best = matchRoutePath(pathname)
+  if (!best) return null
+  return APP_ROUTES.find((r) => r.path === best)?.label ?? null
+}
+
 type Perms = { pembelian?: boolean; penjualan?: boolean; kas?: boolean; biaya?: boolean }
 
 /** Filter route sesuai role & permission user (sejalan dgn sidebar/bottom-nav). */
