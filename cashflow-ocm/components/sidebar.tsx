@@ -10,6 +10,7 @@ import {
   ShoppingCart,
   TrendingUp,
   Users,
+  HeartPulse,
   Wallet,
   Receipt,
   DollarSign,
@@ -30,12 +31,26 @@ const navItems = [
   { href: '/pembelian',   label: 'Pembelian',    icon: ShoppingCart },
   { href: '/penjualan',   label: 'Penjualan',    icon: TrendingUp },
   { href: '/peron',       label: 'Peron',        icon: Users },
+  { href: '/peron/kesehatan', label: 'Kesehatan Peron', icon: HeartPulse },
   { href: '/kas',         label: 'Buku Kas',     icon: Wallet },
   { href: '/biaya',       label: 'Biaya',        icon: Receipt },
   { href: '/harga',       label: 'Harga Acuan',  icon: DollarSign },
   { href: '/laporan',     label: 'Laporan',      icon: BarChart3 },
   { href: '/pengaturan',  label: 'Pengaturan',   icon: Settings },
 ]
+
+/**
+ * Aktif bila href cocok DAN tak ada item lain yang lebih spesifik juga cocok
+ * (mis. di /peron/kesehatan, "Kesehatan Peron" aktif, "Peron" tidak).
+ */
+function isNavActive(pathname: string, href: string): boolean {
+  if (pathname === href) return true
+  if (href === '/dashboard') return false
+  if (!pathname.startsWith(href)) return false
+  return !navItems.some(
+    (n) => n.href !== href && n.href.startsWith(href + '/') && pathname.startsWith(n.href),
+  )
+}
 
 function NavLink({
   href,
@@ -136,8 +151,7 @@ export function Sidebar({ user, isOwner, onToggle }: { user?: any; isOwner?: boo
             label={item.label}
             icon={item.icon}
             active={
-              pathname === item.href ||
-              (item.href !== '/dashboard' && pathname.startsWith(item.href))
+              isNavActive(pathname, item.href)
             }
           />
         ))}
@@ -268,8 +282,7 @@ export function MobileSidebar({ user, isOwner }: { user?: any; isOwner?: boolean
                 label={item.label}
                 icon={item.icon}
                 active={
-                  pathname === item.href ||
-                  (item.href !== '/dashboard' && pathname.startsWith(item.href))
+                  isNavActive(pathname, item.href)
                 }
                 onClick={() => setOpen(false)}
               />
