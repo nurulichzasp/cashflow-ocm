@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { FotoBuktiUploader } from '@/components/foto-bukti-uploader'
 import { Textarea } from '@/components/ui/textarea'
-import { DateRangePopover } from '@/components/date-range-popover'
+import { DateRangeInline } from '@/components/date-range-inline'
 import { createPembelian, updatePembelian, getHargaAcuanListForProduk, type KategoriPembelian, type DetailInput } from './actions'
 import { formatRupiah, formatRentangReplas, formatRentangKotak, todayString } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -405,7 +405,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
                           className={cn(
                             'flex h-8 w-full items-center justify-center gap-1 rounded-md border px-1 text-[11px] transition-colors',
                             isEditing
-                              ? 'border-[var(--brand)] text-stone-800 dark:text-zinc-100'
+                              ? 'border-[var(--focus-ring)] text-stone-800 dark:text-zinc-100'
                               : hasDate
                                 ? 'border-stone-200 dark:border-border text-stone-600 dark:text-zinc-300'
                                 : 'border-stone-200 dark:border-border text-stone-400 dark:text-zinc-500',
@@ -424,14 +424,15 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
                         )}
                       </div>
                     </div>
-                    {/* Editor tanggal native — muncul HANYA saat chip baris ini diketuk */}
+                    {/* Editor tanggal — muncul HANYA saat chip baris ini diketuk.
+                        SATU baris: [Dari] [s/d] (label di dalam kotak, native picker). */}
                     {isEditing && (
                       <div className="px-2 pb-2 pt-0.5">
-                        <DateRangePopover
+                        <DateRangeInline
                           dari={d.tanggalReplas}
                           sampai={d.tanggalReplasSampai}
                           onChange={(from, sampai) => setRowRange(idx, from, sampai)}
-                          warning={warnRange(d)}
+                          compact
                         />
                       </div>
                     )}

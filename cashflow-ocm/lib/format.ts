@@ -107,3 +107,16 @@ export function formatRentangReplas(min: string, max: string): string {
   if (f.y === t.y) return `${f.d} ${BULAN_PANJANG[f.m - 1]} – ${t.d} ${BULAN_PANJANG[t.m - 1]}`
   return `${f.d} ${BULAN_PENDEK[f.m - 1]} ${f.y} – ${t.d} ${BULAN_PENDEK[t.m - 1]} ${t.y}`
 }
+
+/**
+ * Tanggal pendek untuk kotak sempit: "11 Jun" (tahun disembunyikan bila = tahun
+ * berjalan), atau "11 Jun 2025" bila beda tahun. Muat 1 baris di HP.
+ */
+export function formatTanggalPendek(date: string): string {
+  const f = parseYmd(date)
+  if (!f) return ''
+  const curY = new Date().getFullYear()
+  return f.y === curY
+    ? `${f.d} ${BULAN_PENDEK[f.m - 1]}`
+    : `${f.d} ${BULAN_PENDEK[f.m - 1]} ${f.y}`
+}
