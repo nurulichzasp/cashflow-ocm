@@ -2,30 +2,11 @@
 
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
-
-const PAGE_TITLES: Record<string, string> = {
-  '/dashboard':  'Dashboard',
-  '/pembelian':  'Pembelian',
-  '/penjualan':  'Penjualan',
-  '/peron':      'Peron',
-  '/kas':        'Buku Kas',
-  '/biaya':      'Biaya',
-  '/harga':      'Harga Acuan',
-  '/laporan':    'Laporan',
-  '/pengaturan': 'Pengaturan',
-}
-
-function getTitle(pathname: string): string {
-  if (PAGE_TITLES[pathname]) return PAGE_TITLES[pathname]
-  for (const [route, title] of Object.entries(PAGE_TITLES)) {
-    if (route !== '/dashboard' && pathname.startsWith(route)) return title
-  }
-  return 'CV OCM'
-}
+import { resolvePageTitle } from '@/lib/nav-routes'
 
 export function MobilePageHeader() {
   const pathname = usePathname()
-  const title = getTitle(pathname)
+  const title = resolvePageTitle(pathname) ?? 'CV OCM'
 
   return (
     <div className="md:hidden flex h-14 items-center justify-between bg-white/96 backdrop-blur-md border-b border-stone-200/70 px-4 shrink-0 z-30">

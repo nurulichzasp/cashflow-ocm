@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { Search, CornerDownLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { visibleRoutes, type AppRoute } from '@/lib/nav-routes'
+import { visibleRoutes, isRouteActive, type AppRoute } from '@/lib/nav-routes'
 
 /**
  * Command Palette — pencarian halaman cepat (gaya cmdk) tanpa dependency baru.
@@ -140,7 +140,7 @@ export function CommandPalette({
                 results.map((r, i) => {
                   const Icon = r.icon
                   const isKeyActive = i === active
-                  const isCurrentPage = pathname === r.path || (r.path !== '/dashboard' && pathname.startsWith(r.path))
+                  const isCurrentPage = isRouteActive(pathname, r.path)
                   return (
                     <button
                       key={r.path}

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { motion } from 'motion/react'
 import { usePathname } from 'next/navigation'
-import { visibleRoutes } from '@/lib/nav-routes'
+import { visibleRoutes, isRouteActive } from '@/lib/nav-routes'
 import { cn } from '@/lib/utils'
 
 /**
@@ -31,7 +31,7 @@ export function ShortcutGrid({
     <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4">
       {routes.map((r) => {
         const Icon = r.icon
-        const isActive = pathname === r.path || (r.path !== '/dashboard' && pathname.startsWith(r.path))
+        const isActive = isRouteActive(pathname, r.path)
         return (
           <motion.div key={r.path} whileTap={{ scale: 0.95 }}>
             <Link
