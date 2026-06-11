@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { CalendarDays, ChevronLeft, ChevronRight, AlertTriangle, X } from 'lucide-react'
 import { formatRentangKotak } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -33,6 +34,9 @@ export function DateRangePopover({ dari, sampai, onChange, warning, placeholder 
   const [open, setOpen] = useState(false)
   // anchor = klik pertama dalam sesi pemilihan berjalan (untuk membentuk rentang)
   const [anchor, setAnchor] = useState<string | null>(null)
+  // Portal hanya setelah mount (hindari mismatch SSR)
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
   const init = parse(dari)
   const today = new Date()
@@ -113,9 +117,11 @@ export function DateRangePopover({ dari, sampai, onChange, warning, placeholder 
         {warning && <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-500 ml-auto" />}
       </button>
 
-      {open && (
+      {open && mounted && createPortal(
         <>
-          {/* Backdrop — overlay tengah layar agar kalender tak terpotong area scroll dialog */}
+          {/* Backdrop — overlay tengah layar agar kalender tak terpotong area scroll dialog.
+              Dirender ke <body> via portal supaya `fixed` relatif ke viewport, bukan ke
+              dialog (yang memakai transform → jadi containing block elemen fixed). */}
           <div className="fixed inset-0 z-[80] bg-black/50" onClick={() => setOpen(false)} />
           <div
             role="dialog"
@@ -191,7 +197,8 @@ export function DateRangePopover({ dari, sampai, onChange, warning, placeholder 
               </div>
             </div>
           </div>
-        </>
+        </>,
+        document.body,
       )}
     </>
   )
