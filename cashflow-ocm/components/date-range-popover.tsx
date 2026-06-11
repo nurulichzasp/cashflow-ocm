@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { CalendarDays, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { CalendarDays, ChevronLeft, ChevronRight, AlertTriangle, X } from 'lucide-react'
 import { formatRentangKotak } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
@@ -33,13 +33,12 @@ export function DateRangePopover({ dari, sampai, onChange, warning, placeholder 
   const [open, setOpen] = useState(false)
   // anchor = klik pertama dalam sesi pemilihan berjalan (untuk membentuk rentang)
   const [anchor, setAnchor] = useState<string | null>(null)
-  const ref = useRef<HTMLDivElement>(null)
 
-  const init = parse(dari) ?? null
+  const init = parse(dari)
   const today = new Date()
   const [view, setView] = useState({ y: init?.y ?? today.getFullYear(), m: init?.m ?? today.getMonth() })
 
-  // Sinkronkan bulan tampilan ke "dari" saat dibuka
+  // Saat dibuka: arahkan bulan tampilan ke "dari" & reset sesi pemilihan.
   useEffect(() => {
     if (open) {
       const p = parse(dari)
@@ -48,26 +47,19 @@ export function DateRangePopover({ dari, sampai, onChange, warning, placeholder 
     }
   }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Tutup saat klik di luar / Escape
+  // Tutup saat Escape
   useEffect(() => {
     if (!open) return
-    function onDoc(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') setOpen(false)
     }
-    document.addEventListener('mousedown', onDoc)
     document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('mousedown', onDoc)
-      document.removeEventListener('keydown', onKey)
-    }
+    return () => document.removeEventListener('keydown', onKey)
   }, [open])
 
   function pick(dateStr: string) {
     if (anchor === null) {
-      // Klik pertama → tanggal tunggal (dari = tanggal, sampai null). Popover tetap buka.
+      // Klik pertama → tanggal tunggal (dari = tanggal, sampai null). Tetap terbuka.
       setAnchor(dateStr)
       onChange(dateStr, '')
     } else {
@@ -101,10 +93,10 @@ export function DateRangePopover({ dari, sampai, onChange, warning, placeholder 
   const label = formatRentangKotak(dari, sampai)
 
   return (
-    <div ref={ref} className="relative">
+    <>
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => setOpen(true)}
         title={warning ? 'Ada >1 harga di rentang ini — harga pakai tanggal awal. Pecah baris kalau perlu.' : undefined}
         className={cn(
           'h-8 w-full flex items-center gap-1.5 rounded-md border px-2 text-sm transition-colors min-w-0',
@@ -122,69 +114,85 @@ export function DateRangePopover({ dari, sampai, onChange, warning, placeholder 
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1 right-0 w-[268px] max-w-[calc(100vw-2.5rem)] rounded-xl border border-stone-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3 shadow-xl">
-          <div className="flex items-center justify-between mb-2">
-            <button type="button" onClick={prevMonth} className="h-7 w-7 flex items-center justify-center rounded-md text-stone-500 hover:bg-stone-100 dark:hover:bg-white/[0.06]">
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <span className="text-sm font-semibold text-stone-800 dark:text-zinc-100">{BULAN[view.m]} {view.y}</span>
-            <button type="button" onClick={nextMonth} className="h-7 w-7 flex items-center justify-center rounded-md text-stone-500 hover:bg-stone-100 dark:hover:bg-white/[0.06]">
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-
-          <div className="grid grid-cols-7 gap-0.5 mb-1">
-            {HARI.map((h) => (
-              <div key={h} className="h-6 flex items-center justify-center text-[10px] font-medium text-stone-400 dark:text-zinc-500">{h}</div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-7 gap-0.5">
-            {cells.map((d, i) => {
-              if (d === null) return <div key={i} />
-              const ds = ymd(view.y, view.m, d)
-              const isFrom = ds === selFrom
-              const isTo = ds === selTo
-              const inRange = selFrom && selTo && ds > selFrom && ds < selTo
-              const isAnchor = anchor === ds
-              const isToday = ds === todayStr
-              return (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => pick(ds)}
-                  className={cn(
-                    'h-8 flex items-center justify-center rounded-md text-sm tabular-nums transition-colors',
-                    (isFrom || isTo || isAnchor)
-                      ? 'bg-emerald-600 text-white font-semibold'
-                      : inRange
-                        ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
-                        : 'text-stone-700 dark:text-zinc-200 hover:bg-stone-100 dark:hover:bg-white/[0.06]',
-                    isToday && !(isFrom || isTo || isAnchor) && 'ring-1 ring-inset ring-emerald-500/40',
-                  )}
-                >
-                  {d}
-                </button>
-              )
-            })}
-          </div>
-
-          <div className="mt-2 flex items-center justify-between">
-            <span className="text-[11px] text-stone-400 dark:text-zinc-500">
-              {anchor ? 'Pilih tanggal akhir…' : 'Klik 1 tanggal atau pilih rentang'}
-            </span>
-            {dari && (
-              <button
-                type="button"
-                onClick={() => { onChange('', ''); setAnchor(null); setOpen(false) }}
-                className="text-[11px] font-medium text-stone-400 hover:text-red-500"
-              >
-                Hapus
+        <>
+          {/* Backdrop — overlay tengah layar agar kalender tak terpotong area scroll dialog */}
+          <div className="fixed inset-0 z-[80] bg-black/50" onClick={() => setOpen(false)} />
+          <div
+            role="dialog"
+            className="fixed left-1/2 top-1/2 z-[90] -translate-x-1/2 -translate-y-1/2 w-[320px] max-w-[calc(100vw-1.5rem)] rounded-2xl border border-stone-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-2xl"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <button type="button" onClick={prevMonth} className="h-8 w-8 flex items-center justify-center rounded-lg text-stone-500 hover:bg-stone-100 dark:hover:bg-white/[0.06]">
+                <ChevronLeft className="h-4 w-4" />
               </button>
-            )}
+              <span className="text-sm font-semibold text-stone-800 dark:text-zinc-100">{BULAN[view.m]} {view.y}</span>
+              <button type="button" onClick={nextMonth} className="h-8 w-8 flex items-center justify-center rounded-lg text-stone-500 hover:bg-stone-100 dark:hover:bg-white/[0.06]">
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-7 gap-1 mb-1">
+              {HARI.map((h) => (
+                <div key={h} className="h-7 flex items-center justify-center text-[11px] font-medium text-stone-400 dark:text-zinc-500">{h}</div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-7 gap-1">
+              {cells.map((d, i) => {
+                if (d === null) return <div key={i} className="h-9" />
+                const ds = ymd(view.y, view.m, d)
+                const isFrom = ds === selFrom
+                const isTo = ds === selTo
+                const inRange = selFrom && selTo && ds > selFrom && ds < selTo
+                const isAnchor = anchor === ds
+                const isToday = ds === todayStr
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => pick(ds)}
+                    className={cn(
+                      'h-9 flex items-center justify-center rounded-lg text-sm tabular-nums transition-colors',
+                      (isFrom || isTo || isAnchor)
+                        ? 'bg-emerald-600 text-white font-semibold'
+                        : inRange
+                          ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
+                          : 'text-stone-700 dark:text-zinc-200 hover:bg-stone-100 dark:hover:bg-white/[0.06]',
+                      isToday && !(isFrom || isTo || isAnchor) && 'ring-1 ring-inset ring-emerald-500/40',
+                    )}
+                  >
+                    {d}
+                  </button>
+                )
+              })}
+            </div>
+
+            <div className="mt-3 flex items-center justify-between border-t border-stone-100 dark:border-zinc-800 pt-2.5">
+              <span className="text-[11px] text-stone-400 dark:text-zinc-500">
+                {anchor ? 'Pilih tanggal akhir…' : 'Klik 1 tanggal atau pilih rentang'}
+              </span>
+              <div className="flex items-center gap-3">
+                {dari && (
+                  <button
+                    type="button"
+                    onClick={() => { onChange('', ''); setAnchor(null); setOpen(false) }}
+                    className="text-[11px] font-medium text-stone-400 hover:text-red-500"
+                  >
+                    Hapus
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400"
+                >
+                  <X className="h-3 w-3" /> Tutup
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
+        </>
       )}
-    </div>
+    </>
   )
 }
