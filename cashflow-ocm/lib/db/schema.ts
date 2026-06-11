@@ -124,6 +124,8 @@ export const pembelian = sqliteTable('pembelian', {
   tanggalBayar: text('tanggal_bayar'),
   sumberBayarId: text('sumber_bayar_id').references(() => akunKas.id),
   catatan: text('catatan'),
+  // Keterangan ringkas tiket (auto-isi "Total N Replas (rentang)", bisa diedit manual)
+  keterangan: text('keterangan'),
   createdBy: text('created_by').notNull().references(() => user.id),
   idempotencyKey: text('idempotency_key'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
@@ -144,7 +146,9 @@ export const pembelianDetail = sqliteTable('pembelian_detail', {
   subtotalJual: integer('subtotal_jual').notNull(),
   keuntungan: integer('keuntungan').notNull(),
   urutan: integer('urutan').notNull().default(0),
-  tanggalReplas: text('tanggal_replas'), // tanggal replas bongkar di PKS (opsional)
+  tanggalReplas: text('tanggal_replas'), // awal rentang replas ("dari"). bongkar di PKS (opsional)
+  tanggalReplasSampai: text('tanggal_replas_sampai'), // akhir rentang ("sampai"). null = tanggal tunggal
+  jumlahReplas: integer('jumlah_replas'), // jumlah replas yang membentuk tonase baris ini
 })
 
 export const penjualan = sqliteTable('penjualan', {

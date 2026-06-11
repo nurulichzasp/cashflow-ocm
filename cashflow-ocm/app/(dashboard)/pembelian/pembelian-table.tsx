@@ -214,9 +214,10 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
           statusBayarPeron: editTarget.statusBayarPeron,
           sumberBayarId: editTarget.sumberBayarId ?? undefined,
           catatan: editTarget.catatan ?? undefined,
+          keterangan: editTarget.keterangan ?? undefined,
           fotoUrls: editTarget.fotos.map((f) => f.url),
           details: editTarget.details.length > 0
-            ? editTarget.details.map((d) => ({ noTid: d.noTid ?? undefined, tonase: d.tonase, hargaLapangan: d.hargaLapangan, tanggalReplas: d.tanggalReplas ?? undefined }))
+            ? editTarget.details.map((d) => ({ noTid: d.noTid ?? undefined, tonase: d.tonase, hargaLapangan: d.hargaLapangan, tanggalReplas: d.tanggalReplas ?? undefined, tanggalReplasSampai: d.tanggalReplasSampai ?? undefined, jumlahReplas: d.jumlahReplas ?? undefined }))
             : [{ tonase: editTarget.tonase, hargaLapangan: editTarget.hargaBeli }],
         } : undefined}
         onOpenChange={(open) => { if (!open) setEditTarget(null) }}
