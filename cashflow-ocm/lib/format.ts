@@ -120,3 +120,30 @@ export function formatTanggalPendek(date: string): string {
     ? `${f.d} ${BULAN_PENDEK[f.m - 1]}`
     : `${f.d} ${BULAN_PENDEK[f.m - 1]} ${f.y}`
 }
+
+type ReplasDetail = {
+  tonase: number | string
+  jumlahReplas?: number | string | null
+  tanggalReplas?: string | null
+  tanggalReplasSampai?: string | null
+}
+
+/**
+ * SATU SUMBER keterangan tiket: "Total {N} Replas ({rentang})".
+ * Dipakai PERSIS sama oleh form pembelian (live) & nota cetak (3 mode). Menerima
+ * detail bentuk string (form) maupun number (DB). Semua baris replas tonase 0 →
+ * string kosong (sama dgn perilaku form). `fallbackTanggal` = tanggal header tiket.
+ */
+export function buildKeteranganReplas(details: ReplasDetail[], fallbackTanggal: string): string {
+  const num = (v: number | string | null | undefined) => (typeof v === 'number' ? v : parseFloat(String(v ?? '')) || 0)
+  const int = (v: number | string | null | undefined) => (typeof v === 'number' ? Math.trunc(v) : parseInt(String(v ?? ''), 10) || 0)
+  const rows = details.filter((d) => num(d.tonase) > 0)
+  if (rows.length === 0) return ''
+  const totalReplas = rows.reduce((s, d) => s + int(d.jumlahReplas), 0)
+  const froms = rows.map((d) => d.tanggalReplas || fallbackTanggal).filter(Boolean) as string[]
+  const tos = rows.map((d) => d.tanggalReplasSampai || d.tanggalReplas || fallbackTanggal).filter(Boolean) as string[]
+  if (froms.length === 0) return ''
+  const min = froms.reduce((a, b) => (a < b ? a : b))
+  const max = tos.reduce((a, b) => (a > b ? a : b))
+  return `Total ${totalReplas} Replas (${formatRentangReplas(min, max)})`
+}

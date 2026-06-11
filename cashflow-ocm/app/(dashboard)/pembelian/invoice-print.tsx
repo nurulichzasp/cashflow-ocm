@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -8,7 +9,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Printer, FileText, Thermometer, Zap } from 'lucide-react'
-import { formatRupiah, formatTanggal } from '@/lib/format'
+import { toast } from 'sonner'
+import { formatRupiah, formatTanggal, buildKeteranganReplas } from '@/lib/format'
 import { fotoUrl } from '@/lib/foto-url'
 import type { Pembelian, Peron, AkunKas, PembelianFoto, PembelianDetail } from '@/lib/db/schema'
 
@@ -82,6 +84,9 @@ function buildNotaHTML(p: PembelianRow, nomorUrut: number): string {
   const waktu = formatWaktu(p.createdAt)
   const sumberLabel = sumberBayarLabel(p.sumberBayar)
   const noInvoice = generateNoPembelian(p.tanggal, p.peron?.kode, nomorUrut)
+  // Keterangan "Total N Replas (rentang)" — pakai yg tersimpan (hormati edit manual),
+  // fallback ke helper bersama (format identik dgn form).
+  const keteranganReplas = p.keterangan?.trim() || buildKeteranganReplas(details, p.tanggal)
 
   const detailRows = details.map((d) => `
     <tr>
@@ -132,6 +137,7 @@ function buildNotaHTML(p: PembelianRow, nomorUrut: number): string {
   .foto-section{margin-top:10px}
   .foto-strip{display:flex;flex-wrap:wrap;gap:5px}
   .foto-thumb{height:72px;width:72px;object-fit:cover;border-radius:4px;border:1px solid #e7e5e4}
+  .ket-replas{text-align:center;font-size:10px;font-weight:600;color:#44403c;margin-top:10px}
   .footer{text-align:center;font-size:8.5px;color:#a8a29e;margin-top:14px;padding-top:10px;border-top:1px solid #e7e5e4}
   .no-print{margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:8px}
   .back-btn{background:#fff;color:#44403c;border:1px solid #d6d3d1;padding:6px 14px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer}
@@ -198,6 +204,8 @@ function buildNotaHTML(p: PembelianRow, nomorUrut: number): string {
 
   ${p.catatan ? `<div class="catatan"><div class="catatan-lbl">Catatan</div>${esc(p.catatan)}</div>` : ''}
 
+  ${keteranganReplas ? `<div class="ket-replas">${esc(keteranganReplas)}</div>` : ''}
+
   <div class="footer">CV Omanda Cerli Mandiri &bull; ${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
 </div>
 </body>
@@ -211,6 +219,7 @@ function buildThermalHTML(p: PembelianRow, paperWidthMm: number, nomorUrut: numb
   const waktu = formatWaktu(p.createdAt)
   const sumberLabel = sumberBayarLabel(p.sumberBayar)
   const noInvoice = generateNoPembelian(p.tanggal, p.peron?.kode, nomorUrut)
+  const keteranganReplas = p.keterangan?.trim() || buildKeteranganReplas(details, p.tanggal)
   const charWidth = paperWidthMm === 80 ? 42 : 32
   const divider = '-'.repeat(charWidth)
   const doubleDivider = '='.repeat(charWidth)
@@ -332,6 +341,8 @@ function buildThermalHTML(p: PembelianRow, paperWidthMm: number, nomorUrut: numb
   ${p.sumberBayar ? `<div class="row"><span class="l">Pembayaran</span><span class="r">${sumberLabel}</span></div>` : ''}
 
   ${p.catatan ? `<div class="divider"></div><div style="font-size:7.5pt;margin-bottom:1px">CATATAN:</div><div style="font-size:8pt">${esc(p.catatan)}</div>` : ''}
+
+  ${keteranganReplas ? `<div class="divider"></div><div class="center bold" style="font-size:9pt">${esc(keteranganReplas)}</div>` : ''}
 
   <div class="solid"></div>
   <div class="center small" style="margin-top:2px">${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
@@ -490,6 +501,7 @@ function buildThermerURL(p: PembelianRow, nomorUrut: number): string {
   const waktu = formatWaktu(p.createdAt)
   const sumberLabel = p.sumberBayar ? (p.sumberBayar.tipe === 'bank' ? 'Transfer' : 'Tunai') : null
   const noInvoice = generateNoPembelian(p.tanggal, p.peron?.kode, nomorUrut)
+  const keteranganReplas = p.keterangan?.trim() || buildKeteranganReplas(details, p.tanggal)
 
   const entries: ThermerEntry[] = [
     txt('CV OCM', 1, 1, 2),
@@ -518,6 +530,7 @@ function buildThermerURL(p: PembelianRow, nomorUrut: number): string {
     txt(`Status  : ${p.statusBayarPeron === 'lunas' ? 'LUNAS' : 'BELUM DIBAYAR'}`, 1),
     ...(sumberLabel ? [txt(`Bayar   : ${sumberLabel}`)] : []),
     ...(p.catatan ? [txt(div, 0, 1), txt('Catatan:', 0, 0, 4), txt(p.catatan)] : []),
+    ...(keteranganReplas ? [txt(div, 0, 1), txt(keteranganReplas, 1, 1, 0)] : []),
     txt(equ, 0, 1),
     txt('CV Omanda Cerli Mandiri', 0, 1, 4),
     txt('Terima kasih!', 1, 1, 0),
@@ -530,8 +543,24 @@ function buildThermerURL(p: PembelianRow, nomorUrut: number): string {
 
 // ── Komponen Tombol ──────────────────────────────────────────────────────────
 
+type PrintMode = 'lengkap' | 'thermal' | 'thermer'
+
 export function PrintNotaButton({ pembelian, nomorUrut }: { pembelian: PembelianRow; nomorUrut: number }) {
+  const [lastMode, setLastMode] = useState<PrintMode | null>(null)
+
+  // Mode terakhir diingat antar sesi.
+  useEffect(() => {
+    const m = localStorage.getItem('last_print_mode')
+    if (m === 'lengkap' || m === 'thermal' || m === 'thermer') setLastMode(m)
+  }, [])
+
+  function remember(mode: PrintMode) {
+    localStorage.setItem('last_print_mode', mode)
+    setLastMode(mode)
+  }
+
   function handlePrintLengkap() {
+    remember('lengkap')
     const html = buildNotaHTML(pembelian, nomorUrut)
     const win = window.open('', '_blank', 'width=600,height=750')
     if (!win) { alert('Pop-up diblokir. Izinkan pop-up untuk halaman ini.'); return }
@@ -539,6 +568,7 @@ export function PrintNotaButton({ pembelian, nomorUrut }: { pembelian: Pembelian
   }
 
   function handlePrintThermal() {
+    remember('thermal')
     const width = getThermalWidth()
     const html = buildThermalHTML(pembelian, width, nomorUrut)
     const win = window.open('', '_blank', `width=${width === 80 ? 400 : 320},height=600`)
@@ -547,26 +577,45 @@ export function PrintNotaButton({ pembelian, nomorUrut }: { pembelian: Pembelian
   }
 
   function handlePrintThermer() {
-    window.location.href = buildThermerURL(pembelian, nomorUrut)
+    remember('thermer')
+    const url = buildThermerURL(pembelian, nomorUrut)
+    // Fallback: bila Thermer tak terpasang, iOS diam (tak ada error) → deteksi via
+    // visibilitychange; kalau halaman tetap terlihat setelah jeda, app tak terbuka.
+    let opened = false
+    const onHide = () => { opened = true }
+    document.addEventListener('visibilitychange', onHide, { once: true })
+    window.location.href = url
+    window.setTimeout(() => {
+      document.removeEventListener('visibilitychange', onHide)
+      if (!opened && document.visibilityState === 'visible') {
+        toast.error('Tidak bisa membuka Thermer. Pastikan aplikasi Thermer terpasang.')
+      }
+    }, 1600)
   }
+
+  const dot = (mode: PrintMode) =>
+    lastMode === mode ? <span className="ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--brand)]" title="Mode terakhir" /> : null
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="inline-flex items-center justify-center h-7 w-7 rounded-md text-stone-500 hover:text-stone-700 dark:text-zinc-300 hover:bg-stone-100 dark:hover:bg-white/[0.06] transition-colors focus:outline-none" title="Cetak Nota">
         <Printer className="h-3.5 w-3.5" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
+      <DropdownMenuContent align="end" className="w-52">
         <DropdownMenuItem onClick={handlePrintLengkap} className="gap-2 cursor-pointer">
           <FileText className="h-3.5 w-3.5" />
           Print Lengkap (A5)
+          {dot('lengkap')}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handlePrintThermal} className="gap-2 cursor-pointer">
           <Thermometer className="h-3.5 w-3.5" />
           Print Thermal (preview)
+          {dot('thermal')}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handlePrintThermer} className="gap-2 cursor-pointer text-stone-700 dark:text-zinc-200 focus:text-stone-900 dark:focus:text-white focus:bg-stone-100 dark:focus:bg-white/[0.06]">
           <Zap className="h-3.5 w-3.5" />
           Thermer (langsung)
+          {dot('thermer')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

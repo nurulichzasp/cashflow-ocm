@@ -12,7 +12,7 @@ import { FotoBuktiUploader } from '@/components/foto-bukti-uploader'
 import { Textarea } from '@/components/ui/textarea'
 import { DateRangeInline } from '@/components/date-range-inline'
 import { createPembelian, updatePembelian, getHargaAcuanListForProduk, type KategoriPembelian, type DetailInput } from './actions'
-import { formatRupiah, formatRentangReplas, formatRentangKotak, todayString } from '@/lib/format'
+import { formatRupiah, formatRentangKotak, buildKeteranganReplas, todayString } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { Plus, Trash2, CalendarDays, AlertTriangle } from 'lucide-react'
 
@@ -197,18 +197,9 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
     setEditingDateIdx(null)
   }
 
-  // Keterangan otomatis: "Total {N} Replas ({rentang})" dari baris bertonase > 0.
-  const autoKeterangan = (() => {
-    const rows = details.filter((d) => (parseFloat(d.tonase) || 0) > 0)
-    if (rows.length === 0) return ''
-    const totalReplas = rows.reduce((s, d) => s + (parseInt(d.jumlahReplas, 10) || 0), 0)
-    const froms = rows.map((d) => d.tanggalReplas || tanggal).filter(Boolean)
-    const tos = rows.map((d) => d.tanggalReplasSampai || d.tanggalReplas || tanggal).filter(Boolean)
-    if (froms.length === 0) return ''
-    const min = froms.reduce((a, b) => (a < b ? a : b))
-    const max = tos.reduce((a, b) => (a > b ? a : b))
-    return `Total ${totalReplas} Replas (${formatRentangReplas(min, max)})`
-  })()
+  // Keterangan otomatis: "Total {N} Replas ({rentang})" — SATU SUMBER (helper bersama
+  // dipakai juga di nota cetak), supaya format selalu identik.
+  const autoKeterangan = buildKeteranganReplas(details, tanggal)
 
   useEffect(() => {
     if (!keteranganManual) setKeterangan(autoKeterangan)
