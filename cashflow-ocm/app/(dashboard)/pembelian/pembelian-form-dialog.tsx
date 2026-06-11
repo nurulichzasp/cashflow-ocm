@@ -10,18 +10,23 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { FotoBuktiUploader } from '@/components/foto-bukti-uploader'
 import { Textarea } from '@/components/ui/textarea'
-import { createPembelian, updatePembelian, getLatestHargaAcuan, type KategoriPembelian, type DetailInput } from './actions'
-import { formatRupiah, todayString } from '@/lib/format'
-import { Plus, Trash2, CalendarDays } from 'lucide-react'
+import { DateRangePopover } from '@/components/date-range-popover'
+import { createPembelian, updatePembelian, getHargaAcuanListForProduk, type KategoriPembelian, type DetailInput } from './actions'
+import { formatRupiah, formatRentangReplas, todayString } from '@/lib/format'
+import { Plus, Trash2 } from 'lucide-react'
 
 type PeronOption = { id: string; nama: string; keuntunganPerKg: number }
 type AkunOption = { id: string; nama: string; tipe: string }
+type AcuanRow = { tanggalBerlaku: string; hargaLapangan: number; selisihJualBga: number }
 
 interface DetailRow {
   noTid: string
+  jumlahReplas: string
   tonase: string
   hargaLapangan: string
-  tanggalReplas: string
+  tanggalReplas: string // "dari"
+  tanggalReplasSampai: string // "sampai" ('' = tunggal)
+  manualPrice: boolean // harga di-override manual → jangan ditimpa auto
 }
 
 interface Props {
@@ -37,13 +42,14 @@ interface Props {
     statusBayarPeron: 'belum' | 'lunas'
     sumberBayarId?: string
     catatan?: string
+    keterangan?: string
     fotoUrls?: string[]
-    details: Array<{ noTid?: string; tonase: number; hargaLapangan: number; tanggalReplas?: string }>
+    details: Array<{ noTid?: string; tonase: number; hargaLapangan: number; tanggalReplas?: string; tanggalReplasSampai?: string; jumlahReplas?: number }>
   }
   onOpenChange?: (open: boolean) => void
 }
 
-const EMPTY_DETAIL: DetailRow = { noTid: '', tonase: '', hargaLapangan: '', tanggalReplas: '' }
+const EMPTY_DETAIL: DetailRow = { noTid: '', jumlahReplas: '', tonase: '', hargaLapangan: '', tanggalReplas: '', tanggalReplasSampai: '', manualPrice: false }
 
 export function PembelianFormDialog({ children, peronOptions, akunOptions, open: openProp, initialData, onOpenChange }: Props) {
   const [openInternal, setOpenInternal] = useState(false)
@@ -59,6 +65,8 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
   const [statusBayar, setStatusBayar] = useState<'belum' | 'lunas'>('belum')
   const [sumberBayarId, setSumberBayarId] = useState('')
   const [catatan, setCatatan] = useState('')
+  const [keterangan, setKeterangan] = useState('')
+  const [keteranganManual, setKeteranganManual] = useState(false)
   const [fotos, setFotos] = useState<string[]>([])
   const [details, setDetails] = useState<DetailRow[]>([{ ...EMPTY_DETAIL }])
 
@@ -70,14 +78,21 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
       setStatusBayar(initialData.statusBayarPeron)
       setSumberBayarId(initialData.sumberBayarId ?? '')
       setCatatan(initialData.catatan ?? '')
+      setKeterangan(initialData.keterangan ?? '')
+      // Tiket lama: pertahankan keterangan tersimpan (anggap manual) agar tak ditimpa auto.
+      setKeteranganManual(!!initialData.keterangan)
       setFotos(initialData.fotoUrls ?? [])
       setDetails(
         initialData.details.length > 0
           ? initialData.details.map((d) => ({
               noTid: d.noTid ?? '',
+              jumlahReplas: d.jumlahReplas != null ? String(d.jumlahReplas) : '',
               tonase: String(d.tonase),
               hargaLapangan: String(d.hargaLapangan),
               tanggalReplas: d.tanggalReplas ?? '',
+              tanggalReplasSampai: d.tanggalReplasSampai ?? '',
+              // Harga tersimpan dipertahankan saat edit (jangan ditimpa auto bila acuan berubah).
+              manualPrice: true,
             }))
           : [{ ...EMPTY_DETAIL }]
       )
@@ -87,9 +102,8 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
   const selectedPeron = peronOptions.find((p) => p.id === peronId)
   const keuntunganPerKg = selectedPeron?.keuntunganPerKg ?? 0
 
-  const [hargaAcuanData, setHargaAcuanData] = useState<{ hargaLapangan: number; selisihJualBga: number; tanggalBerlaku: string } | null>(null)
+  const [acuanList, setAcuanList] = useState<AcuanRow[]>([])
   const [hargaLoading, setHargaLoading] = useState(false)
-  const [hargaOverride, setHargaOverride] = useState(false)
 
   // Kategori BRDL merujuk ke Harga Acuan produknya. LMDM mengikuti harga TRYM.
   const derivedProduk: 'TBS' | 'BRDL KTWM' | 'BRDL TRYM' =
@@ -98,38 +112,104 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
       : kategori === 'OCM BRDL TRYM' || kategori === 'OCM BRDL LMDM'
         ? 'BRDL TRYM'
         : 'TBS'
-  const kelebihan = hargaAcuanData ? hargaAcuanData.selisihJualBga - keuntunganPerKg : 0
-  const autoHarga = hargaAcuanData ? hargaAcuanData.hargaLapangan + kelebihan : 0
 
+  // Step-function harga acuan: baris paling baru dengan tanggalBerlaku <= tanggal.
+  function lookupAcuan(date: string): AcuanRow | null {
+    let best: AcuanRow | null = null
+    for (const a of acuanList) {
+      if (a.tanggalBerlaku <= date && (!best || a.tanggalBerlaku > best.tanggalBerlaku)) best = a
+    }
+    return best
+  }
+  // Harga beli auto = acuan + (selisihJualBga − untungCV). null bila tak ada acuan.
+  function autoHargaForDate(date: string): number | null {
+    const a = lookupAcuan(date)
+    if (!a) return null
+    return a.hargaLapangan + (a.selisihJualBga - keuntunganPerKg)
+  }
+  // Rentang baris melewati >1 harga acuan? (ada tanggalBerlaku di dalam (dari, sampai])
+  function warnRange(d: DetailRow): boolean {
+    if (!d.tanggalReplas || !d.tanggalReplasSampai) return false
+    return acuanList.some((a) => a.tanggalBerlaku > d.tanggalReplas && a.tanggalBerlaku <= d.tanggalReplasSampai)
+  }
+
+  // Referensi harga untuk tanggal header (panel ringkasan)
+  const headerAcuan = lookupAcuan(tanggal)
+  const headerAuto = autoHargaForDate(tanggal)
+
+  // Muat seluruh riwayat harga acuan produk saat dialog dibuka / produk berganti.
   useEffect(() => {
-    if (!open || initialData) return
+    if (!open) return
     let cancelled = false
     setHargaLoading(true)
-    getLatestHargaAcuan(derivedProduk, tanggal).then((result) => {
+    getHargaAcuanListForProduk(derivedProduk).then((rows) => {
       if (cancelled) return
-      setHargaAcuanData(result ? { hargaLapangan: result.hargaLapangan, selisihJualBga: result.selisihJualBga, tanggalBerlaku: result.tanggalBerlaku } : null)
+      setAcuanList(rows)
       setHargaLoading(false)
     })
     return () => { cancelled = true }
-  }, [open, derivedProduk, tanggal, initialData])
+  }, [open, derivedProduk])
 
+  // Recompute harga semua baris NON-manual saat acuan/untung/tanggal header berubah.
+  // (Tanggal "dari" baris kosong → fallback tanggal header.)
   useEffect(() => {
-    if (!open || initialData || hargaOverride || !autoHarga) return
-    setDetails((prev) => prev.map((d) => d.hargaLapangan === '' || !hargaOverride ? { ...d, hargaLapangan: String(autoHarga) } : d))
-  }, [autoHarga, open, initialData, hargaOverride])
+    if (!open || acuanList.length === 0) return
+    setDetails((prev) => prev.map((d) => {
+      if (d.manualPrice) return d
+      const auto = autoHargaForDate(d.tanggalReplas || tanggal)
+      return auto !== null ? { ...d, hargaLapangan: String(auto) } : d
+    }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [acuanList, keuntunganPerKg, tanggal, open])
 
   function updateDetail(idx: number, field: keyof DetailRow, value: string) {
-    if (field === 'hargaLapangan') setHargaOverride(true)
-    setDetails((prev) => prev.map((d, i) => i === idx ? { ...d, [field]: value } : d))
+    setDetails((prev) => prev.map((d, i) => {
+      if (i !== idx) return d
+      // Edit harga manual → tandai baris agar tak ditimpa auto.
+      if (field === 'hargaLapangan') return { ...d, hargaLapangan: value, manualPrice: true }
+      return { ...d, [field]: value }
+    }))
+  }
+
+  // Set rentang tanggal replas baris + recompute harga baris itu (kecuali manual).
+  function setRowRange(idx: number, from: string, sampai: string) {
+    setDetails((prev) => prev.map((d, i) => {
+      if (i !== idx) return d
+      const nd = { ...d, tanggalReplas: from, tanggalReplasSampai: sampai }
+      if (!nd.manualPrice) {
+        const auto = autoHargaForDate(from || tanggal)
+        if (auto !== null) nd.hargaLapangan = String(auto)
+      }
+      return nd
+    }))
   }
 
   function addDetail() {
-    setDetails((prev) => [...prev, { ...EMPTY_DETAIL }])
+    // Baris baru langsung dapat harga auto tanggal header (akan ter-recompute saat tanggalnya diisi).
+    const auto = autoHargaForDate(tanggal)
+    setDetails((prev) => [...prev, { ...EMPTY_DETAIL, hargaLapangan: auto !== null ? String(auto) : '' }])
   }
 
   function removeDetail(idx: number) {
     setDetails((prev) => prev.filter((_, i) => i !== idx))
   }
+
+  // Keterangan otomatis: "Total {N} Replas ({rentang})" dari baris bertonase > 0.
+  const autoKeterangan = (() => {
+    const rows = details.filter((d) => (parseFloat(d.tonase) || 0) > 0)
+    if (rows.length === 0) return ''
+    const totalReplas = rows.reduce((s, d) => s + (parseInt(d.jumlahReplas, 10) || 0), 0)
+    const froms = rows.map((d) => d.tanggalReplas || tanggal).filter(Boolean)
+    const tos = rows.map((d) => d.tanggalReplasSampai || d.tanggalReplas || tanggal).filter(Boolean)
+    if (froms.length === 0) return ''
+    const min = froms.reduce((a, b) => (a < b ? a : b))
+    const max = tos.reduce((a, b) => (a > b ? a : b))
+    return `Total ${totalReplas} Replas (${formatRentangReplas(min, max)})`
+  })()
+
+  useEffect(() => {
+    if (!keteranganManual) setKeterangan(autoKeterangan)
+  }, [autoKeterangan, keteranganManual])
 
   const parsedDetails = details.map((d) => ({
     tonase: parseFloat(d.tonase) || 0,
@@ -147,6 +227,8 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
     setStatusBayar('belum')
     setSumberBayarId('')
     setCatatan('')
+    setKeterangan('')
+    setKeteranganManual(false)
     setFotos([])
     setDetails([{ ...EMPTY_DETAIL }])
   }
@@ -165,6 +247,8 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
         tonase: parseFloat(d.tonase),
         hargaLapangan: parseFloat(d.hargaLapangan),
         tanggalReplas: d.tanggalReplas || undefined,
+        tanggalReplasSampai: d.tanggalReplasSampai || undefined,
+        jumlahReplas: d.jumlahReplas !== '' ? parseInt(d.jumlahReplas, 10) || 0 : undefined,
       }))
 
       const payload = {
@@ -174,6 +258,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
         statusBayarPeron: statusBayar,
         sumberBayarId: sumberBayarId || undefined,
         catatan: catatan || undefined,
+        keterangan: keterangan || undefined,
         details: detailInputs,
         fotoUrls: fotos,
         idempotencyKey: idemKey,
@@ -239,24 +324,19 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
             </div>
           </div>
 
-          {/* Preview Harga Otomatis */}
-          {!initialData && hargaAcuanData && (
+          {/* Referensi Harga Otomatis (tanggal header) — harga PER BARIS ikut tanggal replas masing-masing */}
+          {!initialData && headerAcuan && (
             <div className="rounded-lg border border-stone-200 dark:border-border bg-stone-50 dark:bg-white/[0.03] px-4 py-3 text-sm">
-              <div className="flex items-center justify-between mb-1.5">
-                <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-[#6B7280]">Harga Otomatis ({derivedProduk})</p>
-                <button type="button" onClick={() => setHargaOverride(!hargaOverride)} className="text-xs text-stone-600 dark:text-zinc-400 hover:underline">
-                  {hargaOverride ? 'Pakai otomatis' : 'Override manual'}
-                </button>
-              </div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-[#6B7280] mb-1.5">Harga Otomatis ({derivedProduk})</p>
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-600 dark:text-stone-300">
-                <span>Acuan: <strong className="num">Rp {hargaAcuanData.hargaLapangan.toLocaleString('id-ID')}</strong>/kg</span>
-                <span>Kelebihan: <strong className="num">Rp {kelebihan.toLocaleString('id-ID')}</strong></span>
-                <span className="text-stone-900 dark:text-stone-100 font-semibold">Harga Beli: <strong className="num">Rp {autoHarga.toLocaleString('id-ID')}</strong>/kg</span>
+                <span>Acuan: <strong className="num">Rp {headerAcuan.hargaLapangan.toLocaleString('id-ID')}</strong>/kg</span>
+                <span>Kelebihan: <strong className="num">Rp {(headerAcuan.selisihJualBga - keuntunganPerKg).toLocaleString('id-ID')}</strong></span>
+                <span className="text-stone-900 dark:text-stone-100 font-semibold">Harga Beli: <strong className="num">Rp {(headerAuto ?? 0).toLocaleString('id-ID')}</strong>/kg</span>
               </div>
-              <p className="text-[10px] text-stone-400 mt-1">Berlaku sejak {hargaAcuanData.tanggalBerlaku} · Untung CV: Rp {keuntunganPerKg}/kg</p>
+              <p className="text-[10px] text-stone-400 mt-1">Acuan tanggal header · tiap baris pakai tanggal replas-nya sendiri · Untung CV: Rp {keuntunganPerKg}/kg</p>
             </div>
           )}
-          {!initialData && !hargaAcuanData && !hargaLoading && (
+          {!initialData && !headerAcuan && !hargaLoading && (
             <div className="rounded-lg border border-amber-200 dark:border-amber-900/30 bg-amber-50 dark:bg-amber-950/10 px-4 py-3 text-xs text-amber-700 dark:text-amber-400">
               Harga acuan belum tersedia untuk {derivedProduk}. Tambah dulu di Harga Acuan, atau isi manual.
             </div>
@@ -268,16 +348,14 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
               <Label>Rincian</Label>
             </div>
 
-            <div className="rounded-lg border border-stone-200 overflow-hidden">
-              {/* Header */}
-              <div className="grid grid-cols-[1fr_1fr_1.3fr_auto] gap-0 bg-stone-50 border-b border-stone-200 text-xs font-semibold uppercase text-stone-500 tracking-wide">
-                <div className="px-3 py-2">Tonase (kg) *</div>
-                <div className="px-3 py-2">Harga (Rp/kg) *</div>
-                <div className="px-3 py-2 flex items-center gap-1">
-                  <CalendarDays className="h-3 w-3" />
-                  Tgl. Replas
-                </div>
-                <div className="px-3 py-2 w-10" />
+            <div className="rounded-lg border border-stone-200 dark:border-border overflow-hidden">
+              {/* Header — Replas | Tonase | Harga | Tgl Replas | hapus */}
+              <div className="grid grid-cols-[44px_1fr_1fr_1.4fr_28px] gap-0 bg-stone-50 dark:bg-white/[0.03] border-b border-stone-200 dark:border-border text-[10px] sm:text-xs font-semibold uppercase text-stone-500 tracking-wide">
+                <div className="px-1.5 py-2 text-right">Replas</div>
+                <div className="px-1.5 py-2">Tonase</div>
+                <div className="px-1.5 py-2">Rp/kg *</div>
+                <div className="px-1.5 py-2">Tgl Replas</div>
+                <div className="px-1 py-2" />
               </div>
 
               {/* Rows */}
@@ -286,32 +364,47 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
                 const harga = parseFloat(d.hargaLapangan) || 0
                 const subtotal = ton * harga
                 return (
-                  <div key={idx} className="border-b border-stone-100 last:border-b-0">
-                    <div className="grid grid-cols-[1fr_1fr_1.3fr_auto] gap-0 items-center">
-                      <div className="px-1.5 py-1.5 min-w-0">
+                  <div key={idx} className="border-b border-stone-100 dark:border-border last:border-b-0">
+                    <div className="grid grid-cols-[44px_1fr_1fr_1.4fr_28px] gap-0 items-center">
+                      <div className="px-1 py-1.5 min-w-0">
+                        <Input
+                          type="text"
+                          inputMode="numeric"
+                          value={d.jumlahReplas}
+                          onChange={(e) => updateDetail(idx, 'jumlahReplas', e.target.value.replace(/[^0-9]/g, ''))}
+                          placeholder="0"
+                          className="h-8 text-sm text-right tabular-nums min-w-0 px-1"
+                        />
+                      </div>
+                      <div className="px-1 py-1.5 min-w-0">
                         <Input
                           type="text"
                           inputMode="decimal"
                           value={d.tonase}
                           onChange={(e) => updateDetail(idx, 'tonase', e.target.value.replace(/[^0-9.]/g, ''))}
                           placeholder="0"
-                          className="h-8 text-sm text-right min-w-0 px-2"
+                          className="h-8 text-sm text-right min-w-0 px-1.5"
                         />
                       </div>
-                      <div className="px-1.5 py-1.5 min-w-0">
+                      <div className="px-1 py-1.5 min-w-0">
                         <NumberInput
                           value={d.hargaLapangan}
                           onChange={(n) => updateDetail(idx, 'hargaLapangan', String(n))}
                           placeholder="0"
-                          className="h-8 text-sm min-w-0 px-2"
+                          className="h-8 text-sm min-w-0 px-1.5"
                         />
                       </div>
-                      <div className="px-1.5 py-1.5 min-w-0">
-                        <Input type="date" value={d.tanggalReplas} onChange={(e) => updateDetail(idx, 'tanggalReplas', e.target.value)} className="h-8 text-sm text-stone-500 min-w-0 px-2" />
+                      <div className="px-1 py-1.5 min-w-0">
+                        <DateRangePopover
+                          dari={d.tanggalReplas}
+                          sampai={d.tanggalReplasSampai}
+                          onChange={(from, sampai) => setRowRange(idx, from, sampai)}
+                          warning={warnRange(d)}
+                        />
                       </div>
-                      <div className="px-2 py-1.5 w-10 flex justify-center">
+                      <div className="px-0 py-1.5 flex justify-center">
                         {details.length > 1 && (
-                          <button type="button" onClick={() => removeDetail(idx)} className="h-7 w-7 flex items-center justify-center rounded text-stone-400 hover:text-red-500 hover:bg-red-50">
+                          <button type="button" onClick={() => removeDetail(idx)} className="h-7 w-7 flex items-center justify-center rounded text-stone-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10">
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         )}
@@ -319,7 +412,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
                     </div>
                     {subtotal > 0 && (
                       <div className="px-3 pb-1.5 text-xs text-stone-500 flex gap-4">
-                        <span>Subtotal: <span className="font-semibold text-stone-800">{formatRupiah(subtotal)}</span></span>
+                        <span>Subtotal: <span className="font-semibold text-stone-800 dark:text-zinc-200">{formatRupiah(subtotal)}</span></span>
                         {keuntunganPerKg > 0 && <span>H. Jual: <span className="font-medium">{(harga + keuntunganPerKg).toLocaleString('id-ID')}/kg</span></span>}
                       </div>
                     )}
@@ -353,6 +446,27 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Keterangan otomatis (Total N Replas + rentang) — tetap bisa diedit manual */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <Label>Keterangan</Label>
+              {keteranganManual && autoKeterangan && (
+                <button
+                  type="button"
+                  onClick={() => { setKeteranganManual(false); setKeterangan(autoKeterangan) }}
+                  className="text-[11px] font-medium text-stone-400 hover:text-emerald-600 dark:hover:text-emerald-400"
+                >
+                  Set ulang otomatis
+                </button>
+              )}
+            </div>
+            <Input
+              value={keterangan}
+              onChange={(e) => { setKeterangan(e.target.value); setKeteranganManual(true) }}
+              placeholder="Total — Replas"
+            />
           </div>
 
           {/* Status bayar + Sumber bayar */}

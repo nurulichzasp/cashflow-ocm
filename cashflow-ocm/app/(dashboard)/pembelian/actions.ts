@@ -29,7 +29,9 @@ export interface DetailInput {
   noTid?: string
   tonase: number
   hargaLapangan: number // harga yang dibayar ke peron
-  tanggalReplas?: string // tanggal replas bongkar di PKS (opsional)
+  tanggalReplas?: string // awal rentang replas ("dari", opsional)
+  tanggalReplasSampai?: string // akhir rentang replas ("sampai", null = tanggal tunggal)
+  jumlahReplas?: number // jumlah replas pada baris ini
 }
 
 const pembelianSchema = z.object({
@@ -39,11 +41,14 @@ const pembelianSchema = z.object({
   statusBayarPeron: z.enum(['belum', 'lunas']).default('belum'),
   sumberBayarId: z.string().optional(),
   catatan: z.string().optional(),
+  keterangan: z.string().optional(),
   details: z.array(z.object({
     noTid: z.string().optional(),
     tonase: z.number().positive(),
     hargaLapangan: z.number().positive(),
     tanggalReplas: z.string().optional(),
+    tanggalReplasSampai: z.string().optional(),
+    jumlahReplas: z.number().int().nonnegative().optional(),
   })).min(1, 'Minimal 1 baris detail'),
   fotoUrls: z.array(z.string()).optional(),
   idempotencyKey: z.string().optional(),
@@ -64,7 +69,13 @@ function computeTotals(details: DetailInput[], keuntunganPerKg: number) {
     totalKeuntungan += keuntungan
     return { ...d, hargaJual, subtotalBeli, subtotalJual, keuntungan, urutan: i }
   })
-  return { computed, totalTonase, totalBeli, totalJual, totalKeuntungan }
+  // Header hargaBeli/hargaJual = rata-rata tertimbang (Rp/kg). Saat harga campur
+  // antar baris, ini representasi yang benar untuk portal peron (yang menampilkan
+  // "Rp X/kg" per tiket) — bukan harga baris pertama saja. /laporan tidak memakai
+  // field ini (pakai total), jadi tidak ada regresi.
+  const hargaBeliRata = totalTonase > 0 ? Math.round(totalBeli / totalTonase) : 0
+  const hargaJualRata = totalTonase > 0 ? Math.round(totalJual / totalTonase) : 0
+  return { computed, totalTonase, totalBeli, totalJual, totalKeuntungan, hargaBeliRata, hargaJualRata }
 }
 
 export async function createPembelian(data: {
@@ -74,6 +85,7 @@ export async function createPembelian(data: {
   statusBayarPeron: 'belum' | 'lunas'
   sumberBayarId?: string
   catatan?: string
+  keterangan?: string
   details: DetailInput[]
   fotoUrls?: string[]
   idempotencyKey?: string
@@ -85,8 +97,7 @@ export async function createPembelian(data: {
   const peronData = await db.query.peron.findFirst({ where: (t, { eq }) => eq(t.id, parsed.peronId) })
   if (!peronData) throw new Error('Peron tidak ditemukan')
 
-  const { computed, totalTonase, totalBeli, totalJual, totalKeuntungan } = computeTotals(parsed.details, peronData.keuntunganPerKg)
-  const firstDetail = computed[0]
+  const { computed, totalTonase, totalBeli, totalJual, totalKeuntungan, hargaBeliRata, hargaJualRata } = computeTotals(parsed.details, peronData.keuntunganPerKg)
 
   // Anti-dobel: tolak pembelian identik dari user yang sama dalam ~60 detik terakhir
   // (retry saat sinyal lapangan jelek / double-submit). Match sangat spesifik
@@ -112,14 +123,15 @@ export async function createPembelian(data: {
       kategori: parsed.kategori,
       peronId: parsed.peronId,
       tonase: totalTonase,
-      hargaBeli: firstDetail.hargaLapangan,
-      hargaJual: firstDetail.hargaJual,
+      hargaBeli: hargaBeliRata,
+      hargaJual: hargaJualRata,
       totalBeli,
       totalJual,
       keuntungan: totalKeuntungan,
       statusBayarPeron: parsed.statusBayarPeron,
       sumberBayarId: parsed.sumberBayarId,
       catatan: parsed.catatan,
+      keterangan: parsed.keterangan,
       createdBy: session.user.id,
       idempotencyKey: parsed.idempotencyKey,
     }).onConflictDoNothing({ target: pembelian.idempotencyKey }).returning()
@@ -139,6 +151,8 @@ export async function createPembelian(data: {
         keuntungan: d.keuntungan,
         urutan: d.urutan,
         tanggalReplas: d.tanggalReplas || null,
+        tanggalReplasSampai: d.tanggalReplasSampai || null,
+        jumlahReplas: d.jumlahReplas ?? null,
       }))
     )
 
@@ -213,6 +227,7 @@ export async function updatePembelian(id: string, data: {
   statusBayarPeron: 'belum' | 'lunas'
   sumberBayarId?: string
   catatan?: string
+  keterangan?: string
   details: DetailInput[]
   fotoUrls?: string[]
 }) {
@@ -223,8 +238,7 @@ export async function updatePembelian(id: string, data: {
   const peronData = await db.query.peron.findFirst({ where: (t, { eq }) => eq(t.id, parsed.peronId) })
   if (!peronData) throw new Error('Peron tidak ditemukan')
 
-  const { computed, totalTonase, totalBeli, totalJual, totalKeuntungan } = computeTotals(parsed.details, peronData.keuntunganPerKg)
-  const firstDetail = computed[0]
+  const { computed, totalTonase, totalBeli, totalJual, totalKeuntungan, hargaBeliRata, hargaJualRata } = computeTotals(parsed.details, peronData.keuntunganPerKg)
 
   // Update + ganti detail + sinkron mutasi kas, atomic dalam satu transaksi.
   await db.transaction(async (tx) => {
@@ -233,14 +247,15 @@ export async function updatePembelian(id: string, data: {
       kategori: parsed.kategori,
       peronId: parsed.peronId,
       tonase: totalTonase,
-      hargaBeli: firstDetail.hargaLapangan,
-      hargaJual: firstDetail.hargaJual,
+      hargaBeli: hargaBeliRata,
+      hargaJual: hargaJualRata,
       totalBeli,
       totalJual,
       keuntungan: totalKeuntungan,
       statusBayarPeron: parsed.statusBayarPeron,
       sumberBayarId: parsed.sumberBayarId,
       catatan: parsed.catatan,
+      keterangan: parsed.keterangan,
     }).where(eq(pembelian.id, id))
 
     // Replace all details
@@ -256,6 +271,8 @@ export async function updatePembelian(id: string, data: {
         keuntungan: d.keuntungan,
         urutan: d.urutan,
         tanggalReplas: d.tanggalReplas || null,
+        tanggalReplasSampai: d.tanggalReplasSampai || null,
+        jumlahReplas: d.jumlahReplas ?? null,
       }))
     )
 
@@ -382,4 +399,23 @@ export async function getLatestHargaAcuan(produk: 'TBS' | 'BRDL KTWM' | 'BRDL TR
     orderBy: (t, { desc }) => [desc(t.tanggalBerlaku), desc(t.createdAt)],
   })
   return result ?? null
+}
+
+// Seluruh riwayat harga acuan satu produk (urut tanggal naik) — untuk auto-harga
+// PER BARIS di dialog: klien menghitung harga acuan tiap baris dari tanggal "dari"
+// baris itu (step-function) tanpa bolak-balik ke server, sekaligus mendeteksi
+// rentang yang melewati >1 harga acuan.
+export async function getHargaAcuanListForProduk(
+  produk: 'TBS' | 'BRDL KTWM' | 'BRDL TRYM' | 'BRDL LMDM',
+) {
+  await requireSession()
+  const rows = await db.query.hargaAcuan.findMany({
+    where: (t, { eq }) => eq(t.produk, produk),
+    orderBy: (t, { asc }) => [asc(t.tanggalBerlaku), asc(t.createdAt)],
+  })
+  return rows.map((r) => ({
+    tanggalBerlaku: r.tanggalBerlaku,
+    hargaLapangan: r.hargaLapangan,
+    selisihJualBga: r.selisihJualBga,
+  }))
 }

@@ -60,3 +60,50 @@ export function formatTanggalLengkap(date: string | Date): string {
 export function todayString(): string {
   return new Date().toISOString().slice(0, 10)
 }
+
+// Nama bulan ID — dipakai formatter rentang replas (hindari ketergantungan locale
+// agar dash "–" & singkatan konsisten lintas platform).
+const BULAN_PENDEK = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
+const BULAN_PANJANG = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
+
+function parseYmd(s: string): { y: number; m: number; d: number } | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s)
+  if (!m) return null
+  return { y: Number(m[1]), m: Number(m[2]), d: Number(m[3]) }
+}
+
+/**
+ * Kotak tanggal replas (ringkas, bulan pendek) untuk trigger kalender 1-kotak:
+ *   tunggal               → "4 Jun"
+ *   rentang sebulan       → "4–5 Jun"
+ *   rentang beda bulan    → "30 Mei – 2 Jun"
+ *   rentang beda tahun    → "28 Des 2025 – 3 Jan 2026"
+ * `sampai` kosong/sama dengan `dari` → dianggap tunggal.
+ */
+export function formatRentangKotak(dari: string, sampai?: string | null): string {
+  const f = parseYmd(dari)
+  if (!f) return ''
+  if (!sampai || sampai === dari) return `${f.d} ${BULAN_PENDEK[f.m - 1]}`
+  const t = parseYmd(sampai)
+  if (!t) return `${f.d} ${BULAN_PENDEK[f.m - 1]}`
+  if (f.y === t.y && f.m === t.m) return `${f.d}–${t.d} ${BULAN_PENDEK[f.m - 1]}`
+  if (f.y === t.y) return `${f.d} ${BULAN_PENDEK[f.m - 1]} – ${t.d} ${BULAN_PENDEK[t.m - 1]}`
+  return `${f.d} ${BULAN_PENDEK[f.m - 1]} ${f.y} – ${t.d} ${BULAN_PENDEK[t.m - 1]} ${t.y}`
+}
+
+/**
+ * Rentang tanggal untuk keterangan tiket (bulan panjang):
+ *   min == max            → "7 Juni"
+ *   sebulan & setahun     → "4–7 Juni"
+ *   beda bulan, setahun   → "30 Mei – 2 Juni"
+ *   beda tahun            → "28 Des 2025 – 3 Jan 2026"
+ */
+export function formatRentangReplas(min: string, max: string): string {
+  const f = parseYmd(min)
+  const t = parseYmd(max)
+  if (!f || !t) return ''
+  if (min === max) return `${f.d} ${BULAN_PANJANG[f.m - 1]}`
+  if (f.y === t.y && f.m === t.m) return `${f.d}–${t.d} ${BULAN_PANJANG[f.m - 1]}`
+  if (f.y === t.y) return `${f.d} ${BULAN_PANJANG[f.m - 1]} – ${t.d} ${BULAN_PANJANG[t.m - 1]}`
+  return `${f.d} ${BULAN_PENDEK[f.m - 1]} ${f.y} – ${t.d} ${BULAN_PENDEK[t.m - 1]} ${t.y}`
+}
