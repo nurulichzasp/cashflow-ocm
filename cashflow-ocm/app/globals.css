@@ -97,6 +97,9 @@
      focus, nav aktif, link, sparkline, monogram. */
   --brand: #0B6E4F;        /* emerald dalam untuk teks/ikon/stroke/ring di light (~5,5:1 di putih) */
   --brand-solid: #0E7A57;  /* emerald solid untuk tombol (teks putih ≈ 5:1, kedua tema) */
+  /* Focus ring — emerald brand di-DESATURASI (lebih kalem, tak neon). Dipakai
+     SATU garis border saja (gaya field TGL). Adaptif tema lewat var(--brand). */
+  --focus-ring: color-mix(in oklab, var(--brand) 70%, #6B7280);
 
   /* Semantic financial tokens (mirror .text-masuk/.text-keluar/.text-warning) */
   --masuk: #16A34A;
@@ -630,12 +633,12 @@ html.dark [class~="hover:bg-orange-700"]:hover       { background-color: #c8654a
     outline: none;
     box-shadow: none;
   }
-  /* Keyboard focus: SATU garis emerald tipis (border + ring 1px sewarna, TANPA gap
-     bg → menyatu jadi satu garis, bukan dua). Tetap jelas utk keyboard (WCAG 2.4.7). */
+  /* Keyboard focus: SATU garis border emerald-kalem (gaya field TGL) — TANPA ring
+     kedua/glow. Cukup ubah warna border 1px ke --focus-ring. */
   .neural-focus:focus-visible {
-    border-color: var(--brand);
+    border-color: var(--focus-ring);
     outline: none;
-    box-shadow: 0 0 0 1px var(--brand);
+    box-shadow: none;
   }
 
   /* Semantic border-only focus for financial fields */
