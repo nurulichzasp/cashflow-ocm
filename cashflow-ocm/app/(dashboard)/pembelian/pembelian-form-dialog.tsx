@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { DateRangePopover } from '@/components/date-range-popover'
 import { createPembelian, updatePembelian, getHargaAcuanListForProduk, type KategoriPembelian, type DetailInput } from './actions'
 import { formatRupiah, formatRentangReplas, todayString } from '@/lib/format'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, CalendarDays } from 'lucide-react'
 
 type PeronOption = { id: string; nama: string; keuntunganPerKg: number }
 type AkunOption = { id: string; nama: string; tipe: string }
@@ -347,12 +347,11 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
             </div>
 
             <div className="rounded-lg border border-stone-200 dark:border-border overflow-hidden">
-              {/* Header — Replas | Tonase | Harga | Tgl Replas | hapus */}
-              <div className="grid grid-cols-[44px_1fr_1fr_1.4fr_28px] gap-0 bg-stone-50 dark:bg-white/[0.03] border-b border-stone-200 dark:border-border text-[10px] sm:text-xs font-semibold uppercase text-stone-500 tracking-wide">
+              {/* Header — Replas | Tonase | Harga | hapus. Tgl Replas pindah ke baris penuh per item. */}
+              <div className="grid grid-cols-[44px_1fr_1fr_28px] gap-0 bg-stone-50 dark:bg-white/[0.03] border-b border-stone-200 dark:border-border text-[10px] sm:text-xs font-semibold uppercase text-stone-500 tracking-wide">
                 <div className="px-1.5 py-2 text-right">Replas</div>
-                <div className="px-1.5 py-2">Tonase</div>
+                <div className="px-1.5 py-2 text-right">Tonase</div>
                 <div className="px-1.5 py-2">Rp/kg *</div>
-                <div className="px-1.5 py-2">Tgl Replas</div>
                 <div className="px-1 py-2" />
               </div>
 
@@ -363,7 +362,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
                 const subtotal = ton * harga
                 return (
                   <div key={idx} className="border-b border-stone-100 dark:border-border last:border-b-0">
-                    <div className="grid grid-cols-[44px_1fr_1fr_1.4fr_28px] gap-0 items-center">
+                    <div className="grid grid-cols-[44px_1fr_1fr_28px] gap-0 items-center">
                       <div className="px-1 py-1.5 min-w-0">
                         <Input
                           type="text"
@@ -392,14 +391,6 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
                           className="h-8 text-sm min-w-0 px-1.5"
                         />
                       </div>
-                      <div className="px-1 py-1.5 min-w-0">
-                        <DateRangePopover
-                          dari={d.tanggalReplas}
-                          sampai={d.tanggalReplasSampai}
-                          onChange={(from, sampai) => setRowRange(idx, from, sampai)}
-                          warning={warnRange(d)}
-                        />
-                      </div>
                       <div className="px-0 py-1.5 flex justify-center">
                         {details.length > 1 && (
                           <button type="button" onClick={() => removeDetail(idx)} className="h-7 w-7 flex items-center justify-center rounded text-stone-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10">
@@ -407,6 +398,20 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
                           </button>
                         )}
                       </div>
+                    </div>
+                    {/* Tgl Replas — baris penuh sendiri (1 kolom): label di atas,
+                        rentang Dari–Sampai dapat lebar penuh (tak lagi dijejal di grid) */}
+                    <div className="px-2 pb-2 pt-0.5 space-y-1">
+                      <span className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-stone-400 dark:text-zinc-500">
+                        <CalendarDays className="h-3 w-3" />
+                        Tgl Replas
+                      </span>
+                      <DateRangePopover
+                        dari={d.tanggalReplas}
+                        sampai={d.tanggalReplasSampai}
+                        onChange={(from, sampai) => setRowRange(idx, from, sampai)}
+                        warning={warnRange(d)}
+                      />
                     </div>
                     {subtotal > 0 && (
                       <div className="px-3 pb-1.5 text-xs text-stone-500 flex gap-4">
