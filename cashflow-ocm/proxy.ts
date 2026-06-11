@@ -20,7 +20,9 @@ const publicPaths = [
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
-  const isPublic = publicPaths.some((p) => pathname.startsWith(p))
+  // '/' = welcome/splash, harus EXACT-match (jangan masuk publicPaths startsWith
+  // — '/' akan cocok dengan SEMUA path & membuka seluruh gate).
+  const isPublic = pathname === '/' || publicPaths.some((p) => pathname.startsWith(p))
 
   const sessionToken =
     request.cookies.get('better-auth.session_token')?.value ??

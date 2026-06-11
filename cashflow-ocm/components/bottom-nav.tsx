@@ -97,7 +97,7 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
 
   async function handleLogout() {
     await signOut()
-    router.push('/login')
+    router.push('/')
     router.refresh()
   }
 

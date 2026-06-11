@@ -81,7 +81,7 @@ export function Sidebar({ user, isOwner, onToggle }: { user?: any; isOwner?: boo
 
   async function handleLogout() {
     await signOut()
-    router.push('/login')
+    router.push('/')
     router.refresh()
   }
 
@@ -181,7 +181,7 @@ export function MobileSidebar({ user, isOwner }: { user?: any; isOwner?: boolean
 
   async function handleLogout() {
     await signOut()
-    router.push('/login')
+    router.push('/')
     router.refresh()
   }
 

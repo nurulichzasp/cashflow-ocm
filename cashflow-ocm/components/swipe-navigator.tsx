@@ -5,12 +5,16 @@ import { useRouter } from 'next/navigation'
 
 /**
  * SwipeNavigator — gesture navigasi horizontal, HANYA dari tepi layar.
+ * Mengikuti konvensi iOS (sama dengan edge-swipe bawaan Safari):
  *
- *   geser KIRI  (mulai dari tepi KANAN) → router.back()
- *   geser KANAN (mulai dari tepi KIRI)  → router.forward()
+ *   geser KANAN (mulai dari tepi KIRI)  → router.back()     // iOS: kiri = kembali
+ *   geser KIRI  (mulai dari tepi KANAN) → router.forward()
  *
+ * Arah ini SENGAJA setuju dengan edge-swipe native Safari (kiri = back); dulu
+ * terbalik (kiri = forward) sehingga konflik dengan native → "back terasa kebalik".
  * Wajib mulai dari tepi layar (EDGE_ZONE) supaya scroll biasa di tengah
- * konten TIDAK pernah ke-trigger (dulu sering tak sengaja ke-back saat scroll).
+ * konten TIDAK pernah ke-trigger. Tidak ada preventDefault → gesture native
+ * Safari tetap hidup.
  */
 
 const EDGE_ZONE = 28 // px dari tepi layar — gesture WAJIB mulai di sini
@@ -51,8 +55,9 @@ export function SwipeNavigator({ children }: { children: React.ReactNode }) {
     if (Math.abs(dx) < THRESHOLD) return
     if (Math.abs(dx) <= Math.abs(dy) * DIRECTION_RATIO) return
 
-    if (dx < 0) router.back() // geser kiri (mulai dari tepi kanan)
-    else router.forward() // geser kanan (mulai dari tepi kiri)
+    // Konvensi iOS: geser KANAN dari tepi kiri = back; geser KIRI dari tepi kanan = forward.
+    if (dx > 0) router.back()
+    else router.forward()
   }
 
   return (
