@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { signIn } from '@/lib/auth-client'
 import { toast } from 'sonner'
@@ -11,6 +11,21 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState({ email: '', password: '' })
   const [showPassword, setShowPassword] = useState(false)
+
+  // Saat sesi expired (mis. idle > 15 mnt / PWA dibuka lagi), proxy.ts
+  // mengarahkan ke /login?reason=expired. Tampilkan pesan jelas alih-alih
+  // membiarkan user bingung kenapa balik ke layar login. Baca dari
+  // window.location agar tidak perlu Suspense boundary untuk useSearchParams.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('reason') === 'expired') {
+      toast.info('Sesi berakhir, silakan login ulang.')
+      // Bersihkan query agar pesan tidak muncul lagi saat refresh.
+      const url = new URL(window.location.href)
+      url.searchParams.delete('reason')
+      window.history.replaceState({}, '', url.toString())
+    }
+  }, [])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
