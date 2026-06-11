@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { DateRangeInline } from '@/components/date-range-inline'
 import { CalendarDays, X } from 'lucide-react'
 
 const MONTHS = [
@@ -78,21 +78,7 @@ export function DateRangeFilter({ dari, sampai, onChange }: Props) {
           </SelectContent>
         </Select>
       ) : (
-        <div className="flex items-center gap-1.5 w-full sm:w-auto min-w-0">
-          <Input
-            type="date"
-            value={dari}
-            onChange={(e) => onChange(e.target.value, sampai)}
-            className="flex-1 sm:flex-none sm:w-[150px] min-w-0 h-9 text-xs"
-          />
-          <span className="shrink-0 text-xs text-stone-400">s/d</span>
-          <Input
-            type="date"
-            value={sampai}
-            onChange={(e) => onChange(dari, e.target.value)}
-            className="flex-1 sm:flex-none sm:w-[150px] min-w-0 h-9 text-xs"
-          />
-        </div>
+        <DateRangeInline dari={dari} sampai={sampai} onChange={onChange} className="w-full sm:w-auto" />
       )}
 
       {/* Aksi sekunder: ganti mode + reset (tidak mengganggu lebar dropdown) */}

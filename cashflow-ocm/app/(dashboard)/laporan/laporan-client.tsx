@@ -5,7 +5,7 @@ import { getLaporanData, getPajakData, getLabaRugiTahunan, getNeracaData } from 
 import { formatRupiah, formatTanggal } from '@/lib/format'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { DateRangeInline } from '@/components/date-range-inline'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Download, FileSpreadsheet } from 'lucide-react'
 import { updatePpnStatus, updatePphStatus } from '../pengaturan/actions'
@@ -530,15 +530,13 @@ export function LaporanClient({
     <div className="space-y-5">
       <Card>
         <CardContent className="pt-4">
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">Dari</p>
-              <Input type="date" value={dari} onChange={(e) => setDari(e.target.value)} className="w-40" />
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">Sampai</p>
-              <Input type="date" value={sampai} onChange={(e) => setSampai(e.target.value)} className="w-40" />
-            </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <DateRangeInline
+              dari={dari}
+              sampai={sampai}
+              onChange={(d, s) => { setDari(d); setSampai(s) }}
+              className="w-full sm:w-auto sm:min-w-[280px]"
+            />
             <Button onClick={handleTerapkan} disabled={isPending}>
               {isPending ? 'Memuat...' : 'Terapkan'}
             </Button>
