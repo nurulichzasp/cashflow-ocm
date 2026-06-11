@@ -630,12 +630,12 @@ html.dark [class~="hover:bg-orange-700"]:hover       { background-color: #c8654a
     outline: none;
     box-shadow: none;
   }
-  /* Keyboard focus: ring netral yang JELAS terlihat (WCAG 2.4.7) — sebelumnya tak ada. */
+  /* Keyboard focus: SATU garis emerald tipis (border + ring 1px sewarna, TANPA gap
+     bg → menyatu jadi satu garis, bukan dua). Tetap jelas utk keyboard (WCAG 2.4.7). */
   .neural-focus:focus-visible {
     border-color: var(--brand);
     outline: none;
-    /* 2px gap (bg) + 2px ring iris brand → identitas focus premium, kontras non-text >=3:1 (WCAG 1.4.11) */
-    box-shadow: 0 0 0 2px var(--background), 0 0 0 4px color-mix(in oklab, var(--brand) 60%, transparent);
+    box-shadow: 0 0 0 1px var(--brand);
   }
 
   /* Semantic border-only focus for financial fields */
