@@ -6,9 +6,9 @@ import { useState } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react'
 import { cn } from '@/lib/utils'
 import {
-  House,
+  LayoutDashboard,
   ShoppingCart,
-  Banknote,
+  TrendingUp,
   Search,
   Menu,
   X,
@@ -20,11 +20,10 @@ import { parsePerms, isRouteActive } from '@/lib/nav-routes'
 import { useNavCompact } from '@/lib/nav-visibility-store'
 
 const primaryNav = [
-  { href: '/dashboard', label: 'Beranda', icon: House, perm: undefined },
+  // Ikon di-REVERT (iterasi 3): Beranda = grid, Penjualan = trending. Gaya bar tetap.
+  { href: '/dashboard', label: 'Beranda', icon: LayoutDashboard, perm: undefined },
   { href: '/pembelian', label: 'Pembelian', icon: ShoppingCart, perm: 'pembelian' as const },
-  // Penjualan = uang masuk → ikon Banknote (uang kertas). Bukan $ (kita Rupiah),
-  // jelas terbaca kecil, dan tak mirip cart/search/home/menu.
-  { href: '/penjualan', label: 'Penjualan', icon: Banknote, perm: 'penjualan' as const },
+  { href: '/penjualan', label: 'Penjualan', icon: TrendingUp, perm: 'penjualan' as const },
 ]
 
 function NavTab({
