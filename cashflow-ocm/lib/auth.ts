@@ -25,6 +25,20 @@ const trustedOrigins = Array.from(
   ),
 )
 
+// ── PARAMETER sesi pendek ala m-banking (gampang diubah) ─────────────────────
+// Data keuangan sensitif → sesi tidak boleh bertahan lama. Tiap buka app
+// setelah idle/tutup melewati timeout = harus login ulang.
+//
+// IDLE_TIMEOUT = umur sesi sejak aktivitas terakhir. Selama user aktif sesi
+// diperpanjang (sliding refresh, lihat updateAge di bawah); begitu idle
+// melewati timeout → sesi mati di server → user diarahkan ke /login.
+const IDLE_TIMEOUT_SECONDS = 60 * 15 // 15 menit
+// Seberapa sering expiry sesi di-refresh saat user aktif. Dibuat jauh lebih
+// pendek dari IDLE_TIMEOUT supaya sliding terasa mulus: tiap kali user aktif
+// (request) dan sesi terakhir di-update > updateAge lalu, expiry di-reset ke
+// now + IDLE_TIMEOUT. Efek akhir: aktif = sesi hidup, idle > 15 mnt = mati.
+const SESSION_UPDATE_AGE_SECONDS = 60 * 3 // refresh tiap ~3 menit aktivitas
+
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: 'sqlite',
@@ -69,9 +83,28 @@ export const auth = betterAuth({
     },
   },
   session: {
-    expiresIn: 60 * 60 * 24 * 7,
-    updateAge: 60 * 60 * 24,
+    // Umur sesi pendek + sliding refresh (lihat PARAMETER di atas).
+    expiresIn: IDLE_TIMEOUT_SECONDS,
+    updateAge: SESSION_UPDATE_AGE_SECONDS,
+    // cookieCache: cache sesi di cookie ber-TTL agar getSession tidak selalu
+    // hit DB. Bahaya untuk kasus ini: kalau TTL panjang, sesi bisa terasa
+    // "hidup" walau server sudah expired (proxy & getSession baca cache, bukan
+    // DB) → celah. Maka DIMATIKAN: tiap cek sesi memvalidasi ke DB sehingga
+    // sesi expired langsung ditolak (proxy.ts mengandalkan validasi ini).
+    cookieCache: {
+      enabled: false,
+    },
   },
+  // Catatan persistensi cookie:
+  // Better Auth meng-hardcode maxAge cookie sesi = expiresIn KECUALI sign-in
+  // pakai rememberMe:false — tapi rememberMe:false JUGA mematikan sliding
+  // refresh (sesi jadi mati pas 15 mnt sejak LOGIN walau user aktif). Karena
+  // acceptance criteria mewajibkan "aktif < timeout = sesi TIDAK putus"
+  // (sliding), kita TIDAK pakai rememberMe:false. Keandalan lintas platform
+  // (termasuk PWA iOS yang cookie-nya bisa nyangkut) dijamin oleh kombinasi:
+  //   (1) expiry server pendek + sliding (di sini), dan
+  //   (2) proxy.ts yang MEMVALIDASI sesi (bukan cuma cek keberadaan cookie),
+  // sehingga cookie expired apa pun selalu ditolak → /login.
 })
 
 export type Session = typeof auth.$Infer.Session
