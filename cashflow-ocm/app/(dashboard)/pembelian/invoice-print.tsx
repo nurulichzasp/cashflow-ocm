@@ -108,11 +108,7 @@ function buildNotaHTML(p: PembelianRow, nomorUrut: number): string {
   .meta{display:flex;justify-content:space-between;margin-bottom:12px;font-size:10.5px;color:#57534e}
   .meta .lbl{color:#a8a29e;font-size:9px;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:1px}
   .meta .val{font-weight:600}
-  .kat{display:inline-block;padding:1px 7px;border-radius:999px;font-size:8.5px;font-weight:700}
-  .kat-OCMR1{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
-  .kat-OCMR2{background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe}
-  .kat-OCMPSAGU{background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0}
-  .kat-OCMBRDL{background:#fffbeb;color:#b45309;border:1px solid #fde68a}
+  .kat{display:inline-block;padding:1px 7px;border-radius:999px;font-size:8.5px;font-weight:700;background:#f5f5f4;color:#44403c;border:1px solid #e7e5e4}
   table{width:100%;border-collapse:collapse;margin-bottom:10px;font-size:10.5px}
   thead th{background:#f5f5f4;padding:5px 6px;text-align:left;font-size:8.5px;text-transform:uppercase;letter-spacing:0.06em;color:#78716c;font-weight:700;border-bottom:1.5px solid #e7e5e4}
   th.r{text-align:right}
@@ -123,13 +119,13 @@ function buildNotaHTML(p: PembelianRow, nomorUrut: number): string {
   .divider-double{border:none;border-top:2.5px double #e7e5e4;margin:8px 0}
   .total-row{display:flex;justify-content:space-between;padding:5px 0}
   .total-row .lbl{font-weight:700;font-size:12px}
-  .total-row .val{font-weight:700;font-size:13px}
+  .total-row .val{font-weight:700;font-size:13px;font-variant-numeric:tabular-nums}
   .info-row{display:flex;justify-content:space-between;padding:3.5px 0;font-size:10.5px;border-bottom:1px dashed #f5f5f4}
   .info-row .lbl{color:#78716c}
   .info-row .val{font-weight:600}
   .st{display:inline-block;padding:1px 7px;border-radius:999px;font-size:8.5px;font-weight:700}
-  .st-lunas{background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0}
-  .st-belum{background:#fffbeb;color:#b45309;border:1px solid #fde68a}
+  .st-lunas{background:#ecfdf5;color:#0B6E4F;border:1px solid #a7f3d0}
+  .st-belum{background:#f5f5f4;color:#78716c;border:1px solid #e7e5e4}
   .catatan{background:#f5f5f4;border-radius:5px;padding:6px 8px;font-size:10px;color:#57534e;margin-top:8px}
   .catatan-lbl{font-weight:700;font-size:8.5px;text-transform:uppercase;letter-spacing:0.05em;color:#a8a29e;margin-bottom:2px}
   .section-label{font-size:8.5px;text-transform:uppercase;letter-spacing:0.05em;color:#a8a29e;font-weight:700;margin-bottom:5px}
@@ -137,7 +133,8 @@ function buildNotaHTML(p: PembelianRow, nomorUrut: number): string {
   .foto-strip{display:flex;flex-wrap:wrap;gap:5px}
   .foto-thumb{height:72px;width:72px;object-fit:cover;border-radius:4px;border:1px solid #e7e5e4}
   .footer{text-align:center;font-size:8.5px;color:#a8a29e;margin-top:14px;padding-top:10px;border-top:1px solid #e7e5e4}
-  .no-print{margin-bottom:14px}
+  .no-print{margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .back-btn{background:#fff;color:#44403c;border:1px solid #d6d3d1;padding:6px 14px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer}
   .print-btn{background:#0E7A57;color:#fff;border:none;padding:6px 16px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer}
   @media print{.no-print{display:none}@page{margin:8mm;size:A5}body{background:#fff}}
 </style>
@@ -145,6 +142,7 @@ function buildNotaHTML(p: PembelianRow, nomorUrut: number): string {
 <body>
 <div class="wrap">
   <div class="no-print">
+    <button class="back-btn" onclick="window.close()">&#8592; Tutup</button>
     <button class="print-btn" onclick="window.print()">&#128438; Cetak / Simpan PDF</button>
   </div>
 
@@ -256,6 +254,7 @@ function buildThermalHTML(p: PembelianRow, paperWidthMm: number, nomorUrut: numb
   .status-lunas{font-weight:bold}
   .status-belum{font-weight:bold}
   .no-print{margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap}
+  .back-btn{background:#fff;color:#44403c;border:1px solid #d6d3d1;padding:8px 14px;border-radius:6px;font-size:12pt;cursor:pointer;font-family:Arial,sans-serif}
   .print-btn{background:#0E7A57;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-size:12pt;cursor:pointer;font-family:Arial,sans-serif;flex:1}
   .share-btn{background:#0E7A57;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-size:12pt;cursor:pointer;font-family:Arial,sans-serif;flex:1}
   @media print{
@@ -269,6 +268,7 @@ function buildThermalHTML(p: PembelianRow, paperWidthMm: number, nomorUrut: numb
 <body>
 <div class="wrap">
   <div class="no-print">
+    <button class="back-btn" onclick="window.close()">&#8592; Tutup</button>
     <button class="print-btn" onclick="window.print()">&#128438; Cetak</button>
     <button class="share-btn" onclick="bagikanNota()">&#8679; Bagikan</button>
   </div>
@@ -398,21 +398,18 @@ function buildRekapHTML(list: PembelianRow[]): string {
   td.r{text-align:right;font-variant-numeric:tabular-nums}
   td.b{font-weight:700}
   td.mono{font-family:monospace;font-size:9.5px}
-  .kat{display:inline-block;padding:1px 6px;border-radius:999px;font-size:8.5px;font-weight:700}
-  .kat-OCMR1{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
-  .kat-OCMR2{background:#f5f3ff;color:#6d28d9;border:1px solid #ddd6fe}
-  .kat-OCMPSAGU{background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0}
-  .kat-OCMBRDL{background:#fffbeb;color:#b45309;border:1px solid #fde68a}
+  .kat{display:inline-block;padding:1px 6px;border-radius:999px;font-size:8.5px;font-weight:700;background:#f5f5f4;color:#44403c;border:1px solid #e7e5e4}
   .st{display:inline-block;padding:1px 6px;border-radius:999px;font-size:8.5px;font-weight:700}
-  .st-lunas{background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0}
-  .st-belum{background:#fffbeb;color:#b45309;border:1px solid #fde68a}
+  .st-lunas{background:#ecfdf5;color:#0B6E4F;border:1px solid #a7f3d0}
+  .st-belum{background:#f5f5f4;color:#78716c;border:1px solid #e7e5e4}
   tfoot td{font-weight:700;border-top:2px solid #e7e5e4;border-bottom:none;padding-top:8px;font-size:11px}
   .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
   .scard{border:1px solid #e7e5e4;border-radius:6px;padding:8px 12px}
   .scard .sl{font-size:8.5px;text-transform:uppercase;letter-spacing:0.06em;color:#a8a29e;margin-bottom:2px}
-  .scard .sv{font-size:13px;font-weight:700;color:#1c1917}
-  .scard.green .sv{color:#15803d}
-  .no-print{margin-bottom:16px}
+  .scard .sv{font-size:13px;font-weight:700;color:#1c1917;font-variant-numeric:tabular-nums}
+  .scard.green .sv{color:#0B6E4F}
+  .no-print{margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .back-btn{background:#fff;color:#44403c;border:1px solid #d6d3d1;padding:7px 16px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer}
   .print-btn{background:#0E7A57;color:#fff;border:none;padding:7px 18px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer}
   .foto-row td{padding:4px 8px 10px 8px;border-bottom:1.5px solid #e7e5e4}
   .foto-strip{display:flex;flex-wrap:wrap;gap:6px}
@@ -423,6 +420,7 @@ function buildRekapHTML(list: PembelianRow[]): string {
 <body>
 <div class="wrap">
   <div class="no-print">
+    <button class="back-btn" onclick="window.close()">&#8592; Tutup</button>
     <button class="print-btn" onclick="window.print()">&#128438; Cetak / Simpan PDF</button>
   </div>
 
