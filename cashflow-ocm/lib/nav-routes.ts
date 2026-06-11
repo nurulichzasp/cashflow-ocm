@@ -8,6 +8,7 @@ import {
   DollarSign,
   BarChart3,
   Settings,
+  HeartPulse,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -40,6 +41,7 @@ export const APP_ROUTES: AppRoute[] = [
 
   // — Master Data —
   { label: 'Peron', path: '/peron', group: 'Master Data', icon: Users },
+  { label: 'Kesehatan Peron', path: '/peron/kesehatan', group: 'Master Data', icon: HeartPulse },
   { label: 'Harga Acuan', path: '/harga', group: 'Master Data', icon: DollarSign },
 
   // — Lainnya —

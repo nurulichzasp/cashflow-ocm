@@ -10,6 +10,7 @@ const publicPaths = [
   '/login',
   '/api/auth',          // better-auth internal
   '/api/cron',          // Vercel cron (auth: Bearer CRON_SECRET)
+  '/api/peron-health',  // Cron rebuild kesehatan peron (auth: Bearer/secret CRON_SECRET)
   '/api/backup',        // Backup terjadwal POST (auth: Bearer BACKUP_TOKEN); GET cek session di route
   '/api/telegram',      // Telegram webhook (auth: ?secret=...)
   '/api/parse-bast',    // Parser BAST (auth: cek session di dalam route handler)

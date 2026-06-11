@@ -282,15 +282,76 @@ export const accountRelations = relations(account, ({ one }) => ({
   user: one(user, { fields: [account.userId], references: [user.id] }),
 }))
 
+// ─── Kesehatan Peron (early-warning peron melemah, berbasis share) ──────────────
+
+// Snapshot mingguan per peron — sumber grafik & tren
+export const peronSnapshot = sqliteTable('peron_snapshot', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  peronId: text('peron_id').notNull().references(() => peron.id, { onDelete: 'cascade' }),
+  weekStart: text('week_start').notNull(), // ISO Senin "YYYY-MM-DD"
+  totalKg: real('total_kg').notNull().default(0), // kg real (tonase pecahan)
+  setorCount: integer('setor_count').notNull().default(0),
+  share: real('share').notNull().default(0), // 0..1
+  isOperationalWeek: integer('is_operational_week', { mode: 'boolean' }).notNull().default(true),
+  computedAt: integer('computed_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+}, (t) => ({
+  uq: uniqueIndex('peron_snapshot_peron_week_idx').on(t.peronId, t.weekStart),
+}))
+
+// Status kesehatan terkini per peron — 1 baris/peron, untuk list & badge instan
+export const peronHealth = sqliteTable('peron_health', {
+  peronId: text('peron_id').primaryKey().references(() => peron.id, { onDelete: 'cascade' }),
+  status: text('status', { enum: ['normal', 'perhatian', 'kritis', 'data_kurang'] }).notNull().default('data_kurang'),
+  shareCurrent: real('share_current').notNull().default(0),
+  shareBase: real('share_base').notNull().default(0),
+  shareDelta: real('share_delta').notNull().default(0),
+  declineWeeks: integer('decline_weeks').notNull().default(0),
+  typicalGap: real('typical_gap').notNull().default(0),
+  daysSinceLast: integer('days_since_last').notNull().default(0),
+  lastSetorDate: text('last_setor_date'), // "YYYY-MM-DD" | null
+  seasonVerdict: text('season_verdict', { enum: ['musim', 'lari'] }), // | null
+  isArchived: integer('is_archived', { mode: 'boolean' }).notNull().default(false),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+})
+
+// Log tindak lanjut — deteksi tanpa aksi = percuma
+export const peronFollowup = sqliteTable('peron_followup', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  peronId: text('peron_id').notNull().references(() => peron.id, { onDelete: 'cascade' }),
+  triggeredStatus: text('triggered_status').notNull(),
+  contacted: integer('contacted', { mode: 'boolean' }).notNull().default(false),
+  reason: text('reason', { enum: ['harga_kalah', 'pindah_cv', 'masalah_operasional', 'memang_musim', 'lainnya'] }),
+  note: text('note'),
+  outcome: text('outcome', { enum: ['kembali_normal', 'masih_pantau', 'hilang'] }),
+  createdBy: text('created_by').references(() => user.id),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+})
+
 export const akunKasRelations = relations(akunKas, ({ many }) => ({
   transaksi: many(transaksiKas),
   pembelian: many(pembelian),
   biaya: many(biayaOperasional),
 }))
 
-export const peronRelations = relations(peron, ({ many }) => ({
+export const peronRelations = relations(peron, ({ many, one }) => ({
   modalPeron: many(modalPeron),
   pembelian: many(pembelian),
+  snapshots: many(peronSnapshot),
+  health: one(peronHealth, { fields: [peron.id], references: [peronHealth.peronId] }),
+  followups: many(peronFollowup),
+}))
+
+export const peronSnapshotRelations = relations(peronSnapshot, ({ one }) => ({
+  peron: one(peron, { fields: [peronSnapshot.peronId], references: [peron.id] }),
+}))
+
+export const peronHealthRelations = relations(peronHealth, ({ one }) => ({
+  peron: one(peron, { fields: [peronHealth.peronId], references: [peron.id] }),
+}))
+
+export const peronFollowupRelations = relations(peronFollowup, ({ one }) => ({
+  peron: one(peron, { fields: [peronFollowup.peronId], references: [peron.id] }),
+  createdByUser: one(user, { fields: [peronFollowup.createdBy], references: [user.id] }),
 }))
 
 export const modalPeronRelations = relations(modalPeron, ({ one }) => ({
@@ -361,3 +422,6 @@ export type PembelianFoto = typeof pembelianFoto.$inferSelect
 export type BiayaFoto = typeof biayaFoto.$inferSelect
 export type PpnBulanan = typeof ppnBulanan.$inferSelect
 export type PphBulanan = typeof pphBulanan.$inferSelect
+export type PeronSnapshot = typeof peronSnapshot.$inferSelect
+export type PeronHealth = typeof peronHealth.$inferSelect
+export type PeronFollowup = typeof peronFollowup.$inferSelect
