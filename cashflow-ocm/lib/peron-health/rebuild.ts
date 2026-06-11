@@ -175,11 +175,21 @@ export async function rebuildPeronHealth(): Promise<{ peronCount: number; weekCo
     })
   }
   for (const h of healthUpserts) {
-    // Jangan timpa peronId (target) maupun isArchived (dikelola archivePeron).
-    const { peronId: _p, isArchived: _a, ...updatable } = h
     await db.insert(peronHealth).values(h).onConflictDoUpdate({
       target: peronHealth.peronId,
-      set: updatable,
+      // Jangan timpa isArchived (dikelola archivePeron) maupun peronId (target).
+      set: {
+        status: h.status,
+        shareCurrent: h.shareCurrent,
+        shareBase: h.shareBase,
+        shareDelta: h.shareDelta,
+        declineWeeks: h.declineWeeks,
+        typicalGap: h.typicalGap,
+        daysSinceLast: h.daysSinceLast,
+        lastSetorDate: h.lastSetorDate,
+        seasonVerdict: h.seasonVerdict,
+        updatedAt: h.updatedAt,
+      },
     })
   }
 

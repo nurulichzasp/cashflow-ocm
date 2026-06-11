@@ -67,7 +67,19 @@ export async function GET(request: Request) {
     }
 
     const success = await sendTelegramMessage(message)
-    return NextResponse.json({ success, mode })
+
+    // Rebuild kesehatan peron sekalian (sekali/hari) — digabung ke cron ini agar
+    // andal di plan Vercel mana pun tanpa cron terpisah. Gagal di sini TIDAK
+    // mengganggu ringkasan harian.
+    let peronHealth: unknown = null
+    try {
+      const { rebuildPeronHealth } = await import('@/lib/peron-health/rebuild')
+      peronHealth = await rebuildPeronHealth()
+    } catch (e) {
+      console.error('Daily peron-health rebuild error:', e)
+    }
+
+    return NextResponse.json({ success, mode, peronHealth })
   } catch (error) {
     console.error('Daily summary error:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
