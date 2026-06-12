@@ -16,9 +16,10 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { deleteBiayaOperasional } from './actions'
+import { BiayaFormDialog } from './biaya-form-dialog'
 import { formatRupiah, formatTanggal } from '@/lib/format'
 import { FotoBuktiGallery } from '@/components/foto-bukti-gallery'
-import { Trash2, Receipt, ImageIcon, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { Trash2, Receipt, ImageIcon, ArrowUpDown, ArrowUp, ArrowDown, Pencil } from 'lucide-react'
 import { DateRangeFilter } from '@/components/date-range-filter'
 import type { BiayaOperasional, AkunKas, BiayaFoto } from '@/lib/db/schema'
 
@@ -38,14 +39,17 @@ const kategoriColors: Record<BiayaOperasional['kategori'], string> = {
   lainnya: 'bg-stone-100 text-stone-600 dark:text-stone-300 border border-transparent',
 }
 
+type AkunOption = { id: string; nama: string; tipe: string }
+
 interface Props {
   biayaList: BiayaRow[]
   isOwner: boolean
+  akunOptions: AkunOption[]
 }
 
 type SortCol = 'tanggal' | 'jumlah'
 
-export function BiayaTable({ biayaList, isOwner }: Props) {
+export function BiayaTable({ biayaList, isOwner, akunOptions }: Props) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [expandedFotoId, setExpandedFotoId] = useState<string | null>(null)
   const [sortBy, setSortBy] = useState<SortCol>('tanggal')
@@ -120,7 +124,7 @@ export function BiayaTable({ biayaList, isOwner }: Props) {
               </th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Catatan</th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Foto</th>
-              {isOwner && <th className="px-4 py-3 w-10" />}
+              <th className="px-4 py-3 w-10"><span className="sr-only">Aksi</span></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
@@ -154,41 +158,48 @@ export function BiayaTable({ biayaList, isOwner }: Props) {
                       <span className="text-stone-300 text-xs">—</span>
                     )}
                   </td>
-                  {isOwner && (
-                    <td className="px-4 py-3 text-right">
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" aria-label="Hapus" className="tap-pad h-8 w-8 text-stone-400 hover:text-red-600 hover:bg-red-50">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Hapus biaya?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Biaya <strong>{kategoriLabels[item.kategori]}</strong> tanggal{' '}
-                              <strong>{formatTanggal(item.tanggal)}</strong> sebesar{' '}
-                              <strong>{formatRupiah(item.jumlah)}</strong> akan dihapus.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Batal</AlertDialogCancel>
-                            <AlertDialogAction
-                              className="bg-red-600 hover:bg-red-700 text-white"
-                              onClick={() => handleDelete(item.id)}
-                              disabled={deletingId === item.id}
-                            >
-                              {deletingId === item.id ? 'Menghapus...' : 'Hapus'}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </td>
-                  )}
+                  <td className="px-4 py-3 text-right">
+                    <div className="inline-flex items-center gap-0.5">
+                      <BiayaFormDialog editItem={item} akunOptions={akunOptions}>
+                        <Button variant="ghost" size="icon" aria-label="Edit" className="tap-pad h-8 w-8 text-stone-400 hover:text-stone-700 dark:hover:text-zinc-200">
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </BiayaFormDialog>
+                      {isOwner && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" aria-label="Hapus" className="tap-pad h-8 w-8 text-stone-400 hover:text-red-600 hover:bg-red-50">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Hapus biaya?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Biaya <strong>{kategoriLabels[item.kategori]}</strong> tanggal{' '}
+                                <strong>{formatTanggal(item.tanggal)}</strong> sebesar{' '}
+                                <strong>{formatRupiah(item.jumlah)}</strong> akan dihapus.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Batal</AlertDialogCancel>
+                              <AlertDialogAction
+                                className="bg-red-600 hover:bg-red-700 text-white"
+                                onClick={() => handleDelete(item.id)}
+                                disabled={deletingId === item.id}
+                              >
+                                {deletingId === item.id ? 'Menghapus...' : 'Hapus'}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </div>
+                  </td>
                 </tr>
                 {expandedFotoId === item.id && item.fotos.length > 0 && (
                   <tr className="bg-stone-50/50 dark:bg-white/[0.02]">
-                    <td colSpan={isOwner ? 7 : 6} className="px-5 py-3">
+                    <td colSpan={7} className="px-5 py-3">
                       <FotoBuktiGallery urls={item.fotos.map((f) => f.url)} />
                     </td>
                   </tr>
@@ -215,34 +226,42 @@ export function BiayaTable({ biayaList, isOwner }: Props) {
             </div>
             <div className="flex items-center justify-between">
               <p className="text-lg font-bold text-stone-900 num">{formatRupiah(item.jumlah)}</p>
-              {isOwner && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50 gap-1.5">
-                      <Trash2 className="h-3.5 w-3.5" />
-                      Hapus
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Hapus biaya?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Biaya {kategoriLabels[item.kategori]} pada {formatTanggal(item.tanggal)} akan dihapus.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Batal</AlertDialogCancel>
-                      <AlertDialogAction
-                        className="bg-red-600 hover:bg-red-700 text-white"
-                        onClick={() => handleDelete(item.id)}
-                        disabled={deletingId === item.id}
-                      >
-                        {deletingId === item.id ? 'Menghapus...' : 'Hapus'}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              )}
+              <div className="flex items-center gap-1">
+                <BiayaFormDialog editItem={item} akunOptions={akunOptions}>
+                  <Button variant="ghost" size="sm" className="text-stone-600 dark:text-zinc-300 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] gap-1.5">
+                    <Pencil className="h-3.5 w-3.5" />
+                    Edit
+                  </Button>
+                </BiayaFormDialog>
+                {isOwner && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50 gap-1.5">
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Hapus
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Hapus biaya?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Biaya {kategoriLabels[item.kategori]} pada {formatTanggal(item.tanggal)} akan dihapus.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                        <AlertDialogAction
+                          className="bg-red-600 hover:bg-red-700 text-white"
+                          onClick={() => handleDelete(item.id)}
+                          disabled={deletingId === item.id}
+                        >
+                          {deletingId === item.id ? 'Menghapus...' : 'Hapus'}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </div>
             </div>
             {item.catatan && <p className="text-xs text-stone-500 mt-2">{item.catatan}</p>}
             {item.fotos.length > 0 && (

@@ -92,6 +92,51 @@ export async function createTransaksiKas(formData: FormData) {
   return { success: true }
 }
 
+export async function updateTransaksiKas(id: string, formData: FormData) {
+  const session = await requireSession()
+  requirePermission(session.user.role as any, 'canEdit')
+
+  const existing = await db.query.transaksiKas.findFirst({ where: (t, { eq }) => eq(t.id, id) })
+  if (!existing) throw new Error('Transaksi tidak ditemukan')
+
+  // Guard: transaksi otomatis (dari penjualan/biaya) tidak boleh diedit di sini.
+  if (existing.refTabel) {
+    throw new Error('Transaksi ini otomatis dari penjualan/biaya — edit di catatan sumbernya.')
+  }
+
+  const data = kasSchema.parse({
+    tanggal: formData.get('tanggal'),
+    akunId: formData.get('akunId'),
+    arah: formData.get('arah'),
+    jumlah: formData.get('jumlah'),
+    kategori: formData.get('kategori'),
+    catatan: formData.get('catatan') || undefined,
+  })
+
+  await db.update(transaksiKas).set({
+    tanggal: data.tanggal,
+    akunId: data.akunId,
+    arah: data.arah,
+    jumlah: data.jumlah,
+    kategori: data.kategori,
+    catatan: data.catatan ?? null,
+  }).where(eq(transaksiKas.id, id))
+
+  await logActivity({
+    userId: session.user.id,
+    action: 'update',
+    entityType: 'transaksi_kas',
+    entityId: id,
+    description: describeActivity('update', 'transaksi_kas', `${data.arah} ${data.kategori} • Rp${data.jumlah}`),
+    oldValues: { tanggal: existing.tanggal, akunId: existing.akunId, arah: existing.arah, jumlah: existing.jumlah, kategori: existing.kategori, catatan: existing.catatan },
+    newValues: { tanggal: data.tanggal, akunId: data.akunId, arah: data.arah, jumlah: data.jumlah, kategori: data.kategori, catatan: data.catatan ?? null },
+  })
+
+  revalidatePath('/kas')
+  revalidatePath('/dashboard')
+  return { success: true }
+}
+
 export async function deleteTransaksiKas(id: string) {
   const session = await requireOwner()
 

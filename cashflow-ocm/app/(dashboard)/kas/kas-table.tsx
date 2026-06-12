@@ -16,8 +16,9 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { deleteTransaksiKas } from './actions'
+import { KasFormDialog } from './kas-form-dialog'
 import { formatRupiah, formatTanggal } from '@/lib/format'
-import { Trash2, Wallet, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { Trash2, Wallet, ArrowUpDown, ArrowUp, ArrowDown, Pencil } from 'lucide-react'
 import { DateRangeFilter } from '@/components/date-range-filter'
 import type { TransaksiKas, AkunKas } from '@/lib/db/schema'
 
@@ -52,6 +53,17 @@ export function KasTable({ transaksiList, isOwner }: Props) {
     if (sortBy === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
     else { setSortBy(col); setSortDir('desc') }
   }
+
+  // Opsi akun diturunkan dari baris yang ada (untuk dialog edit) — dedup by id.
+  const akunOptions = useMemo(() => {
+    const map = new Map<string, { id: string; nama: string; tipe: string }>()
+    for (const t of transaksiList) {
+      if (t.akun && !map.has(t.akun.id)) {
+        map.set(t.akun.id, { id: t.akun.id, nama: t.akun.nama, tipe: t.akun.tipe })
+      }
+    }
+    return Array.from(map.values())
+  }, [transaksiList])
 
   const filtered = useMemo(() => {
     let list = [...transaksiList]
@@ -106,7 +118,7 @@ export function KasTable({ transaksiList, isOwner }: Props) {
                 <span className="inline-flex items-center gap-1 justify-end">Jumlah {sortBy === 'jumlah' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</span>
               </th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Catatan</th>
-              {isOwner && <th className="px-4 py-3 w-10" />}
+              <th className="px-4 py-3 w-10"><span className="sr-only">Aksi</span></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
@@ -133,36 +145,45 @@ export function KasTable({ transaksiList, isOwner }: Props) {
                   </span>
                 </td>
                 <td className="px-4 py-3 text-stone-500 max-w-[180px] truncate">{item.catatan ?? <span className="text-stone-400">—</span>}</td>
-                {isOwner && (
-                  <td className="px-4 py-3 text-right">
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" aria-label="Hapus" className="tap-pad h-8 w-8 text-stone-400 hover:text-[#F87171] hover:bg-red-50">
-                          <Trash2 className="h-4 w-4" />
+                <td className="px-4 py-3 text-right">
+                  <div className="inline-flex items-center gap-0.5">
+                    {!item.refTabel && (
+                      <KasFormDialog editItem={item} akunOptions={akunOptions}>
+                        <Button variant="ghost" size="icon" aria-label="Edit" className="tap-pad h-8 w-8 text-stone-400 hover:text-stone-700 dark:hover:text-zinc-200">
+                          <Pencil className="h-4 w-4" />
                         </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Hapus transaksi?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Transaksi <strong>{formatTanggal(item.tanggal)}</strong> sebesar{' '}
-                            <strong>{formatRupiah(item.jumlah)}</strong> akan dihapus.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Batal</AlertDialogCancel>
-                          <AlertDialogAction
-                            className="bg-red-600 hover:bg-red-700 text-white"
-                            onClick={() => handleDelete(item.id)}
-                            disabled={deletingId === item.id}
-                          >
-                            {deletingId === item.id ? 'Menghapus...' : 'Hapus'}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </td>
-                )}
+                      </KasFormDialog>
+                    )}
+                    {isOwner && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon" aria-label="Hapus" className="tap-pad h-8 w-8 text-stone-400 hover:text-[#F87171] hover:bg-red-50">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Hapus transaksi?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Transaksi <strong>{formatTanggal(item.tanggal)}</strong> sebesar{' '}
+                              <strong>{formatRupiah(item.jumlah)}</strong> akan dihapus.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Batal</AlertDialogCancel>
+                            <AlertDialogAction
+                              className="bg-red-600 hover:bg-red-700 text-white"
+                              onClick={() => handleDelete(item.id)}
+                              disabled={deletingId === item.id}
+                            >
+                              {deletingId === item.id ? 'Menghapus...' : 'Hapus'}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -189,34 +210,47 @@ export function KasTable({ transaksiList, isOwner }: Props) {
               {item.arah === 'masuk' ? '+' : '-'}{formatRupiah(item.jumlah)}
             </p>
             {item.catatan && <p className="text-xs text-stone-500 mt-2">{item.catatan}</p>}
-            {isOwner && (
-              <div className="flex justify-end mt-2 pt-2 border-t border-stone-100">
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="sm" className="text-[#F87171] hover:text-red-700 hover:bg-red-50 gap-1.5">
-                      <Trash2 className="h-3.5 w-3.5" />
-                      Hapus
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Hapus transaksi?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Transaksi {kategoriLabels[item.kategori]} pada {formatTanggal(item.tanggal)} akan dihapus.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Batal</AlertDialogCancel>
-                      <AlertDialogAction
-                        className="bg-red-600 hover:bg-red-700 text-white"
-                        onClick={() => handleDelete(item.id)}
-                        disabled={deletingId === item.id}
-                      >
-                        {deletingId === item.id ? 'Menghapus...' : 'Hapus'}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+            {(!item.refTabel || isOwner) && (
+              <div className="flex items-center gap-1 mt-2 pt-2 border-t border-stone-100">
+                {!item.refTabel && (
+                  <KasFormDialog editItem={item} akunOptions={akunOptions}>
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-stone-600 dark:text-zinc-300 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      Edit
+                    </button>
+                  </KasFormDialog>
+                )}
+                {isOwner && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="sm" className="ml-auto text-[#F87171] hover:text-red-700 hover:bg-red-50 gap-1.5">
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Hapus
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Hapus transaksi?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Transaksi {kategoriLabels[item.kategori]} pada {formatTanggal(item.tanggal)} akan dihapus.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                        <AlertDialogAction
+                          className="bg-red-600 hover:bg-red-700 text-white"
+                          onClick={() => handleDelete(item.id)}
+                          disabled={deletingId === item.id}
+                        >
+                          {deletingId === item.id ? 'Menghapus...' : 'Hapus'}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
               </div>
             )}
           </div>

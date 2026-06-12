@@ -126,6 +126,79 @@ export async function createBiayaOperasional(formData: FormData) {
   return { success: true, id: inserted[0].id }
 }
 
+export async function updateBiayaOperasional(id: string, formData: FormData) {
+  const session = await requireSession()
+  requirePermission(session.user.role as any, 'canEdit')
+
+  const data = biayaSchema.parse({
+    tanggal: formData.get('tanggal'),
+    kategori: formData.get('kategori'),
+    jumlah: formData.get('jumlah'),
+    akunSumberId: formData.get('akunSumberId'),
+    catatan: formData.get('catatan') || undefined,
+  })
+
+  // Foto nota dikirim sebagai JSON array string lewat FormData
+  const fotoUrls: string[] = (() => {
+    const raw = formData.get('fotoUrls')
+    if (typeof raw !== 'string' || !raw) return []
+    try {
+      const arr = JSON.parse(raw)
+      return Array.isArray(arr) ? arr.filter((u): u is string => typeof u === 'string') : []
+    } catch {
+      return []
+    }
+  })()
+
+  const existing = await db.query.biayaOperasional.findFirst({ where: (t, { eq }) => eq(t.id, id) })
+  if (!existing) throw new Error('Biaya tidak ditemukan')
+
+  await db.transaction(async (tx) => {
+    await tx.update(biayaOperasional).set({
+      tanggal: data.tanggal,
+      kategori: data.kategori,
+      jumlah: data.jumlah,
+      akunSumberId: data.akunSumberId,
+      catatan: data.catatan ?? null,
+    }).where(eq(biayaOperasional.id, id))
+
+    // Sinkronkan kas: hapus mutasi lama, buat ulang (uang keluar)
+    await tx.delete(transaksiKas).where(and(eq(transaksiKas.refTabel, 'biaya_operasional'), eq(transaksiKas.refId, id)))
+    await tx.insert(transaksiKas).values({
+      tanggal: data.tanggal,
+      akunId: data.akunSumberId,
+      arah: 'keluar',
+      jumlah: data.jumlah,
+      kategori: 'biaya_operasional',
+      refTabel: 'biaya_operasional',
+      refId: id,
+      catatan: `Biaya ${data.kategori}${data.catatan ? `: ${data.catatan}` : ''}`,
+      createdBy: session.user.id,
+    })
+
+    // Sinkronkan foto: hapus lama, buat ulang
+    await tx.delete(biayaFoto).where(eq(biayaFoto.biayaId, id))
+    if (fotoUrls.length > 0) {
+      await tx.insert(biayaFoto).values(fotoUrls.map((url) => ({ biayaId: id, url })))
+    }
+  })
+
+  await logActivity({
+    userId: session.user.id,
+    action: 'update',
+    entityType: 'biaya_operasional',
+    entityId: id,
+    description: describeActivity('update', 'biaya_operasional', `${data.kategori} • Rp${data.jumlah}`),
+    oldValues: { tanggal: existing.tanggal, kategori: existing.kategori, jumlah: existing.jumlah, akunSumberId: existing.akunSumberId, catatan: existing.catatan },
+    newValues: { tanggal: data.tanggal, kategori: data.kategori, jumlah: data.jumlah, akunSumberId: data.akunSumberId, catatan: data.catatan ?? null },
+  })
+
+  revalidatePath('/biaya')
+  revalidatePath('/kas')
+  revalidatePath('/dashboard')
+  return { success: true }
+}
+
 export async function deleteBiayaOperasional(id: string) {
   const session = await requireSession()
   requirePermission(session.user.role as any, 'canDelete')

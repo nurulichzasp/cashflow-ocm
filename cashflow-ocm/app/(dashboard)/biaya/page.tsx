@@ -57,7 +57,7 @@ export default async function BiayaPage() {
         )}
       </div>
 
-      <BiayaTable biayaList={biayaList} isOwner={isOwner} />
+      <BiayaTable biayaList={biayaList} isOwner={isOwner} akunOptions={akunOptions} />
     </div>
   )
 }
