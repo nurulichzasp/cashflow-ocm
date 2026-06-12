@@ -108,17 +108,17 @@ export function KasTable({ transaksiList, isOwner }: Props) {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-stone-50 dark:bg-white/[0.03] border-b border-stone-200 dark:border-border">
-              <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 cursor-pointer select-none" onClick={() => handleSort('tanggal')}>
-                <span className="inline-flex items-center gap-1">Tanggal {sortBy === 'tanggal' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</span>
+              <th scope="col" aria-sort={sortBy === 'tanggal' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'} className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">
+                <button type="button" onClick={() => handleSort('tanggal')} className="inline-flex items-center gap-1 select-none hover:text-stone-700 dark:hover:text-zinc-300">Tanggal {sortBy === 'tanggal' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</button>
               </th>
-              <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Akun</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Kategori</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Arah</th>
-              <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 cursor-pointer select-none" onClick={() => handleSort('jumlah')}>
-                <span className="inline-flex items-center gap-1 justify-end">Jumlah {sortBy === 'jumlah' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</span>
+              <th scope="col" className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Akun</th>
+              <th scope="col" className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Kategori</th>
+              <th scope="col" className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Arah</th>
+              <th scope="col" aria-sort={sortBy === 'jumlah' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'} className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">
+                <button type="button" onClick={() => handleSort('jumlah')} className="inline-flex items-center gap-1 justify-end w-full hover:text-stone-700 dark:hover:text-zinc-300">Jumlah {sortBy === 'jumlah' ? (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-30" />}</button>
               </th>
-              <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Catatan</th>
-              <th className="px-4 py-3 w-10"><span className="sr-only">Aksi</span></th>
+              <th scope="col" className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Catatan</th>
+              <th scope="col" className="px-4 py-3 w-10"><span className="sr-only">Aksi</span></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">

@@ -48,7 +48,7 @@ export function AnimatedRupiah({ value }: { value: number }) {
   return (
     <span className="inline-flex items-baseline leading-none whitespace-nowrap">
       <span className="text-lg sm:text-xl font-semibold text-stone-400 dark:text-zinc-500 mr-1.5">Rp</span>
-      <span className="text-[2.6rem] sm:text-[3.4rem] font-bold leading-none">{sign}{fmt(n)}</span>
+      <span className="text-[2.6rem] sm:text-[3.4rem] font-bold leading-none tabular-nums">{sign}{fmt(n)}</span>
       {unit && <span className="text-lg sm:text-xl font-semibold text-stone-400 dark:text-zinc-500 ml-1.5">{unit}</span>}
     </span>
   )

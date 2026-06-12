@@ -27,6 +27,45 @@ const kategoriLabels: Record<TransaksiKas['kategori'], string> = {
   lainnya: 'Lainnya',
 }
 
+/**
+ * Skeleton ringkas untuk tab async (Pajak / L/R Tahunan / Neraca) saat memuat —
+ * baris tabel berdenyut, selaras gaya skeleton app (animate-pulse + abu redup).
+ */
+function TableSkeleton({ rows = 6 }: { rows?: number }) {
+  return (
+    <div className="space-y-4 animate-pulse" aria-hidden="true">
+      <div className="h-4 w-40 rounded bg-stone-200/60 dark:bg-white/[0.06]" />
+      <div className="rounded-lg border overflow-hidden">
+        <div className="bg-muted/50 px-4 py-2.5">
+          <div className="h-3 w-24 rounded bg-stone-200/60 dark:bg-white/[0.06]" />
+        </div>
+        <div className="divide-y">
+          {Array.from({ length: rows }).map((_, i) => (
+            <div key={i} className="flex items-center justify-between px-4 py-3">
+              <div className="h-3.5 w-32 rounded bg-stone-200/60 dark:bg-white/[0.06]" />
+              <div className="h-3.5 w-20 rounded bg-stone-200/40 dark:bg-white/[0.04]" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** UI retry inline saat fetch tab gagal — pesan singkat + tombol coba lagi. */
+function RetryState({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="rounded-lg border border-dashed py-10 px-4 text-center space-y-3">
+      <p className="text-sm text-muted-foreground">
+        Gagal memuat. Periksa koneksi lalu coba lagi.
+      </p>
+      <Button variant="outline" size="sm" onClick={onRetry}>
+        Coba Lagi
+      </Button>
+    </div>
+  )
+}
+
 function exportCSV(rows: Record<string, unknown>[], filename: string) {
   if (!rows.length) return
   const keys = Object.keys(rows[0])
@@ -281,13 +320,24 @@ type NeracaDataType = Awaited<ReturnType<typeof getNeracaData>>
 function PajakTab({ tahun, onTahunChange }: { tahun: string; onTahunChange: (t: string) => void }) {
   const [data, setData] = useState<PajakData | null>(null)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(false)
+
+  function load() {
+    setLoading(true)
+    setError(false)
+    getPajakData(tahun)
+      .then(setData)
+      .catch(() => setError(true))
+      .finally(() => setLoading(false))
+  }
 
   useEffect(() => {
-    setLoading(true)
-    getPajakData(tahun).then(setData).finally(() => setLoading(false))
+    load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tahun])
 
-  if (loading || !data) return <p className="text-sm text-muted-foreground py-8 text-center">Memuat data pajak...</p>
+  if (error) return <RetryState onRetry={load} />
+  if (loading || !data) return <TableSkeleton rows={6} />
 
   return (
     <div className="space-y-6">
@@ -385,13 +435,24 @@ function PajakTab({ tahun, onTahunChange }: { tahun: string; onTahunChange: (t: 
 function LabaRugiTahunanTab({ tahun, onTahunChange }: { tahun: string; onTahunChange: (t: string) => void }) {
   const [data, setData] = useState<LabaRugiTahunanData | null>(null)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(false)
+
+  function load() {
+    setLoading(true)
+    setError(false)
+    getLabaRugiTahunan(tahun)
+      .then(setData)
+      .catch(() => setError(true))
+      .finally(() => setLoading(false))
+  }
 
   useEffect(() => {
-    setLoading(true)
-    getLabaRugiTahunan(tahun).then(setData).finally(() => setLoading(false))
+    load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tahun])
 
-  if (loading || !data) return <p className="text-sm text-muted-foreground py-8 text-center">Memuat...</p>
+  if (error) return <RetryState onRetry={load} />
+  if (loading || !data) return <TableSkeleton rows={8} />
 
   const rows = [
     { label: 'Pendapatan Penjualan', value: data.totalPenjualan, cls: 'text-foreground' },
@@ -438,13 +499,24 @@ function LabaRugiTahunanTab({ tahun, onTahunChange }: { tahun: string; onTahunCh
 function NeracaTab() {
   const [data, setData] = useState<NeracaDataType | null>(null)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(false)
+
+  function load() {
+    setLoading(true)
+    setError(false)
+    getNeracaData()
+      .then(setData)
+      .catch(() => setError(true))
+      .finally(() => setLoading(false))
+  }
 
   useEffect(() => {
-    setLoading(true)
-    getNeracaData().then(setData).finally(() => setLoading(false))
+    load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  if (loading || !data) return <p className="text-sm text-muted-foreground py-8 text-center">Memuat neraca...</p>
+  if (error) return <RetryState onRetry={load} />
+  if (loading || !data) return <TableSkeleton rows={7} />
 
   const modalAwal = typeof window !== 'undefined' ? Number(localStorage.getItem('neraca_modal_awal') ?? '0') : 0
   const totalEkuitas = modalAwal + data.ekuitas.labaDitahan
