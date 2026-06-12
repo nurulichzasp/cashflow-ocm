@@ -192,7 +192,7 @@ function PerPeronTab({ data, dari, sampai }: { data: LaporanData; dari: string; 
                   <td className="px-4 py-3 font-medium">{p.nama}</td>
                   <td className="px-4 py-3 text-right tabular-nums">{p.jumlahTiket}</td>
                   <td className="px-4 py-3 text-right tabular-nums">{formatRupiah(p.totalBeli)}</td>
-                  <td className="px-4 py-3 text-right tabular-nums text-green-600">{formatRupiah(p.keuntungan)}</td>
+                  <td className="px-4 py-3 text-right tabular-nums text-foreground">{formatRupiah(p.keuntungan)}</td>
                   <td className="px-4 py-3 text-right tabular-nums">{formatRupiah(p.dpAktif)}</td>
                 </tr>
               ))}
@@ -373,7 +373,7 @@ function PajakTab({ tahun, onTahunChange }: { tahun: string; onTahunChange: (t: 
                   <td className="px-4 py-2 text-right tabular-nums font-semibold">{formatRupiah(d.ppn)}</td>
                   <td className="px-4 py-2 text-center">
                     <button
-                      className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium cursor-pointer ${d.status === 'sudah' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}
+                      className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium cursor-pointer ${d.status === 'sudah' ? 'bg-muted text-foreground border border-border' : 'bg-transparent text-muted-foreground border border-border'}`}
                       onClick={async () => {
                         const next = d.status === 'sudah' ? 'belum' : 'sudah'
                         const tgl = next === 'sudah' ? new Date().toISOString().slice(0, 10) : undefined
@@ -410,7 +410,7 @@ function PajakTab({ tahun, onTahunChange }: { tahun: string; onTahunChange: (t: 
                   <td className="px-4 py-2 text-right tabular-nums">{formatRupiah(d.nominal)}</td>
                   <td className="px-4 py-2 text-center">
                     <button
-                      className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium cursor-pointer ${d.status === 'sudah' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}
+                      className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium cursor-pointer ${d.status === 'sudah' ? 'bg-muted text-foreground border border-border' : 'bg-transparent text-muted-foreground border border-border'}`}
                       onClick={async () => {
                         const next = d.status === 'sudah' ? 'belum' : 'sudah'
                         const tgl = next === 'sudah' ? new Date().toISOString().slice(0, 10) : undefined
@@ -463,7 +463,7 @@ function LabaRugiTahunanTab({ tahun, onTahunChange }: { tahun: string; onTahunCh
     { label: 'PPh Badan (22%)', value: data.pphBadan, cls: 'text-muted-foreground' },
     { label: 'Laba Bersih Setelah Pajak', value: data.labaBersih, cls: 'font-bold text-lg', sep: true },
     { label: 'Total PPh Pasal 25 Dibayar', value: data.totalPph25Dibayar, cls: 'text-muted-foreground' },
-    { label: data.pphKurangBayar >= 0 ? 'PPh Kurang Bayar' : 'PPh Lebih Bayar', value: Math.abs(data.pphKurangBayar), cls: data.pphKurangBayar > 0 ? 'font-semibold text-amber-600' : 'font-semibold text-green-600' },
+    { label: data.pphKurangBayar >= 0 ? 'PPh Kurang Bayar' : 'PPh Lebih Bayar', value: Math.abs(data.pphKurangBayar), cls: 'font-semibold text-foreground' },
   ]
 
   return (
@@ -556,7 +556,7 @@ function NeracaTab() {
         </div>
       </div>
 
-      <div className={cn('rounded-lg px-4 py-3 text-sm font-semibold', balanced ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200')}>
+      <div className={cn('rounded-lg px-4 py-3 text-sm font-semibold', balanced ? 'bg-muted text-muted-foreground border border-border' : 'bg-red-50 text-red-700 border border-red-200')}>
         {balanced
           ? 'Aset = Kewajiban + Ekuitas (Balance)'
           : `Selisih: ${formatRupiah(Math.abs(selisih))} — Aset ${selisih > 0 ? '>' : '<'} Kewajiban + Ekuitas`

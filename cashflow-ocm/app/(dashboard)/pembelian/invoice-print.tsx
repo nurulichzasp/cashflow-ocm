@@ -563,7 +563,7 @@ export function PrintNotaButton({ pembelian, nomorUrut }: { pembelian: Pembelian
     remember('lengkap')
     const html = buildNotaHTML(pembelian, nomorUrut)
     const win = window.open('', '_blank', 'width=600,height=750')
-    if (!win) { alert('Pop-up diblokir. Izinkan pop-up untuk halaman ini.'); return }
+    if (!win) { toast.error('Pop-up diblokir. Izinkan pop-up untuk halaman ini.'); return }
     win.document.open(); win.document.write(html); win.document.close()
   }
 
@@ -572,7 +572,7 @@ export function PrintNotaButton({ pembelian, nomorUrut }: { pembelian: Pembelian
     const width = getThermalWidth()
     const html = buildThermalHTML(pembelian, width, nomorUrut)
     const win = window.open('', '_blank', `width=${width === 80 ? 400 : 320},height=600`)
-    if (!win) { alert('Pop-up diblokir. Izinkan pop-up untuk halaman ini.'); return }
+    if (!win) { toast.error('Pop-up diblokir. Izinkan pop-up untuk halaman ini.'); return }
     win.document.open(); win.document.write(html); win.document.close()
   }
 
@@ -598,8 +598,8 @@ export function PrintNotaButton({ pembelian, nomorUrut }: { pembelian: Pembelian
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="inline-flex items-center justify-center h-7 w-7 rounded-md text-stone-500 hover:text-stone-700 dark:text-zinc-300 hover:bg-stone-100 dark:hover:bg-white/[0.06] transition-colors focus:outline-none" title="Cetak Nota">
-        <Printer className="h-3.5 w-3.5" />
+      <DropdownMenuTrigger aria-label="Cetak nota" className="inline-flex items-center justify-center h-7 w-7 rounded-md text-stone-500 hover:text-stone-700 dark:text-zinc-300 hover:bg-stone-100 dark:hover:bg-white/[0.06] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50" title="Cetak Nota">
+        <Printer className="h-3.5 w-3.5" aria-hidden />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-52">
         <DropdownMenuItem onClick={handlePrintLengkap} className="gap-2 cursor-pointer">
@@ -626,7 +626,7 @@ export function PrintRekapButton({ pembelianList }: { pembelianList: PembelianRo
   function handlePrint() {
     const html = buildRekapHTML(pembelianList)
     const win = window.open('', '_blank', 'width=1000,height=750')
-    if (!win) { alert('Pop-up diblokir. Izinkan pop-up untuk halaman ini.'); return }
+    if (!win) { toast.error('Pop-up diblokir. Izinkan pop-up untuk halaman ini.'); return }
     win.document.open(); win.document.write(html); win.document.close()
   }
   return (
