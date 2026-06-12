@@ -15,8 +15,9 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { deletePenjualan, updatePenjualanStatus } from './actions'
+import { PenjualanFormDialog } from './penjualan-form-dialog'
 import { formatTanggal, formatRupiah, todayString } from '@/lib/format'
-import { Trash2, FileText, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { Trash2, FileText, ArrowUpDown, ArrowUp, ArrowDown, Pencil } from 'lucide-react'
 import { DateRangeFilter } from '@/components/date-range-filter'
 import { EmptyState } from '@/components/empty-state'
 import type { Penjualan } from '@/lib/db/schema'
@@ -150,68 +151,20 @@ export function PenjualanTable({ penjualanList, isOwner }: Props) {
               </th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Tgl Bayar</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Catatan</th>
-              {isOwner && <th className="px-4 py-3 w-10" />}
+              <th className="px-4 py-3 w-10" />
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
             {filtered.map((item) => (
-              <tr key={item.id} className="bg-white hover:bg-stone-50 dark:hover:bg-white/[0.03] transition-colors">
-                <td className="px-4 py-3 text-stone-900">{formatTanggal(item.tanggal)}</td>
-                <td className="px-4 py-3 font-medium text-stone-900 max-w-[200px]">
-                  <div className="whitespace-pre-line leading-tight">{item.noInvoice || <span className="text-stone-400">—</span>}</div>
-                </td>
-                <td className="px-4 py-3 text-right">
-                  {item.totalBersih ? (
-                    <div>
-                      <p className="font-semibold num text-stone-900 dark:text-stone-100">{formatRupiah(item.totalBersih)}</p>
-                      {item.totalNilai && item.totalNilai !== item.totalBersih && (
-                        <p className="text-[11px] text-stone-400 num">Dibayar: {formatRupiah(item.totalNilai)}</p>
-                      )}
-                    </div>
-                  ) : item.totalNilai ? (
-                    <span className="font-semibold num text-stone-900 dark:text-stone-100">{formatRupiah(item.totalNilai)}</span>
-                  ) : <span className="text-stone-400">—</span>}
-                </td>
-                <td className="px-4 py-3">
-                  <StatusBadge
-                    status={item.statusBayar}
-                    onToggle={item.statusBayar === 'belum' ? () => handleToggleLunas(item.id) : undefined}
-                    loading={updatingId === item.id}
-                  />
-                </td>
-                <td className="px-4 py-3 text-stone-600">{item.tanggalBayarBga ? formatTanggal(item.tanggalBayarBga) : <span className="text-stone-400">—</span>}</td>
-                <td className="px-4 py-3 text-stone-500 max-w-[180px] truncate">{item.catatan ?? <span className="text-stone-400">—</span>}</td>
-                {isOwner && (
-                  <td className="px-4 py-3 text-right">
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" aria-label="Hapus" className="tap-pad h-8 w-8 text-stone-400 hover:text-red-600 hover:bg-red-50">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Hapus penjualan?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Invoice <strong>{item.noInvoice || 'tanpa nomor'}</strong> akan dihapus secara permanen.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Batal</AlertDialogCancel>
-                          <AlertDialogAction
-                            className="bg-red-600 hover:bg-red-700 text-white"
-                            onClick={() => handleDelete(item.id)}
-                            disabled={deletingId === item.id}
-                          >
-                            {deletingId === item.id ? 'Menghapus...' : 'Hapus'}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </td>
-                )}
-              </tr>
+              <PenjualanRow
+                key={item.id}
+                item={item}
+                isOwner={isOwner}
+                updatingId={updatingId}
+                deletingId={deletingId}
+                onToggleLunas={handleToggleLunas}
+                onDelete={handleDelete}
+              />
             ))}
           </tbody>
         </table>
@@ -235,27 +188,113 @@ export function PenjualanTable({ penjualanList, isOwner }: Props) {
   )
 }
 
-/* ─────────────────────────────────────────────────────────────────
-   Premium mobile card — collapsible invoice list, catatan clamped
-   ───────────────────────────────────────────────────────────────── */
-
-type CardItem = Penjualan
-
-function PenjualanCard({
-  item,
-  isOwner,
-  updatingId,
-  deletingId,
-  onToggleLunas,
-  onDelete,
-}: {
-  item: CardItem
+interface RowProps {
+  item: Penjualan
   isOwner: boolean
   updatingId: string | null
   deletingId: string | null
   onToggleLunas: (id: string) => void
   onDelete: (id: string) => void
-}) {
+}
+
+/* ─── Desktop row — invoice diciutkan (primary + "+N lagi") ─── */
+function PenjualanRow({ item, isOwner, updatingId, deletingId, onToggleLunas, onDelete }: RowProps) {
+  const [expanded, setExpanded] = useState(false)
+  const invoices = (item.noInvoice ?? '').split('\n').filter(Boolean)
+
+  return (
+    <tr className="bg-white hover:bg-stone-50 dark:hover:bg-white/[0.03] transition-colors align-top">
+      <td className="px-4 py-3 text-stone-900 whitespace-nowrap">{formatTanggal(item.tanggal)}</td>
+      <td className="px-4 py-3 font-medium text-stone-900 max-w-[240px]">
+        {invoices.length === 0 ? (
+          <span className="text-stone-400">—</span>
+        ) : (
+          <div className="leading-tight">
+            <p className="font-mono text-[12px] truncate">{invoices[0]}</p>
+            {invoices.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setExpanded(v => !v)}
+                  className="mt-1 inline-flex items-center gap-0.5 rounded-full bg-black/[0.04] dark:bg-white/[0.06] px-2 py-0.5 text-[10px] font-medium text-stone-600 dark:text-zinc-300 hover:bg-black/[0.08] dark:hover:bg-white/[0.1] transition-colors"
+                >
+                  {expanded ? 'Sembunyikan' : `+${invoices.length - 1} invoice`} {expanded ? '↑' : '↓'}
+                </button>
+                {expanded && (
+                  <div className="mt-1 space-y-0.5 font-mono text-[11px] text-stone-500 dark:text-zinc-400">
+                    {invoices.slice(1).map((inv, i) => <p key={i} className="truncate">{inv}</p>)}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+      </td>
+      <td className="px-4 py-3 text-right whitespace-nowrap">
+        {item.totalBersih ? (
+          <div>
+            <p className="font-semibold num text-stone-900 dark:text-stone-100">{formatRupiah(item.totalBersih)}</p>
+            {item.totalNilai && item.totalNilai !== item.totalBersih && (
+              <p className="text-[11px] text-stone-400 num">Dibayar: {formatRupiah(item.totalNilai)}</p>
+            )}
+          </div>
+        ) : item.totalNilai ? (
+          <span className="font-semibold num text-stone-900 dark:text-stone-100">{formatRupiah(item.totalNilai)}</span>
+        ) : <span className="text-stone-400">—</span>}
+      </td>
+      <td className="px-4 py-3">
+        <StatusBadge
+          status={item.statusBayar}
+          onToggle={item.statusBayar === 'belum' ? () => onToggleLunas(item.id) : undefined}
+          loading={updatingId === item.id}
+        />
+      </td>
+      <td className="px-4 py-3 text-stone-600 whitespace-nowrap">{item.tanggalBayarBga ? formatTanggal(item.tanggalBayarBga) : <span className="text-stone-400">—</span>}</td>
+      <td className="px-4 py-3 text-right whitespace-nowrap">
+        <div className="inline-flex items-center gap-0.5">
+          <PenjualanFormDialog editItem={item}>
+            <Button variant="ghost" size="icon" aria-label="Edit" className="tap-pad h-8 w-8 text-stone-400 hover:text-stone-700 dark:hover:text-zinc-200">
+              <Pencil className="h-4 w-4" />
+            </Button>
+          </PenjualanFormDialog>
+          {isOwner && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="Hapus" className="tap-pad h-8 w-8 text-stone-400 hover:text-red-600 hover:bg-red-50">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Hapus penjualan?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Invoice <strong>{invoices[0] || 'tanpa nomor'}</strong> akan dihapus secara permanen.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Batal</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                    onClick={() => onDelete(item.id)}
+                    disabled={deletingId === item.id}
+                  >
+                    {deletingId === item.id ? 'Menghapus...' : 'Hapus'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+        </div>
+      </td>
+    </tr>
+  )
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Premium mobile card — collapsible invoice list, catatan clamped
+   ───────────────────────────────────────────────────────────────── */
+
+function PenjualanCard({ item, isOwner, updatingId, deletingId, onToggleLunas, onDelete }: RowProps) {
   const [expanded, setExpanded] = useState(false)
   const invoices = (item.noInvoice ?? '').split('\n').filter(Boolean)
   const primaryInvoice = invoices[0] || 'Tanpa nomor invoice'
@@ -372,6 +411,15 @@ function PenjualanCard({
           <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M20.52 3.48A11.94 11.94 0 0 0 12.04 0C5.5 0 .2 5.3.2 11.84a11.79 11.79 0 0 0 1.66 6.04L0 24l6.27-1.65a11.86 11.86 0 0 0 5.77 1.47h.01c6.54 0 11.84-5.3 11.84-11.84 0-3.16-1.23-6.13-3.37-8.5ZM12.04 21.8h-.01a9.94 9.94 0 0 1-5.06-1.38l-.36-.22-3.72.98.99-3.63-.23-.37a9.94 9.94 0 1 1 8.39 4.62Zm5.45-7.45c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.66.15-.2.3-.76.97-.93 1.17-.17.2-.34.22-.64.07-.3-.15-1.25-.46-2.39-1.47a8.97 8.97 0 0 1-1.66-2.06c-.17-.3-.02-.46.13-.6.13-.13.3-.34.45-.51.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.66-1.6-.9-2.18-.24-.58-.49-.5-.66-.51l-.56-.01a1.1 1.1 0 0 0-.78.37c-.27.3-1.02 1-1.02 2.43 0 1.43 1.05 2.82 1.2 3.02.15.2 2.07 3.16 5.01 4.43.7.3 1.25.48 1.67.62.7.22 1.34.19 1.85.12.56-.08 1.76-.72 2.01-1.42.25-.7.25-1.3.17-1.42-.07-.12-.27-.2-.57-.35Z"/></svg>
           Bagikan
         </button>
+        <PenjualanFormDialog editItem={item}>
+          <button
+            type="button"
+            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-stone-600 dark:text-zinc-300 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+            Edit
+          </button>
+        </PenjualanFormDialog>
         {isOwner && (
           <AlertDialog>
             <AlertDialogTrigger asChild>

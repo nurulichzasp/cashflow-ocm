@@ -180,6 +180,15 @@ function parseBgaRekap(rows: (string | number)[][]): {
 
   if (invoiceList.length === 0) return null
 
+  // Tanggal transaksi = AKHIR periode (tgl "sampai" / s-d), bukan tanggal header invoice.
+  if (periode) {
+    const bulanRe = '(Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)'
+    const range = periode.match(new RegExp(`(\\d{1,2})\\s*[-–]\\s*(\\d{1,2})\\s+${bulanRe}\\s+(\\d{4})`, 'i'))
+    const single = periode.match(new RegExp(`(\\d{1,2})\\s+${bulanRe}\\s+(\\d{4})`, 'i'))
+    if (range) tanggal = `${range[4]}-${bulanMap[range[3].toLowerCase()]}-${range[2].padStart(2, '0')}`
+    else if (single) tanggal = `${single[3]}-${bulanMap[single[2].toLowerCase()]}-${single[1].padStart(2, '0')}`
+  }
+
   // Susun catatan
   const lines: string[] = []
   if (periode) lines.push(periode)

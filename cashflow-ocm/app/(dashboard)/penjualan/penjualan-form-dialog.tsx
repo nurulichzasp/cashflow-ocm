@@ -8,9 +8,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { createPenjualan } from './actions'
+import { createPenjualan, updatePenjualan } from './actions'
 import { todayString } from '@/lib/format'
-import { FileText, Loader2, Sparkles, ChevronDown, ChevronUp, Table2, AlertTriangle } from 'lucide-react'
+import { FileText, Loader2, Sparkles, ChevronDown, ChevronUp, Table2 } from 'lucide-react'
+import type { Penjualan } from '@/lib/db/schema'
 
 type SideVal = { total: number; dpp: number; ppn: number; pph: number; dibayar: number }
 type MergedRow = { noInv: string; ket: string; area: string; rekap: SideVal | null; rekap2: SideVal | null; conflict: boolean }
@@ -25,19 +26,20 @@ function activeVal(row: MergedRow, pick?: 'rekap' | 'rekap2'): SideVal | null {
   return pick === 'rekap' ? row.rekap : row.rekap2
 }
 
-type Props = { children: React.ReactNode }
+type Props = { children: React.ReactNode; editItem?: Penjualan }
 
-export function PenjualanFormDialog({ children }: Props) {
+export function PenjualanFormDialog({ children, editItem }: Props) {
+  const isEdit = !!editItem
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [idemKey, setIdemKey] = useState(() => crypto.randomUUID())
   const [parsing, setParsing] = useState(false)
-  const [statusBayar, setStatusBayar] = useState<'belum' | 'lunas'>('belum')
-  const [tanggal, setTanggal] = useState(todayString())
-  const [noInvoice, setNoInvoice] = useState('')
-  const [totalBersih, setTotalBersih] = useState('')
-  const [totalNilai, setTotalNilai] = useState('')
-  const [catatan, setCatatan] = useState('')
+  const [statusBayar, setStatusBayar] = useState<'belum' | 'lunas'>(editItem?.statusBayar ?? 'belum')
+  const [tanggal, setTanggal] = useState(editItem?.tanggal ?? todayString())
+  const [noInvoice, setNoInvoice] = useState(editItem?.noInvoice ?? '')
+  const [totalBersih, setTotalBersih] = useState(editItem?.totalBersih ? String(editItem.totalBersih) : '')
+  const [totalNilai, setTotalNilai] = useState(editItem?.totalNilai ? String(editItem.totalNilai) : '')
+  const [catatan, setCatatan] = useState(editItem?.catatan ?? '')
   const [preview, setPreview] = useState<PreviewData | null>(null)
   const [picks, setPicks] = useState<Record<number, 'rekap' | 'rekap2'>>({})
   const [previewOpen, setPreviewOpen] = useState(true)
@@ -45,7 +47,7 @@ export function PenjualanFormDialog({ children }: Props) {
 
   const unresolved = preview ? preview.rows.filter((r, i) => r.conflict && !picks[i]).length : 0
 
-  // Hitung ulang total + catatan tiap kali rekap/pilihan berubah
+  // Hitung ulang total + catatan tiap kali rekap/pilihan berubah (hanya saat ada preview upload)
   useEffect(() => {
     if (!preview) return
     let tB = 0, tN = 0, tDpp = 0, tPpn = 0, tPph = 0
@@ -137,10 +139,15 @@ export function PenjualanFormDialog({ children }: Props) {
       formData.set('totalBersih', totalBersih)
       formData.set('totalNilai', totalNilai)
       formData.set('catatan', catatan)
-      formData.set('idempotencyKey', idemKey)
-      await createPenjualan(formData)
-      toast.success('Penjualan berhasil ditambahkan')
-      setIdemKey(crypto.randomUUID())
+      if (isEdit) {
+        await updatePenjualan(editItem!.id, formData)
+        toast.success('Penjualan berhasil diperbarui')
+      } else {
+        formData.set('idempotencyKey', idemKey)
+        await createPenjualan(formData)
+        toast.success('Penjualan berhasil ditambahkan')
+        setIdemKey(crypto.randomUUID())
+      }
       setOpen(false)
       resetForm()
     } catch (error) {
@@ -151,22 +158,22 @@ export function PenjualanFormDialog({ children }: Props) {
   }
 
   function resetForm() {
-    setTanggal(todayString())
-    setNoInvoice('')
-    setTotalBersih('')
-    setTotalNilai('')
-    setCatatan('')
+    setTanggal(editItem?.tanggal ?? todayString())
+    setNoInvoice(editItem?.noInvoice ?? '')
+    setTotalBersih(editItem?.totalBersih ? String(editItem.totalBersih) : '')
+    setTotalNilai(editItem?.totalNilai ? String(editItem.totalNilai) : '')
+    setCatatan(editItem?.catatan ?? '')
     setPreview(null)
     setPicks({})
-    setStatusBayar('belum')
+    setStatusBayar(editItem?.statusBayar ?? 'belum')
   }
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm() }}>
+    <Dialog open={open} onOpenChange={(v) => { setOpen(v); resetForm() }}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Tambah Penjualan</DialogTitle>
+          <DialogTitle>{isEdit ? 'Edit Penjualan' : 'Tambah Penjualan'}</DialogTitle>
         </DialogHeader>
 
         {/* Upload */}
@@ -208,7 +215,7 @@ export function PenjualanFormDialog({ children }: Props) {
                 Preview Rekap
                 <span className="text-xs text-muted-foreground font-normal">({preview.rows.length} baris)</span>
                 {unresolved > 0 && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 font-semibold">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-foreground/10 text-foreground font-medium">
                     {unresolved} perlu dipilih
                   </span>
                 )}
@@ -224,11 +231,10 @@ export function PenjualanFormDialog({ children }: Props) {
                     <span key={s} className="text-[10px] px-1.5 py-0.5 rounded bg-white/[0.06] text-muted-foreground font-medium">{s}</span>
                   ))}
                 </div>
-                {/* Banner konflik */}
+                {/* Banner konflik — netral */}
                 {unresolved > 0 && (
-                  <div className="flex items-start gap-1.5 px-3 py-2 text-[11px] text-amber-700 dark:text-amber-300 bg-amber-500/10 border-b border-amber-500/20">
-                    <AlertTriangle className="h-3.5 w-3.5 mt-px shrink-0" />
-                    <span>BGA mengirim angka berbeda untuk {unresolved} kategori (data sebagian bisa basi). Pilih yang benar di bawah — total ikut menyesuaikan.</span>
+                  <div className="px-3 py-2 text-[11px] text-muted-foreground bg-muted/40 border-b border-border">
+                    BGA mengirim angka berbeda untuk {unresolved} kategori. Pilih yang benar di bawah — total ikut menyesuaikan.
                   </div>
                 )}
                 {/* Baris */}
@@ -247,12 +253,11 @@ export function PenjualanFormDialog({ children }: Props) {
                         </div>
                       )
                     }
-                    // Baris konflik — pilih REKAP vs REKAP 2 HARGA
+                    // Baris konflik — pilih REKAP vs REKAP 2 HARGA (netral monokrom)
                     return (
-                      <div key={i} className="px-3 py-2.5 bg-amber-500/[0.07]">
+                      <div key={i} className="px-3 py-2.5 bg-foreground/[0.02]">
                         <div className="flex items-center gap-1.5 mb-1.5">
-                          <AlertTriangle className="h-3 w-3 text-amber-600 dark:text-amber-400 shrink-0" />
-                          <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-300">{[r.area, r.ket].filter(Boolean).join(' · ')}</span>
+                          <span className="text-[11px] font-medium text-foreground">{[r.area, r.ket].filter(Boolean).join(' · ')}</span>
                           <span className="text-[10px] text-muted-foreground">— pilih angka yang benar</span>
                         </div>
                         <div className="grid grid-cols-2 gap-1.5">
@@ -265,11 +270,14 @@ export function PenjualanFormDialog({ children }: Props) {
                                 type="button"
                                 key={side}
                                 onClick={() => setPicks(p => ({ ...p, [i]: side }))}
-                                className={`text-left rounded-md border px-2 py-1.5 transition-colors ${sel ? 'border-emerald-500 bg-emerald-500/10' : 'border-border hover:bg-muted/50'}`}
+                                className={`text-left rounded-md border px-2 py-1.5 transition-colors ${sel ? 'border-foreground bg-foreground/[0.06]' : 'border-border hover:bg-muted/50'}`}
                               >
-                                <div className="text-[10px] text-muted-foreground">{side === 'rekap' ? 'REKAP (1 harga)' : 'REKAP 2 HARGA'}</div>
-                                <div className="text-[11px] num text-muted-foreground">Total {rp(sv.total)}</div>
-                                <div className="text-[11px] num font-semibold text-foreground">Dibayar {rp(sv.dibayar)}</div>
+                                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                                  <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${sel ? 'bg-foreground' : 'border border-muted-foreground'}`} />
+                                  {side === 'rekap' ? 'REKAP (1 harga)' : 'REKAP 2 HARGA'}
+                                </div>
+                                <div className={`text-[11px] num mt-1 ${sel ? 'text-foreground' : 'text-muted-foreground'}`}>Total {rp(sv.total)}</div>
+                                <div className={`text-[11px] num font-semibold ${sel ? 'text-foreground' : 'text-muted-foreground'}`}>Dibayar {rp(sv.dibayar)}</div>
                               </button>
                             )
                           })}
@@ -321,7 +329,7 @@ export function PenjualanFormDialog({ children }: Props) {
             </div>
             <div className="space-y-1.5">
               <Label>Tanggal Bayar</Label>
-              <Input name="tanggalBayarBga" type="date" disabled={statusBayar === 'belum'} />
+              <Input name="tanggalBayarBga" type="date" defaultValue={editItem?.tanggalBayarBga ?? undefined} disabled={statusBayar === 'belum'} />
             </div>
           </div>
 
@@ -370,11 +378,11 @@ export function PenjualanFormDialog({ children }: Props) {
 
           <div className="flex justify-end items-center gap-2 pt-4 -mx-6 px-6 -mb-6 pb-6 border-t border-border bg-muted/30 rounded-b-3xl">
             {unresolved > 0 && (
-              <span className="text-xs text-amber-600 dark:text-amber-400 mr-auto">Pilih dulu {unresolved} kategori yang ditandai</span>
+              <span className="text-xs text-muted-foreground mr-auto">Pilih dulu {unresolved} kategori yang ditandai</span>
             )}
             <Button variant="outline" type="button" onClick={() => setOpen(false)}>Batal</Button>
             <Button type="submit" disabled={loading || unresolved > 0}>
-              {loading ? 'Menyimpan...' : 'Tambah Penjualan'}
+              {loading ? 'Menyimpan...' : isEdit ? 'Simpan Perubahan' : 'Tambah Penjualan'}
             </Button>
           </div>
         </form>

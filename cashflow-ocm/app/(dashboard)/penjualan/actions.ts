@@ -196,6 +196,72 @@ export async function updatePenjualanStatus(id: string, statusBayar: 'belum' | '
   return { success: true }
 }
 
+export async function updatePenjualan(id: string, formData: FormData) {
+  const session = await requireSession()
+  requirePermission(session.user.role as any, 'canEdit')
+
+  const data = penjualanSchema.parse({
+    tanggal: formData.get('tanggal'),
+    noBast: formData.get('noBast') || undefined,
+    noInvoice: formData.get('noInvoice') || undefined,
+    statusBayar: formData.get('statusBayar'),
+    tanggalBayarBga: formData.get('tanggalBayarBga') || undefined,
+    totalBersih: parseRpInput(formData.get('totalBersih')),
+    totalNilai: parseRpInput(formData.get('totalNilai')),
+    catatan: formData.get('catatan') || undefined,
+  })
+
+  const existing = await db.query.penjualan.findFirst({ where: (t, { eq }) => eq(t.id, id) })
+  if (!existing) throw new Error('Penjualan tidak ditemukan')
+
+  await db.transaction(async (tx) => {
+    await tx.update(penjualan).set({
+      tanggal: data.tanggal,
+      noBast: data.noBast ?? null,
+      noInvoice: data.noInvoice ?? null,
+      statusBayar: data.statusBayar,
+      tanggalBayarBga: data.tanggalBayarBga ?? null,
+      totalBersih: data.totalBersih ?? null,
+      totalNilai: data.totalNilai ?? null,
+      catatan: data.catatan ?? null,
+    }).where(eq(penjualan.id, id))
+
+    // Sinkronkan kas: hapus mutasi lama, buat ulang jika lunas
+    await tx.delete(transaksiKas).where(and(eq(transaksiKas.refTabel, 'penjualan'), eq(transaksiKas.refId, id)))
+    if (data.statusBayar === 'lunas' && data.totalNilai) {
+      const akunUtama = await getAkunUtama()
+      if (akunUtama) {
+        await tx.insert(transaksiKas).values({
+          tanggal: data.tanggalBayarBga || data.tanggal,
+          akunId: akunUtama.id,
+          arah: 'masuk',
+          jumlah: data.totalNilai,
+          kategori: 'penerimaan_bga',
+          refTabel: 'penjualan',
+          refId: id,
+          catatan: `Penerimaan BGA${data.noInvoice ? ` inv ${data.noInvoice}` : ''}`,
+          createdBy: session.user.id,
+        })
+      }
+    }
+  })
+
+  await logActivity({
+    userId: session.user.id,
+    action: 'update',
+    entityType: 'penjualan',
+    entityId: id,
+    description: describeActivity('update', 'penjualan', `${data.noInvoice ?? data.noBast ?? '-'} • Rp${data.totalBersih ?? 0}`),
+    oldValues: { tanggal: existing.tanggal, noInvoice: existing.noInvoice, totalBersih: existing.totalBersih, totalNilai: existing.totalNilai, statusBayar: existing.statusBayar, tanggalBayarBga: existing.tanggalBayarBga, catatan: existing.catatan },
+    newValues: { tanggal: data.tanggal, noInvoice: data.noInvoice, totalBersih: data.totalBersih, totalNilai: data.totalNilai, statusBayar: data.statusBayar, tanggalBayarBga: data.tanggalBayarBga ?? null, catatan: data.catatan },
+  })
+
+  revalidatePath('/penjualan')
+  revalidatePath('/kas')
+  revalidatePath('/dashboard')
+  return { success: true }
+}
+
 export async function deletePenjualan(id: string) {
   const session = await requireOwner()
 
