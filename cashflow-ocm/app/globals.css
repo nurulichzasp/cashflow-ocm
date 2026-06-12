@@ -689,3 +689,11 @@ html.dark [class~="hover:bg-orange-700"]:hover       { background-color: #c8654a
     0 0 24px -8px color-mix(in oklab, var(--warning) 50%, transparent),
     0 10px 30px -12px oklch(0.2 0 0 / 0.30) !important;
 }
+
+/* ── Toast atas jangan ketutup Dynamic Island / notch (iPhone 15 Pro dst) ──
+   Container toast posisi atas diturunkan di bawah safe-area-inset-top.
+   Override `top` + variabel `--offset-top` sonner (dobel-aman lintas versi). */
+[data-sonner-toaster][data-y-position="top"] {
+  --offset-top: max(calc(env(safe-area-inset-top) + 10px), 1.25rem) !important;
+  top: max(calc(env(safe-area-inset-top) + 10px), 1.25rem) !important;
+}
