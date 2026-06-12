@@ -6,7 +6,7 @@ import { db } from '@/lib/db'
 import {
   transaksiKas, biayaOperasional, penjualan,
   pembelian, peron, modalPeron, akunKas,
-  ppnBulanan, pphBulanan,
+  ppnBulanan, pphBulanan, appSettings,
 } from '@/lib/db/schema'
 import { eq, sum, and, gte, lte, lt, asc, like } from 'drizzle-orm'
 import { requirePermission } from '@/lib/permissions'
@@ -219,7 +219,7 @@ export async function getLabaRugiTahunan(tahun: string) {
 export async function getNeracaData() {
   await requireFinanceAccess()
 
-  const [allAkun, allTransaksi, piutangRows, dpRows, ppnRows, pphRows, pembelianTotal, penjualanTotal, biayaTotal] = await Promise.all([
+  const [allAkun, allTransaksi, piutangRows, dpRows, ppnRows, pphRows, pembelianTotal, penjualanTotal, biayaTotal, modalAwalRow] = await Promise.all([
     db.select().from(akunKas).orderBy(akunKas.urutan),
     db.select({ akunId: transaksiKas.akunId, arah: transaksiKas.arah, total: sum(transaksiKas.jumlah) })
       .from(transaksiKas).groupBy(transaksiKas.akunId, transaksiKas.arah),
@@ -236,7 +236,11 @@ export async function getNeracaData() {
     // dengan akrual (jurnal: debit piutang, kredit pendapatan), bukan dobel-hitung.
     db.select({ total: sum(penjualan.totalBersih) }).from(penjualan),
     db.select({ total: sum(biayaOperasional.jumlah) }).from(biayaOperasional),
+    db.select({ value: appSettings.value }).from(appSettings).where(eq(appSettings.key, 'neraca_modal_awal')),
   ])
+
+  // Modal awal pemilik untuk neraca — disimpan server-side (sinkron lintas perangkat).
+  const modalAwal = Number(modalAwalRow[0]?.value ?? '0') || 0
 
   const mutasiPerAkun: Record<string, number> = {}
   for (const r of allTransaksi) {
@@ -266,6 +270,7 @@ export async function getNeracaData() {
     aset: { kasBank: totalKasBank, piutangBga, dpPeron, total: totalAset },
     kewajiban: { hutangPpn, hutangPph, total: totalKewajiban },
     ekuitas: { labaDitahan, total: labaDitahan },
+    modalAwal,
     balance: totalAset === totalKewajiban + labaDitahan,
     selisih: totalAset - (totalKewajiban + labaDitahan),
   }

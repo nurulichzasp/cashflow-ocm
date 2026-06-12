@@ -256,6 +256,14 @@ export const pphBulanan = sqliteTable('pph_bulanan', {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
 })
 
+// Key-value pengaturan global (sinkron lintas perangkat/pengguna).
+// Contoh: key='neraca_modal_awal' → Modal Awal pada laporan Neraca.
+export const appSettings = sqliteTable('app_settings', {
+  key: text('key').primaryKey(),
+  value: text('value').notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+})
+
 export const activityLog = sqliteTable('activity_log', {
   id: text('id').primaryKey().default(sql`(lower(hex(randomblob(8))))`),
   userId: text('user_id').notNull().references(() => user.id),
@@ -431,6 +439,7 @@ export type PenjualanDetail = typeof penjualanDetail.$inferSelect
 export type BiayaOperasional = typeof biayaOperasional.$inferSelect
 export type TransaksiKas = typeof transaksiKas.$inferSelect
 export type ActivityLog = typeof activityLog.$inferSelect
+export type AppSetting = typeof appSettings.$inferSelect
 export type PembelianFoto = typeof pembelianFoto.$inferSelect
 export type BiayaFoto = typeof biayaFoto.$inferSelect
 export type PpnBulanan = typeof ppnBulanan.$inferSelect

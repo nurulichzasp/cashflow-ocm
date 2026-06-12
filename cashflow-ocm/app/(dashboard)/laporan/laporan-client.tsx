@@ -518,7 +518,7 @@ function NeracaTab() {
   if (error) return <RetryState onRetry={load} />
   if (loading || !data) return <TableSkeleton rows={7} />
 
-  const modalAwal = typeof window !== 'undefined' ? Number(localStorage.getItem('neraca_modal_awal') ?? '0') : 0
+  const modalAwal = data.modalAwal
   const totalEkuitas = modalAwal + data.ekuitas.labaDitahan
   const totalKewajibanEkuitas = data.kewajiban.total + totalEkuitas
   const balanced = data.aset.total === totalKewajibanEkuitas

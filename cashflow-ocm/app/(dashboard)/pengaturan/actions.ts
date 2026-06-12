@@ -1,7 +1,7 @@
 'use server'
 
 import { db } from '@/lib/db'
-import { user, account, ppnBulanan, pphBulanan } from '@/lib/db/schema'
+import { user, account, ppnBulanan, pphBulanan, appSettings } from '@/lib/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
 import { headers } from 'next/headers'
@@ -248,4 +248,35 @@ export async function getPphList() {
   if (!session) throw new Error('Tidak terautentikasi')
   requirePermission(session.user.role, 'canViewFinance')
   return db.select().from(pphBulanan).orderBy(pphBulanan.bulan)
+}
+
+// ─── App Settings (key-value global, sinkron lintas perangkat) ───────────────
+
+// Baca satu pengaturan global. Cukup terautentikasi (read-only).
+export async function getAppSetting(key: string): Promise<string | null> {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) throw new Error('Tidak terautentikasi')
+
+  const row = await db.query.appSettings.findFirst({ where: eq(appSettings.key, key) })
+  return row?.value ?? null
+}
+
+// Tulis satu pengaturan global. Owner-only (upsert berdasarkan key).
+export async function setAppSetting(key: string, value: string) {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session || session.user.role !== 'owner') {
+    throw new Error('Hanya Owner yang dapat mengubah pengaturan ini')
+  }
+
+  await db
+    .insert(appSettings)
+    .values({ key, value, updatedAt: new Date() })
+    .onConflictDoUpdate({
+      target: appSettings.key,
+      set: { value, updatedAt: new Date() },
+    })
+
+  revalidatePath('/laporan')
+  revalidatePath('/pengaturan')
+  return { success: true }
 }

@@ -64,6 +64,8 @@ import {
   updateUserRole,
   resetUserPassword,
   updateUserPermissions,
+  getAppSetting,
+  setAppSetting,
 } from './actions'
 import { useRouter } from 'next/navigation'
 import { ThermalPrinterSettings } from './thermal-printer-settings'
@@ -158,11 +160,25 @@ export function SettingsClient({ currentUser, initialUsers, section }: SettingsC
     const storedTarifPpn = localStorage.getItem('tax_tarif_ppn')
     const storedTarifPph = localStorage.getItem('tax_tarif_pph_badan')
     const storedNominalPph25 = localStorage.getItem('tax_nominal_pph25')
-    const storedModalAwal = localStorage.getItem('neraca_modal_awal')
     if (storedTarifPpn) setTarifPpn(storedTarifPpn)
     if (storedTarifPph) setTarifPphBadan(storedTarifPph)
     if (storedNominalPph25) setNominalPph25(storedNominalPph25)
-    if (storedModalAwal) setModalAwal(storedModalAwal)
+
+    // Modal Awal: sumber kebenaran server (sinkron lintas perangkat). Fallback ke
+    // localStorage lama hanya bila server belum punya nilai (masa transisi migrasi).
+    getAppSetting('neraca_modal_awal')
+      .then((serverVal) => {
+        if (serverVal !== null) {
+          setModalAwal(serverVal)
+        } else {
+          const storedModalAwal = localStorage.getItem('neraca_modal_awal')
+          if (storedModalAwal) setModalAwal(storedModalAwal)
+        }
+      })
+      .catch(() => {
+        const storedModalAwal = localStorage.getItem('neraca_modal_awal')
+        if (storedModalAwal) setModalAwal(storedModalAwal)
+      })
   }, [])
 
   function handleSaveCompany(e: React.FormEvent) {
@@ -887,13 +903,20 @@ export function SettingsClient({ currentUser, initialUsers, section }: SettingsC
             )}
             <CardContent>
               <form
-                onSubmit={(e) => {
+                onSubmit={async (e) => {
                   e.preventDefault()
                   localStorage.setItem('tax_tarif_ppn', tarifPpn)
                   localStorage.setItem('tax_tarif_pph_badan', tarifPphBadan)
                   localStorage.setItem('tax_nominal_pph25', nominalPph25)
+                  // Modal Awal: tulis ke server (sumber kebenaran, sinkron lintas
+                  // perangkat). localStorage tetap diisi sebagai cadangan tak berbahaya.
                   localStorage.setItem('neraca_modal_awal', modalAwal)
-                  toast.success('Konfigurasi pajak berhasil disimpan')
+                  try {
+                    await setAppSetting('neraca_modal_awal', modalAwal)
+                    toast.success('Konfigurasi pajak berhasil disimpan')
+                  } catch {
+                    toast.error('Gagal menyimpan Modal Awal ke server')
+                  }
                 }}
                 className="space-y-4"
               >
