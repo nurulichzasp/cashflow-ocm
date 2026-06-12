@@ -69,8 +69,8 @@ function LabaRugiTab({ data, dari, sampai }: { data: LaporanData; dari: string; 
   const labaKotor = totalPenjualan - totalPembelian
 
   const exportRows = [
-    { Keterangan: 'Pendapatan Penjualan (lunas)', 'Jumlah (Rp)': totalPenjualan },
-    { Keterangan: 'HPP – Pembelian (lunas)', 'Jumlah (Rp)': totalPembelian },
+    { Keterangan: 'Pendapatan Penjualan (akrual)', 'Jumlah (Rp)': totalPenjualan },
+    { Keterangan: 'HPP – Pembelian (akrual)', 'Jumlah (Rp)': totalPembelian },
     { Keterangan: 'Laba Kotor', 'Jumlah (Rp)': labaKotor },
     { Keterangan: 'Biaya Operasional', 'Jumlah (Rp)': totalBiaya },
     { Keterangan: 'Laba Bersih', 'Jumlah (Rp)': labaBersih },
@@ -90,8 +90,8 @@ function LabaRugiTab({ data, dari, sampai }: { data: LaporanData; dari: string; 
         <table className="w-full text-sm">
           <tbody>
             {[
-              { label: 'Pendapatan Penjualan (lunas)', value: totalPenjualan, cls: 'text-foreground' },
-              { label: 'HPP – Pembelian (lunas)', value: totalPembelian, cls: 'text-muted-foreground' },
+              { label: 'Pendapatan Penjualan (akrual)', value: totalPenjualan, cls: 'text-foreground' },
+              { label: 'HPP – Pembelian (akrual)', value: totalPembelian, cls: 'text-muted-foreground' },
               { label: 'Laba Kotor', value: labaKotor, cls: 'font-semibold text-foreground', bg: 'bg-muted/30', sep: true },
               { label: 'Biaya Operasional', value: totalBiaya, cls: 'text-muted-foreground' },
               { label: 'Laba Bersih', value: labaBersih, cls: 'font-semibold text-foreground', bg: 'bg-muted/30', sep: true },
@@ -547,7 +547,7 @@ export function LaporanClient({
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">Penjualan Lunas</CardTitle>
+            <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">Penjualan (akrual)</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-xl font-semibold text-stone-900 dark:text-zinc-50">{formatRupiah(data.labaRugi.totalPenjualan)}</p>
@@ -555,7 +555,7 @@ export function LaporanClient({
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">Pembelian Lunas</CardTitle>
+            <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">Pembelian (akrual)</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-xl font-semibold text-stone-900 dark:text-zinc-50">{formatRupiah(data.labaRugi.totalPembelian)}</p>

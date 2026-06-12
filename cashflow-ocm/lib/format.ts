@@ -58,7 +58,12 @@ export function formatTanggalLengkap(date: string | Date): string {
 }
 
 export function todayString(): string {
-  return new Date().toISOString().slice(0, 10)
+  // Tanggal LOKAL (bukan UTC) — toISOString() bikin entri dini hari WIB mundur 1 hari.
+  const d = new Date()
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
 }
 
 // Nama bulan ID — dipakai formatter rentang replas (hindari ketergantungan locale

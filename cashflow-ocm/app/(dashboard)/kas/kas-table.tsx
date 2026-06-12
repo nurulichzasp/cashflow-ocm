@@ -121,13 +121,16 @@ export function KasTable({ transaksiList, isOwner }: Props) {
                 <td className="px-4 py-3 text-stone-700">{kategoriLabels[item.kategori]}</td>
                 <td className="px-4 py-3">
                   {item.arah === 'masuk' ? (
-                    <span className="inline-flex rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground border border-border">Masuk</span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground border border-border"><ArrowUp className="h-3 w-3 shrink-0" aria-hidden />Masuk</span>
                   ) : (
-                    <span className="inline-flex rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground border border-border">Keluar</span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground border border-border"><ArrowDown className="h-3 w-3 shrink-0" aria-hidden />Keluar</span>
                   )}
                 </td>
                 <td className={`px-4 py-3 text-right font-semibold num ${item.arah === 'masuk' ? 'text-stone-900 dark:text-zinc-50' : 'text-stone-500 dark:text-zinc-400'}`}>
-                  {item.arah === 'masuk' ? '+' : '-'}{formatRupiah(item.jumlah)}
+                  <span className="inline-flex items-center justify-end gap-1">
+                    {item.arah === 'masuk' ? <ArrowUp className="h-3.5 w-3.5 shrink-0" aria-hidden /> : <ArrowDown className="h-3.5 w-3.5 shrink-0" aria-hidden />}
+                    {item.arah === 'masuk' ? '+' : '-'}{formatRupiah(item.jumlah)}
+                  </span>
                 </td>
                 <td className="px-4 py-3 text-stone-500 max-w-[180px] truncate">{item.catatan ?? <span className="text-stone-400">—</span>}</td>
                 {isOwner && (
@@ -176,12 +179,13 @@ export function KasTable({ transaksiList, isOwner }: Props) {
                 <p className="text-xs text-stone-500 mt-0.5">{formatTanggal(item.tanggal)} · {item.akun?.nama ?? item.akunId}</p>
               </div>
               {item.arah === 'masuk' ? (
-                <span className="inline-flex rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-foreground border border-border shrink-0">Masuk</span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-foreground border border-border shrink-0"><ArrowUp className="h-3 w-3 shrink-0" aria-hidden />Masuk</span>
               ) : (
-                <span className="inline-flex rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground border border-border shrink-0">Keluar</span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground border border-border shrink-0"><ArrowDown className="h-3 w-3 shrink-0" aria-hidden />Keluar</span>
               )}
             </div>
-            <p className={`text-base font-bold num ${item.arah === 'masuk' ? 'text-stone-900 dark:text-zinc-50' : 'text-stone-500 dark:text-zinc-400'}`}>
+            <p className={`text-base font-bold num inline-flex items-center gap-1 ${item.arah === 'masuk' ? 'text-stone-900 dark:text-zinc-50' : 'text-stone-500 dark:text-zinc-400'}`}>
+              {item.arah === 'masuk' ? <ArrowUp className="h-3.5 w-3.5 shrink-0" aria-hidden /> : <ArrowDown className="h-3.5 w-3.5 shrink-0" aria-hidden />}
               {item.arah === 'masuk' ? '+' : '-'}{formatRupiah(item.jumlah)}
             </p>
             {item.catatan && <p className="text-xs text-stone-500 mt-2">{item.catatan}</p>}

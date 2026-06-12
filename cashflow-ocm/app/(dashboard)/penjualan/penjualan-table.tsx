@@ -142,16 +142,16 @@ export function PenjualanTable({ penjualanList, isOwner }: Props) {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-stone-50 dark:bg-white/[0.03] border-b border-stone-200 dark:border-border">
-              <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 cursor-pointer select-none" onClick={() => handleSort('tanggal')}>
-                <span className="inline-flex items-center gap-1">Tanggal <SortIcon active={sortBy === 'tanggal'} dir={sortDir} /></span>
+              <th scope="col" aria-sort={sortBy === 'tanggal' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'} className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">
+                <button type="button" onClick={() => handleSort('tanggal')} className="inline-flex items-center gap-1 select-none hover:text-stone-700 dark:hover:text-zinc-300">Tanggal <SortIcon active={sortBy === 'tanggal'} dir={sortDir} /></button>
               </th>
-              <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">No. Invoice</th>
-              <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500 cursor-pointer select-none" onClick={() => handleSort('totalBersih')}>
-                <span className="inline-flex items-center gap-1 justify-end">Nilai Bersih <SortIcon active={sortBy === 'totalBersih'} dir={sortDir} /></span>
+              <th scope="col" className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">No. Invoice</th>
+              <th scope="col" aria-sort={sortBy === 'totalBersih' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'} className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">
+                <button type="button" onClick={() => handleSort('totalBersih')} className="inline-flex items-center gap-1 justify-end w-full hover:text-stone-700 dark:hover:text-zinc-300">Nilai Bersih <SortIcon active={sortBy === 'totalBersih'} dir={sortDir} /></button>
               </th>
-              <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Tgl Bayar</th>
-              <th className="px-4 py-3 w-10" />
+              <th scope="col" className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
+              <th scope="col" className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Tgl Bayar</th>
+              <th scope="col" className="px-4 py-3 w-10"><span className="sr-only">Aksi</span></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
