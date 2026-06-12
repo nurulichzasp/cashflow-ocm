@@ -30,24 +30,46 @@ export async function POST(req: NextRequest) {
         const XLSX = require('xlsx')
         const wb = XLSX.read(buffer, { type: 'buffer' })
 
-        // BGA: utamakan "REKAP 2 HARGA" (BGA kirim 2 harga sbg default), fallback ke "REKAP".
-        // Pilih rekap pertama yang ada nilainya; kalau semua 0, pakai yang pertama keparse.
-        const rekapCandidates = ['REKAP 2 HARGA', 'REKAP'].filter((n) => (wb.SheetNames as string[]).includes(n))
-        let bgaResult: ReturnType<typeof parseBgaRekap> = null
-        let rekapSheet = ''
-        for (const name of rekapCandidates) {
-          const rekapRows = XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, defval: '' }) as (string | number)[][]
-          const res = parseBgaRekap(rekapRows)
-          if (!res) continue
-          if (!bgaResult) { bgaResult = res; rekapSheet = name } // fallback pertama yang keparse
-          if (Number(res.totalNilai) > 0) { bgaResult = res; rekapSheet = name; break } // pilih yang ada nilainya
+        // BGA: baca KEDUA rekap (REKAP = 1 harga, REKAP 2 HARGA = 2 harga) lalu
+        // bandingkan per kategori. Wiring BGA tidak konsisten antar periode &
+        // sebagian sheet berisi data basi, jadi kategori yang BEDA ditandai
+        // "conflict" supaya user yang pilih angka yang benar di form.
+        const parseRekapSheet = (name: string) => {
+          if (!(wb.SheetNames as string[]).includes(name)) return null
+          const r = XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, defval: '' }) as (string | number)[][]
+          return parseBgaRekap(r)
         }
-        if (bgaResult) return NextResponse.json({
-          success: true, ...bgaResult,
-          sheetNames: wb.SheetNames as string[],
-          rekapSheet,
-          info: 'excel-bga-rekap',
-        })
+        const rkA = parseRekapSheet('REKAP')           // harga tunggal
+        const rkB = parseRekapSheet('REKAP 2 HARGA')   // dua harga
+        const primary = rkB ?? rkA
+        if (primary) {
+          const aRows = rkA?.previewRows ?? []
+          const bRows = rkB?.previewRows ?? []
+          const pick = (x: any) => x ? { total: x.total, dpp: x.dpp, ppn: x.ppn, pph: x.pph, dibayar: x.dibayar } : null
+          const n = Math.max(aRows.length, bRows.length)
+          const mergedRows: any[] = []
+          for (let i = 0; i < n; i++) {
+            const a = aRows[i] ?? null
+            const b = bRows[i] ?? null
+            const base = b ?? a
+            const conflict = !!(a && b && Math.round(Number(a.total)) !== Math.round(Number(b.total)))
+            mergedRows.push({
+              noInv: base?.noInv ?? '', ket: base?.ket ?? '', area: base?.area ?? '',
+              rekap: pick(a), rekap2: pick(b), conflict,
+            })
+          }
+          return NextResponse.json({
+            success: true,
+            info: 'excel-bga-rekap',
+            sheetNames: wb.SheetNames as string[],
+            tanggal: primary.tanggal,
+            noInvoice: primary.noInvoice,
+            periode: primary.periode ?? '',
+            mergedRows,
+            hasRekap: !!rkA,
+            hasRekap2: !!rkB,
+          })
+        }
 
         // Fallback: sheet pertama
         const ws = wb.Sheets[wb.SheetNames[0]]
@@ -75,7 +97,7 @@ export async function POST(req: NextRequest) {
 
 // ── BGA REKAP sheet parser ────────────────────────────────────────────────────
 function parseBgaRekap(rows: (string | number)[][]): {
-  tanggal: string; noInvoice: string; noBast: string
+  tanggal: string; noInvoice: string; noBast: string; periode: string
   totalTonase: string; totalBersih: string; totalNilai: string; catatan: string
   previewRows: any[]; totalRow: any;
 } | null {
@@ -171,6 +193,7 @@ function parseBgaRekap(rows: (string | number)[][]): {
     tanggal,
     noInvoice: invoiceList.join('\n'),
     noBast: '',
+    periode,
     totalTonase: '',
     totalBersih: String(Math.round(totTotal)),
     totalNilai: String(Math.round(totDibayar)),
