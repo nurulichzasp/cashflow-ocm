@@ -301,13 +301,14 @@ export function PenjualanFormDialog({ children, editItem }: Props) {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <Label>Tanggal</Label>
-            <Input type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} required />
+            <Label htmlFor="pj-tanggal">Tanggal</Label>
+            <Input id="pj-tanggal" type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} required />
           </div>
 
           <div className="space-y-1.5">
-            <Label>No. Invoice</Label>
+            <Label htmlFor="pj-noinvoice">No. Invoice</Label>
             <textarea
+              id="pj-noinvoice"
               rows={3}
               value={noInvoice}
               onChange={(e) => setNoInvoice(e.target.value)}
@@ -318,9 +319,9 @@ export function PenjualanFormDialog({ children, editItem }: Props) {
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Status Bayar</Label>
+              <Label htmlFor="pj-status">Status Bayar</Label>
               <Select value={statusBayar} onValueChange={(v) => setStatusBayar(v as 'belum' | 'lunas')}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger id="pj-status"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="belum">Belum</SelectItem>
                   <SelectItem value="lunas">Lunas</SelectItem>
@@ -328,8 +329,8 @@ export function PenjualanFormDialog({ children, editItem }: Props) {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Tanggal Bayar</Label>
-              <Input name="tanggalBayarBga" type="date" defaultValue={editItem?.tanggalBayarBga ?? undefined} disabled={statusBayar === 'belum'} />
+              <Label htmlFor="pj-tglbayar">Tanggal Bayar</Label>
+              <Input id="pj-tglbayar" name="tanggalBayarBga" type="date" defaultValue={editItem?.tanggalBayarBga ?? undefined} disabled={statusBayar === 'belum'} />
             </div>
           </div>
 
@@ -338,8 +339,9 @@ export function PenjualanFormDialog({ children, editItem }: Props) {
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Nilai Penjualan</p>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-sm">Nilai Bersih <span className="text-muted-foreground font-normal text-xs">(tanpa pajak)</span></Label>
+                <Label htmlFor="pj-bersih" className="text-sm">Nilai Bersih <span className="text-muted-foreground font-normal text-xs">(tanpa pajak)</span></Label>
                 <Input
+                  id="pj-bersih"
                   type="number"
                   value={totalBersih}
                   onChange={(e) => setTotalBersih(e.target.value)}
@@ -351,8 +353,9 @@ export function PenjualanFormDialog({ children, editItem }: Props) {
                 )}
               </div>
               <div className="space-y-1.5">
-                <Label className="text-sm">Total Dibayar <span className="text-muted-foreground font-normal text-xs">(+PPN−PPH)</span></Label>
+                <Label htmlFor="pj-dibayar" className="text-sm">Total Dibayar <span className="text-muted-foreground font-normal text-xs">(+PPN−PPH)</span></Label>
                 <Input
+                  id="pj-dibayar"
                   type="number"
                   value={totalNilai}
                   onChange={(e) => setTotalNilai(e.target.value)}
@@ -367,8 +370,9 @@ export function PenjualanFormDialog({ children, editItem }: Props) {
           </div>
 
           <div className="space-y-1.5">
-            <Label>Catatan</Label>
+            <Label htmlFor="pj-catatan">Catatan</Label>
             <Textarea
+              id="pj-catatan"
               rows={3}
               value={catatan}
               onChange={(e) => setCatatan(e.target.value)}

@@ -82,9 +82,9 @@ export function BiayaFormDialog({ children, akunOptions }: Props) {
               <Input id="tanggal" name="tanggal" type="date" defaultValue={todayString()} required />
             </div>
             <div className="space-y-1.5">
-              <Label>Kategori</Label>
+              <Label htmlFor="by-kategori">Kategori</Label>
               <Select value={kategori} onValueChange={(v) => setKategori(v as BiayaKategori)}>
-                <SelectTrigger><SelectValue placeholder="Pilih kategori" /></SelectTrigger>
+                <SelectTrigger id="by-kategori"><SelectValue placeholder="Pilih kategori" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="gaji">Gaji</SelectItem>
                   <SelectItem value="solar">Solar</SelectItem>
@@ -97,9 +97,9 @@ export function BiayaFormDialog({ children, akunOptions }: Props) {
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Akun Sumber</Label>
+              <Label htmlFor="by-akun">Akun Sumber</Label>
               <Select value={akunSumberId} onValueChange={(v) => { if (v) setAkunSumberId(v) }}>
-                <SelectTrigger><SelectValue placeholder="Pilih akun" /></SelectTrigger>
+                <SelectTrigger id="by-akun"><SelectValue placeholder="Pilih akun" /></SelectTrigger>
                 <SelectContent>
                   {akunOptions.map((a) => (
                     <SelectItem key={a.id} value={a.id}>{a.nama}</SelectItem>
@@ -108,8 +108,9 @@ export function BiayaFormDialog({ children, akunOptions }: Props) {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Jumlah (Rp)</Label>
+              <Label htmlFor="by-jumlah">Jumlah (Rp)</Label>
               <NumberInput
+                id="by-jumlah"
                 name="jumlah"
                 value={jumlah}
                 onChange={(v) => { setJumlah(v); if (errors.jumlah) setErrors({}) }}
@@ -122,8 +123,9 @@ export function BiayaFormDialog({ children, akunOptions }: Props) {
           </div>
 
           <div className="space-y-1.5">
-            <Label>Catatan</Label>
+            <Label htmlFor="by-catatan">Catatan</Label>
             <Textarea
+              id="by-catatan"
               name="catatan"
               rows={3}
               placeholder="Opsional"

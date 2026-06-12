@@ -290,13 +290,13 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
           {/* Baris 1: Tanggal full-width mobile, lalu Kategori + Peron */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <div className="col-span-2 sm:col-span-1 space-y-1.5">
-              <Label>Tanggal *</Label>
-              <Input type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} required />
+              <Label htmlFor="pb-tanggal">Tanggal *</Label>
+              <Input id="pb-tanggal" type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} required />
             </div>
             <div className="col-span-2 sm:col-span-1 space-y-1.5">
-              <Label>Kategori *</Label>
+              <Label htmlFor="pb-kategori">Kategori *</Label>
               <Select value={kategori} onValueChange={(v) => setKategori(v as KategoriPembelian)}>
-                <SelectTrigger><SelectValue placeholder="Pilih kategori" /></SelectTrigger>
+                <SelectTrigger id="pb-kategori"><SelectValue placeholder="Pilih kategori" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="OCM R2">OCM R2</SelectItem>
                   <SelectItem value="OCMP SAGU">OCMP SAGU</SelectItem>
@@ -307,9 +307,9 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
               </Select>
             </div>
             <div className="col-span-2 sm:col-span-1 space-y-1.5">
-              <Label>Peron *</Label>
+              <Label htmlFor="pb-peron">Peron *</Label>
               <Select value={peronId} onValueChange={(v) => { if (v) setPeronId(v) }}>
-                <SelectTrigger><SelectValue placeholder="Pilih peron" /></SelectTrigger>
+                <SelectTrigger id="pb-peron"><SelectValue placeholder="Pilih peron" /></SelectTrigger>
                 <SelectContent>
                   {peronOptions.map((p) => (
                     <SelectItem key={p.id} value={p.id}>{p.nama}</SelectItem>
@@ -361,6 +361,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
                     <div className="grid grid-cols-[36px_minmax(0,1fr)_minmax(0,1fr)_104px_26px] gap-0 items-center">
                       <div className="px-1 py-1.5 min-w-0">
                         <Input
+                          aria-label="Jumlah replas"
                           type="text"
                           inputMode="numeric"
                           value={d.jumlahReplas}
@@ -371,6 +372,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
                       </div>
                       <div className="px-1 py-1.5 min-w-0">
                         <Input
+                          aria-label="Tonase (kg)"
                           type="text"
                           inputMode="decimal"
                           value={d.tonase}
@@ -381,6 +383,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
                       </div>
                       <div className="px-1 py-1.5 min-w-0">
                         <NumberInput
+                          aria-label="Harga per kg"
                           value={d.hargaLapangan}
                           onChange={(n) => updateDetail(idx, 'hargaLapangan', String(n))}
                           placeholder="0"
@@ -462,7 +465,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
           {/* Keterangan otomatis (Total N Replas + rentang) — tetap bisa diedit manual */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <Label>Keterangan</Label>
+              <Label htmlFor="pb-keterangan">Keterangan</Label>
               {keteranganManual && autoKeterangan && (
                 <button
                   type="button"
@@ -474,6 +477,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
               )}
             </div>
             <Input
+              id="pb-keterangan"
               value={keterangan}
               onChange={(e) => { setKeterangan(e.target.value); setKeteranganManual(true) }}
               placeholder="Total — Replas"
@@ -483,9 +487,9 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
           {/* Status bayar + Sumber bayar */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Status Bayar</Label>
+              <Label htmlFor="pb-status">Status Bayar</Label>
               <Select value={statusBayar} onValueChange={(v) => setStatusBayar(v as 'belum' | 'lunas')}>
-                <SelectTrigger><SelectValue placeholder="Pilih status" /></SelectTrigger>
+                <SelectTrigger id="pb-status"><SelectValue placeholder="Pilih status" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="belum">Belum Dibayar</SelectItem>
                   <SelectItem value="lunas">Lunas</SelectItem>
@@ -493,9 +497,9 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Sumber Bayar</Label>
+              <Label htmlFor="pb-sumber">Sumber Bayar</Label>
               <Select value={sumberBayarId} onValueChange={(v) => { if (v) setSumberBayarId(v) }}>
-                <SelectTrigger><SelectValue placeholder="— Pilih akun —" /></SelectTrigger>
+                <SelectTrigger id="pb-sumber"><SelectValue placeholder="— Pilih akun —" /></SelectTrigger>
                 <SelectContent>
                   {akunOptions.map((a) => (
                     <SelectItem key={a.id} value={a.id}>{a.nama}</SelectItem>
@@ -507,8 +511,9 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
 
           {/* Catatan */}
           <div className="space-y-1.5">
-            <Label>Catatan</Label>
+            <Label htmlFor="pb-catatan">Catatan</Label>
             <Textarea
+              id="pb-catatan"
               rows={2}
               value={catatan}
               onChange={(e) => setCatatan(e.target.value)}
