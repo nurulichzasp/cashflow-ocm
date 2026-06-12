@@ -17,8 +17,8 @@ import {
   pphBulanan,
   hargaAcuan,
 } from '@/lib/db/schema'
-import { eq, sum, and, gte, like, desc, lte } from 'drizzle-orm'
-import { formatRupiah, formatCompact } from '@/lib/format'
+import { eq, sum, and, gte, desc, lte } from 'drizzle-orm'
+import { formatRupiah, formatCompact, jakartaDateString } from '@/lib/format'
 import {
   TrendingUp,
   ShoppingCart,
@@ -114,11 +114,9 @@ type Insight = {
 
 async function getSmartInsights(): Promise<Insight[]> {
   const today = new Date()
-  const todayStr = today.toISOString().slice(0, 10)
-  const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
-    .toISOString().slice(0, 10)
-  const fourteenDaysAgo = new Date(today.getTime() - 14 * 24 * 60 * 60 * 1000)
-    .toISOString().slice(0, 10)
+  const todayStr = jakartaDateString()
+  const thirtyDaysAgo = jakartaDateString(-30)
+  const fourteenDaysAgo = jakartaDateString(-14)
 
   const insights: Insight[] = []
 
@@ -203,7 +201,7 @@ async function getHargaAcuanLatest() {
 }
 
 async function getTodayStats() {
-  const today = new Date().toISOString().slice(0, 10)
+  const today = jakartaDateString()
   const [pembeliRows, penjualRows, biayaRows] = await Promise.all([
     db.select({ total: sum(transaksiKas.jumlah) })
       .from(transaksiKas)

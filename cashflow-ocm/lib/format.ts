@@ -57,13 +57,16 @@ export function formatTanggalLengkap(date: string | Date): string {
   }).format(d)
 }
 
+// Tanggal di zona WIB (Asia/Jakarta), YYYY-MM-DD. Sadar-zona supaya KONSISTEN
+// di server (Vercel = UTC) maupun client — toISOString()/local bikin entri dini
+// hari WIB mundur 1 hari. offsetDays untuk hitung mundur (mis. -30 hari).
+export function jakartaDateString(offsetDays = 0): string {
+  const d = new Date(Date.now() + offsetDays * 86_400_000)
+  return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' })
+}
+
 export function todayString(): string {
-  // Tanggal LOKAL (bukan UTC) — toISOString() bikin entri dini hari WIB mundur 1 hari.
-  const d = new Date()
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
+  return jakartaDateString()
 }
 
 // Nama bulan ID — dipakai formatter rentang replas (hindari ketergantungan locale

@@ -382,10 +382,10 @@ export function PenjualanFormDialog({ children, editItem }: Props) {
 
           <div className="flex justify-end items-center gap-2 pt-4 -mx-6 px-6 -mb-6 pb-6 border-t border-border bg-muted/30 rounded-b-3xl">
             {unresolved > 0 && (
-              <span className="text-xs text-muted-foreground mr-auto">Pilih dulu {unresolved} kategori yang ditandai</span>
+              <span id="pj-unresolved-hint" role="status" aria-live="polite" className="text-xs text-muted-foreground mr-auto">Pilih dulu {unresolved} kategori yang ditandai</span>
             )}
             <Button variant="outline" type="button" onClick={() => setOpen(false)}>Batal</Button>
-            <Button type="submit" disabled={loading || unresolved > 0}>
+            <Button type="submit" disabled={loading || unresolved > 0} aria-describedby={unresolved > 0 ? 'pj-unresolved-hint' : undefined}>
               {loading ? 'Menyimpan...' : isEdit ? 'Simpan Perubahan' : 'Tambah Penjualan'}
             </Button>
           </div>
