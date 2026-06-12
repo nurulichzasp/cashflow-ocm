@@ -30,17 +30,24 @@ export async function POST(req: NextRequest) {
         const XLSX = require('xlsx')
         const wb = XLSX.read(buffer, { type: 'buffer' })
 
-        // BGA: cek sheet REKAP dulu
-        const rekapName = (wb.SheetNames as string[]).find((n: string) => n === 'REKAP' || n === 'REKAP 2 HARGA')
-        if (rekapName) {
-          const rekapRows = XLSX.utils.sheet_to_json(wb.Sheets[rekapName], { header: 1, defval: '' }) as (string | number)[][]
-          const bgaResult = parseBgaRekap(rekapRows)
-          if (bgaResult) return NextResponse.json({
-            success: true, ...bgaResult,
-            sheetNames: wb.SheetNames as string[],
-            info: 'excel-bga-rekap',
-          })
+        // BGA: utamakan "REKAP 2 HARGA" (BGA kirim 2 harga sbg default), fallback ke "REKAP".
+        // Pilih rekap pertama yang ada nilainya; kalau semua 0, pakai yang pertama keparse.
+        const rekapCandidates = ['REKAP 2 HARGA', 'REKAP'].filter((n) => (wb.SheetNames as string[]).includes(n))
+        let bgaResult: ReturnType<typeof parseBgaRekap> = null
+        let rekapSheet = ''
+        for (const name of rekapCandidates) {
+          const rekapRows = XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, defval: '' }) as (string | number)[][]
+          const res = parseBgaRekap(rekapRows)
+          if (!res) continue
+          if (!bgaResult) { bgaResult = res; rekapSheet = name } // fallback pertama yang keparse
+          if (Number(res.totalNilai) > 0) { bgaResult = res; rekapSheet = name; break } // pilih yang ada nilainya
         }
+        if (bgaResult) return NextResponse.json({
+          success: true, ...bgaResult,
+          sheetNames: wb.SheetNames as string[],
+          rekapSheet,
+          info: 'excel-bga-rekap',
+        })
 
         // Fallback: sheet pertama
         const ws = wb.Sheets[wb.SheetNames[0]]

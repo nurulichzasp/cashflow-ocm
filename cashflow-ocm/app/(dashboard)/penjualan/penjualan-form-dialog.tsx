@@ -63,7 +63,7 @@ export function PenjualanFormDialog({ children }: Props) {
 
       const filled = [data.tanggal, data.noInvoice, data.catatan].filter(Boolean).length
       if (filled > 0) {
-        const src = data.info === 'excel-bga-rekap' ? 'Rekap' : data.info?.includes('excel') ? 'Excel' : 'PDF'
+        const src = data.info === 'excel-bga-rekap' ? (data.rekapSheet || 'Rekap') : data.info?.includes('excel') ? 'Excel' : 'PDF'
         toast.success(`Data berhasil diisi dari ${src}`)
       } else {
         toast.info('File terbaca tapi tidak ada field yang cocok — isi manual ya')
