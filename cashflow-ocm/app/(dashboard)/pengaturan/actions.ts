@@ -2,7 +2,7 @@
 
 import { db } from '@/lib/db'
 import { user, account, ppnBulanan, pphBulanan, appSettings } from '@/lib/db/schema'
-import { eq, and } from 'drizzle-orm'
+import { eq, and, inArray } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
@@ -323,6 +323,41 @@ export async function setAppSetting(key: string, value: string) {
       target: appSettings.key,
       set: { value, updatedAt: new Date() },
     })
+
+  revalidatePath('/laporan')
+  revalidatePath('/pengaturan')
+  return { success: true }
+}
+
+// Baca banyak pengaturan sekaligus (1 query). Dipakai server component utk render
+// nilai awal form → tanpa flash default→asli. Cukup terautentikasi.
+export async function getAppSettings(keys: string[]): Promise<Record<string, string | null>> {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) throw new Error('Tidak terautentikasi')
+
+  const out: Record<string, string | null> = {}
+  for (const k of keys) out[k] = null
+  if (keys.length === 0) return out
+
+  const rows = await db.select().from(appSettings).where(inArray(appSettings.key, keys))
+  for (const r of rows) out[r.key] = r.value
+  return out
+}
+
+// Tulis banyak pengaturan sekaligus (upsert per key). Owner-only.
+export async function setAppSettings(entries: Record<string, string>) {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session || session.user.role !== 'owner') {
+    throw new Error('Hanya Owner yang dapat mengubah pengaturan ini')
+  }
+
+  const now = new Date()
+  for (const [key, value] of Object.entries(entries)) {
+    await db
+      .insert(appSettings)
+      .values({ key, value, updatedAt: now })
+      .onConflictDoUpdate({ target: appSettings.key, set: { value, updatedAt: now } })
+  }
 
   revalidatePath('/laporan')
   revalidatePath('/pengaturan')

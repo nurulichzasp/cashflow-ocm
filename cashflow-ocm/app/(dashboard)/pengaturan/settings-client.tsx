@@ -66,8 +66,7 @@ import {
   updateUserEmail,
   resetUserPassword,
   updateUserPermissions,
-  getAppSetting,
-  setAppSetting,
+  setAppSettings,
 } from './actions'
 import { useRouter } from 'next/navigation'
 import { ThermalPrinterSettings } from './thermal-printer-settings'
@@ -119,9 +118,25 @@ interface SettingsClientProps {
   initialUsers: UserItem[]
   /** Bila diisi, hanya render satu section ini (mode halaman terpisah, tanpa nav). */
   section?: SettingsSection
+  /** Nilai awal Profil Perusahaan dari server (null = belum pernah disimpan ke server). */
+  initialCompany?: {
+    name: string | null
+    address: string | null
+    phone: string | null
+    email: string | null
+    npwp: string | null
+    threshold: string | null
+  }
+  /** Nilai awal Pajak & Modal Awal dari server (null = belum pernah disimpan ke server). */
+  initialTax?: {
+    tarifPpn: string | null
+    tarifPphBadan: string | null
+    nominalPph25: string | null
+    modalAwal: string | null
+  }
 }
 
-export function SettingsClient({ currentUser, initialUsers, section }: SettingsClientProps) {
+export function SettingsClient({ currentUser, initialUsers, section, initialCompany, initialTax }: SettingsClientProps) {
   const router = useRouter()
   const isOwner = currentUser.role === 'owner'
 
@@ -129,69 +144,62 @@ export function SettingsClient({ currentUser, initialUsers, section }: SettingsC
   const [activeTab, setActiveTab] = useState<SettingsSection>('company')
   const active: SettingsSection = section ?? activeTab
 
-  // Company profile state
-  const [companyName, setCompanyName] = useState('CV OCM')
-  const [address, setAddress] = useState('Jl. Lintas Timur No. 45, Indragiri Hulu, Riau')
-  const [phone, setPhone] = useState('+62 812-3456-7890')
-  const [email, setEmail] = useState('admin@ocm.com')
-  const [npwp, setNpwp] = useState('91.234.567.8-123.000')
-  const [threshold, setThreshold] = useState('50000000') // Rp 50.000.000
+  // Company profile state — nilai awal dari server (anti-flash); fallback default.
+  const [companyName, setCompanyName] = useState(initialCompany?.name ?? 'CV OCM')
+  const [address, setAddress] = useState(initialCompany?.address ?? 'Jl. Lintas Timur No. 45, Indragiri Hulu, Riau')
+  const [phone, setPhone] = useState(initialCompany?.phone ?? '+62 812-3456-7890')
+  const [email, setEmail] = useState(initialCompany?.email ?? 'admin@ocm.com')
+  const [npwp, setNpwp] = useState(initialCompany?.npwp ?? '91.234.567.8-123.000')
+  const [threshold, setThreshold] = useState(initialCompany?.threshold ?? '50000000') // Rp 50.000.000
 
-  // Tax config state
-  const [tarifPpn, setTarifPpn] = useState('11')
-  const [tarifPphBadan, setTarifPphBadan] = useState('22')
-  const [nominalPph25, setNominalPph25] = useState('698917')
-  const [modalAwal, setModalAwal] = useState('0')
+  // Tax config state — nilai awal dari server (anti-flash); fallback default.
+  const [tarifPpn, setTarifPpn] = useState(initialTax?.tarifPpn ?? '11')
+  const [tarifPphBadan, setTarifPphBadan] = useState(initialTax?.tarifPphBadan ?? '22')
+  const [nominalPph25, setNominalPph25] = useState(initialTax?.nominalPph25 ?? '698917')
+  const [modalAwal, setModalAwal] = useState(initialTax?.modalAwal ?? '0')
 
   useEffect(() => {
-    // Load from localStorage if exists
-    const storedName = localStorage.getItem('company_name')
-    const storedAddress = localStorage.getItem('company_address')
-    const storedPhone = localStorage.getItem('company_phone')
-    const storedEmail = localStorage.getItem('company_email')
-    const storedNpwp = localStorage.getItem('company_npwp')
-    const storedThreshold = localStorage.getItem('company_large_transaction_threshold')
-
-    if (storedName) setCompanyName(storedName)
-    if (storedAddress) setAddress(storedAddress)
-    if (storedPhone) setPhone(storedPhone)
-    if (storedEmail) setEmail(storedEmail)
-    if (storedNpwp) setNpwp(storedNpwp)
-    if (storedThreshold) setThreshold(storedThreshold)
-
-    const storedTarifPpn = localStorage.getItem('tax_tarif_ppn')
-    const storedTarifPph = localStorage.getItem('tax_tarif_pph_badan')
-    const storedNominalPph25 = localStorage.getItem('tax_nominal_pph25')
-    if (storedTarifPpn) setTarifPpn(storedTarifPpn)
-    if (storedTarifPph) setTarifPphBadan(storedTarifPph)
-    if (storedNominalPph25) setNominalPph25(storedNominalPph25)
-
-    // Modal Awal: sumber kebenaran server (sinkron lintas perangkat). Fallback ke
-    // localStorage lama hanya bila server belum punya nilai (masa transisi migrasi).
-    getAppSetting('neraca_modal_awal')
-      .then((serverVal) => {
-        if (serverVal !== null) {
-          setModalAwal(serverVal)
-        } else {
-          const storedModalAwal = localStorage.getItem('neraca_modal_awal')
-          if (storedModalAwal) setModalAwal(storedModalAwal)
-        }
-      })
-      .catch(() => {
-        const storedModalAwal = localStorage.getItem('neraca_modal_awal')
-        if (storedModalAwal) setModalAwal(storedModalAwal)
-      })
+    // Sumber kebenaran = server (lewat initialCompany/initialTax, sudah ter-render
+    // server-side → tanpa flash). MASA TRANSISI: hanya untuk field yang server-nya
+    // MASIH kosong (belum pernah disimpan ke server), pakai nilai lama dari
+    // localStorage agar tak hilang. Sekali user menyimpan, semua pindah ke server.
+    const ls = (k: string) => localStorage.getItem(k)
+    if (!initialCompany?.name) { const v = ls('company_name'); if (v) setCompanyName(v) }
+    if (!initialCompany?.address) { const v = ls('company_address'); if (v) setAddress(v) }
+    if (!initialCompany?.phone) { const v = ls('company_phone'); if (v) setPhone(v) }
+    if (!initialCompany?.email) { const v = ls('company_email'); if (v) setEmail(v) }
+    if (!initialCompany?.npwp) { const v = ls('company_npwp'); if (v) setNpwp(v) }
+    if (!initialCompany?.threshold) { const v = ls('company_large_transaction_threshold'); if (v) setThreshold(v) }
+    if (!initialTax?.tarifPpn) { const v = ls('tax_tarif_ppn'); if (v) setTarifPpn(v) }
+    if (!initialTax?.tarifPphBadan) { const v = ls('tax_tarif_pph_badan'); if (v) setTarifPphBadan(v) }
+    if (!initialTax?.nominalPph25) { const v = ls('tax_nominal_pph25'); if (v) setNominalPph25(v) }
+    if (!initialTax?.modalAwal) { const v = ls('neraca_modal_awal'); if (v) setModalAwal(v) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  function handleSaveCompany(e: React.FormEvent) {
+  async function handleSaveCompany(e: React.FormEvent) {
     e.preventDefault()
-    localStorage.setItem('company_name', companyName)
-    localStorage.setItem('company_address', address)
-    localStorage.setItem('company_phone', phone)
-    localStorage.setItem('company_email', email)
-    localStorage.setItem('company_npwp', npwp)
-    localStorage.setItem('company_large_transaction_threshold', threshold)
-    toast.success('Profil perusahaan berhasil disimpan')
+    try {
+      // Sumber kebenaran: server (sinkron lintas perangkat).
+      await setAppSettings({
+        company_name: companyName,
+        company_address: address,
+        company_phone: phone,
+        company_email: email,
+        company_npwp: npwp,
+        company_large_transaction_threshold: threshold,
+      })
+      // localStorage tetap diisi sebagai cadangan tak berbahaya (offline-friendly).
+      localStorage.setItem('company_name', companyName)
+      localStorage.setItem('company_address', address)
+      localStorage.setItem('company_phone', phone)
+      localStorage.setItem('company_email', email)
+      localStorage.setItem('company_npwp', npwp)
+      localStorage.setItem('company_large_transaction_threshold', threshold)
+      toast.success('Profil perusahaan berhasil disimpan')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Gagal menyimpan. Coba lagi.')
+    }
   }
 
   // Add user state
@@ -565,7 +573,7 @@ export function SettingsClient({ currentUser, initialUsers, section }: SettingsC
                 </div>
 
                 <div className="pt-3">
-                  <Button type="submit" className="bg-stone-900 hover:bg-stone-800 dark:bg-white dark:hover:bg-zinc-200 dark:text-stone-900 text-white cursor-pointer">
+                  <Button type="submit" disabled={!isOwner} className="bg-stone-900 hover:bg-stone-800 dark:bg-white dark:hover:bg-zinc-200 dark:text-stone-900 text-white cursor-pointer">
                     Simpan Profil Perusahaan
                   </Button>
                 </div>
@@ -990,17 +998,22 @@ export function SettingsClient({ currentUser, initialUsers, section }: SettingsC
               <form
                 onSubmit={async (e) => {
                   e.preventDefault()
-                  localStorage.setItem('tax_tarif_ppn', tarifPpn)
-                  localStorage.setItem('tax_tarif_pph_badan', tarifPphBadan)
-                  localStorage.setItem('tax_nominal_pph25', nominalPph25)
-                  // Modal Awal: tulis ke server (sumber kebenaran, sinkron lintas
-                  // perangkat). localStorage tetap diisi sebagai cadangan tak berbahaya.
-                  localStorage.setItem('neraca_modal_awal', modalAwal)
                   try {
-                    await setAppSetting('neraca_modal_awal', modalAwal)
+                    // Sumber kebenaran: server (tarif pajak + modal awal sinkron lintas perangkat).
+                    await setAppSettings({
+                      tax_tarif_ppn: tarifPpn,
+                      tax_tarif_pph_badan: tarifPphBadan,
+                      tax_nominal_pph25: nominalPph25,
+                      neraca_modal_awal: modalAwal,
+                    })
+                    // localStorage tetap diisi sebagai cadangan tak berbahaya.
+                    localStorage.setItem('tax_tarif_ppn', tarifPpn)
+                    localStorage.setItem('tax_tarif_pph_badan', tarifPphBadan)
+                    localStorage.setItem('tax_nominal_pph25', nominalPph25)
+                    localStorage.setItem('neraca_modal_awal', modalAwal)
                     toast.success('Konfigurasi pajak berhasil disimpan')
-                  } catch {
-                    toast.error('Gagal menyimpan Modal Awal ke server')
+                  } catch (err) {
+                    toast.error(err instanceof Error ? err.message : 'Gagal menyimpan. Coba lagi.')
                   }
                 }}
                 className="space-y-4"
@@ -1028,7 +1041,7 @@ export function SettingsClient({ currentUser, initialUsers, section }: SettingsC
                   </div>
                 </div>
                 <div className="pt-3">
-                  <Button type="submit" className="bg-stone-900 hover:bg-stone-800 dark:bg-white dark:hover:bg-zinc-200 dark:text-stone-900 text-white cursor-pointer">
+                  <Button type="submit" disabled={!isOwner} className="bg-stone-900 hover:bg-stone-800 dark:bg-white dark:hover:bg-zinc-200 dark:text-stone-900 text-white cursor-pointer">
                     Simpan Konfigurasi Pajak
                   </Button>
                 </div>
