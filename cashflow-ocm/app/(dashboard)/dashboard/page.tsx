@@ -1,887 +1,394 @@
 export const dynamic = 'force-dynamic'
 
+import Link from 'next/link'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { hasPermission } from '@/lib/permissions'
+import { parsePerms } from '@/lib/nav-routes'
 import { db } from '@/lib/db'
+import { akunKas, transaksiKas, pembelian } from '@/lib/db/schema'
+import { sum, gte } from 'drizzle-orm'
+import { getPeronList } from '../peron/actions'
+import { getPeronHealthList } from '../peron/health-actions'
 import {
-  transaksiKas,
-  pembelian,
-  penjualan,
-  modalPeron,
-  peron,
-  biayaOperasional,
-  akunKas,
-  ppnBulanan,
-  pphBulanan,
-  hargaAcuan,
-} from '@/lib/db/schema'
-import { eq, sum, and, gte, desc, lte } from 'drizzle-orm'
-import { formatRupiah, formatCompact, jakartaDateString } from '@/lib/format'
+  formatCompact,
+  formatNumber,
+  formatTanggalLengkap,
+  formatTanggalPendek,
+  jakartaDateString,
+} from '@/lib/format'
 import {
-  TrendingUp,
   ShoppingCart,
+  TrendingUp,
   Receipt,
+  Banknote,
+  Coins,
+  ArrowDownLeft,
+  ArrowLeftRight,
+  CircleDollarSign,
   ArrowUpRight,
   ArrowDownRight,
-  Sparkles,
-  AlertCircle,
-  Clock,
-  CircleDollarSign,
+  HeartPulse,
+  ChevronRight,
+  Layers,
+  Scale,
+  Wallet,
 } from 'lucide-react'
-import CashflowChart from '@/components/charts/CashflowChartLazy'
-import { AnimatedRupiah } from '@/components/animated-rupiah'
+import { EmptyState } from '@/components/empty-state'
+import { QuickActions } from './quick-actions'
+import { AkunCarousel, type AkunCard } from './akun-carousel'
 
-async function getMetrics() {
-  const [akunList, transaksiRows, modalRows, piutangBelumRaw, penjualanLunasRaw, pembelianKeuntungan] =
+const BULAN = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+]
+
+async function getDashboardData() {
+  const todayStr = jakartaDateString()
+  const monthStart = `${todayStr.slice(0, 7)}-01`
+  const weekAgo = jakartaDateString(-6) // 7 hari terakhir (inklusif hari ini)
+
+  const [akunList, transaksiRows, deltaRows, pembelianMonthRows, recentTx, healthList] =
     await Promise.all([
       db.select().from(akunKas).orderBy(akunKas.urutan),
 
-      db.select({ akunId: transaksiKas.akunId, arah: transaksiKas.arah, total: sum(transaksiKas.jumlah) })
+      // Saldo per akun = saldoAwal + Σ(masuk) − Σ(keluar). SAMA dgn halaman /kas.
+      db
+        .select({ akunId: transaksiKas.akunId, arah: transaksiKas.arah, total: sum(transaksiKas.jumlah) })
         .from(transaksiKas)
         .groupBy(transaksiKas.akunId, transaksiKas.arah),
 
-      db.select({ jenis: modalPeron.jenis, total: sum(modalPeron.jumlah) })
-        .from(modalPeron)
-        .innerJoin(peron, and(eq(modalPeron.peronId, peron.id), eq(peron.status, 'aktif')))
-        .groupBy(modalPeron.jenis),
+      // Delta kas 7 hari terakhir (mutasi bertanggal ≥ weekAgo).
+      db
+        .select({ arah: transaksiKas.arah, total: sum(transaksiKas.jumlah) })
+        .from(transaksiKas)
+        .where(gte(transaksiKas.tanggal, weekAgo))
+        .groupBy(transaksiKas.arah),
 
-      db.select({ total: sum(penjualan.totalBersih) })
-        .from(penjualan)
-        .where(eq(penjualan.statusBayar, 'belum')),
+      // Ringkasan bulan berjalan: margin dagang (keuntungan) + volume (tonase kg).
+      db
+        .select({ keuntungan: sum(pembelian.keuntungan), tonaseKg: sum(pembelian.tonase) })
+        .from(pembelian)
+        .where(gte(pembelian.tanggal, monthStart)),
 
-      db.select({ total: sum(penjualan.totalBersih) })
-        .from(penjualan)
-        .where(eq(penjualan.statusBayar, 'lunas')),
+      // Transaksi terakhir — ledger kas (sumber paling murah & representatif).
+      db.query.transaksiKas.findMany({
+        orderBy: (t, { desc: d }) => [d(t.tanggal), d(t.createdAt)],
+        limit: 5,
+        with: { akun: true },
+      }),
 
-      db.select({ total: sum(pembelian.keuntungan) })
-        .from(pembelian),
+      // Kesehatan peron — reuse sumber halaman /peron/kesehatan (sudah non-archived).
+      getPeronHealthList(),
     ])
 
-  // Saldo per akun = saldoAwal + mutasi
   const mutasiPerAkun: Record<string, number> = {}
   for (const r of transaksiRows) {
     const prev = mutasiPerAkun[r.akunId] ?? 0
     mutasiPerAkun[r.akunId] = prev + (r.arah === 'masuk' ? Number(r.total ?? 0) : -Number(r.total ?? 0))
   }
+  const akunSaldo = akunList.map((a) => ({ ...a, saldo: a.saldoAwal + (mutasiPerAkun[a.id] ?? 0) }))
+  const totalSaldo = akunSaldo.reduce((s, a) => s + a.saldo, 0)
 
-  const akunSaldo = akunList.map((a) => ({
-    ...a,
-    saldo: a.saldoAwal + (mutasiPerAkun[a.id] ?? 0),
-  }))
+  let deltaMasuk = 0
+  let deltaKeluar = 0
+  for (const r of deltaRows) {
+    if (r.arah === 'masuk') deltaMasuk += Number(r.total ?? 0)
+    else deltaKeluar += Number(r.total ?? 0)
+  }
+  const delta7 = deltaMasuk - deltaKeluar
 
-  const totalSaldoBank = akunSaldo.filter((a) => a.tipe === 'bank').reduce((s, a) => s + a.saldo, 0)
-  const totalSaldoTunai = akunSaldo.filter((a) => a.tipe === 'tunai').reduce((s, a) => s + a.saldo, 0)
-  const totalSaldo = totalSaldoBank + totalSaldoTunai
+  const marginBulan = Number(pembelianMonthRows[0]?.keuntungan ?? 0)
+  const volumeTon = Number(pembelianMonthRows[0]?.tonaseKg ?? 0) / 1000
 
-  const dpTambah = Number(modalRows.find((r) => r.jenis === 'tambah')?.total ?? 0)
-  const dpKurang = Number(modalRows.find((r) => r.jenis === 'kurang')?.total ?? 0)
-  const dpKembali = Number(modalRows.find((r) => r.jenis === 'kembali')?.total ?? 0)
-  const totalDpPeron = dpTambah - dpKurang - dpKembali
-
-  const piutangBga = Number(piutangBelumRaw?.[0]?.total ?? 0)
-  const totalPenjualanLunas = Number(penjualanLunasRaw?.[0]?.total ?? 0)
-  const totalModalBerputar = totalSaldo + totalDpPeron + piutangBga
-
-  const estimasiLaba = Number(pembelianKeuntungan?.[0]?.total ?? 0)
-
-  // Total pembelian (modal terserap) untuk hitung Net Margin
-  const totalPembelianRaw = await db.select({ total: sum(pembelian.totalBeli) }).from(pembelian)
-  const totalPembelian = Number(totalPembelianRaw?.[0]?.total ?? 0)
-  const totalRevenue = totalPenjualanLunas + piutangBga // total nilai bersih semua penjualan
-  const netMarginPct = totalPembelian > 0 ? (estimasiLaba / totalPembelian) * 100 : 0
+  const peronKritis = healthList.filter((p) => p.status === 'kritis').length
+  const peronPerhatian = healthList.filter((p) => p.status === 'perhatian').length
 
   return {
-    akunSaldo, totalSaldo, totalDpPeron, piutangBga,
-    totalPenjualanLunas, totalModalBerputar, estimasiLaba,
-    totalPembelian, totalRevenue, netMarginPct,
-  }
-}
-
-/**
- * Smart Insights — analitik kontekstual real-time untuk owner.
- * Hanya munculkan kondisi yang BENAR-BENAR actionable. Sembunyi bila aman.
- */
-type Insight = {
-  id: string
-  tone: 'warn' | 'info' | 'good'
-  icon: 'piutang' | 'harga' | 'pajak' | 'margin'
-  label: string
-  detail?: string
-  href?: string
-}
-
-async function getSmartInsights(): Promise<Insight[]> {
-  const today = new Date()
-  const todayStr = jakartaDateString()
-  const thirtyDaysAgo = jakartaDateString(-30)
-  const fourteenDaysAgo = jakartaDateString(-14)
-
-  const insights: Insight[] = []
-
-  // 1. Piutang umur > 30 hari
-  const piutangLama = await db
-    .select({ jumlah: penjualan.totalBersih, tanggal: penjualan.tanggal })
-    .from(penjualan)
-    .where(and(eq(penjualan.statusBayar, 'belum'), lte(penjualan.tanggal, thirtyDaysAgo)))
-
-  if (piutangLama.length > 0) {
-    const total = piutangLama.reduce((s, p) => s + (p.jumlah ?? 0), 0)
-    insights.push({
-      id: 'piutang-lama',
-      tone: 'warn',
-      icon: 'piutang',
-      label: `${piutangLama.length} piutang > 30 hari`,
-      detail: formatCompact(total),
-      href: '/penjualan',
-    })
-  }
-
-  // 2. Harga acuan stale (TBS > 14 hari tidak update)
-  const tbsLatest = await db
-    .select({ tanggal: hargaAcuan.tanggalBerlaku })
-    .from(hargaAcuan)
-    .where(eq(hargaAcuan.produk, 'TBS'))
-    .orderBy(desc(hargaAcuan.tanggalBerlaku))
-    .limit(1)
-
-  if (tbsLatest[0] && tbsLatest[0].tanggal < fourteenDaysAgo) {
-    const daysSince = Math.floor(
-      (today.getTime() - new Date(tbsLatest[0].tanggal).getTime()) / (24 * 60 * 60 * 1000),
-    )
-    insights.push({
-      id: 'harga-stale',
-      tone: 'info',
-      icon: 'harga',
-      label: `Harga TBS belum diupdate ${daysSince} hari`,
-      detail: 'Perbarui acuan pasar',
-      href: '/harga',
-    })
-  }
-
-  // 3. PPN bulan lalu belum disetor & sudah mendekati akhir bulan
-  const lastMonthDate = new Date(today.getFullYear(), today.getMonth() - 1, 1)
-  const lastMonth = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth() + 1).padStart(2, '0')}`
-  const ppnLast = await db.query.ppnBulanan.findFirst({ where: eq(ppnBulanan.bulan, lastMonth) })
-  const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate()
-  const dayOfMonth = today.getDate()
-  const daysLeft = lastDay - dayOfMonth
-
-  if (ppnLast && ppnLast.statusSetor !== 'sudah' && daysLeft <= 7) {
-    insights.push({
-      id: 'ppn-jt',
-      tone: 'warn',
-      icon: 'pajak',
-      label: `PPN bulan lalu belum disetor`,
-      detail: `JT ${daysLeft} hari lagi`,
-      href: '/laporan',
-    })
-  }
-
-  return insights
-}
-
-/** Harga acuan terbaru per produk + selisih hari (untuk Quick Reference card). */
-async function getHargaAcuanLatest() {
-  const produks = ['TBS', 'BRDL KTWM', 'BRDL TRYM', 'BRDL LMDM'] as const
-  const rows = await Promise.all(
-    produks.map(async (p) => {
-      const r = await db.select().from(hargaAcuan)
-        .where(eq(hargaAcuan.produk, p))
-        .orderBy(desc(hargaAcuan.tanggalBerlaku))
-        .limit(2)
-      const current = r[0] ?? null
-      const previous = r[1] ?? null
-      const delta = current && previous ? current.hargaLapangan - previous.hargaLapangan : 0
-      return { produk: p, current, previous, delta }
-    })
-  )
-  return rows
-}
-
-async function getTodayStats() {
-  const today = jakartaDateString()
-  const [pembeliRows, penjualRows, biayaRows] = await Promise.all([
-    db.select({ total: sum(transaksiKas.jumlah) })
-      .from(transaksiKas)
-      .where(and(
-        eq(transaksiKas.tanggal, today),
-        eq(transaksiKas.kategori, 'bayar_peron'),
-        eq(transaksiKas.arah, 'keluar'),
-      )),
-    db.select({ total: sum(penjualan.totalBersih) })
-      .from(penjualan)
-      .where(eq(penjualan.tanggal, today)),
-    db.select({ total: sum(biayaOperasional.jumlah) })
-      .from(biayaOperasional)
-      .where(eq(biayaOperasional.tanggal, today)),
-  ])
-  return {
-    pembelianHariIni: Number(pembeliRows[0]?.total ?? 0),
-    penjualanHariIni: Number(penjualRows[0]?.total ?? 0),
-    biayaHariIni: Number(biayaRows[0]?.total ?? 0),
-  }
-}
-
-async function getTaxStatus() {
-  const now = new Date()
-  const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-  const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-  const lastMonth = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth() + 1).padStart(2, '0')}`
-
-  const thisMonthStart = `${thisMonth}-01`
-  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
-  const thisMonthEnd = `${thisMonth}-${String(lastDay).padStart(2, '0')}`
-
-  const [ppnThisMonthRows, ppnLastRecord, pphLastRecord] = await Promise.all([
-    db.select({ total: sum(penjualan.totalBersih) })
-      .from(penjualan)
-      .where(and(gte(penjualan.tanggal, thisMonthStart), eq(penjualan.statusBayar, 'lunas'))),
-    db.query.ppnBulanan.findFirst({ where: eq(ppnBulanan.bulan, lastMonth) }),
-    db.query.pphBulanan.findFirst({ where: eq(pphBulanan.bulan, lastMonth) }),
-  ])
-
-  const ppnThisMonth = Math.round(Number(ppnThisMonthRows[0]?.total ?? 0) * 0.11)
-
-  return {
-    thisMonth,
-    lastMonth,
-    ppnThisMonth,
-    ppnLastMonth: ppnLastRecord ?? null,
-    pphLastMonth: pphLastRecord ?? null,
-  }
-}
-
-async function getChartSeries(days = 14) {
-  const end = new Date()
-  const startDate = new Date(end.getTime() - (days - 1) * 24 * 60 * 60 * 1000)
-  const startStr = startDate.toISOString().slice(0, 10)
-
-  const [transaksi, modalRows, akunList] = await Promise.all([
-    db.select().from(transaksiKas).where(gte(transaksiKas.tanggal, startStr)).orderBy(transaksiKas.tanggal),
-    db.select().from(modalPeron).where(gte(modalPeron.tanggal, startStr)).orderBy(modalPeron.tanggal),
-    db.select().from(akunKas),
-  ])
-
-  const saldoAwalPerAkun: Record<string, number> = {}
-  for (const a of akunList) {
-    saldoAwalPerAkun[a.id] = a.saldoAwal
-  }
-
-  const dates: string[] = []
-  for (let i = 0; i < days; i++) {
-    const d = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000)
-    dates.push(d.toISOString().slice(0, 10))
-  }
-
-  const daily = dates.map((date) => {
-    const rows = transaksi.filter((t: any) => t.tanggal === date)
-    const masuk = rows.filter((r: any) => r.arah === 'masuk').reduce((s: number, r: any) => s + Number(r.jumlah ?? 0), 0)
-    const keluar = rows.filter((r: any) => r.arah === 'keluar').reduce((s: number, r: any) => s + Number(r.jumlah ?? 0), 0)
-    return { date: date.slice(5), masuk, keluar }
-  })
-
-  const trend = dates.map((date) => {
-    const tUpTo = transaksi.filter((t: any) => t.tanggal <= date)
-    const totalKas = Object.entries(saldoAwalPerAkun).reduce((acc, [akunId, saldoAwal]) => {
-      const akuMutasi = tUpTo.filter((r: any) => r.akunId === akunId).reduce((s: number, r: any) => s + (r.arah === 'masuk' ? Number(r.jumlah) : -Number(r.jumlah)), 0)
-      return acc + saldoAwal + akuMutasi
-    }, 0)
-    const dpPeron = modalRows.filter((m: any) => m.tanggal <= date).reduce((acc: number, r: any) => acc + (r.jenis === 'tambah' ? Number(r.jumlah) : -Number(r.jumlah)), 0)
-    const piutang = tUpTo.filter((r: any) => r.kategori === 'penerimaan_bga' && r.arah === 'masuk').reduce((s: number, r: any) => s + Number(r.jumlah), 0)
-    return { date: date.slice(5), total: totalKas + dpPeron + piutang }
-  })
-
-  const lastDate = dates[dates.length - 1]
-  const transaksiUpTo = transaksi.filter((t: any) => t.tanggal <= lastDate)
-  const totalKas = Object.entries(saldoAwalPerAkun).reduce((acc, [akunId, saldoAwal]) => {
-    const mut = transaksiUpTo.filter((r: any) => r.akunId === akunId).reduce((s: number, r: any) => s + (r.arah === 'masuk' ? Number(r.jumlah) : -Number(r.jumlah)), 0)
-    return acc + saldoAwal + mut
-  }, 0)
-  const dp = modalRows.reduce((acc: number, r: any) => acc + (r.jenis === 'tambah' ? Number(r.jumlah) : -Number(r.jumlah)), 0)
-  const piutang = transaksiUpTo.filter((r: any) => r.kategori === 'penerimaan_bga' && r.arah === 'masuk').reduce((s: number, r: any) => s + Number(r.jumlah), 0)
-
-  const tunaiTotal = akunList.filter((a) => a.tipe === 'tunai').reduce((s, a) => {
-    const mut = transaksiUpTo.filter((r: any) => r.akunId === a.id).reduce((acc: number, r: any) => acc + (r.arah === 'masuk' ? Number(r.jumlah) : -Number(r.jumlah)), 0)
-    return s + a.saldoAwal + mut
-  }, 0)
-  const bankTotal = akunList.filter((a) => a.tipe === 'bank').reduce((s, a) => {
-    const mut = transaksiUpTo.filter((r: any) => r.akunId === a.id).reduce((acc: number, r: any) => acc + (r.arah === 'masuk' ? Number(r.jumlah) : -Number(r.jumlah)), 0)
-    return s + a.saldoAwal + mut
-  }, 0)
-
-  return {
-    daily,
-    trend,
-    composition: [
-      { name: 'Bank',      value: bankTotal },
-      { name: 'Tunai',     value: tunaiTotal },
-      { name: 'DP Peron',  value: dp },
-      { name: 'Piutang',   value: piutang },
-    ],
+    akunSaldo, totalSaldo, delta7,
+    marginBulan, volumeTon,
+    recentTx, peronKritis, peronPerhatian,
+    monthName: BULAN[Number(todayStr.slice(5, 7)) - 1],
+    todayStr,
   }
 }
 
 export default async function DashboardPage() {
-  // Dashboard menampilkan seluruh angka keuangan (saldo, piutang, laba, pajak).
-  // Peran tanpa hak finance (mis. kasir) tidak boleh melihatnya — arahkan ke
-  // halaman input yang boleh mereka akses. Tanpa gate ini, /dashboard (landing
-  // default setelah login) membocorkan finansial ke non-finance. Cek dilakukan
-  // SEBELUM getMetrics() agar datanya tidak ikut dihitung untuk yang tak berhak.
+  // Dashboard membocorkan seluruh angka finansial (saldo, margin, transaksi).
+  // Peran tanpa canViewFinance (mis. kasir) diarahkan ke halaman input — cek
+  // SEBELUM query agar datanya tak ikut dihitung untuk yang tak berhak.
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session) redirect('/login')
   if (!hasPermission(session.user.role, 'canViewFinance')) redirect('/pembelian')
 
-  const [metrics, today, charts, tax, hargaLatest, insights] = await Promise.all([
-    getMetrics(),
-    getTodayStats(),
-    getChartSeries(14),
-    getTaxStatus(),
-    getHargaAcuanLatest(),
-    getSmartInsights(),
-  ])
+  const role = session.user.role
+  const isOwner = role === 'owner'
+  const canCreate = hasPermission(role, 'canCreate')
+  const perms = parsePerms((session.user as { permissions?: string | null }).permissions)
 
-  const modalBreakdown = [
-    { label: 'Saldo Kas', value: formatCompact(metrics.totalSaldo) },
-    { label: 'DP Peron', value: formatCompact(metrics.totalDpPeron) },
-    { label: 'Piutang', value: formatCompact(metrics.piutangBga) },
-  ]
+  const data = await getDashboardData()
 
-  const todayItems = [
-    {
-      label: 'Pembelian Hari Ini',
-      value: formatCompact(today.pembelianHariIni),
-      icon: ShoppingCart,
-      color: 'text-stone-700 dark:text-zinc-300',
-    },
-    {
-      label: 'Penjualan Hari Ini',
-      value: formatCompact(today.penjualanHariIni),
-      icon: TrendingUp,
-      color: 'text-stone-700 dark:text-zinc-300',
-    },
-    {
-      label: 'Biaya Hari Ini',
-      value: formatCompact(today.biayaHariIni),
-      icon: Receipt,
-      color: 'text-stone-500 dark:text-zinc-500',
-    },
-  ]
+  // Opsi form untuk aksi cepat (hanya difetch bila role boleh create).
+  let peronOptions: { id: string; nama: string; keuntunganPerKg: number }[] = []
+  const akunOptions = data.akunSaldo.map((a) => ({ id: a.id, nama: a.nama, tipe: a.tipe }))
+  if (canCreate) {
+    const peronList = await getPeronList()
+    peronOptions = peronList.map((p) => ({ id: p.id, nama: p.nama, keuntunganPerKg: p.keuntunganPerKg }))
+  }
 
-  // Kelompokkan akun: Rek BRI CV OCM tampil sendiri, sisanya digabung
-  const akunCvOcm = metrics.akunSaldo.find((a) => a.nama.toLowerCase().includes('cv ocm'))
-  const akunLainnya = metrics.akunSaldo.filter((a) => a.tipe === 'bank' && !a.nama.toLowerCase().includes('cv ocm'))
-  const akunTunai = metrics.akunSaldo.filter((a) => a.tipe === 'tunai')
+  // Akun utama (CV OCM) ditandai — selaras hierarki halaman /kas.
+  const utamaId =
+    data.akunSaldo.find((a) => a.nama.toLowerCase().includes('cv ocm'))?.id ?? data.akunSaldo[0]?.id
+  const akunCards: AkunCard[] = data.akunSaldo.map((a) => ({
+    id: a.id,
+    nama: a.nama,
+    tipe: a.tipe,
+    saldo: a.saldo,
+    utama: a.id === utamaId,
+  }))
+
+  const displayName = session.user.nickname || session.user.name || 'OCM'
 
   return (
-    <div className="space-y-4 sm:space-y-5 pt-1 md:pt-0">
+    <div className="space-y-5 pb-2 pt-1 md:pt-0">
+      {/* A. Sapaan + tanggal WIB (app-bar logo/avatar sudah di ScrollShell) */}
+      <div className="px-0.5">
+        <h1 className="text-[1.35rem] font-bold leading-tight tracking-tight text-stone-900 dark:text-zinc-50">
+          Halo, {displayName}
+        </h1>
+        <p className="mt-0.5 text-[13px] text-stone-400 dark:text-zinc-500 capitalize">
+          {formatTanggalLengkap(data.todayStr)}
+        </p>
+      </div>
 
-      {/* SMART INSIGHTS — alerts kontekstual real-time (auto-hide bila aman) */}
-      {insights.length > 0 && (
-        <section className="rounded-2xl border border-black/[0.06] dark:border-white/[0.07] bg-white/95 dark:bg-card p-4 shadow-sm">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.24em] text-stone-400 dark:text-zinc-500 font-semibold">Tindakan cepat</p>
-              <h2 className="mt-2 text-sm font-semibold text-stone-900 dark:text-zinc-100">Smart Insights</h2>
-            </div>
-            <p className="text-[11px] text-stone-500 dark:text-zinc-500">Hanya kondisi yang perlu tindak lanjut.</p>
-          </div>
-          <div className="mt-4">
-            <SmartInsights items={insights} />
-          </div>
-        </section>
+      {/* B. Hero — Total Kas (gelap selalu, putih). Sumber == /kas. */}
+      <TotalKasHero total={data.totalSaldo} delta7={data.delta7} />
+
+      {/* C. Aksi cepat — hanya role canCreate */}
+      {canCreate && (
+        <QuickActions
+          peronOptions={peronOptions}
+          akunOptions={akunOptions}
+          showPembelian={isOwner || perms.pembelian !== false}
+          showPenjualan={isOwner || perms.penjualan !== false}
+          showHarga
+          showBiaya={isOwner || perms.biaya !== false}
+        />
       )}
 
-      {/* HERO + TODAY — Modal Berputar besar + 3 statistik hari ini di sampingnya.
-          Layar sempit (< lg): today strip otomatis turun ke bawah jadi baris 3 kolom. */}
-      <div className="grid gap-4 lg:grid-cols-3 lg:items-stretch">
-        <div className="lg:col-span-2">
-          <ModalHero
-            total={metrics.totalModalBerputar}
-            breakdown={modalBreakdown}
-            trend={charts.trend}
+      {/* D. Akun kas — geser horizontal */}
+      {akunCards.length > 0 ? (
+        <AkunCarousel items={akunCards} />
+      ) : (
+        <EmptyState icon={Wallet} title="Belum ada akun kas" description="Tambah akun kas di Buku Kas untuk mulai mencatat saldo." />
+      )}
+
+      {/* E. Ringkasan bulan berjalan */}
+      <section>
+        <p className="mb-2.5 px-0.5 text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-zinc-500">
+          Ringkasan {data.monthName}
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          <SummaryCard
+            icon={Layers}
+            label="Margin Dagang"
+            value={formatCompact(data.marginBulan)}
+            sub="Markup peron · sblm biaya"
+          />
+          <SummaryCard
+            icon={Scale}
+            label="Volume"
+            value={`${formatNumber(Math.round(data.volumeTon * 10) / 10)} ton`}
+            sub="Tonase pembelian"
           />
         </div>
-        <TodayStrip items={todayItems} />
-      </div>
+      </section>
 
-      {/* GLANCE — Net Margin + Harga Acuan */}
-      <NetMarginAndHarga
-        netMarginPct={metrics.netMarginPct}
-        estimasiLaba={metrics.estimasiLaba}
-        totalPembelian={metrics.totalPembelian}
-        totalRevenue={metrics.totalRevenue}
-        hargaLatest={hargaLatest}
-      />
+      {/* F. Kesehatan peron — 1 baris ringkas, tappable */}
+      <PeronHealthRow kritis={data.peronKritis} perhatian={data.peronPerhatian} />
 
-      {/* TWO-UP — Saldo akun + Pajak compact */}
-      <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
-        {/* Saldo (lg:col-span-2) */}
-        <div className="lg:col-span-2 surface overflow-hidden">
-          <div className="px-5 py-3 border-b border-stone-100 dark:border-border flex items-center justify-between">
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Saldo Rekening &amp; Kas</p>
-            <p className="text-xs font-semibold num tabular-nums text-stone-900 dark:text-stone-100">{formatCompact(metrics.totalSaldo)}</p>
-          </div>
-          <div className="divide-y divide-stone-100 dark:divide-border">
-            {akunCvOcm && (
-              <div className="flex items-center justify-between px-5 py-3">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <span className="h-1.5 w-1.5 rounded-full bg-stone-900 dark:bg-white shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-stone-900 dark:text-stone-100 truncate">{akunCvOcm.nama}</p>
-                    <p className="text-[10px] text-stone-400 dark:text-zinc-500 font-semibold uppercase tracking-wider">Utama</p>
-                  </div>
-                </div>
-                <p className={`text-sm font-bold num tabular-nums shrink-0 ${akunCvOcm.saldo >= 0 ? 'text-stone-900 dark:text-stone-100' : 'text-red-500'}`}>
-                  {formatRupiah(akunCvOcm.saldo)}
-                </p>
-              </div>
-            )}
-            {akunLainnya.map((a) => (
-              <div key={a.id} className="flex items-center justify-between px-5 py-2.5">
-                <p className="text-sm text-stone-600 dark:text-stone-300 truncate mr-3">{a.nama}</p>
-                <p className={`text-sm font-semibold num tabular-nums shrink-0 ${a.saldo >= 0 ? 'text-stone-800 dark:text-stone-200' : 'text-red-500'}`}>
-                  {formatRupiah(a.saldo)}
-                </p>
-              </div>
-            ))}
-            {akunTunai.map((a) => (
-              <div key={a.id} className="flex items-center justify-between px-5 py-2.5">
-                <div className="flex items-center gap-2 min-w-0">
-                  <p className="text-sm text-stone-600 dark:text-stone-300 truncate">{a.nama}</p>
-                  <span className="text-[10px] text-stone-400 dark:text-zinc-500 uppercase tracking-wider shrink-0">Tunai</span>
-                </div>
-                <p className={`text-sm font-semibold num tabular-nums shrink-0 ${a.saldo >= 0 ? 'text-stone-800 dark:text-stone-200' : 'text-red-500'}`}>
-                  {formatRupiah(a.saldo)}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* G. Transaksi terakhir */}
+      <RecentTransactions items={data.recentTx} />
+    </div>
+  )
+}
 
-        {/* Pajak strip — ultra compact */}
-        <TaxStrip tax={tax} />
-      </div>
-
-      {/* CHART — cashflow harian (single, fokus) */}
-      <div className="surface overflow-hidden">
-        <div className="px-5 py-3.5 border-b border-stone-100 dark:border-border flex items-center justify-between">
-          <div>
-            <p className="text-sm font-semibold text-stone-800 dark:text-stone-200 tracking-tight">Cashflow Harian</p>
-            <p className="text-[11px] text-stone-400 dark:text-zinc-500 mt-0.5">Kas masuk vs keluar — 14 hari terakhir</p>
-          </div>
-        </div>
-        <div className="p-4">
-          <CashflowChart data={charts.daily} />
-        </div>
+/* ──────────────────────────────────────────────────────────────────
+   B. Hero — Total Kas
+   ────────────────────────────────────────────────────────────── */
+function TotalKasHero({ total, delta7 }: { total: number; delta7: number }) {
+  const up = delta7 > 0
+  const down = delta7 < 0
+  return (
+    <div className="relative overflow-hidden rounded-3xl border border-white/[0.06] bg-[#191919] p-6 text-white shadow-[var(--shadow-card)] dark:bg-[#0F0F0F]">
+      <p className="text-[11px] font-semibold uppercase tracking-widest text-white/45">Total Kas</p>
+      <p className="mt-2 num tabular-nums text-[2.6rem] font-bold leading-none tracking-[-0.03em]">
+        {formatCompact(total)}
+      </p>
+      <div className="mt-3 flex items-center gap-1.5 text-[12px]">
+        {up && (
+          <>
+            <span className="inline-flex items-center gap-0.5 font-semibold num tabular-nums" style={{ color: '#35C892' }}>
+              <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.5} />
+              {formatCompact(delta7)}
+            </span>
+            <span className="text-white/40">· 7 hari terakhir</span>
+          </>
+        )}
+        {down && (
+          <>
+            <span className="inline-flex items-center gap-0.5 font-semibold num tabular-nums text-white/75">
+              <ArrowDownRight className="h-3.5 w-3.5" strokeWidth={2.5} />
+              {formatCompact(Math.abs(delta7))}
+            </span>
+            <span className="text-white/40">· 7 hari terakhir</span>
+          </>
+        )}
+        {!up && !down && <span className="text-white/45">Per hari ini</span>}
       </div>
     </div>
   )
 }
 
 /* ──────────────────────────────────────────────────────────────────
-   Modal Hero — full-width, subtle gradient, breakdown inline.
+   E. Kartu ringkasan
    ────────────────────────────────────────────────────────────── */
-
-function ModalHero({
-  total,
-  breakdown,
-  trend,
+function SummaryCard({
+  icon: Icon,
+  label,
+  value,
+  sub,
 }: {
-  total: number
-  breakdown: { label: string; value: string }[]
-  trend: { date: string; total: number }[]
+  icon: React.ElementType
+  label: string
+  value: string
+  sub: string
 }) {
-  // Hitung pct change 14d ke nilai sekarang
-  const first = trend[0]?.total ?? total
-  const pctChange = first > 0 ? ((total - first) / first) * 100 : 0
-  const up = pctChange >= 0
-  // Sembunyikan % bila baseline 14-hari-lalu mendekati nol — kalau tidak, angkanya
-  // meledak (mis. "804%") dan menyesatkan, bukan menjawab "berapa" dalam 3 detik.
-  const showPct = first > 0 && Math.abs(pctChange) < 100
+  return (
+    <div className="surface p-4">
+      <div className="flex items-center gap-1.5">
+        <Icon className="h-3.5 w-3.5 text-stone-400 dark:text-zinc-500" strokeWidth={2} />
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-400 dark:text-zinc-500">{label}</p>
+      </div>
+      <p className="mt-2 num tabular-nums text-xl font-bold tracking-tight text-stone-900 dark:text-zinc-50">{value}</p>
+      <p className="mt-1 text-[11px] text-stone-400 dark:text-zinc-500">{sub}</p>
+    </div>
+  )
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   F. Kesehatan peron
+   ────────────────────────────────────────────────────────────── */
+function PeronHealthRow({ kritis, perhatian }: { kritis: number; perhatian: number }) {
+  const total = kritis + perhatian
+  const parts: string[] = []
+  if (kritis > 0) parts.push(`${kritis} kritis`)
+  if (perhatian > 0) parts.push(`${perhatian} perlu perhatian`)
+  const aman = total === 0
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-black/[0.06] dark:border-white/[0.07] bg-white dark:bg-[#0F0F0F] p-5 sm:p-6">
-      {/* Baris atas: label + delta */}
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-zinc-500">Total Modal Berputar</p>
-        {showPct && (
-          <span className="inline-flex items-center gap-1 text-[11px] font-semibold num tabular-nums text-stone-500 dark:text-zinc-400 shrink-0">
-            {up ? '▲' : '▼'} {Math.abs(pctChange).toFixed(1)}%
-            <span className="font-normal text-stone-400 dark:text-zinc-500">14h</span>
-          </span>
+    <Link href="/peron/kesehatan" className="surface row-press flex items-center gap-3 p-4">
+      <span
+        className="grid h-9 w-9 shrink-0 place-items-center rounded-xl"
+        style={
+          aman
+            ? { backgroundColor: 'rgba(120,113,108,0.10)' }
+            : { backgroundColor: 'color-mix(in oklab, var(--warning) 14%, transparent)' }
+        }
+      >
+        <HeartPulse
+          className="h-4 w-4"
+          strokeWidth={2}
+          style={{ color: aman ? '#78716C' : 'var(--warning)' }}
+        />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold text-stone-900 dark:text-zinc-100">
+          {aman ? 'Semua peron normal' : parts.join(' · ')}
+        </p>
+        <p className="text-[11px] text-stone-400 dark:text-zinc-500">Kesehatan Peron</p>
+      </div>
+      <ChevronRight className="h-4 w-4 shrink-0 text-stone-300 dark:text-zinc-600" />
+    </Link>
+  )
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   G. Transaksi terakhir (ledger kas)
+   ────────────────────────────────────────────────────────────── */
+const KATEGORI_META: Record<string, { label: string; icon: React.ElementType }> = {
+  penerimaan_bga: { label: 'Penerimaan BGA', icon: TrendingUp },
+  tarik_bri: { label: 'Tarik Tunai', icon: Banknote },
+  bayar_peron: { label: 'Bayar Peron', icon: ShoppingCart },
+  modal_peron: { label: 'Modal Peron', icon: Coins },
+  kembali_modal: { label: 'Kembali Modal', icon: ArrowDownLeft },
+  biaya_operasional: { label: 'Biaya Operasional', icon: Receipt },
+  penyesuaian: { label: 'Penyesuaian', icon: ArrowLeftRight },
+  lainnya: { label: 'Lainnya', icon: CircleDollarSign },
+}
+
+type RecentTxRow = {
+  id: string
+  tanggal: string
+  arah: 'masuk' | 'keluar'
+  jumlah: number
+  kategori: string
+  catatan: string | null
+  akun: { nama: string } | null
+}
+
+function RecentTransactions({ items }: { items: RecentTxRow[] }) {
+  return (
+    <section>
+      <div className="mb-2.5 flex items-center justify-between px-0.5">
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-zinc-500">
+          Transaksi Terakhir
+        </p>
+        {items.length > 0 && (
+          <Link
+            href="/kas"
+            className="text-[11px] font-semibold text-[var(--brand)] transition-opacity hover:opacity-70"
+          >
+            Lihat semua
+          </Link>
         )}
       </div>
 
-      {/* Angka utama */}
-      <p className="mt-2.5 leading-none num tabular-nums tracking-[-0.035em] text-stone-900 dark:text-zinc-50">
-        <AnimatedRupiah value={total} />
-      </p>
-
-      {/* Sparkline full-width — isi ruang kosong & jadi anchor visual */}
-      <div className="mt-4 -mx-1">
-        <Sparkline data={trend.map((t) => t.total)} up={up} />
-      </div>
-
-      {/* Inline breakdown — chip style, bukan grid card */}
-      <div className="relative mt-4 flex flex-wrap gap-x-5 gap-y-2 pt-4 border-t border-stone-100 dark:border-white/[0.06]">
-        {breakdown.map((b, i) => (
-          <div key={b.label} className="flex items-center gap-2">
-            {i > 0 && <span className="hidden sm:inline h-3 w-px bg-stone-200 dark:bg-white/10" />}
-            <span className="text-[10px] uppercase tracking-wider text-stone-400 dark:text-zinc-500 font-medium">{b.label}</span>
-            <span className="text-[13px] font-semibold num tabular-nums text-stone-800 dark:text-zinc-200">{b.value}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-/* SVG sparkline full-width — kurva mulus, garis menyatu (tak "terputus"), tanpa dependency. */
-function Sparkline({ data, up }: { data: number[]; up: boolean }) {
-  if (data.length < 2) return null
-  const w = 300
-  const h = 56
-  // Ruang atas/bawah lega: hari-hari flat (tanpa aktivitas) tak menempel ke dasar SVG,
-  // jadi garis datar + bagian naik terbaca sebagai SATU garis, bukan baseline terpisah.
-  const padTop = 8
-  const padBottom = 16
-  const min = Math.min(...data)
-  const max = Math.max(...data)
-  const range = max - min || 1
-  const step = w / (data.length - 1)
-  const usableH = h - padTop - padBottom
-  const pts = data.map((v, i): [number, number] => [
-    i * step,
-    padTop + (1 - (v - min) / range) * usableH,
-  ])
-
-  // Catmull-Rom → cubic bezier (tension rendah, tanpa overshoot) untuk garis mengalir.
-  const t = 0.16
-  let line = `M ${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`
-  for (let i = 1; i < pts.length; i++) {
-    const p0 = pts[i - 1]
-    const p1 = pts[i]
-    const prev = pts[i - 2] ?? p0
-    const next = pts[i + 1] ?? p1
-    const c1x = p0[0] + (p1[0] - prev[0]) * t
-    const c1y = p0[1] + (p1[1] - prev[1]) * t
-    const c2x = p1[0] - (next[0] - p0[0]) * t
-    const c2y = p1[1] - (next[1] - p0[1]) * t
-    line += ` C ${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ${p1[0].toFixed(1)},${p1[1].toFixed(1)}`
-  }
-
-  const areaPath = `${line} L ${w},${h} L 0,${h} Z`
-  // Stroke netral via currentColor — konsisten dengan palet (arah terbaca dari bentuk).
-  const stroke = 'currentColor'
-  const id = `sl-grad-${up ? 'up' : 'dn'}`
-
-  return (
-    <svg
-      viewBox={`0 0 ${w} ${h}`}
-      className="w-full h-14 sm:h-16 text-[var(--brand)]"
-      preserveAspectRatio="none"
-      aria-hidden
-    >
-      <defs>
-        <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={stroke} stopOpacity="0.20" />
-          <stop offset="100%" stopColor={stroke} stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path d={areaPath} fill={`url(#${id})`} className="sl-fade" />
-      <path
-        d={line}
-        fill="none"
-        stroke={stroke}
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        vectorEffect="non-scaling-stroke"
-        pathLength={1}
-        className="sl-draw"
-      />
-    </svg>
-  )
-}
-
-/* Today strip — horizontal chip row, monokrom dengan accent kanan saja. */
-function TodayStrip({
-  items,
-}: {
-  items: { label: string; value: string; icon: React.ElementType; color: string }[]
-}) {
-  return (
-    <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:flex lg:flex-col lg:gap-3 lg:h-full">
-      {items.map((item) => (
-        <div
-          key={item.label}
-          className="rounded-xl border border-black/[0.06] dark:border-white/[0.06] bg-stone-50/60 dark:bg-white/[0.025] px-3 py-3 sm:px-4 sm:py-3.5 min-w-0 lg:flex-1 lg:flex lg:flex-col lg:justify-center"
-        >
-          <div className="flex items-center gap-1.5">
-            <item.icon className="h-3 w-3 text-stone-400 dark:text-zinc-500" strokeWidth={2} />
-            <p className="text-[10px] uppercase tracking-wider text-stone-400 dark:text-zinc-500 font-medium truncate">{item.label.replace(' Hari Ini', '')}</p>
-          </div>
-          <p className="mt-1.5 text-[15px] sm:text-base font-bold num tabular-nums text-stone-900 dark:text-zinc-100 truncate">{item.value}</p>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-/* Pajak — compact column dengan dot status */
-function TaxStrip({ tax }: { tax: any }) {
-  const items = [
-    {
-      label: 'PPN Bulan Ini',
-      value: formatCompact(tax.ppnThisMonth),
-      sub: 'Estimasi penjualan lunas',
-      status: 'info' as const,
-    },
-    {
-      label: 'PPN Bulan Lalu',
-      value: tax.ppnLastMonth?.statusSetor === 'sudah' ? 'Sudah Disetor' : 'Belum Disetor',
-      sub: tax.ppnLastMonth?.statusSetor === 'sudah' ? `Tgl ${tax.ppnLastMonth.tanggalSetor ?? '-'}` : 'JT akhir bulan ini',
-      status: (tax.ppnLastMonth?.statusSetor === 'sudah' ? 'done' : 'pending') as 'done' | 'pending',
-    },
-    {
-      label: 'PPh Pasal 25',
-      value: tax.pphLastMonth?.statusBayar === 'sudah' ? 'Sudah Dibayar' : 'Belum Dibayar',
-      sub: tax.pphLastMonth?.statusBayar === 'sudah' ? `Tgl ${tax.pphLastMonth.tanggalBayar ?? '-'}` : 'JT tgl 15',
-      status: (tax.pphLastMonth?.statusBayar === 'sudah' ? 'done' : 'pending') as 'done' | 'pending',
-    },
-  ]
-
-  return (
-    <div className="surface overflow-hidden">
-      <div className="px-5 py-3 border-b border-stone-100 dark:border-border flex items-center justify-between">
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400">Pajak</p>
-        <p className="text-[10px] text-stone-400">PPN 11% · PPh 25</p>
-      </div>
-      <div className="divide-y divide-stone-100 dark:divide-border">
-        {items.map((it) => {
-          // Netral: sudah = titik terisi, belum = titik berongga (ring). Status
-          // terbaca dari bentuk + label ("Sudah/Belum Disetor"), bukan warna.
-          const dotColor = it.status === 'done'
-            ? 'bg-foreground'
-            : it.status === 'pending'
-              ? 'bg-transparent border border-muted-foreground'
-              : 'bg-stone-300 dark:bg-zinc-600'
-          return (
-            <div key={it.label} className="px-5 py-2.5 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-[11px] text-stone-400 font-medium">{it.label}</p>
-                <p className="text-[10px] text-stone-400 mt-0.5">{it.sub}</p>
-              </div>
-              <div className="flex items-center gap-1.5 shrink-0">
-                <span className={`h-1.5 w-1.5 rounded-full ${dotColor}`} />
-                <p className="text-[12px] font-semibold num tabular-nums text-stone-800 dark:text-zinc-200">{it.value}</p>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-/* ──────────────────────────────────────────────────────────────────
-   Net Margin Glance + Harga Acuan Reference
-   Two-up premium glance bar — owner langsung lihat profitabilitas
-   dan harga lapangan terbaru tanpa pindah halaman.
-   ────────────────────────────────────────────────────────────── */
-
-type HargaLatest = {
-  produk: string
-  current: { hargaLapangan: number; selisihJualBga: number; tanggalBerlaku: string } | null
-  previous: { hargaLapangan: number } | null
-  delta: number
-}
-
-function NetMarginAndHarga({
-  netMarginPct,
-  estimasiLaba,
-  totalPembelian,
-  totalRevenue,
-  hargaLatest,
-}: {
-  netMarginPct: number
-  estimasiLaba: number
-  totalPembelian: number
-  totalRevenue: number
-  hargaLatest: HargaLatest[]
-}) {
-  // Klasifikasi warna margin — health visual
-  const healthy = netMarginPct >= 1.5
-  const moderate = netMarginPct >= 0.5 && netMarginPct < 1.5
-  // Palet netral: angka mendominasi lewat ukuran/berat, bukan warna. Tingkat sehat
-  // tetap terbaca dari lebar bar + skala 0 / 1.5 / 3%+.
-  const marginTone = 'text-stone-900 dark:text-zinc-50'
-  const marginBar = healthy
-    ? 'bg-stone-900 dark:bg-zinc-100'
-    : moderate
-      ? 'bg-stone-500 dark:bg-zinc-400'
-      : 'bg-stone-300 dark:bg-zinc-600'
-
-  // Skala bar — 3% margin = 100% bar (TBS trading umumnya tipis)
-  const barWidth = Math.max(4, Math.min(100, (netMarginPct / 3) * 100))
-
-  return (
-    <div className="grid gap-3 grid-cols-1 lg:grid-cols-2">
-      {/* Net Margin Glance */}
-      <div className="surface press-card p-5 sm:p-6">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-1.5">
-              <Sparkles className="h-3 w-3 text-stone-400 dark:text-zinc-500" strokeWidth={2} />
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Margin Dagang</p>
-            </div>
-            <div className="mt-3 flex items-baseline gap-1.5">
-              <span className={`text-[2.25rem] sm:text-[2.6rem] leading-none font-bold num tabular-nums tracking-[-0.03em] ${marginTone}`}>
-                {netMarginPct.toFixed(2)}
-              </span>
-              <span className={`text-base font-semibold ${marginTone}`}>%</span>
-            </div>
-            <p className="mt-1.5 text-[11px] text-stone-400 dark:text-zinc-500">
-              {formatCompact(estimasiLaba)} dari {formatCompact(totalPembelian)} pembelian · sebelum biaya operasional
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-[10px] uppercase tracking-wider text-stone-400 dark:text-zinc-500 font-medium">Revenue</p>
-            <p className="mt-1 text-[13px] font-semibold text-stone-700 dark:text-zinc-300 num tabular-nums">
-              {formatCompact(totalRevenue)}
-            </p>
-          </div>
-        </div>
-        {/* Margin health bar */}
-        <div className="mt-5 h-1.5 w-full rounded-full bg-stone-100 dark:bg-white/[0.06] overflow-hidden">
-          <div
-            className={`h-full rounded-full transition-all duration-700 ${marginBar}`}
-            style={{ width: `${barWidth}%` }}
-          />
-        </div>
-        <div className="mt-1.5 flex items-center justify-between text-[10px] text-stone-400 dark:text-zinc-500 font-medium tabular-nums">
-          <span>0%</span>
-          <span>1.5%</span>
-          <span>3%+</span>
-        </div>
-      </div>
-
-      {/* Harga Acuan Reference */}
-      <div className="surface press-card overflow-hidden">
-        <div className="px-5 py-3 border-b border-stone-100 dark:border-border flex items-center justify-between">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Harga Lapangan</p>
-          <a
-            href="/harga"
-            className="text-[10px] uppercase tracking-wider text-stone-500 dark:text-zinc-400 hover:text-[var(--brand)] font-medium transition-colors"
-          >
-            Kelola →
-          </a>
-        </div>
-        <div className="grid grid-cols-2">
-          {hargaLatest.map(({ produk, current, delta }, idx) => {
-            const up = delta > 0
-            const down = delta < 0
-            const DeltaIcon = up ? ArrowUpRight : down ? ArrowDownRight : null
-            const deltaTone = up
-              ? 'text-stone-600 dark:text-zinc-300'
-              : down
-                ? 'text-stone-500 dark:text-zinc-400'
-                : 'text-stone-400 dark:text-zinc-500'
+      {items.length === 0 ? (
+        <EmptyState icon={Wallet} title="Belum ada transaksi" description="Transaksi kas terakhir akan muncul di sini." />
+      ) : (
+        <div className="surface divide-y divide-stone-100 dark:divide-border overflow-hidden">
+          {items.map((t) => {
+            const meta = KATEGORI_META[t.kategori] ?? KATEGORI_META.lainnya
+            const Icon = meta.icon
+            const masuk = t.arah === 'masuk'
+            const sub = [t.akun?.nama, t.catatan?.trim()].filter(Boolean).join(' · ')
             return (
-              <div
-                key={produk}
-                className={`px-4 py-3 border-stone-100 dark:border-border ${idx % 2 === 0 ? 'border-r' : ''} ${idx < hargaLatest.length - 2 ? 'border-b' : ''}`}
-              >
-                <p className="text-[11px] font-mono font-semibold text-stone-500 dark:text-zinc-300 truncate">{produk}</p>
-                {current ? (
-                  <div className="mt-1 flex items-baseline gap-1.5">
-                    <p className="text-[15px] font-bold num tabular-nums text-stone-900 dark:text-zinc-50 leading-none">
-                      Rp {current.hargaLapangan.toLocaleString('id-ID')}
-                    </p>
-                    {delta !== 0 && DeltaIcon && (
-                      <span className={`inline-flex items-center text-[10px] font-semibold num tabular-nums ${deltaTone}`}>
-                        <DeltaIcon className="h-3 w-3" strokeWidth={2.5} />
-                        {Math.abs(delta).toLocaleString('id-ID')}
-                      </span>
-                    )}
-                  </div>
-                ) : (
-                  <p className="mt-1 text-[13px] text-stone-400 dark:text-zinc-600">—</p>
-                )}
+              <div key={t.id} className="flex items-center gap-3 px-4 py-3">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-stone-100 dark:bg-white/[0.06]">
+                  <Icon className="h-4 w-4 text-stone-600 dark:text-zinc-300" strokeWidth={2} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-stone-900 dark:text-zinc-100">{meta.label}</p>
+                  {sub && <p className="truncate text-[11px] text-stone-400 dark:text-zinc-500">{sub}</p>}
+                </div>
+                <div className="shrink-0 text-right">
+                  <p
+                    className="num tabular-nums text-sm font-bold"
+                    style={masuk ? { color: 'var(--masuk)' } : undefined}
+                  >
+                    <span className={masuk ? '' : 'text-stone-900 dark:text-zinc-100'}>
+                      {masuk ? '+' : '−'}{formatCompact(t.jumlah)}
+                    </span>
+                  </p>
+                  <p className="mt-0.5 text-[10px] text-stone-400 dark:text-zinc-500">{formatTanggalPendek(t.tanggal)}</p>
+                </div>
               </div>
             )
           })}
         </div>
-      </div>
-    </div>
-  )
-}
-
-/* ──────────────────────────────────────────────────────────────────
-   Smart Insights — strip alerts kontekstual (max 3 chip).
-   Tampilkan hanya bila ada kondisi actionable. Aman = sembunyi total.
-   ────────────────────────────────────────────────────────────── */
-
-function SmartInsights({ items }: { items: Insight[] }) {
-  const iconMap = {
-    piutang: Clock,
-    harga: CircleDollarSign,
-    pajak: AlertCircle,
-    margin: TrendingUp,
-  }
-  const toneMap = {
-    warn: {
-      bg: 'bg-amber-500/[0.10] dark:bg-amber-500/[0.08]',
-      border: 'border-amber-500/20',
-      icon: 'text-amber-600 dark:text-amber-400',
-      dot: 'bg-amber-500',
-    },
-    info: {
-      bg: 'bg-muted',
-      border: 'border-border',
-      icon: 'text-muted-foreground',
-      dot: 'bg-muted-foreground',
-    },
-    good: {
-      bg: 'bg-muted',
-      border: 'border-border',
-      icon: 'text-foreground',
-      dot: 'bg-foreground',
-    },
-  } as const
-
-  return (
-    <div className="grid gap-2 sm:grid-cols-3">
-      {items.map((it) => {
-        const Icon = iconMap[it.icon]
-        const tone = toneMap[it.tone]
-        const Wrapper: any = it.href ? 'a' : 'div'
-        return (
-          <Wrapper
-            key={it.id}
-            href={it.href}
-            className={`group flex min-w-0 items-center gap-3 rounded-2xl border ${tone.border} ${tone.bg} px-3.5 py-3 transition duration-200 ease-out ${it.href ? 'hover:-translate-y-0.5 cursor-pointer hover:bg-stone-50 dark:hover:bg-white/[0.04]' : ''}`}
-          >
-            <div className={`relative flex h-8 w-8 items-center justify-center rounded-xl ${tone.bg} shrink-0`}>
-              <Icon className={`h-4 w-4 ${tone.icon}`} strokeWidth={2.25} />
-              <span className={`absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full ${tone.dot}`} />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[12px] font-semibold text-stone-900 dark:text-zinc-100 truncate leading-tight">{it.label}</p>
-              {it.detail && (
-                <p className="text-[11px] text-stone-500 dark:text-zinc-400 tabular-nums truncate mt-0.5">{it.detail}</p>
-              )}
-            </div>
-            {it.href && (
-              <span className="text-[10px] uppercase tracking-wider font-semibold text-stone-400 dark:text-zinc-500 group-hover:text-stone-700 dark:group-hover:text-zinc-300 transition-colors shrink-0">
-                →
-              </span>
-            )}
-          </Wrapper>
-        )
-      })}
-    </div>
+      )}
+    </section>
   )
 }
