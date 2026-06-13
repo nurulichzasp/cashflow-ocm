@@ -9,7 +9,7 @@ import { BiayaFormDialog } from '../biaya/biaya-form-dialog'
 type PeronOption = { id: string; nama: string; keuntunganPerKg: number }
 type AkunOption = { id: string; nama: string; tipe: string }
 
-const tile = 'tactile flex flex-col items-center gap-1.5 outline-none'
+const tile = 'tactile flex flex-col items-center gap-1.5 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background'
 const square =
   'grid h-14 w-14 place-items-center rounded-2xl border border-stone-200/80 bg-card text-stone-700 shadow-[var(--shadow-card)] dark:border-white/[0.07] dark:text-zinc-200'
 const squarePrimary =

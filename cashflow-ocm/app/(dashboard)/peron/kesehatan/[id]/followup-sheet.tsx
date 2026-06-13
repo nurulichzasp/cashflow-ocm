@@ -57,7 +57,7 @@ export function FollowupSheet({ peronId, status }: { peronId: string; status: st
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger
-        className="tactile inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--brand-solid)] text-base font-semibold text-white shadow-[0_8px_24px_rgba(14,122,88,0.35)] hover:brightness-110 active:scale-[0.98]"
+        className="tactile inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[var(--brand-solid)] text-base font-semibold text-white shadow-[0_8px_24px_rgba(14,122,88,0.35)] hover:brightness-110 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2"
       >
         <Plus className="h-5 w-5" strokeWidth={2.5} /> Tindak Lanjut
       </SheetTrigger>
@@ -102,7 +102,7 @@ export function FollowupSheet({ peronId, status }: { peronId: string; status: st
           <button
             onClick={submit}
             disabled={pending}
-            className="tactile h-12 w-full rounded-xl bg-[var(--brand-solid)] text-base font-semibold text-white hover:brightness-110 active:scale-[0.98] disabled:opacity-60"
+            className="tactile h-12 w-full rounded-xl bg-[var(--brand-solid)] text-base font-semibold text-white hover:brightness-110 active:scale-[0.98] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2"
           >
             {pending ? 'Menyimpan…' : 'Simpan'}
           </button>

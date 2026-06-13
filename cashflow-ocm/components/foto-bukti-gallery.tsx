@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { X, ChevronLeft, ChevronRight, ImageOff } from 'lucide-react'
 import { fotoUrl } from '@/lib/foto-url'
 
@@ -21,6 +21,17 @@ export function FotoBuktiGallery({ urls, maxThumbnails = 4 }: Props) {
   function closeLightbox() { setLightboxIdx(null) }
   function prev() { setLightboxIdx((i) => (i !== null ? (i - 1 + urls.length) % urls.length : 0)) }
   function next() { setLightboxIdx((i) => (i !== null ? (i + 1) % urls.length : 0)) }
+
+  useEffect(() => {
+    if (lightboxIdx === null) return
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setLightboxIdx(null)
+      else if (e.key === 'ArrowLeft') setLightboxIdx((i) => (i !== null ? (i - 1 + urls.length) % urls.length : 0))
+      else if (e.key === 'ArrowRight') setLightboxIdx((i) => (i !== null ? (i + 1) % urls.length : 0))
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [lightboxIdx, urls.length])
 
   return (
     <>
@@ -48,6 +59,9 @@ export function FotoBuktiGallery({ urls, maxThumbnails = 4 }: Props) {
 
       {lightboxIdx !== null && (
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Pratinjau foto ${lightboxIdx + 1} dari ${urls.length}`}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/85"
           onClick={closeLightbox}
         >
@@ -64,6 +78,8 @@ export function FotoBuktiGallery({ urls, maxThumbnails = 4 }: Props) {
             <button
               type="button"
               onClick={closeLightbox}
+              autoFocus
+              aria-label="Tutup pratinjau"
               className="absolute -top-3 -right-3 h-8 w-8 rounded-full bg-white text-stone-800 flex items-center justify-center shadow-lg hover:bg-stone-100"
             >
               <X className="h-4 w-4" />
@@ -74,6 +90,7 @@ export function FotoBuktiGallery({ urls, maxThumbnails = 4 }: Props) {
                 <button
                   type="button"
                   onClick={prev}
+                  aria-label="Foto sebelumnya"
                   className="absolute left-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70"
                 >
                   <ChevronLeft className="h-5 w-5" />
@@ -81,6 +98,7 @@ export function FotoBuktiGallery({ urls, maxThumbnails = 4 }: Props) {
                 <button
                   type="button"
                   onClick={next}
+                  aria-label="Foto berikutnya"
                   className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70"
                 >
                   <ChevronRight className="h-5 w-5" />

@@ -18,12 +18,16 @@ export function ThemeSelector() {
   if (!mounted) return null
 
   return (
-    <div className="flex gap-3">
+    <div className="flex gap-3" role="radiogroup" aria-label="Pilih tema tampilan">
       {options.map(({ value, label, icon: Icon, desc }) => {
         const active = theme === value
         return (
           <button
             key={value}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            aria-label={`${label} — ${desc}`}
             onClick={() => setTheme(value)}
             className={cn(
               'flex flex-1 flex-col items-center gap-2.5 p-4 rounded-xl border-2 transition-all duration-200',
@@ -54,13 +58,17 @@ export function ThemeToggle() {
   if (!mounted) return null
 
   return (
-    <div className="flex items-center gap-0.5 p-1 rounded-lg bg-white/[0.05]">
-      {([['light', Sun], ['system', Monitor], ['dark', Moon]] as const).map(([val, Icon]) => (
+    <div className="flex items-center gap-0.5 p-1 rounded-lg bg-white/[0.05]" role="radiogroup" aria-label="Tema tampilan">
+      {([['light', Sun, 'Terang'], ['system', Monitor, 'Otomatis'], ['dark', Moon, 'Gelap']] as const).map(([val, Icon, lbl]) => (
         <button
           key={val}
+          type="button"
+          role="radio"
+          aria-checked={theme === val}
+          aria-label={lbl}
           onClick={() => setTheme(val)}
           className={cn(
-            'flex items-center justify-center h-6 w-6 rounded-md transition-all duration-150',
+            'tap-pad flex items-center justify-center h-6 w-6 rounded-md transition-all duration-150',
             theme === val
               ? 'bg-white text-stone-900 shadow-sm'
               : 'text-stone-500 hover:text-stone-300'
