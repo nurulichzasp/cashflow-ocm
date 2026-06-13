@@ -1,137 +1,227 @@
-# Snapshot Aplikasi — Cashflow OCM (keadaan faktual kode)
+# 📸 Snapshot Teknis — Cashflow OCM
 
-> Potret **apa yang benar-benar ada di kode** per tanggal di bawah. Dipakai sebagai sumber kebenaran saat konsultasi spec. Bila berbeda dengan dokumen lain, **utamakan file ini**.
+> **Sumber kebenaran kode. Diverifikasi langsung dari source (bukan ingatan/README/snapshot lama).**
+> HEAD lokal: `0fe0f0d` · Branch `main` = `origin/main` (0 ahead / 0 behind) · **fully deployed** ke produksi (Vercel `cashflow-ocm-d61i` → omandacerli.com).
+> Status pohon kerja saat snapshot dibuat: **bersih** (tak ada perubahan kode belum-commit). Snapshot ini menggantikan snapshot 13 Jun pagi (HEAD `d439cfd`).
+
+---
+
+## Perubahan sejak 13 Juni 2026 (HEAD `d439cfd` → `0fe0f0d`)
+
+21 commit. Tiga gelombang:
+
+### A. Fitur & redesign (6 commit) — terverifikasi
+| Commit | Perubahan |
+|---|---|
+| `589ebac` | **Ganti email login** pengguna (owner-only) — action `updateUserEmail` di `pengaturan/actions.ts` (ganti `user.email` Better Auth, sesi tak putus). ✅ landing. |
+| `e13e111` | Entri app **selalu** WelcomeScreen → login (hapus auto-skip authed); `manifest.start_url` `/` |
+| `33fb5da` | **Redesain Beranda** jadi pusat kendali mobile-first (hero Total Kas, 4 aksi cepat, carousel akun, margin/volume, kesehatan peron, transaksi) |
+| `81a56e8` | **Command Palette** upgrade → pencarian data lintas modul (`lib/search-actions.ts` `searchAll`) |
+| `4bd6f37` | Pembelian: ringkasan dobel → satu hero filter-aware |
+| `034f0fa` | Penjualan: 4-kartu → hero premium |
+
+### B. Sistem warna semantik (3 commit) — terverifikasi di `globals.css`
+- `ab6b781` Token fungsional `--ok/--warn/--crit` + `.pill-*`/`.text-*` + komponen `StatusPill`; CTA emerald (Button default); hero emerald gelap; saldo/laba negatif merah-teredam.
+- `1cbaad9`, `6ebf4a9` Polish hero Total Kas (akhirnya: dasar netral `#18181B` + aksen hijau tipis, sama di light/dark).
+
+### C. Audit UI/UX menyeluruh — 12 batch (`d342a7a` → `0fe0f0d`) — **delta utama**
+| Batch (commit) | Area & file yang berubah |
+|---|---|
+| 1 `d342a7a` | **5 P0**: badge TBS `harga-table.tsx`; badge Aktif peron → `StatusPill`; mutasi `modal-history-table.tsx` → `.text-masuk/.text-keluar`; padding `followup-sheet.tsx`; label "Hapus Transaksi" `settings-client.tsx` → `.text-crit` |
+| 2 `65a4280` | **Token destruktif/status**: tombol hapus `bg-red-600` → `Button variant="destructive"`; trash hover → token; asterisk/Keluar/Danger Zone → `.text-crit`; untung → `.text-ok`; badge amber → `--warn`; offline wifi → `#FBBF24`; Ekspor green → netral (penjualan/kas/pembelian/harga/peron-table, profil-client, profile-dialog, notifikasi, offline) |
+| 3 `b18c89f` | **a11y/focus/tap**: hapus `maximumScale:1` (`layout.tsx`); `button.tsx` focus ring base → `ring-brand`; quick-actions focus; followup-sheet CTA focus; `theme-selector` `role=radiogroup`; Dialog/Sheet close `.tap-pad`; lightbox `foto-bukti-gallery` role=dialog+Esc+aria |
+| 4 `4f1456b` | **Dark parity + loading**: `CashflowChart` tooltip hex → token; biaya/harga thead+hover `dark:`; kartu mobile biaya/harga/kas → `.surface`; bottom-nav surface adaptif light (`bg-white/60`); +4 `loading.tsx` (pengaturan, profil, peron/[id], peron/kesehatan/[id]) |
+| 5 `62276a8` | **Polish**: biaya pill kategori → `StatusPill`; amber sisa → `--warn`; mikrocopy ("Transksi"→"Transaksi", "Zona Berbahaya", sr-only "Tutup"); ikon (Shield→Palette, FotoCount ImageOff→Image); kas hapus `dark:text-[#6B7280]`; `error.tsx` 60vh→60dvh |
+| 6 `43524ab` | **Tap/ARIA/loading**: laporan tab `py-3`+`role=tablist`; toggle PPN/PPh `.tap-pad`+aria; SEMUA skeleton (`skeletons.tsx` + semua `loading.tsx`) `aria-hidden`→`role=status`+sr-only "Memuat…"; dashboard skeleton hero #18181B; settings tabel pengguna hex→`bg-card`; penjualan No.Invoice `<textarea>`→`<Textarea>` |
+| 7 `55e14fa` | truncate nama panjang `peron/[id]`; CLS avatar `profil-client`; tap-pad hapus-baris pembelian; aria-hidden glyph carousel |
+| 8 `cd1d6c0` | **Portal/themeColor/foto**: `/p/[token]` dipaksa terang (`colorScheme:light` + `bg-white`→hex); `layout.tsx` `themeColor` statis → **adaptif** (light `#FAFAF9`/dark `#191919`); galeri foto onError → placeholder |
+| 9 `b42ff01` | **Profil & Pajak → SERVER**: actions `getAppSettings`/`setAppSettings` (batch, owner-only); `perusahaan`/`pajak` page ambil nilai server-side → initial props (tanpa flash, fix flicker modalAwal); localStorage tinggal fallback. **Konsekuensi: edit profil/pajak kini owner-only** (tombol disabled utk non-owner) |
+| 10 `0594b2d` | **Validasi inline Tambah Pengguna** (`FieldError` per field + `aria-invalid` + `noValidate`); fix placeholder sandi "6"→"8" |
+| 11 `fbcabde` | **Validasi inline pembelian per-baris** (baris setengah-isi ditandai merah, tak di-drop diam-diam) |
+| 12-13 `0fe0f0d` | **CTA emerald** (9 tombol Simpan/Tambah di settings/profile-dialog/thermal hapus override `bg-stone-900/dark:bg-white` → Button default emerald); **validasi inline Pajak** (4 field: tarif 0–100%, nominal ≥0) |
 
 ---
 
 ## 1. Stack & Versi
 
-| Komponen | Versi (package.json) |
+| Komponen | Versi (`package.json`) | Catatan |
+|---|---|---|
+| Next.js | `^16.2.9` | App Router; build **Turbopack** |
+| React / React DOM | `^19.2.7` | |
+| Better Auth | `^1.6.16` | email+password, sesi cookie |
+| Drizzle ORM / Kit | `^0.45.2` / `^0.31.10` | |
+| @libsql/client | `^0.17.3` | Turso (SQLite) |
+| @base-ui/react | `^1.5.0` | Button, Sheet, Select, AlertDialog, Dropdown |
+| @radix-ui (dialog/checkbox/select/slot) | dialog `^1.1.16`, checkbox `^1.3.4`, select `^2.3.0`, slot `^1.2.5` | ⚠️ **dua library primitif** (lihat §6) |
+| @vercel/blob | `^2.4.0` | upload foto + backup terjadwal |
+| lucide-react | `^1.17.0` | ikon |
+| motion | `^12.40.0` | animasi (`motion/react`) |
+| next-themes | `^0.4.6` | light/dark via class |
+| recharts | `^3.8.1` | chart |
+| react-hook-form / @hookform/resolvers / zod | `^7.78.0` / `^5.4.0` / `^4.4.3` | |
+| sonner | `^2.0.7` | toast |
+| tailwindcss / @tailwindcss/postcss | `^4` | Tailwind v4 (`@theme` di CSS) |
+| tailwind-merge / clsx / cva | `^3.6.0` / `^2.1.1` / `^0.7.1` | |
+| date-fns | `^4.4.0` | |
+| xlsx | CDN `0.20.3` (sheetjs) | parse BAST + backup XLSX |
+| typescript / tsx | `^5` / `^4.22.4` | |
+| shadcn | `^4.11.0` | |
+
+**Build & deploy** (`next.config.ts`): `typescript.ignoreBuildErrors: false` (type error = build GAGAL), `turbopack: {}`, `serverExternalPackages` (better-auth, @libsql/client, drizzle-orm, xlsx, dll). Deploy: push `main` → auto-deploy Vercel. Script `vercel-build`: `tsx scripts/add-replas-fields.ts && tsx scripts/add-app-settings-table.ts && next build` (migrasi idempotent dulu, baru build).
+
+**Cron** (`vercel.json`): `/api/cron/daily-summary?mode=morning` @ `0 0 * * *` & `?mode=evening` @ `0 11 * * *` (UTC).
+
+**Env penting** (`.env.example`): `TURSO_CONNECTION_URL`, `TURSO_AUTH_TOKEN`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `NEXT_PUBLIC_APP_URL`, `BLOB_READ_WRITE_TOKEN`, `CRON_SECRET` (wajib prod, kalau tidak cron 401), `BACKUP_TOKEN`, `TELEGRAM_BOT_TOKEN`/`_CHAT_ID`/`_WEBHOOK_SECRET` (opsional), `NEXT_PUBLIC_OCM_WHATSAPP` (opsional, tombol WA portal), `ADDITIONAL_TRUSTED_ORIGINS`.
+
+---
+
+## 2. Skema Database — **24 tabel** (`lib/db/schema.ts`, SQLite/Turso)
+
+### KONVENSI NILAI (✅ terverifikasi dari schema)
+- ✅ **Uang = `integer`** (rupiah bulat): `saldoAwal`, `jumlah`, `hargaLapangan`, `totalBeli/Jual`, `keuntungan`, `totalBersih/Nilai`, `nominal` (pph), `totalPpn`, `keuntunganPerKg`, `selisihJualBga`.
+- ✅ **Kg/tonase = `real`** (berat bisa pecahan): `pembelian.tonase`, `pembelianDetail.tonase`, `penjualanDetail.qtyKg`, `peronSnapshot.totalKg`, semua `share*`.
+- ✅ **Tanggal transaksi = `text` "YYYY-MM-DD"**: `tanggal`, `tanggalBerlaku/Bayar/Setor/BayarBga`, `tanggalReplas(Sampai)`, `weekStart`, `lastSetorDate`; bulan pajak `text` "YYYY-MM".
+- ✅ **Timestamp sistem = `integer` (unixepoch)**: `createdAt/updatedAt/computedAt/issuedAt/lastViewedAt` (`{ mode: 'timestamp' }` default `(unixepoch())`).
+- **ID**: kebanyakan `text` PK default `(lower(hex(randomblob(8))))`; Better Auth pakai `text` id; `peronSnapshot`/`peronFollowup` pakai `integer` autoincrement.
+
+### Tabel per kelompok
+| Kelompok | Tabel |
 |---|---|
-| Next.js | 16.2.9 (App Router) |
-| React / React DOM | 19.2.7 |
-| TypeScript | 5.x (strict, `ignoreBuildErrors: false`) |
-| Tailwind CSS | v4 |
-| Drizzle ORM | 0.45.2 |
-| Better Auth | **1.6.16** (bukan 1.6.7 lagi) |
-| libSQL / Turso client | 0.17.3 |
-| motion (Framer Motion) | 12.40 |
-| recharts | 3.8 |
-| zod | 4.4 · react-hook-form 7.78 · sonner 2.0 |
+| **Auth (Better Auth)** | `user`, `session`, `account`, `verification` |
+| **Master data** | `akun_kas`, `peron`, `modal_peron`, `harga_acuan` |
+| **Transaksi inti** | `pembelian` (+`pembelian_detail`, `pembelian_foto`), `penjualan` (+`penjualan_detail`), `biaya_operasional` (+`biaya_foto`), `transaksi_kas` |
+| **Pajak / settings / audit** | `ppn_bulanan`, `pph_bulanan`, `app_settings` (key-value), `activity_log` |
+| **Kesehatan Peron** | `peron_snapshot`, `peron_health`, `peron_access`, `peron_followup` |
 
-**Build & deploy:**
-- Build command = **`next build` (Turbopack, default Next 16)**. ⚠️ Koreksi: app **TIDAK** lagi pakai `--webpack`; build mulus di Turbopack (sempat dicoba lock webpack lalu di-revert).
-- Deploy: Vercel. Domain produksi **`omandacerli.com`** (+ alias `cashflow-ocm-d61i.vercel.app`). Dua project Vercel; alur andal = `git push main` lalu `vercel --prod --yes`.
-- Env penting: `BETTER_AUTH_URL` (URL produksi), `BETTER_AUTH_SECRET`, `ADDITIONAL_TRUSTED_ORIGINS` (daftar origin tepercaya, koma), `TURSO_CONNECTION_URL/AUTH_TOKEN`, `BLOB_READ_WRITE_TOKEN`, `CRON_SECRET`, `BACKUP_TOKEN`, `TELEGRAM_BOT_TOKEN/CHAT_ID/WEBHOOK_SECRET`. Opsional: `NEXT_PUBLIC_OCM_WHATSAPP` (nomor WA → tombol chat di portal peron).
-- **Gerbang auth = `proxy.ts`** (Next 16 mengganti `middleware.ts`). Redirect path non-publik tanpa cookie sesi → `/login`. publicPaths antara lain: `/login`, `/api/auth`, `/api/cron`, `/api/peron-health`, `/api/backup`, `/api/telegram`, `/manifest.webmanifest`, `/sw.js`, `/offline`, `/` (welcome), `/p/` (portal peron).
+**Enum penting**: `user.role` text (default `viewer`); `pembelian.kategori` (OCM R1/R2/SAGU/BRDL/BRDL KTWM/TRYM/LMDM); `harga_acuan.produk` (TBS/BRDL KTWM/TRYM/LMDM); `transaksi_kas.kategori` (8 nilai); `transaksi_kas.arah` (masuk/keluar); `peron_health.status` (normal/perhatian/kritis/data_kurang).
+
+**Relasi inti**: `pembelian → peron, akunKas(sumberBayar), user`; `pembelian 1—N pembelian_detail/foto`; `penjualan 1—N penjualan_detail`; `biaya → akunKas, user, 1—N foto`; `transaksi_kas → akunKas`; `peron 1—N modal_peron/snapshot/followup, 1—1 peron_health/peron_access`. Foto & detail `onDelete: cascade`.
+
+**Idempotency**: `uniqueIndex` `idempotency_key` di 5 tabel transaksi — `modal_peron`, `pembelian`, `penjualan`, `biaya_operasional`, `transaksi_kas` (cegah dobel-submit).
 
 ---
 
-## 2. Skema Database (Drizzle / libSQL — SQLite)
+## 3. Modul & Route
 
-**Konvensi tipe (PENTING):**
-- **Uang = `integer` rupiah penuh** (tanpa desimal).
-- ⚠️ **Berat kg = `real`, BUKAN integer** (`tonase`, `qtyKg`, `total_kg` — berat bisa pecahan). Koreksi terhadap anggapan "uang & kg integer".
-- **Tanggal transaksi = `text` "YYYY-MM-DD"** (sudah WIB saat input). **Timestamp sistem** (`created_at` dll) = `integer` unixepoch.
-- **PK domain = `text` hex acak** (`lower(hex(randomblob(8)))`), kecuali tabel Better Auth (`text` id) dan `peron_snapshot`/`peron_followup` (`integer` autoincrement).
+### Halaman (`app/`)
+**Publik** (bypass auth proxy): `/` (welcome, exact-match), `/login`, `/offline`, `/p/[token]` (portal peron read-only). **Ter-gate** (butuh sesi, redirect `/login`): dashboard, pembelian, penjualan, kas, biaya, laporan, harga, peron, peron/[id], peron/kesehatan, peron/kesehatan/[id], profil, dan **pengaturan** + sub: `cadangan, harga, notifikasi, pajak, pengguna, perusahaan, printer, tampilan, tentang`. (26 `page.tsx` total.)
 
-### Better Auth (4 tabel)
-- `user` (id text PK, name, email unik, **role** text default `viewer`, **permissions** text/JSON, nickname/fullName/phone/address, dst).
-- `session`, `account`, `verification` — standar Better Auth.
+**Gate auth = `proxy.ts`** (BUKAN `middleware.ts` — Next 16). `publicPaths`: `/login, /api/auth, /api/cron, /api/peron-health, /api/backup, /api/telegram, /api/parse-bast, /manifest.webmanifest, /sw.js, /offline, /p/` (`/p/` **wajib trailing slash**). `/` di-handle `pathname === '/'` exact.
 
-### Domain inti
-- **`peron`** — id, kode (int, opsional), nama, kontak, alamat, status `aktif|nonaktif`, **keuntunganPerKg** (int, default 50), createdAt. *Peron = pelanggan OCM.*
-- **`modal_peron`** — DP/modal ke peron. peronId→peron, tanggal (text), jenis `tambah|kurang|kembali`, jumlah (int Rp), createdBy, idempotencyKey.
-- **`harga_acuan`** — tanggalBerlaku, produk `TBS|BRDL KTWM|BRDL TRYM|BRDL LMDM`, **hargaLapangan** (int), **selisihJualBga** (int, default 120).
-- **`pembelian`** (header tiket beli dari peron) — tanggal (text), kategori `OCM R1|OCM R2|OCMP SAGU|OCM BRDL|OCM BRDL KTWM|OCM BRDL TRYM|OCM BRDL LMDM`, **peronId**→peron, **tonase (real kg)**, hargaJual/hargaBeli (int), totalJual/totalBeli/keuntungan (int Rp), **statusBayarPeron `belum|lunas`**, **tanggalBayar** (text|null), **sumberBayarId**→akun_kas, createdBy, idempotencyKey. Field legacy noTid/nopol/supir nullable.
-- **`pembelian_detail`** — line item per TID: pembelianId→pembelian, tonase (real), hargaLapangan, subtotalBeli/Jual, keuntungan, tanggalReplas.
-- **`penjualan`** (ke BGA) — tanggal, noBast, noInvoice, statusBayar `belum|lunas`, tanggalBayarBga, **totalBersih/totalNilai** (int, nullable), createdBy, idempotencyKey.
-- **`penjualan_detail`** — produk `TBS|BRDL`, **qtyKg (real)**, hargaJual, subtotal.
-- **`biaya_operasional`** — tanggal, kategori `gaji|solar|transport|lainnya`, jumlah (int), akunSumberId→akun_kas, createdBy, idempotencyKey.
-- **`akun_kas`** — nama, tipe `bank|tunai`, **saldoAwal** (int), urutan.
-- **`transaksi_kas`** — buku kas. tanggal, akunId→akun_kas, **arah `masuk|keluar`**, jumlah (int), kategori `penerimaan_bga|tarik_bri|bayar_peron|modal_peron|kembali_modal|biaya_operasional|penyesuaian|lainnya`, refTabel/refId (tautan ke entitas sumber), transferGrup, createdBy, idempotencyKey.
-- **`pembelian_foto`**, **`biaya_foto`** — url foto bukti (Vercel Blob).
-- **`ppn_bulanan`** (bulan YYYY-MM, totalPpn, statusSetor) & **`pph_bulanan`** (bulan, nominal default 698917, statusBayar) — pajak.
-- **`activity_log`** — audit: userId, action, entityType, entityId, description, oldValues/newValues (JSON), ip/userAgent.
+### API Route (`app/api/`)
+| Route | Method | Auth (dari kode) | Fungsi |
+|---|---|---|---|
+| `/api/auth/[...all]` | GET, POST | Better Auth handler | Login/sesi/logout |
+| `/api/backup` | GET | sesi + **owner-only** | Download backup (XLSX/JSON) |
+| `/api/backup` | POST | `Bearer BACKUP_TOKEN` (timing-safe) | Backup terjadwal → Vercel Blob |
+| `/api/cron/daily-summary` | GET | `Bearer CRON_SECRET` / `?secret=` | Briefing pagi + rekap sore + rebuild kesehatan |
+| `/api/foto` | GET | sesi | Proxy foto dari Blob (whitelist host) |
+| `/api/health` | GET / POST | **owner-only** (POST butuh frasa `HAPUS-SEMUA-DATA`) | Diagnostik DB / **hapus semua data transaksi** |
+| `/api/metrics` | GET | sesi + `canViewFinance` | Metrik keuangan |
+| `/api/notify` | POST | sesi | Kirim notifikasi Telegram |
+| `/api/parse-bast` | POST | sesi (cek di handler) | Parse PDF/Excel BAST/rekap BGA |
+| `/api/peron-health/refresh` | GET | `Bearer CRON_SECRET` / `?secret=` | Rebuild cache kesehatan peron |
+| `/api/telegram/webhook` | POST / GET | header `X-Telegram-Bot-Api-Secret-Token` / `?secret=` + whitelist chat | Bot command / setup webhook |
+| `/api/upload-foto` | POST | sesi | Upload foto → Blob (validasi magic-bytes) |
 
-### Modul Peron baru (Kesehatan & Portal)
-- **`peron_snapshot`** — snapshot mingguan: peronId, weekStart (ISO Senin), **totalKg (real)**, setorCount, **share (real 0..1)**, isOperationalWeek (bool). Unik per (peron, minggu).
-- **`peron_health`** — status terkini per peron (1 baris): status `normal|perhatian|kritis|data_kurang`, shareCurrent/shareBase/shareDelta, declineWeeks, typicalGap, daysSinceLast, lastSetorDate, **seasonVerdict `musim|lari`**, isArchived (bool).
-- **`peron_followup`** — log tindak lanjut: triggeredStatus, contacted (bool), reason `harga_kalah|pindah_cv|masalah_operasional|memang_musim|lainnya`, note, outcome `kembali_normal|masih_pantau|hilang`, createdBy.
-- **`peron_access`** — token portal publik: peronId PK, **token** (64-hex unik), isActive (bool), issuedAt, lastViewedAt.
+### Server Actions (per modul) — gating dari kode
+Pola umum: **read** = `requireSession()`; **create/edit** = `requirePermission(role, 'canCreate'/'canEdit')`; **delete** = bervariasi (lihat §6).
+- **pembelian**: `createPembelian`(canCreate), `updatePembelian`(canEdit), `deletePembelian`(**canDelete**), `getPembelianList`, `getAkunKasList`, `getEstimasiLaba`, `getKeuntunganPerKg`, `getLatestHargaAcuan`, `getHargaAcuanListForProduk` (read=sesi).
+- **penjualan**: `createPenjualan`(canCreate), `updatePenjualanStatus`/`updatePenjualan`(canEdit), `deletePenjualan`(**owner-only**), `getPenjualanList`.
+- **kas**: `createTransaksiKas`(canCreate), `updateTransaksiKas`(canEdit, blok entri auto via `refTabel`), `deleteTransaksiKas`(**owner-only**), `getAkunKasList`, `getKasTransactions`.
+- **biaya**: `createBiayaOperasional`(canCreate), `updateBiayaOperasional`(canEdit), `deleteBiayaOperasional`(**canDelete**), `getBiayaList`.
+- **harga**: `createHargaAcuan`(canCreate), `deleteHargaAcuan`(**owner-only**), `getHargaList`, `getHargaAktif`.
+- **laporan**: `getLaporanData`, `getPajakData`, `getLabaRugiTahunan`, `getNeracaData` (semua `canViewFinance`).
+- **peron**: `createPeron`(canCreate), `updatePeron`(canEdit), `deletePeron`(**owner-only**), `addModalPeron`(canCreate), `deleteModalPeron`(**owner-only**), `getPeronList`, `getPeronById`.
+- **peron/health-actions**: `getPeronHealthList`, `getPeronHealthDetail`, `refreshPeronHealth`, `createFollowup`, `archivePeron` (sesi).
+- **peron/portal-actions**: `getPeronAccess`, `generatePeronToken`, `revokePeronToken` (sesi).
+- **pengaturan**: `updateProfile`(sesi); `addUser`/`deleteUser`/`updateUserRole`/`updateUserEmail`/`resetUserPassword`/`updateUserPermissions`/`updatePpnStatus`/`updatePphStatus`/`setAppSetting`/`setAppSettings` (**owner-only**); `getPpnList`/`getPphList`(canViewFinance); `getAppSetting`/`getAppSettings`(sesi).
 
-### ⚠️ Jawaban pertanyaan kunci
-- **Pencatatan PEMBAYARAN ke peron per peron_id:** **belum ada tabel ledger pembayaran terpisah** (jumlah/metode/cicilan). Pembayaran dilacak **per-tiket** lewat `pembelian.statusBayarPeron` (`belum`/`lunas`) + `pembelian.tanggalBayar` + `pembelian.sumberBayarId`. → **"Sisa belum dibayar" per peron = Σ `pembelian.totalBeli` yang `statusBayarPeron='belum'`.** (Portal peron sudah hitung begini.)
-- **Tonase per peron tersimpan di:** tabel **`pembelian`** (kolom `peron_id`, `tanggal`, `tonase` real-kg, `harga_beli`, `kategori`, `total_beli`). Rincian per TID di `pembelian_detail`.
-
----
-
-## 3. Modul & Route (App Router)
-
-**Halaman (login wajib kecuali ditandai publik):**
-- `/` — **Welcome screen** (publik; sudah login → redirect `/dashboard`). `app/loading.tsx` = splash branded saat cek sesi.
-- `/login` — form login (publik).
-- `/dashboard` — ringkasan: Total Modal Berputar + sparkline, kartu Pembelian/Penjualan/Biaya, **"Margin Dagang"** (dulu "Net Margin"/"Estimasi Laba" — = Σ markup peron, sebelum biaya operasional), harga lapangan, saldo rekening & kas.
-- `/pembelian`, `/penjualan`, `/kas`, `/biaya`, `/harga` — daftar + form (dialog/sheet) + filter.
-- `/peron` (+ `/peron/[id]` detail dengan kartu **Link Portal**).
-- `/peron/kesehatan` (Layar A: ringkasan + "Perlu Ditindaklanjuti" 🔴🟡 + collapsible) + `/peron/kesehatan/[id]` (Layar B: grafik share% + bar kg + verdict musim/lari + riwayat + form tindak lanjut + arsip).
-- `/laporan` — laba rugi (akrual), per peron, buku kas, pajak, neraca, tahunan.
-- `/pengaturan` (+ sub: perusahaan, pengguna, pajak, printer, tampilan, cadangan, harga, notifikasi, tentang).
-- **`/p/[token]`** — **Portal Peron PUBLIK, read-only** (di luar login & shell app). Tema terang. Tampil: Sisa Belum Dibayar, ringkasan periode, harga acuan, riwayat setoran & pembayaran — **hanya milik peron itu**. Token invalid → 404 ramah.
-- `/offline` — fallback PWA.
-
-**API routes:** `/api/auth/[...all]`, `/api/foto` & `/api/upload-foto` (Blob), `/api/metrics` (gate `canViewFinance`), `/api/cron/daily-summary` (Telegram + **rebuild kesehatan peron** sekalian), `/api/peron-health/refresh` (manual/tombol), `/api/backup`, `/api/telegram/webhook`, `/api/parse-bast`, `/api/health`, `/api/notify`.
-
-**Server actions** (per modul `actions.ts`): pembelian, penjualan, kas, biaya, harga, peron, laporan, pengaturan. Plus `peron/health-actions.ts` (list/detail/refresh/createFollowup/archivePeron) & `peron/portal-actions.ts` (generate/revoke/getPeronAccess token portal). Semua mutasi tulis `activity_log`; create uang pakai idempotency-key (anti-dobel).
+### RBAC (`lib/permissions.ts`)
+Peran: `owner, admin, kasir, akuntan, viewer`. Matrix 6 izin (`canCreate/Edit/Delete/ViewFinance/ManageUsers/ApproveTransactions`). `owner`=semua; `admin`=create/edit/delete/finance/approve (tanpa manage-users); `kasir`=create saja; `akuntan`/`viewer`=view-finance saja. Peran tak dikenal → `noPermissions` (**fail-closed**, role di-lowercase). `requirePermission()` lempar error utk server actions. **Visibilitas nav** (`nav-routes.ts` `parsePerms` + `visibleRoutes`): owner lihat semua; non-owner ikut permissions JSON per-modul; `/pengaturan` `ownerOnly`.
 
 ---
 
 ## 4. Struktur File (relevan)
-
 ```
 app/
-  (auth)/login
-  (dashboard)/{dashboard,pembelian,penjualan,kas,biaya,harga,laporan,
-              peron,peron/[id],peron/kesehatan,peron/kesehatan/[id],pengaturan/*}
-  p/[token]            ← portal publik
-  api/*                ← auth, foto, cron, peron-health, backup, telegram, dll
-  page.tsx (welcome) · loading.tsx (splash) · error.tsx · global-error.tsx · layout.tsx
-components/            ← UI bersama: ui/* (shadcn/base-ui), bottom-nav, sidebar,
-                         scroll-shell, mobile-header, fab, command-palette,
-                         welcome-screen, splash-screen, skeletons, empty-state, dll
+  (auth)/login/                 page
+  (dashboard)/                  layout, loading, error
+    dashboard/  pembelian/  penjualan/  kas/  biaya/  laporan/  harga/
+    peron/  peron/[id]/  peron/kesehatan/  peron/kesehatan/[id]/
+    profil/  pengaturan/{,harga,notifikasi,pajak,pengguna,perusahaan,printer,tampilan,tentang,cadangan}/
+    (tiap modul: page.tsx, loading.tsx, actions.ts, *-form-dialog.tsx, *-table.tsx)
+  api/ (12 route)  ·  p/[token]/  ·  offline/  ·  page.tsx (welcome)
+  layout.tsx  globals.css  manifest.ts  global-error.tsx
+components/
+  bottom-nav, mobile-header, mobile-page-header, scroll-shell, sidebar,
+  desktop-sidebar, swipe-navigator, fab, shortcut-grid, command-palette,
+  empty-state, skeletons, animated-rupiah, number-input,
+  foto-bukti-{gallery,uploader}, theme-{provider,selector}, profile-dialog,
+  welcome-screen, splash-screen, offline-indicator, date-range-{filter,inline}
+  charts/{CashflowChart,CashflowChartLazy}
+  ui/ (18 primitif: button, input, textarea, label, field-error, dialog, sheet,
+       alert-dialog, dropdown-menu, select, checkbox, switch, card, badge,
+       status-pill, separator, table, sonner) + origin/checkbox
 lib/
-  db/{index,schema}.ts · auth.ts · format.ts · permissions.ts · audit.ts · nav-routes.ts
-  peron-health/{config,week,rebuild,status-meta}.ts   ← otak kesehatan peron
-  peron-portal/data.ts                                ← data portal (server-only)
-proxy.ts              ← gerbang auth (pengganti middleware)
-scripts/              ← migrasi additif SQL langsung (add-*-table.ts)
+  auth, auth-client, db/{index,schema}, permissions, nav-routes,
+  nav-visibility-store, format, utils, foto-url, audit, backup, notification,
+  search-actions, settings-groups, telegram-snapshots,
+  peron-health/{config,rebuild,status-meta,week}, peron-portal/data
+hooks/  use-dashboard-metrics, use-offline
+scripts/ (migrasi idempotent + seed + util):
+  add-app-settings-table, add-replas-fields (keduanya di vercel-build),
+  add-idempotency-columns, add-peron-access-table, add-peron-health-tables,
+  migrate-to-detail, seed, seed-peron, check-db, reset-password,
+  verify-password, gen-pwa-icons.cjs
+proxy.ts (auth gate)  ·  vercel.json  ·  next.config.ts
+public/ icon-{192,512,maskable}.png, sw.js
 ```
 
 ---
 
 ## 5. Konvensi & Pola
 
-- **Uang = integer Rp; kg = real; tanggal text "YYYY-MM-DD" WIB.** Format tampilan: `formatRupiah` (presisi), `formatCompact` (Rp 5,83 M / 296,8 jt / 45 rb — untuk angka glance), `formatTanggal` (10 Jun 2026), `formatTanggalLengkap` (Rabu, 10 Juni 2026). Angka pakai `tabular-nums` (kelas `.num`).
-- **Warna: sistem netral monokrom (charcoal/stone) + SATU aksen emerald** (`--brand` #0E7A58 light / #34A77F dark; `--brand-solid` #0E7A58). Emerald hanya untuk CTA/elemen aktif/positif. **Oranye sudah dihapus.** Merah & amber dipakai hemat (destruktif/peringatan) via hex eksplisit (catch-all globals menetralkan kelas warna mentah). Dark mode default mengikuti sistem.
-- **UI:** shadcn/ui + base-ui + Radix. Dialog form di mobile = sheet bawah; overlay glass (`.glass-panel`). Mobile-first iPhone 15 Pro/Safari: `viewport-fit=cover`, `env(safe-area-inset-*)`, `100dvh`. PWA installable (manifest + service worker, level "tahan sinyal jelek", bukan offline-input).
-- **Bottom nav — pill "liquid glass" gaya Instagram, IKON-ONLY (tanpa label):** 5 tab **Beranda(grid/LayoutDashboard) · Pembelian(cart) · Cari(search, tengah) · Penjualan(trending/TrendingUp) · Lainnya(menu)**. (Ikon Beranda & Penjualan di-REVERT iterasi-3 dari House/Banknote — gaya bar TIDAK berubah.) Material kaca sangat transparan (`bg-white/[0.07]` + `backdrop-blur-2xl` + highlight tepi atas inset) → konten samar tembus. **Indikator aktif = pill oval putih translucent** (`white/12-14`, geser antar tab via `layoutId`, tanpa border) + ikon emerald. Scroll bawah → bar **menyusut halus spring** (scale 0.9), atas/puncak → penuh. Slot badge titik notif siap (`dot` di NavTab, belum diwire). **Disembunyikan di /profil & /pengaturan/\*** (full-screen, `isFullscreenRoute` di `mobile-header.tsx`). Drawer "Lainnya" = halaman kerja saja (Buku Kas/Biaya/Laporan/Peron/Kesehatan Peron/Harga) — TANPA Pengaturan/akun/logout (itu pindah ke Profil). Header: **logo OCM kiri = tombol Beranda (→/dashboard)**; avatar kanan → /profil; di route full-screen logo diganti **tombol back lingkaran glass** (judul tengah). Desktop pakai sidebar kiri (`components/sidebar.tsx` — **terpisah dari `lib/nav-routes.ts` mobile**; tambah menu wajib di KEDUANYA).
-- **Profil & Pengaturan = halaman FULL-SCREEN** (`/profil` + `/pengaturan/*`): tanpa bottom nav, header tombol back glass + judul tengah. List gaya Settings Instagram: **datar (tanpa kartu/kotak ikon), ikon tipis + label + chevron, hairline separator**. `/profil` = kartu profil ramping + Informasi pribadi + semua menu Pengaturan (link ke `/pengaturan/*`) + Keluar merah. Grup menu di `lib/settings-groups.ts` (dipakai bersama /profil & /pengaturan).
-- **Nota cetak pembelian (`app/(dashboard)/pembelian/invoice-print.tsx`) — menu 3 mode** (`PrintNotaButton`, dropdown ikon printer): **"Print Lengkap (A5)"** (window.open → `@page A5`, `window.print()`), **"Print Thermal (preview)"** (window.open → `@page` 58/80mm dari `localStorage thermal_paper_width` di `pengaturan/printer`), **"Thermer (langsung)"** (`window.location.href = thermer://?data=<JSON dict typed entries {type,content,bold,align,format}>` — app **Thermer/Mate Technologies** iOS, printer BT user tersambung ke app itu; format JSON = skema print-data Mate; fallback toast "Pastikan aplikasi Thermer terpasang" via deteksi `visibilitychange`). Mode terakhir diingat (`localStorage last_print_mode`, ditandai titik emerald). Tiap nota ada tombol **"← Tutup"** (`window.close()`) + `print:hidden`. **Keterangan "Total N Replas (rentang)"** tampil di KETIGA mode di atas footer — SATU SUMBER helper `buildKeteranganReplas(details, tanggal)` di `lib/format.ts` (dipakai juga oleh form pembelian live; nota pakai `p.keterangan` tersimpan dulu, fallback helper). Rekap = tabel multi-tiket terpisah (tanpa keterangan per-tiket).
-- **Animasi transisi antar-halaman: BELUM ADA** (tidak ada slide/View Transition antar route). Yang ada: `SwipeNavigator` (gesture dari tepi layar → `router.back()`/`forward()`, sudah disesuaikan arah iOS: geser kanan dari tepi kiri = back), animasi drawer/sheet (motion), count-up angka dashboard, sparkline draw-in, skeleton shimmer. `prefers-reduced-motion` dihormati.
-- **Kesehatan peron berbasis SHARE, bukan kg** (kontribusi relatif peron ke total volume) → kebal musim trek. Rebuild jalan harian (digabung cron daily-summary) + tombol manual. Status: data_kurang (riwayat < 4 minggu operasional) → kritis → perhatian → normal.
+**Nilai & format** (`lib/format.ts`): `formatRupiah` (presisi penuh, tabel/form), `formatCompact`/`formatCompactValue` ("Rp 1,23 M / 296,8 jt / 45 rb", utk hero/KPI), `formatNumber`, `formatTanggal`/`formatTanggalLengkap`/`formatTanggalPendek`, `formatRentangKotak`/`formatRentangReplas` (rentang replas), `buildKeteranganReplas` ("Total N Replas (rentang)" — SATU sumber form & nota). **WIB**: `jakartaDateString(offsetDays)`/`todayString()` pakai `Asia/Jakarta` (konsisten server UTC ↔ client). Angka uang wajib `.num`/`tabular-nums`.
+
+**Warna** (`app/globals.css` `:root`/`html.dark`, Tailwind v4 `@theme`):
+- Monokrom netral. Light `--background #FAFAF9` / `--foreground #1C1917` / `--card #FFFFFF` / `--border #E7E5E4`. Dark `#191919` / `#F3F4F6` / `#28282B` / `rgba(255,255,255,.07)`.
+- Aksen tunggal **emerald** `--brand` #0B6E4F (dark #35C892), `--brand-solid` #0E7A57. Dipakai ≤10% (CTA, focus, nav aktif, link, monogram).
+- Token fungsional: `--ok-fg` #0B6E4F→#35C892, `--warn-fg` #854F0B→#FBBF24, `--crit-fg` #A32D2D→#E68A8A (+`.pill-*`, komponen `StatusPill`). Keuangan: `--masuk` #16A34A, `--keluar` #DC2626, `--warning` #D97706.
+- `--destructive` = **netral abu** (#78716C light / #9CA3AF dark) — **tombol hapus jadi abu, bukan merah** (disengaja). `--radius` 0.625rem.
+- **Catch-all dark/light** di `globals.css` (di luar `@layer`) menetralkan kelas Tailwind warna mentah (`text-green/red/violet/blue`, `bg-*-50/100`). Komponen yg butuh warna bertahan harus pakai token/`.text-ok/crit`/hex eksplisit.
+- ⚠️ **Oranye hampir nol** — sisa `amber-500` di `components/offline-indicator.tsx:31-32` (lihat §6).
+
+**Tipografi**: system font stack (`-apple-system, BlinkMacSystemFont, "SF Pro Text"…`) — **Geist sudah dibuang**. `h1–h3` `text-wrap: balance`.
+
+**Navigasi**:
+- **Bottom-nav** (`components/bottom-nav.tsx`, mobile) = **IKON-ONLY** ✅ (verifikasi: `NavTab` render `<Icon>` saja; teks `label` hanya `aria-label`). 5 slot: Beranda(grid) · Pembelian · **Cari** (tengah, command palette) · Penjualan(trending) · Lainnya(drawer "Pintasan"). Pill aktif gaya IG (liquid-glass; light `bg-white/60`).
+- **Sidebar desktop** (`components/sidebar.tsx`/`desktop-sidebar.tsx`) = BERLABEL (10 item). **Dua sumber nav harus sinkron**: `lib/nav-routes.ts` (mobile/palette) & `sidebar.tsx`/`desktop-sidebar.tsx` (desktop).
+- Active-state **longest-match** (`isRouteActive` di `nav-routes.ts`) — `/peron/kesehatan` ≠ `/peron`.
+- **Toast** (sonner) `position="top-center"` + offset `safe-area-inset-top` (`globals.css`) → tak ketutup Dynamic Island.
+- **Focus ring** `.neural-focus` = satu garis border `var(--focus-ring)` (emerald desaturasi) utk input; `Button` `focus-visible:ring-brand/50` (diseragamkan Batch 3).
+- **State**: komponen `EmptyState` ada; **13 `loading.tsx`** di `(dashboard)`; `(dashboard)/error.tsx` + `global-error.tsx`; skeleton `role=status`+sr-only "Memuat…".
+- **themeColor** (`layout.tsx` viewport) = **adaptif** array (light #FAFAF9 / dark #191919); `maximumScale` **dihapus** (pinch-zoom aktif). `viewportFit: cover`.
+
+**Pola data**: server actions di tiap modul (`'use server'`); transaksi yg memutasi kas auto-buat `transaksi_kas` (`refTabel`/`refId`); foto via Vercel Blob (proxy `/api/foto`); `app_settings` key-value utk pengaturan global lintas-perangkat (`neraca_modal_awal`, `company_*`, `tax_*`).
 
 ---
 
-## 6. Catatan / Gotcha
+## 6. Catatan / Gotcha & Utang Teknis
 
-- **Migrasi DB: JANGAN `drizzle-kit push/migrate`** (meta snapshot drift). Pola dipakai = **SQL additif langsung** lewat `scripts/add-*.ts` (`CREATE TABLE/COLUMN IF NOT EXISTS`, idempoten) terhadap Turso prod. `.env.local` menunjuk DB **produksi** (tidak ada DB dev terpisah).
-- **`proxy.ts` publicPaths pakai `startsWith`** → entri harus presisi. `/` exact-match (jangan masuk array startsWith — akan buka semua). `/p/` WAJIB trailing slash (kalau `/p` saja → cocok `/peron`, `/penjualan`, `/pengaturan`, `/pembelian`). Route cron/portal baru WAJIB ditambah ke publicPaths walau self-guard secret.
-- **Dua sumber navigasi** (mobile `lib/nav-routes.ts` vs desktop `components/sidebar.tsx`) — tambah menu di keduanya.
-- **iCloud:** folder ada di `Documents` iCloud → kadang muncul file duplikat `* 2.*` di `.next/` yang menggagalkan `tsc`/build lokal. Jalankan `find .next -name "* 2.*" -delete` sebelum build. Vercel (checkout bersih) aman.
-- **"Margin Dagang" di dashboard/laporan = Σ markup peron (Rp/kg × tonase), bukan laba bersih** (belum dikurangi biaya operasional/pajak). Sudah dilabeli jujur.
-- **Utang teknis diketahui (bukan blocker):** lint ~120 problem (mayoritas `no-explicit-any` + `<img>` bukan next/image) — `next build` tidak gate lint; Neraca bisa tak balance presisi (kas bruto vs piutang/laba neto); PPN aktual dari rekap BGA belum disimpan ke kolom (di-estimasi). Ledger pembayaran peron granular belum ada (pakai status tiket).
-- **Peron health saat ini mayoritas `data_kurang`** karena riwayat app baru ~2 minggu (< ambang 4 minggu operasional) — wajar, status 🔴🟡 muncul otomatis seiring data menumpuk.
+1. **Build = Turbopack**, `ignoreBuildErrors:false` → **type error = build gagal**. Wajib lulus `tsc --noEmit`. Hapus duplikat iCloud (`* 2.*`, `* 3.*`) di `.next` sebelum build lokal.
+2. **Auth gate = `proxy.ts`** (bukan `middleware.ts`) — Next 16. `'/p/'` di `publicPaths` **wajib trailing slash**.
+3. **JANGAN `drizzle-kit push/migrate`** — skema dikelola via skrip migrasi idempotent (`scripts/add-*`) yg jalan di `vercel-build`.
+4. ⚠️ **Oranye belum 100% nol**: `components/offline-indicator.tsx` masih `bg-amber-500/15` + `text-amber-500` (catch-all tak meng-cover `amber-500`). Offline *page* sudah difix (#FBBF24); *indicator* belum. **Utang kecil.**
+5. ⚠️ **Dua library primitif UI**: `@base-ui/react` (Button, Sheet, Select, AlertDialog, Dropdown) + `@radix-ui` (Dialog, Checkbox). Belum disatukan (skip sadar; tak terlihat user).
+6. ⚠️ **Gating delete tak seragam**: `deletePembelian`/`deleteBiaya` pakai `requirePermission('canDelete')`, tapi `deletePenjualan`/`deleteTransaksiKas`/`deleteHargaAcuan`/`deletePeron`/`deleteModalPeron` **owner-only**. Cek bila ingin konsisten.
+7. **Edit Profil & Pajak kini owner-only** (sejak Batch 9 → `setAppSettings` owner-only). Non-owner: tombol disabled + pesan izin. `thermal_paper_width` tetap localStorage (per-perangkat, disengaja); `company_*`/`tax_*` kini server (localStorage = cadangan).
+8. **Tombol hapus = abu (token `--destructive`), bukan merah** — disengaja (monokrom). Danger lewat teks `.text-crit` (asterisk wajib, label izin, Zona Berbahaya).
+9. **Portal `/p/[token]` theme-agnostic**: dipaksa terang (`colorScheme:light` + hex eksplisit) apa pun tema sistem.
+10. **Checkbox `components/ui/origin/checkbox.tsx` = dead code** (tak diimpor di mana pun); `components/ui/checkbox.tsx` juga tak terpakai (form pakai `Switch`).
+11. **WIB**: selalu `jakartaDateString()`/`todayString()` utk tanggal (server Vercel = UTC).
+12. ⚠️ **`scripts/setup-company-accounts.ts` TIDAK ADA** di repo (tak pernah landing). `updateUserEmail` **sudah landing** (`pengaturan/actions.ts`, commit `589ebac`).
+13. **Idempotency**: form transaksi kirim `idempotencyKey` (uniqueIndex) — aman dari dobel-submit.
 
 ---
-
-*Snapshot dibuat: 11 Juni 2026.*
+*Snapshot dibuat: 13 Juni 2026.*
