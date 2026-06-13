@@ -412,7 +412,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
                       </div>
                       <div className="px-0 py-1.5 flex justify-center">
                         {details.length > 1 && (
-                          <button type="button" onClick={() => removeDetail(idx)} className="h-7 w-7 flex items-center justify-center rounded text-stone-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10">
+                          <button type="button" onClick={() => removeDetail(idx)} className="h-7 w-7 flex items-center justify-center rounded text-stone-400 hover:text-destructive hover:bg-destructive/10">
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         )}
@@ -456,7 +456,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
                 </div>
                 <div>
                   <p className="text-xs text-stone-400 mb-0.5">Keuntungan CV OCM</p>
-                  <p className="font-bold text-green-600 num">{formatRupiah(totalKeuntungan)}</p>
+                  <p className="font-bold text-ok num">{formatRupiah(totalKeuntungan)}</p>
                 </div>
               </div>
             )}

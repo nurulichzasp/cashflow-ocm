@@ -78,7 +78,7 @@ function RowActions({ p, isOwner, onDelete, deleting, akunOptions = [] }: { p: P
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-red-600 hover:bg-red-700 text-white"
+              variant="destructive"
               onClick={() => onDelete(p.id)}
               disabled={deleting === p.id}
             >
@@ -252,7 +252,7 @@ export function PeronTable({ peronList, isOwner, akunOptions = [] }: Props) {
               {isOwner && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </AlertDialogTrigger>
@@ -266,7 +266,7 @@ export function PeronTable({ peronList, isOwner, akunOptions = [] }: Props) {
                     <AlertDialogFooter>
                       <AlertDialogCancel>Batal</AlertDialogCancel>
                       <AlertDialogAction
-                        className="bg-red-600 hover:bg-red-700 text-white"
+                        variant="destructive"
                         onClick={() => handleDelete(p.id)}
                         disabled={deleting === p.id}
                       >

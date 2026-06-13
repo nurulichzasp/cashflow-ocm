@@ -99,7 +99,7 @@ function PembelianRowMenu({ onEdit, onDelete, deleting, id }: { onEdit: () => vo
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-red-600 hover:bg-red-700 text-white"
+              variant="destructive"
               onClick={() => onDelete(id)}
               disabled={deleting === id}
             >
@@ -304,7 +304,7 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
                   <td className="px-3 py-2.5 font-semibold text-stone-900">{p.peron?.nama ?? p.peronId}</td>
                   <td className="px-3 py-2.5 text-right num text-stone-700">{p.tonase.toLocaleString('id-ID')} kg</td>
                   <td className="px-3 py-2.5 text-right font-semibold text-stone-900 num">{formatRupiah(p.totalBeli)}</td>
-                  <td className="px-3 py-2.5 text-right font-semibold text-green-600 num">{formatRupiah(p.keuntungan)}</td>
+                  <td className="px-3 py-2.5 text-right font-semibold text-ok num">{formatRupiah(p.keuntungan)}</td>
                   <td className="px-3 py-2.5 text-right num text-stone-500 text-xs">
                     Rp {p.hargaBeli.toLocaleString('id-ID')}
                   </td>
@@ -444,7 +444,7 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
                   <AlertDialogTrigger asChild>
                     <button
                       type="button"
-                      className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-stone-500 dark:text-zinc-400 hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                      className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-stone-500 dark:text-zinc-400 hover:text-destructive hover:bg-destructive/10 transition-colors"
                     >
                       <Trash2 className="h-3.5 w-3.5" />Hapus
                     </button>
@@ -456,7 +456,7 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
                     <AlertDialogFooter>
                       <AlertDialogCancel>Batal</AlertDialogCancel>
                       <AlertDialogAction
-                        className="bg-red-600 hover:bg-red-700 text-white"
+                        variant="destructive"
                         onClick={() => handleDelete(p.id)}
                         disabled={deletingId === p.id}
                       >

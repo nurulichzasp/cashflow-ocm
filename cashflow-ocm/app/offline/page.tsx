@@ -7,7 +7,7 @@ export default function OfflinePage() {
   return (
     <main className="relative flex min-h-[100dvh] flex-col items-center justify-center gap-6 overflow-hidden bg-[#0A0A0A] px-6 text-center text-zinc-100">
       <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/[0.12] bg-white/[0.04]">
-        <WifiOff className="h-6 w-6 text-amber-500" />
+        <WifiOff className="h-6 w-6 text-[#FBBF24]" />
       </div>
       <div className="space-y-2">
         <h1 className="text-xl font-bold tracking-tight text-zinc-50">Sedang offline</h1>

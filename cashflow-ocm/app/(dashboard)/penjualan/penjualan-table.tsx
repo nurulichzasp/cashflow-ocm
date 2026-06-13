@@ -253,7 +253,7 @@ function PenjualanRow({ item, isOwner, updatingId, deletingId, onToggleLunas, on
           {isOwner && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Hapus" className="tap-pad h-8 w-8 text-stone-400 hover:text-red-600 hover:bg-red-50">
+                <Button variant="ghost" size="icon" aria-label="Hapus" className="tap-pad h-8 w-8 text-stone-400 hover:text-destructive hover:bg-destructive/10">
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </AlertDialogTrigger>
@@ -267,7 +267,7 @@ function PenjualanRow({ item, isOwner, updatingId, deletingId, onToggleLunas, on
                 <AlertDialogFooter>
                   <AlertDialogCancel>Batal</AlertDialogCancel>
                   <AlertDialogAction
-                    className="bg-red-600 hover:bg-red-700 text-white"
+                    variant="destructive"
                     onClick={() => onDelete(item.id)}
                     disabled={deletingId === item.id}
                   >
@@ -418,7 +418,7 @@ function PenjualanCard({ item, isOwner, updatingId, deletingId, onToggleLunas, o
             <AlertDialogTrigger asChild>
               <button
                 type="button"
-                className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 min-h-[44px] text-[12px] font-medium text-stone-500 dark:text-zinc-400 hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 min-h-[44px] text-[12px] font-medium text-stone-500 dark:text-zinc-400 hover:text-destructive hover:bg-destructive/10 transition-colors"
               >
                 <Trash2 className="h-3.5 w-3.5" />
                 Hapus
@@ -434,7 +434,7 @@ function PenjualanCard({ item, isOwner, updatingId, deletingId, onToggleLunas, o
               <AlertDialogFooter>
                 <AlertDialogCancel>Batal</AlertDialogCancel>
                 <AlertDialogAction
-                  className="bg-red-600 hover:bg-red-700 text-white"
+                  variant="destructive"
                   onClick={() => onDelete(item.id)}
                   disabled={deletingId === item.id}
                 >

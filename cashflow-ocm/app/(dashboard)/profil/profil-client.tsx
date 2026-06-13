@@ -97,7 +97,7 @@ export function ProfilClient({ user, isOwner }: { user: ProfilUser; isOwner: boo
       {/* Keluar — destruktif, hemat */}
       <button
         onClick={handleLogout}
-        className="flex w-full items-center justify-center gap-2 py-3.5 text-[15px] font-semibold text-[#DC2626] transition-opacity active:opacity-60 dark:text-[#F87171]"
+        className="flex w-full items-center justify-center gap-2 py-3.5 text-[15px] font-semibold text-crit transition-opacity active:opacity-60"
       >
         <LogOut className="h-[18px] w-[18px]" />
         Keluar

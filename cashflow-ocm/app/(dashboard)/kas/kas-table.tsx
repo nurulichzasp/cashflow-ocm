@@ -158,7 +158,7 @@ export function KasTable({ transaksiList, isOwner }: Props) {
                     {isOwner && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" aria-label="Hapus" className="tap-pad h-8 w-8 text-stone-400 hover:text-[#F87171] hover:bg-red-50">
+                          <Button variant="ghost" size="icon" aria-label="Hapus" className="tap-pad h-8 w-8 text-stone-400 hover:text-destructive hover:bg-destructive/10">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </AlertDialogTrigger>
@@ -173,7 +173,7 @@ export function KasTable({ transaksiList, isOwner }: Props) {
                           <AlertDialogFooter>
                             <AlertDialogCancel>Batal</AlertDialogCancel>
                             <AlertDialogAction
-                              className="bg-red-600 hover:bg-red-700 text-white"
+                              variant="destructive"
                               onClick={() => handleDelete(item.id)}
                               disabled={deletingId === item.id}
                             >
@@ -227,7 +227,7 @@ export function KasTable({ transaksiList, isOwner }: Props) {
                 {isOwner && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="sm" className="ml-auto text-[#F87171] hover:text-red-700 hover:bg-red-50 gap-1.5">
+                      <Button variant="ghost" size="sm" className="ml-auto text-destructive hover:text-destructive hover:bg-destructive/10 gap-1.5">
                         <Trash2 className="h-3.5 w-3.5" />
                         Hapus
                       </Button>
@@ -242,7 +242,7 @@ export function KasTable({ transaksiList, isOwner }: Props) {
                       <AlertDialogFooter>
                         <AlertDialogCancel>Batal</AlertDialogCancel>
                         <AlertDialogAction
-                          className="bg-red-600 hover:bg-red-700 text-white"
+                          variant="destructive"
                           onClick={() => handleDelete(item.id)}
                           disabled={deletingId === item.id}
                         >

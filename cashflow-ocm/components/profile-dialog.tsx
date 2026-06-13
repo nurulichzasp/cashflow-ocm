@@ -263,7 +263,7 @@ export function ProfileDialog({ user, children }: ProfileDialogProps) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <Label htmlFor="fullName" className="text-xs font-semibold text-stone-500">
-                  Nama Panjang <span className="text-red-500">*</span>
+                  Nama Panjang <span className="text-crit">*</span>
                 </Label>
                 <Input
                   id="fullName"
@@ -290,7 +290,7 @@ export function ProfileDialog({ user, children }: ProfileDialogProps) {
 
               <div className="space-y-1">
                 <Label htmlFor="phone" className="text-xs font-semibold text-stone-500">
-                  No WA (WhatsApp) <span className="text-red-500">*</span>
+                  No WA (WhatsApp) <span className="text-crit">*</span>
                 </Label>
                 <Input
                   id="phone"
@@ -304,7 +304,7 @@ export function ProfileDialog({ user, children }: ProfileDialogProps) {
 
               <div className="space-y-1">
                 <Label htmlFor="personalEmail" className="text-xs font-semibold text-stone-500">
-                  Email Pribadi <span className="text-red-500">*</span>
+                  Email Pribadi <span className="text-crit">*</span>
                 </Label>
                 <Input
                   id="personalEmail"
@@ -319,7 +319,7 @@ export function ProfileDialog({ user, children }: ProfileDialogProps) {
 
               <div className="space-y-1 sm:col-span-2">
                 <Label htmlFor="address" className="text-xs font-semibold text-stone-500">
-                  Alamat <span className="text-red-500">*</span>
+                  Alamat <span className="text-crit">*</span>
                 </Label>
                 <Input
                   id="address"

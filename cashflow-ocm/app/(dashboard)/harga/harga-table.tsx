@@ -121,7 +121,7 @@ export function HargaTable({ hargaList, isOwner }: Props) {
                     <td className="px-4 py-3 text-right">
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" aria-label="Hapus" className="tap-pad h-8 w-8 text-stone-400 hover:text-red-600 hover:bg-red-50">
+                          <Button variant="ghost" size="icon" aria-label="Hapus" className="tap-pad h-8 w-8 text-stone-400 hover:text-destructive hover:bg-destructive/10">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </AlertDialogTrigger>
@@ -136,7 +136,7 @@ export function HargaTable({ hargaList, isOwner }: Props) {
                           <AlertDialogFooter>
                             <AlertDialogCancel>Batal</AlertDialogCancel>
                             <AlertDialogAction
-                              className="bg-red-600 hover:bg-red-700 text-white"
+                              variant="destructive"
                               onClick={() => handleDelete(harga.id)}
                               disabled={deletingId === harga.id}
                             >
@@ -168,7 +168,7 @@ export function HargaTable({ hargaList, isOwner }: Props) {
                 {isOwner && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon" aria-label="Hapus" className="tap-pad h-8 w-8 text-stone-400 hover:text-red-600 hover:bg-red-50">
+                      <Button variant="ghost" size="icon" aria-label="Hapus" className="tap-pad h-8 w-8 text-stone-400 hover:text-destructive hover:bg-destructive/10">
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </AlertDialogTrigger>
@@ -182,7 +182,7 @@ export function HargaTable({ hargaList, isOwner }: Props) {
                       <AlertDialogFooter>
                         <AlertDialogCancel>Batal</AlertDialogCancel>
                         <AlertDialogAction
-                          className="bg-red-600 hover:bg-red-700 text-white"
+                          variant="destructive"
                           onClick={() => handleDelete(harga.id)}
                           disabled={deletingId === harga.id}
                         >

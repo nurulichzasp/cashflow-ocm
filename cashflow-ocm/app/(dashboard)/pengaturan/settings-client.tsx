@@ -732,7 +732,7 @@ export function SettingsClient({ currentUser, initialUsers, section }: SettingsC
                         <TableCell className="text-center">
                           <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold uppercase tracking-wider ${
                             user.role === 'owner'
-                              ? 'bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50'
+                              ? 'bg-[var(--warn-bg)] text-[var(--warn-fg)] border border-[var(--warn-fg)]/20'
                               : user.role === 'admin'
                               ? 'bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700'
                               : 'bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700'
@@ -874,7 +874,7 @@ export function SettingsClient({ currentUser, initialUsers, section }: SettingsC
                                   <Button
                                     size="icon"
                                     variant="ghost"
-                                    className="h-8 w-8 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"
+                                    className="h-8 w-8 text-destructive hover:bg-destructive/10"
                                     title="Hapus Pengguna"
                                   >
                                     <Trash2 className="h-3.5 w-3.5" />
@@ -890,7 +890,7 @@ export function SettingsClient({ currentUser, initialUsers, section }: SettingsC
                                   <AlertDialogFooter>
                                     <AlertDialogCancel>Batal</AlertDialogCancel>
                                     <AlertDialogAction
-                                      className="bg-red-600 hover:bg-red-700 text-white"
+                                      variant="destructive"
                                       onClick={() => handleDeleteUser(user.id, user.name)}
                                     >
                                       Hapus
@@ -1073,7 +1073,7 @@ export function SettingsClient({ currentUser, initialUsers, section }: SettingsC
               {/* Export backup section */}
               <div className="space-y-3">
                 <h3 className="text-sm font-semibold text-stone-900 dark:text-stone-100 flex items-center gap-2">
-                  <FileSpreadsheet className="h-4 w-4 text-green-600" /> Ekspor Konfigurasi
+                  <FileSpreadsheet className="h-4 w-4 text-stone-700 dark:text-zinc-300" /> Ekspor Konfigurasi
                 </h3>
                 <p className="text-xs text-muted-foreground max-w-xl">
                   Unduh cadangan data konfigurasi instansi perusahaan Anda (berisi nama kantor, npwp, dan detail profile) sebagai berkas JSON untuk kebutuhan backup berkala.
@@ -1092,7 +1092,7 @@ export function SettingsClient({ currentUser, initialUsers, section }: SettingsC
               {/* Danger Zone */}
               {isOwner && (
                 <div className="rounded-xl border border-red-200 dark:border-red-950 bg-red-50/20 dark:bg-red-950/5 p-4 space-y-3">
-                  <h3 className="text-sm font-bold text-red-600 flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-crit flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4" /> Danger Zone (Zona Berbahaya)
                   </h3>
                   <p className="text-xs text-stone-600 dark:text-stone-400 max-w-xl leading-relaxed">
@@ -1103,14 +1103,14 @@ export function SettingsClient({ currentUser, initialUsers, section }: SettingsC
                     <AlertDialogTrigger asChild>
                       <Button
                         variant="destructive"
-                        className="bg-red-600 hover:bg-red-700 text-white gap-1.5 cursor-pointer"
+                        className="gap-1.5 cursor-pointer"
                       >
                         <Trash2 className="h-4 w-4" /> Bersihkan Seluruh Data Transaksi
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle className="text-red-600">Yakin ingin menghapus seluruh data?</AlertDialogTitle>
+                        <AlertDialogTitle className="text-crit">Yakin ingin menghapus seluruh data?</AlertDialogTitle>
                         <AlertDialogDescription className="space-y-2">
                           <p>Tindakan ini akan mengosongkan:</p>
                           <ul className="list-disc list-inside text-xs font-semibold text-foreground">
@@ -1125,7 +1125,7 @@ export function SettingsClient({ currentUser, initialUsers, section }: SettingsC
                       <AlertDialogFooter>
                         <AlertDialogCancel>Batal</AlertDialogCancel>
                         <AlertDialogAction
-                          className="bg-red-600 hover:bg-red-700 text-white"
+                          variant="destructive"
                           onClick={async () => {
                             try {
                               const res = await fetch('/api/health?clear=1', { method: 'POST' })
