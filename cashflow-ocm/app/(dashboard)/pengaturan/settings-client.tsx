@@ -692,8 +692,8 @@ export function SettingsClient({ currentUser, initialUsers, section }: SettingsC
 
                           <div className="flex items-center justify-between gap-3 rounded-xl border border-red-200 dark:border-red-950/60 bg-red-50/40 dark:bg-red-950/10 px-3.5 py-2.5">
                             <div className="min-w-0">
-                              <p className="text-sm font-medium text-red-600 dark:text-red-400">Hapus Transaksi</p>
-                              <p className="text-[11px] text-red-400 dark:text-red-400/70">Izin menghapus data permanen</p>
+                              <p className="text-sm font-medium text-crit">Hapus Transaksi</p>
+                              <p className="text-[11px] text-crit opacity-75">Izin menghapus data permanen</p>
                             </div>
                             <Switch checked={accessDelete} onCheckedChange={setAccessDelete} aria-label="Akses Hapus Transaksi" />
                           </div>
@@ -952,8 +952,8 @@ export function SettingsClient({ currentUser, initialUsers, section }: SettingsC
 
                       <div className="flex items-center justify-between gap-3 rounded-xl border border-red-200 dark:border-red-950/60 bg-red-50/40 dark:bg-red-950/10 px-3.5 py-2.5">
                         <div className="min-w-0">
-                          <p className="text-sm font-medium text-red-600 dark:text-red-400">Hapus Transaksi</p>
-                          <p className="text-[11px] text-red-400 dark:text-red-400/70">Izin menghapus data permanen</p>
+                          <p className="text-sm font-medium text-crit">Hapus Transaksi</p>
+                          <p className="text-[11px] text-crit opacity-75">Izin menghapus data permanen</p>
                         </div>
                         <Switch
                           checked={editPerms.delete}

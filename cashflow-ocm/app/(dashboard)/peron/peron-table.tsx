@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { StatusPill } from '@/components/ui/status-pill'
 import { EmptyState } from '@/components/empty-state'
 import {
   AlertDialog,
@@ -189,9 +190,9 @@ export function PeronTable({ peronList, isOwner, akunOptions = [] }: Props) {
                 </td>
                 <td className="px-4 py-3 text-center">
                   {p.status === 'aktif' ? (
-                    <span className="inline-flex rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700 border border-green-200">Aktif</span>
+                    <StatusPill tone="ok">Aktif</StatusPill>
                   ) : (
-                    <span className="inline-flex rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-400 line-through">Nonaktif</span>
+                    <StatusPill tone="neutral" className="line-through">Nonaktif</StatusPill>
                   )}
                 </td>
                 <td className="px-4 py-3">
@@ -218,9 +219,9 @@ export function PeronTable({ peronList, isOwner, akunOptions = [] }: Props) {
                 {p.kontak && <p className="text-xs text-stone-500 mt-0.5">{p.kontak}</p>}
               </div>
               {p.status === 'aktif' ? (
-                <span className="inline-flex rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700 border border-green-200 shrink-0">Aktif</span>
+                <StatusPill tone="ok" className="shrink-0">Aktif</StatusPill>
               ) : (
-                <span className="inline-flex rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-400 shrink-0">Nonaktif</span>
+                <StatusPill tone="neutral" className="shrink-0">Nonaktif</StatusPill>
               )}
             </div>
 

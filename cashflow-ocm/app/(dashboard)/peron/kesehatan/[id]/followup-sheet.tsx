@@ -62,10 +62,10 @@ export function FollowupSheet({ peronId, status }: { peronId: string; status: st
         <Plus className="h-5 w-5" strokeWidth={2.5} /> Tindak Lanjut
       </SheetTrigger>
       <SheetContent side="bottom" className="rounded-t-2xl">
-        <SheetHeader className="px-0">
+        <SheetHeader className="pb-0">
           <SheetTitle>Tindak Lanjut Peron</SheetTitle>
         </SheetHeader>
-        <div className="space-y-5 pb-2">
+        <div className="space-y-5 px-4 pb-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="contacted" className="text-sm font-medium">Sudah dihubungi?</Label>
             <Switch id="contacted" checked={contacted} onCheckedChange={setContacted} aria-label="Sudah dihubungi" />

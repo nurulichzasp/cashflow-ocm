@@ -78,7 +78,7 @@ export function ModalHistoryTable({ modal, isOwner }: Props) {
                       <td className="px-4 py-2.5 text-center">
                         <Badge variant={variant}>{label}</Badge>
                       </td>
-                      <td className={`px-4 py-2.5 text-right font-semibold ${m.jenis === 'tambah' ? 'text-emerald-600' : 'text-red-600'}`}>
+                      <td className={`px-4 py-2.5 text-right font-semibold num ${m.jenis === 'tambah' ? 'text-masuk' : 'text-keluar'}`}>
                         {m.jenis === 'tambah' ? '+' : '-'} {formatRupiah(m.jumlah)}
                       </td>
                       <td className="px-4 py-2.5 text-muted-foreground">{m.catatan ?? '-'}</td>
