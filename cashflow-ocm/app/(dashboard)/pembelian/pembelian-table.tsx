@@ -14,7 +14,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { formatTanggal, formatRupiah } from '@/lib/format'
+import { formatTanggal, formatRupiah, formatCompact } from '@/lib/format'
 import { deletePembelian } from './actions'
 import { PembelianFormDialog } from './pembelian-form-dialog'
 import { PrintRekapButton, PrintNotaButton } from './invoice-print'
@@ -181,13 +181,7 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
   const totalJual = filtered.reduce((s, p) => s + p.totalJual, 0)
   const totalUntung = filtered.reduce((s, p) => s + p.keuntungan, 0)
   const jumlahBelum = filtered.filter((p) => p.statusBayarPeron === 'belum').length
-
-  const summaryCards = [
-    { label: 'Total Tiket', value: filtered.length.toString(), sub: `${jumlahBelum} belum dibayar` },
-    { label: 'Total Tonase', value: `${totalTonase.toLocaleString('id-ID')} kg`, sub: 'Netto II' },
-    { label: 'Total Beli', value: formatRupiah(totalBeli), sub: 'Dibayar ke peron', accent: true },
-    { label: 'Belum Dibayar', value: jumlahBelum.toString(), sub: 'Tiket pending' },
-  ]
+  const isFiltered = !!filterDari || !!filterSampai || filterPeronId !== 'all'
 
   if (pembelianList.length === 0) {
     return (
@@ -225,15 +219,34 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
         <Button variant="outline" size="sm" className="hidden" />
       </PembelianFormDialog>
 
-      {/* Summary cards — ikut filter (termasuk bulan) */}
-      <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
-        {summaryCards.map((c) => (
-          <div key={c.label} className="surface press-card p-3 sm:p-4">
-            <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-[#6B7280] mb-1">{c.label}</p>
-            <p className={`text-lg sm:text-2xl font-bold num tabular-nums ${c.accent ? 'text-stone-900 dark:text-zinc-50' : 'text-stone-900 dark:text-stone-100'}`}>{c.value}</p>
-            <p className="text-[10px] sm:text-xs text-stone-400 dark:text-[#6B7280] mt-0.5 sm:mt-1">{c.sub}</p>
+      {/* Ringkasan — SATU hero, IKUT filter (tanggal/peron). Total Beli = modal ke peron.
+          (Sebelumnya dobel: hero di page + 4 kartu di sini — kini disatukan.) */}
+      <div className="surface px-5 py-4 sm:px-6 sm:py-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Total Beli</p>
+            <p className="mt-1.5 text-[2.25rem] sm:text-[2.75rem] font-bold num tabular-nums tracking-[-0.03em] leading-none text-stone-900 dark:text-zinc-50">
+              {formatCompact(totalBeli)}
+            </p>
+            <p className="mt-1.5 text-[11px] text-stone-400 dark:text-zinc-500">
+              {isFiltered ? `Dibayar ke peron · ${filtered.length} tiket terfilter` : 'Dibayar ke peron · seluruh tiket'}
+            </p>
           </div>
-        ))}
+          <div className="flex items-center gap-5 sm:gap-6 shrink-0">
+            <div className="text-right">
+              <p className="text-[10px] uppercase tracking-wider text-stone-400 dark:text-zinc-500 font-medium">Tiket</p>
+              <p className="mt-1 text-sm font-semibold num tabular-nums text-stone-700 dark:text-zinc-300">{filtered.length.toLocaleString('id-ID')}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] uppercase tracking-wider text-stone-400 dark:text-zinc-500 font-medium">Tonase</p>
+              <p className="mt-1 text-sm font-semibold num tabular-nums text-stone-700 dark:text-zinc-300">{totalTonase.toLocaleString('id-ID')} kg</p>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] uppercase tracking-wider text-stone-400 dark:text-zinc-500 font-medium">Belum Dibayar</p>
+              <p className="mt-1 text-sm font-semibold num tabular-nums text-stone-700 dark:text-zinc-300">{jumlahBelum.toLocaleString('id-ID')}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Filter */}
