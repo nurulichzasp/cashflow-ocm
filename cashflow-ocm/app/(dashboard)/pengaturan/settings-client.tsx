@@ -72,6 +72,7 @@ import { useRouter } from 'next/navigation'
 import { ThermalPrinterSettings } from './thermal-printer-settings'
 import { ThemeSelector } from '@/components/theme-selector'
 import { Switch } from '@/components/ui/switch'
+import { FieldError, invalidFieldClass } from '@/components/ui/field-error'
 
 type SettingsSection = 'company' | 'users' | 'pajak' | 'printer' | 'theme' | 'backup'
 
@@ -211,6 +212,7 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
   const [customRoleVal, setCustomRoleVal] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [submittingUser, setSubmittingUser] = useState(false)
+  const [userErrors, setUserErrors] = useState<{ name?: string; email?: string; password?: string; role?: string }>({})
 
   // Permissions state
   const [accessPembelian, setAccessPembelian] = useState(true)
@@ -238,16 +240,17 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
 
   async function handleAddUser(e: React.FormEvent) {
     e.preventDefault()
-    if (!newUserName.trim() || !newUserEmail.trim() || !newUserPassword.trim()) {
-      toast.error('Semua data wajib diisi')
-      return
-    }
-
     const finalRole = newUserRole === 'other' ? customRoleVal.trim() : newUserRole
-    if (!finalRole) {
-      toast.error('Peran sistem wajib diisi')
-      return
-    }
+    // Validasi inline per-field — pesan muncul di bawah tiap kotak (bukan toast).
+    const errs: { name?: string; email?: string; password?: string; role?: string } = {}
+    if (!newUserName.trim()) errs.name = 'Nama wajib diisi'
+    if (!newUserEmail.trim()) errs.email = 'Email wajib diisi'
+    else if (!/^\S+@\S+\.\S+$/.test(newUserEmail.trim())) errs.email = 'Format email tidak valid'
+    if (!newUserPassword) errs.password = 'Kata sandi wajib diisi'
+    else if (newUserPassword.length < 8) errs.password = 'Kata sandi minimal 8 karakter'
+    if (!finalRole) errs.role = 'Peran sistem wajib diisi'
+    setUserErrors(errs)
+    if (Object.keys(errs).length > 0) return
 
     const permissionsJSON = JSON.stringify({
       pembelian: accessPembelian,
@@ -269,6 +272,7 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
       toast.success('Pengguna baru berhasil ditambahkan')
       setAddUserOpen(false)
       // Reset form
+      setUserErrors({})
       setNewUserName('')
       setNewUserEmail('')
       setNewUserPassword('')
@@ -603,16 +607,19 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
                       <DialogTitle className="font-bold">Tambah Pengguna Baru</DialogTitle>
                       <DialogDescription>Masukkan detail login pengguna baru. Simpan sandi dengan aman.</DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={handleAddUser} className="space-y-4 py-2">
+                    <form onSubmit={handleAddUser} noValidate className="space-y-4 py-2">
                       <div className="space-y-1.5">
                         <Label htmlFor="newUserName">Nama Lengkap</Label>
                         <Input
                           id="newUserName"
                           value={newUserName}
-                          onChange={(e) => setNewUserName(e.target.value)}
+                          onChange={(e) => { setNewUserName(e.target.value); if (userErrors.name) setUserErrors((p) => ({ ...p, name: undefined })) }}
                           placeholder="Contoh: Sastro"
+                          aria-invalid={!!userErrors.name}
+                          className={userErrors.name ? invalidFieldClass : undefined}
                           required
                         />
+                        <FieldError>{userErrors.name}</FieldError>
                       </div>
                       <div className="space-y-1.5">
                         <Label htmlFor="newUserEmail">Email Login</Label>
@@ -620,10 +627,13 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
                           id="newUserEmail"
                           type="email"
                           value={newUserEmail}
-                          onChange={(e) => setNewUserEmail(e.target.value)}
+                          onChange={(e) => { setNewUserEmail(e.target.value); if (userErrors.email) setUserErrors((p) => ({ ...p, email: undefined })) }}
                           placeholder="admin@ocm.com"
+                          aria-invalid={!!userErrors.email}
+                          className={userErrors.email ? invalidFieldClass : undefined}
                           required
                         />
+                        <FieldError>{userErrors.email}</FieldError>
                       </div>
                       <div className="space-y-1.5">
                         <Label htmlFor="newUserPassword">Kata Sandi</Label>
@@ -632,8 +642,10 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
                             id="newUserPassword"
                             type={showPassword ? 'text' : 'password'}
                             value={newUserPassword}
-                            onChange={(e) => setNewUserPassword(e.target.value)}
-                            placeholder="Minimal 6 karakter"
+                            onChange={(e) => { setNewUserPassword(e.target.value); if (userErrors.password) setUserErrors((p) => ({ ...p, password: undefined })) }}
+                            placeholder="Minimal 8 karakter"
+                            aria-invalid={!!userErrors.password}
+                            className={userErrors.password ? invalidFieldClass : undefined}
                             required
                           />
                           <button
@@ -644,6 +656,7 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
                             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </button>
                         </div>
+                        <FieldError>{userErrors.password}</FieldError>
                       </div>
                       <div className="space-y-1.5">
                         <Label htmlFor="newUserRole">Peran Sistem</Label>
@@ -668,10 +681,13 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
                           <Input
                             id="customRoleVal"
                             value={customRoleVal}
-                            onChange={(e) => setCustomRoleVal(e.target.value)}
+                            onChange={(e) => { setCustomRoleVal(e.target.value); if (userErrors.role) setUserErrors((p) => ({ ...p, role: undefined })) }}
                             placeholder="Contoh: Keuangan, Operator"
+                            aria-invalid={!!userErrors.role}
+                            className={userErrors.role ? invalidFieldClass : undefined}
                             required
                           />
+                          <FieldError>{userErrors.role}</FieldError>
                         </div>
                       )}
 
@@ -709,7 +725,7 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
                       </div>
 
                       <DialogFooter className="pt-2">
-                        <Button type="button" variant="outline" onClick={() => setAddUserOpen(false)} className="border-stone-200">
+                        <Button type="button" variant="outline" onClick={() => { setAddUserOpen(false); setUserErrors({}) }} className="border-stone-200">
                           Batal
                         </Button>
                         <Button type="submit" disabled={submittingUser} className="bg-stone-900 hover:bg-stone-800 dark:bg-white dark:hover:bg-zinc-200 dark:text-stone-900 text-white">
