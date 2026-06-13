@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { StatusPill } from '@/components/ui/status-pill'
 import { EmptyState } from '@/components/empty-state'
 import {
   AlertDialog,
@@ -30,13 +31,6 @@ const kategoriLabels: Record<BiayaOperasional['kategori'], string> = {
   solar: 'Solar',
   transport: 'Transport',
   lainnya: 'Lainnya',
-}
-
-const kategoriColors: Record<BiayaOperasional['kategori'], string> = {
-  gaji: 'bg-stone-100 text-stone-600 dark:text-stone-300 border border-transparent',
-  solar: 'bg-stone-100 text-stone-600 dark:text-stone-300 border border-transparent',
-  transport: 'bg-stone-100 text-stone-600 dark:text-stone-300 border border-transparent',
-  lainnya: 'bg-stone-100 text-stone-600 dark:text-stone-300 border border-transparent',
 }
 
 type AkunOption = { id: string; nama: string; tipe: string }
@@ -133,9 +127,7 @@ export function BiayaTable({ biayaList, isOwner, akunOptions }: Props) {
                 <tr className="bg-white hover:bg-stone-50 dark:hover:bg-white/[0.03] transition-colors">
                   <td className="px-4 py-3 text-stone-900 dark:text-stone-100">{formatTanggal(item.tanggal)}</td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${kategoriColors[item.kategori]}`}>
-                      {kategoriLabels[item.kategori]}
-                    </span>
+                    <StatusPill tone="neutral">{kategoriLabels[item.kategori]}</StatusPill>
                   </td>
                   <td className="px-4 py-3">
                     <span className="inline-flex rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-700 max-w-[130px] truncate">
@@ -216,9 +208,7 @@ export function BiayaTable({ biayaList, isOwner, akunOptions }: Props) {
           <div key={item.id} className="surface p-4">
             <div className="flex items-start justify-between gap-2 mb-3">
               <div>
-                <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${kategoriColors[item.kategori]}`}>
-                  {kategoriLabels[item.kategori]}
-                </span>
+                <StatusPill tone="neutral">{kategoriLabels[item.kategori]}</StatusPill>
                 <p className="text-xs text-stone-500 mt-1">
                   {formatTanggal(item.tanggal)} · {item.akunSumber?.nama ?? item.akunSumberId}
                 </p>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { X, ChevronLeft, ChevronRight, ImageOff } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, Image as ImageIcon } from 'lucide-react'
 import { fotoUrl } from '@/lib/foto-url'
 
 interface Props {
@@ -120,7 +120,7 @@ export function FotoCount({ count }: { count: number }) {
   if (count === 0) return null
   return (
     <span className="inline-flex items-center gap-1 text-xs text-stone-500">
-      <ImageOff className="h-3.5 w-3.5" />
+      <ImageIcon className="h-3.5 w-3.5" />
       {count}
     </span>
   )

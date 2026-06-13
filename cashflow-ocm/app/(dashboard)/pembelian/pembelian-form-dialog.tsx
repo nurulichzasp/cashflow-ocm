@@ -331,7 +331,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
             </div>
           )}
           {!initialData && !headerAcuan && !hargaLoading && (
-            <div className="rounded-lg border border-amber-200 dark:border-amber-900/30 bg-amber-50 dark:bg-amber-950/10 px-4 py-3 text-xs text-amber-700 dark:text-amber-400">
+            <div className="rounded-lg border border-[var(--warn-fg)]/20 bg-[var(--warn-bg)] px-4 py-3 text-xs text-[var(--warn-fg)]">
               Harga acuan belum tersedia untuk {derivedProduk}. Tambah dulu di Harga Acuan, atau isi manual.
             </div>
           )}
@@ -407,7 +407,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
                         >
                           <CalendarDays className="h-3 w-3 shrink-0" />
                           <span className="truncate">{hasDate ? formatRentangKotak(d.tanggalReplas, d.tanggalReplasSampai) : 'Tgl'}</span>
-                          {warnRange(d) && <AlertTriangle className="h-3 w-3 shrink-0 text-amber-500" />}
+                          {warnRange(d) && <AlertTriangle className="h-3 w-3 shrink-0 text-warn" />}
                         </button>
                       </div>
                       <div className="px-0 py-1.5 flex justify-center">

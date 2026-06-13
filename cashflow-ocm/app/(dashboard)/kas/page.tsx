@@ -49,7 +49,7 @@ export default async function KasPage() {
       {/* Saldo per akun — hierarki: akun utama dominan, sisanya list sekunder ringkas */}
       <div className="surface overflow-hidden">
         <div className="px-5 py-3 border-b border-stone-100 dark:border-border flex items-center justify-between">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Saldo Rekening &amp; Kas</p>
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400">Saldo Rekening &amp; Kas</p>
           <p className="text-xs font-semibold num tabular-nums text-stone-900 dark:text-stone-100">{formatCompact(totalSaldo)}</p>
         </div>
 

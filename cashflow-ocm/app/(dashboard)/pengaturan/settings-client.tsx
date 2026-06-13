@@ -43,7 +43,7 @@ import {
 import {
   Building2,
   Users,
-  Shield,
+  Palette,
   Trash2,
   KeyRound,
   Download,
@@ -465,7 +465,7 @@ export function SettingsClient({ currentUser, initialUsers, section }: SettingsC
               : 'text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-900/60'
           }`}
         >
-          <Shield className="h-4 w-4" />
+          <Palette className="h-4 w-4" />
           Tampilan &amp; Tema
         </button>
 
@@ -559,7 +559,7 @@ export function SettingsClient({ currentUser, initialUsers, section }: SettingsC
                         onChange={(e) => setThreshold(e.target.value)}
                         placeholder="Contoh: 50000000"
                       />
-                      <p className="text-[11px] text-muted-foreground">Transksi keluar melebihi nominal ini butuh konfirmasi Owner.</p>
+                      <p className="text-[11px] text-muted-foreground">Transaksi keluar melebihi nominal ini butuh konfirmasi Owner.</p>
                     </div>
                   </div>
                 </div>
@@ -920,7 +920,7 @@ export function SettingsClient({ currentUser, initialUsers, section }: SettingsC
                       Tentukan modul yang bisa diakses oleh{' '}
                       <strong>{editAccessTarget?.name}</strong>.
                       {editAccessTarget?.role === 'owner' && (
-                        <span className="mt-1 block text-amber-600 dark:text-amber-400">
+                        <span className="mt-1 block text-warn">
                           Catatan: Owner selalu punya akses penuh, terlepas dari pengaturan ini.
                         </span>
                       )}
@@ -1093,7 +1093,7 @@ export function SettingsClient({ currentUser, initialUsers, section }: SettingsC
               {isOwner && (
                 <div className="rounded-xl border border-red-200 dark:border-red-950 bg-red-50/20 dark:bg-red-950/5 p-4 space-y-3">
                   <h3 className="text-sm font-bold text-crit flex items-center gap-2">
-                    <AlertTriangle className="h-4 w-4" /> Danger Zone (Zona Berbahaya)
+                    <AlertTriangle className="h-4 w-4" /> Zona Berbahaya
                   </h3>
                   <p className="text-xs text-stone-600 dark:text-stone-400 max-w-xl leading-relaxed">
                     Menghapus data akan memusnahkan seluruh riwayat kas, pembelian tiket sawit, penjualan BGA, dan biaya operasional. Tindakan ini tidak dapat dibatalkan. Hanya direkomendasikan saat memulai pembukuan tahun fiskal baru.
