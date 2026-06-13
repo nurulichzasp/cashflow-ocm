@@ -11,7 +11,8 @@ function Box({ className }: { className?: string }) {
  */
 export function ListPageSkeleton({ stats = 4 }: { stats?: number }) {
   return (
-    <div className="space-y-5 animate-pulse" aria-hidden="true">
+    <div role="status" aria-busy="true" className="space-y-5 animate-pulse">
+      <span className="sr-only">Memuat…</span>
       <div className="grid grid-cols-2 gap-2 sm:gap-3">
         {Array.from({ length: stats }).map((_, i) => (
           <div key={i} className="surface p-4">
@@ -51,7 +52,8 @@ export function ListPageSkeleton({ stats = 4 }: { stats?: number }) {
 /** Skeleton laporan: header + tabel ringkas. */
 export function ReportSkeleton() {
   return (
-    <div className="space-y-5 animate-pulse" aria-hidden="true">
+    <div role="status" aria-busy="true" className="space-y-5 animate-pulse">
+      <span className="sr-only">Memuat…</span>
       <div className="flex gap-2">
         <Box className="h-10 w-40 rounded-lg" />
         <Box className="h-10 w-28 rounded-lg" />

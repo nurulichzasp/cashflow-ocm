@@ -3,7 +3,8 @@
 // Netral + util .surface + animate-pulse, selaras sistem desain.
 export default function Loading() {
   return (
-    <div className="space-y-5 animate-pulse" aria-hidden="true">
+    <div role="status" aria-busy="true" className="space-y-5 animate-pulse">
+      <span className="sr-only">Memuat…</span>
       {/* Ringkasan: dua kartu berdampingan */}
       <div className="grid grid-cols-2 gap-2 sm:gap-3">
         <div className="surface h-24 sm:h-28" />

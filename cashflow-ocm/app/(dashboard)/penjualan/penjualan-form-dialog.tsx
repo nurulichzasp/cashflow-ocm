@@ -307,13 +307,13 @@ export function PenjualanFormDialog({ children, editItem }: Props) {
 
           <div className="space-y-1.5">
             <Label htmlFor="pj-noinvoice">No. Invoice</Label>
-            <textarea
+            <Textarea
               id="pj-noinvoice"
               rows={3}
               value={noInvoice}
               onChange={(e) => setNoInvoice(e.target.value)}
               placeholder="Opsional — bisa lebih dari satu, satu baris per invoice"
-              className="min-h-[4rem] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring resize-none"
+              className="resize-none"
             />
           </div>
 

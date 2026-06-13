@@ -2,7 +2,8 @@
 // Bentuk: header + avatar + baris info — bukan skeleton daftar generik.
 export default function Loading() {
   return (
-    <div className="space-y-5 animate-pulse" aria-hidden="true">
+    <div role="status" aria-busy="true" className="space-y-5 animate-pulse">
+      <span className="sr-only">Memuat…</span>
       <div className="flex items-center gap-3">
         <div className="h-9 w-9 rounded-full bg-stone-200/60 dark:bg-white/[0.06]" />
         <div className="h-5 w-32 rounded bg-stone-200/60 dark:bg-white/[0.06]" />

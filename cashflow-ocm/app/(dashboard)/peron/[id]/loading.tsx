@@ -2,7 +2,8 @@
 // Lebih sesuai bentuk halaman detail daripada fallback skeleton daftar peron.
 export default function Loading() {
   return (
-    <div className="space-y-5 animate-pulse" aria-hidden="true">
+    <div role="status" aria-busy="true" className="space-y-5 animate-pulse">
+      <span className="sr-only">Memuat…</span>
       {/* Header: judul + aksi */}
       <div className="space-y-2">
         <div className="h-6 w-48 rounded bg-stone-200/60 dark:bg-white/[0.06]" />

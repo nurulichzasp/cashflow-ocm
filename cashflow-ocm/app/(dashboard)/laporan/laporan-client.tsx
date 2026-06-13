@@ -373,7 +373,9 @@ function PajakTab({ tahun, onTahunChange }: { tahun: string; onTahunChange: (t: 
                   <td className="px-4 py-2 text-right tabular-nums font-semibold">{formatRupiah(d.ppn)}</td>
                   <td className="px-4 py-2 text-center">
                     <button
-                      className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold cursor-pointer transition-opacity hover:opacity-80 ${d.status === 'sudah' ? 'pill-ok' : 'pill-warn'}`}
+                      type="button"
+                      aria-label={`Ubah status setor PPN bulan ${bulan} — sekarang ${d.status === 'sudah' ? 'sudah disetor' : 'belum'}`}
+                      className={`tap-pad inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold cursor-pointer transition-opacity hover:opacity-80 ${d.status === 'sudah' ? 'pill-ok' : 'pill-warn'}`}
                       onClick={async () => {
                         const next = d.status === 'sudah' ? 'belum' : 'sudah'
                         const tgl = next === 'sudah' ? new Date().toISOString().slice(0, 10) : undefined
@@ -410,7 +412,9 @@ function PajakTab({ tahun, onTahunChange }: { tahun: string; onTahunChange: (t: 
                   <td className="px-4 py-2 text-right tabular-nums">{formatRupiah(d.nominal)}</td>
                   <td className="px-4 py-2 text-center">
                     <button
-                      className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold cursor-pointer transition-opacity hover:opacity-80 ${d.status === 'sudah' ? 'pill-ok' : 'pill-warn'}`}
+                      type="button"
+                      aria-label={`Ubah status bayar PPh bulan ${bulan} — sekarang ${d.status === 'sudah' ? 'sudah dibayar' : 'belum'}`}
+                      className={`tap-pad inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold cursor-pointer transition-opacity hover:opacity-80 ${d.status === 'sudah' ? 'pill-ok' : 'pill-warn'}`}
                       onClick={async () => {
                         const next = d.status === 'sudah' ? 'belum' : 'sudah'
                         const tgl = next === 'sudah' ? new Date().toISOString().slice(0, 10) : undefined
@@ -656,13 +660,16 @@ export function LaporanClient({
       </div>
 
       <div>
-        <div className="flex border-b overflow-x-auto">
+        <div className="flex border-b overflow-x-auto" role="tablist" aria-label="Bagian laporan">
           {tabs.map((t) => (
             <button
               key={t.key}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === t.key}
               onClick={() => setActiveTab(t.key)}
               className={cn(
-                'px-4 py-2.5 text-sm font-medium border-b-2 -mb-px whitespace-nowrap transition-colors',
+                'px-4 py-3 text-sm font-medium border-b-2 -mb-px whitespace-nowrap transition-colors',
                 activeTab === t.key
                   ? 'border-primary text-primary'
                   : 'border-transparent text-muted-foreground hover:text-foreground'

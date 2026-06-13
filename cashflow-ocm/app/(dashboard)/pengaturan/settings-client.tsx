@@ -714,7 +714,7 @@ export function SettingsClient({ currentUser, initialUsers, section }: SettingsC
               )}
             </CardHeader>
             <CardContent>
-              <div className="rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-[#1E1E1E] overflow-hidden">
+              <div className="rounded-xl border border-border bg-card overflow-hidden">
                 <Table>
                   <TableHeader className="bg-stone-50 dark:bg-stone-900/60">
                     <TableRow>

@@ -4,7 +4,8 @@
 // Netral + util .surface + animate-pulse (selaras loading.tsx lain).
 export default function Loading() {
   return (
-    <div className="space-y-5 pb-2 pt-1 md:pt-0 animate-pulse" aria-hidden="true">
+    <div role="status" aria-busy="true" className="space-y-5 pb-2 pt-1 md:pt-0 animate-pulse">
+      <span className="sr-only">Memuat…</span>
       {/* A. Sapaan */}
       <div className="px-0.5">
         <div className="h-6 w-40 rounded-lg bg-stone-200/60 dark:bg-white/[0.06]" />
@@ -12,7 +13,7 @@ export default function Loading() {
       </div>
 
       {/* B. Hero Total Kas */}
-      <div className="rounded-3xl bg-[#191919] p-6 dark:bg-[#0F0F0F]">
+      <div className="rounded-3xl bg-[#18181B] p-6">
         <div className="h-3 w-20 rounded bg-white/10" />
         <div className="mt-3 h-10 w-2/3 rounded-lg bg-white/[0.08]" />
         <div className="mt-4 h-3 w-40 rounded bg-white/[0.06]" />
