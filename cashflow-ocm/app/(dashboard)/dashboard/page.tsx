@@ -224,25 +224,27 @@ function TotalKasHero({ total, delta7 }: { total: number; delta7: number }) {
     <div
       className="relative overflow-hidden rounded-3xl border border-white/[0.08] p-6 text-white shadow-[var(--shadow-card)]"
       style={{
-        backgroundColor: '#0C3D2D',
-        // Cahaya radial halus dari pojok kanan-atas (bukan gradasi linear, tanpa
-        // glossy) — satu keluarga hijau, kontras rendah → premium, tak "lebay".
-        backgroundImage:
-          'radial-gradient(125% 125% at 100% 0%, #155C44 0%, #0C3D2D 46%, #0A3325 100%)',
+        // Mesh gradasi gelap — kedalaman murni dari cahaya: sorotan utama pojok
+        // kanan-atas + sentuhan lembut kiri-bawah, memudar ke hampir hitam-hijau.
+        // Titik fade pakai rgba(6,34,26,0) (alpha-0 dari warna base, BUKAN
+        // `transparent` murni → cegah "abu mati" di transisi sebagian browser).
+        // Tanpa pola/garis, tanpa warna kedua, tanpa glossy/animasi. Sama di light & dark.
+        background:
+          'radial-gradient(95% 130% at 86% -15%, #277052 0%, #124B38 44%, rgba(6,34,26,0) 78%), radial-gradient(90% 115% at 6% 122%, #154D3B 0%, rgba(6,34,26,0) 60%), #06221A',
       }}
     >
-      <p className="text-[11px] font-semibold uppercase tracking-widest text-white/55">Total Kas</p>
+      <p className="text-[11px] font-semibold uppercase tracking-widest text-white/60">Total Kas</p>
       <p className="mt-2 num tabular-nums text-[2.6rem] font-bold leading-none tracking-[-0.03em]">
         {formatCompact(total)}
       </p>
       <div className="mt-3 flex items-center gap-1.5 text-[12px]">
         {up && (
           <>
-            <span className="inline-flex items-center gap-0.5 font-semibold num tabular-nums" style={{ color: '#35C892' }}>
+            <span className="inline-flex items-center gap-0.5 font-semibold num tabular-nums" style={{ color: '#5BC79B' }}>
               <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.5} />
               {formatCompact(delta7)}
             </span>
-            <span className="text-white/40">· 7 hari terakhir</span>
+            <span className="text-white/60">· 7 hari terakhir</span>
           </>
         )}
         {down && (
@@ -251,10 +253,10 @@ function TotalKasHero({ total, delta7 }: { total: number; delta7: number }) {
               <ArrowDownRight className="h-3.5 w-3.5" strokeWidth={2.5} />
               {formatCompact(Math.abs(delta7))}
             </span>
-            <span className="text-white/40">· 7 hari terakhir</span>
+            <span className="text-white/60">· 7 hari terakhir</span>
           </>
         )}
-        {!up && !down && <span className="text-white/45">Per hari ini</span>}
+        {!up && !down && <span className="text-white/60">Per hari ini</span>}
       </div>
     </div>
   )
