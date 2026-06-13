@@ -56,12 +56,14 @@ import {
   RefreshCw,
   Wallet2,
   SlidersHorizontal,
+  AtSign,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   addUser,
   deleteUser,
   updateUserRole,
+  updateUserEmail,
   resetUserPassword,
   updateUserPermissions,
   getAppSetting,
@@ -275,6 +277,31 @@ export function SettingsClient({ currentUser, initialUsers, section }: SettingsC
       toast.error(msg)
     } finally {
       setSubmittingUser(false)
+    }
+  }
+
+  // Ganti email login state
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false)
+  const [emailTarget, setEmailTarget] = useState<UserItem | null>(null)
+  const [newEmailVal, setNewEmailVal] = useState('')
+  const [submittingEmail, setSubmittingEmail] = useState(false)
+
+  async function handleChangeEmail(e: React.FormEvent) {
+    e.preventDefault()
+    if (!emailTarget || !newEmailVal.trim()) return
+
+    setSubmittingEmail(true)
+    try {
+      await updateUserEmail(emailTarget.id, newEmailVal)
+      toast.success(`Email login ${emailTarget.name} berhasil diubah`)
+      setEmailDialogOpen(false)
+      setNewEmailVal('')
+      router.refresh()
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Gagal mengubah email login'
+      toast.error(msg)
+    } finally {
+      setSubmittingEmail(false)
     }
   }
 
@@ -714,8 +741,64 @@ export function SettingsClient({ currentUser, initialUsers, section }: SettingsC
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
-                          {isOwner && user.id !== currentUser.id ? (
+                          {isOwner ? (
                             <div className="flex items-center justify-end gap-1.5">
+                              {/* Ganti Email Login — tersedia untuk SEMUA pengguna termasuk diri sendiri */}
+                              <Dialog
+                                open={emailDialogOpen && emailTarget?.id === user.id}
+                                onOpenChange={(op) => {
+                                  setEmailDialogOpen(op)
+                                  if (op) {
+                                    setEmailTarget(user)
+                                    setNewEmailVal(user.email)
+                                  }
+                                }}
+                              >
+                                <DialogTrigger asChild>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-8 w-8 text-stone-500 hover:bg-stone-100 dark:hover:bg-stone-800"
+                                    title="Ganti Email Login"
+                                  >
+                                    <AtSign className="h-3.5 w-3.5" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-[400px] dark:bg-card">
+                                  <DialogHeader>
+                                    <DialogTitle className="font-bold">Ganti Email Login</DialogTitle>
+                                    <DialogDescription>
+                                      Ubah email yang dipakai <strong>{user.name}</strong> untuk masuk.
+                                      {user.id === currentUser.id && ' Anda tetap login; gunakan email baru saat masuk berikutnya.'}
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <form onSubmit={handleChangeEmail} className="space-y-4 py-2">
+                                    <div className="space-y-1.5">
+                                      <Label htmlFor="newEmailVal">Email Login Baru</Label>
+                                      <Input
+                                        id="newEmailVal"
+                                        type="email"
+                                        value={newEmailVal}
+                                        onChange={(e) => setNewEmailVal(e.target.value)}
+                                        placeholder="nama@omandacerli.com"
+                                        required
+                                      />
+                                    </div>
+                                    <DialogFooter className="pt-2">
+                                      <Button type="button" variant="outline" onClick={() => setEmailDialogOpen(false)} className="border-stone-200">
+                                        Batal
+                                      </Button>
+                                      <Button type="submit" disabled={submittingEmail} className="bg-stone-900 hover:bg-stone-800 dark:bg-white dark:hover:bg-zinc-200 dark:text-stone-900 text-white">
+                                        {submittingEmail ? 'Memproses...' : 'Ubah Email'}
+                                      </Button>
+                                    </DialogFooter>
+                                  </form>
+                                </DialogContent>
+                              </Dialog>
+
+                              {/* Aksi berikut hanya untuk pengguna LAIN (bukan diri sendiri) */}
+                              {user.id !== currentUser.id && (
+                              <>
                               {/* Edit Akses (hak akses per modul) */}
                               <Button
                                 size="icon"
@@ -815,6 +898,8 @@ export function SettingsClient({ currentUser, initialUsers, section }: SettingsC
                                   </AlertDialogFooter>
                                 </AlertDialogContent>
                               </AlertDialog>
+                              </>
+                              )}
                             </div>
                           ) : (
                             <span className="text-xs text-stone-400">—</span>

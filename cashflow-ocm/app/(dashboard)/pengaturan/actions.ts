@@ -8,6 +8,7 @@ import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { hashPassword } from '@better-auth/utils/password'
 import { requirePermission } from '@/lib/permissions'
+import { logActivity } from '@/lib/audit'
 
 // 1. Update profil user yang sedang login
 export async function updateProfile(data: {
@@ -135,6 +136,53 @@ export async function updateUserRole(targetUserId: string, role: 'owner' | 'admi
       updatedAt: new Date(),
     })
     .where(eq(user.id, targetUserId))
+
+  revalidatePath('/')
+  return { success: true }
+}
+
+// 4b. Ganti email LOGIN pengguna (owner-only) — bisa untuk diri sendiri atau pengguna lain.
+// PENTING: "email login" = kolom user.email yang dipakai Better Auth untuk sign-in,
+// BUKAN companyEmail/personalEmail (itu hanya metadata kontak di updateProfile).
+// Sesi yang sedang aktif tetap valid (sesi dikunci ke userId/token, bukan email),
+// jadi mengganti email sendiri TIDAK membuat owner ter-logout — login berikutnya pakai email baru.
+export async function updateUserEmail(targetUserId: string, newEmail: string) {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session || session.user.role !== 'owner') {
+    throw new Error('Hanya Owner yang dapat mengubah email login')
+  }
+
+  const email = newEmail.trim().toLowerCase()
+  // Validasi format sederhana (sejalan dengan addUser).
+  if (!email || !email.includes('@') || /\s/.test(email)) {
+    throw new Error('Email tidak valid')
+  }
+
+  const target = await db.query.user.findFirst({ where: eq(user.id, targetUserId) })
+  if (!target) throw new Error('Pengguna tidak ditemukan')
+  if (target.email === email) return { success: true } // tidak ada perubahan
+
+  // Email harus unik — cek dulu agar pesannya ramah (UNIQUE index tetap jadi penjaga akhir).
+  const existing = await db.query.user.findFirst({ where: eq(user.email, email) })
+  if (existing && existing.id !== targetUserId) {
+    throw new Error('Email sudah dipakai pengguna lain')
+  }
+
+  const oldEmail = target.email
+  await db
+    .update(user)
+    .set({ email, emailVerified: true, updatedAt: new Date() })
+    .where(eq(user.id, targetUserId))
+
+  await logActivity({
+    userId: session.user.id,
+    action: 'update',
+    entityType: 'user',
+    entityId: targetUserId,
+    description: `Ganti email login ${target.name}: ${oldEmail} → ${email}`,
+    oldValues: { email: oldEmail },
+    newValues: { email },
+  })
 
   revalidatePath('/')
   return { success: true }
