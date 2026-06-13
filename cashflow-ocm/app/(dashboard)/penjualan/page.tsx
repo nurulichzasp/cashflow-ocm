@@ -17,8 +17,6 @@ export default async function PenjualanPage() {
   ])
 
   const isOwner = session?.user.role === 'owner'
-  const jumlahLunas = penjualanList.filter((item) => item.statusBayar === 'lunas').length
-  const jumlahBelum = penjualanList.length - jumlahLunas
 
   const totalPenjualan = penjualanList.reduce((s, p) => s + (p.totalBersih ?? 0), 0)
   const totalPpn = penjualanList.reduce((s, p) => {
@@ -31,26 +29,31 @@ export default async function PenjualanPage() {
     <div className="space-y-5">
       <PenjualanFormDialog><FloatingFab /></PenjualanFormDialog>
 
-      <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
-        <div className="surface press-card p-3 sm:p-4">
-          <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-[#6B7280] mb-1">Total Transaksi</p>
-          <p className="text-lg sm:text-2xl font-bold text-stone-900 dark:text-stone-100 num tabular-nums">{penjualanList.length}</p>
-          <p className="text-[10px] sm:text-xs text-stone-400 dark:text-[#6B7280] mt-0.5 sm:mt-1">Penjualan tercatat</p>
-        </div>
-        <div className="surface press-card p-3 sm:p-4">
-          <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-[#6B7280] mb-1">Total Penjualan</p>
-          <p className="text-lg sm:text-2xl font-bold text-stone-900 dark:text-stone-100 num tabular-nums">{formatCompact(totalPenjualan)}</p>
-          <p className="text-[10px] sm:text-xs text-stone-400 dark:text-[#6B7280] mt-0.5 sm:mt-1">Nilai bersih (tanpa pajak)</p>
-        </div>
-        <div className="surface press-card p-3 sm:p-4">
-          <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-[#6B7280] mb-1">Total PPN</p>
-          <p className="text-lg sm:text-2xl font-bold text-stone-900 dark:text-stone-100 num tabular-nums">{formatCompact(totalPpn)}</p>
-          <p className="text-[10px] sm:text-xs text-stone-400 dark:text-[#6B7280] mt-0.5 sm:mt-1">Selisih PPN-PPH</p>
-        </div>
-        <div className="surface press-card p-3 sm:p-4">
-          <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-[#6B7280] mb-1">Margin Dagang</p>
-          <p className="text-lg sm:text-2xl font-bold text-stone-900 dark:text-stone-100 num tabular-nums">{formatCompact(estimasiLaba)}</p>
-          <p className="text-[10px] sm:text-xs text-stone-400 dark:text-[#6B7280] mt-0.5 sm:mt-1">Markup peron, sblm biaya</p>
+      {/* Ringkasan — satu hero premium (selaras Pembelian). Angka utama = Total
+          Penjualan (nilai bersih); Transaksi/PPN/Margin jadi konteks samping. */}
+      <div className="surface px-5 py-4 sm:px-6 sm:py-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Total Penjualan</p>
+            <p className="mt-1.5 text-[2.25rem] sm:text-[2.75rem] font-bold num tabular-nums tracking-[-0.03em] leading-none text-stone-900 dark:text-zinc-50">
+              {formatCompact(totalPenjualan)}
+            </p>
+            <p className="mt-1.5 text-[11px] text-stone-400 dark:text-zinc-500">Nilai bersih · seluruh transaksi</p>
+          </div>
+          <div className="flex items-center gap-5 sm:gap-6 shrink-0">
+            <div className="text-right">
+              <p className="text-[10px] uppercase tracking-wider text-stone-400 dark:text-zinc-500 font-medium">Transaksi</p>
+              <p className="mt-1 text-sm font-semibold num tabular-nums text-stone-700 dark:text-zinc-300">{penjualanList.length.toLocaleString('id-ID')}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] uppercase tracking-wider text-stone-400 dark:text-zinc-500 font-medium">PPN</p>
+              <p className="mt-1 text-sm font-semibold num tabular-nums text-stone-700 dark:text-zinc-300">{formatCompact(totalPpn)}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] uppercase tracking-wider text-stone-400 dark:text-zinc-500 font-medium">Margin</p>
+              <p className="mt-1 text-sm font-semibold num tabular-nums text-stone-700 dark:text-zinc-300">{formatCompact(estimasiLaba)}</p>
+            </div>
+          </div>
         </div>
       </div>
 
