@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { NumberInput } from '@/components/number-input'
 import { Label } from '@/components/ui/label'
+import { FieldError, invalidFieldClass } from '@/components/ui/field-error'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { FotoBuktiUploader } from '@/components/foto-bukti-uploader'
 import { Textarea } from '@/components/ui/textarea'
@@ -70,6 +71,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
   const [keteranganManual, setKeteranganManual] = useState(false)
   const [fotos, setFotos] = useState<string[]>([])
   const [details, setDetails] = useState<DetailRow[]>([{ ...EMPTY_DETAIL }])
+  const [rowErrors, setRowErrors] = useState<Record<number, { tonase?: boolean; harga?: boolean }>>({})
   // Baris mana yang editor tanggalnya sedang terbuka (chip diketuk). null = semua tertutup.
   const [editingDateIdx, setEditingDateIdx] = useState<number | null>(null)
 
@@ -195,6 +197,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
   function removeDetail(idx: number) {
     setDetails((prev) => prev.filter((_, i) => i !== idx))
     setEditingDateIdx(null)
+    setRowErrors({}) // index bergeser setelah hapus → reset tanda agar tak salah baris
   }
 
   // Keterangan otomatis: "Total {N} Replas ({rentang})" — SATU SUMBER (helper bersama
@@ -226,13 +229,34 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
     setFotos([])
     setDetails([{ ...EMPTY_DETAIL }])
     setEditingDateIdx(null)
+    setRowErrors({})
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    // Validasi per-baris: baris yang sudah "dimulai" (ada isian apa pun) WAJIB punya
+    // tonase > 0 DAN harga > 0. Baris bertanda merah TIDAK di-drop diam-diam.
+    const errs: Record<number, { tonase?: boolean; harga?: boolean }> = {}
+    details.forEach((d, i) => {
+      const started =
+        d.tonase.trim() !== '' || d.hargaLapangan.trim() !== '' ||
+        d.noTid.trim() !== '' || d.jumlahReplas.trim() !== ''
+      if (!started) return
+      const tOk = parseFloat(d.tonase) > 0
+      const hOk = parseFloat(d.hargaLapangan) > 0
+      if (!tOk || !hOk) errs[i] = { tonase: !tOk, harga: !hOk }
+    })
     const validDetails = details.filter((d) => parseFloat(d.tonase) > 0 && parseFloat(d.hargaLapangan) > 0)
+    if (validDetails.length === 0 && Object.keys(errs).length === 0) {
+      errs[0] = { tonase: true, harga: true } // semua baris kosong → tandai baris pertama
+    }
+    setRowErrors(errs)
     if (validDetails.length === 0) {
-      toast.error('Minimal 1 baris dengan tonase dan harga yang valid')
+      toast.error('Isi minimal 1 baris dengan tonase & harga yang valid')
+      return
+    }
+    if (Object.keys(errs).length > 0) {
+      toast.error('Lengkapi atau hapus baris yang ditandai merah')
       return
     }
     setLoading(true)
@@ -376,18 +400,20 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
                           type="text"
                           inputMode="decimal"
                           value={d.tonase}
-                          onChange={(e) => updateDetail(idx, 'tonase', e.target.value.replace(/[^0-9.]/g, ''))}
+                          onChange={(e) => { updateDetail(idx, 'tonase', e.target.value.replace(/[^0-9.]/g, '')); if (rowErrors[idx]) setRowErrors((p) => { const n = { ...p }; delete n[idx]; return n }) }}
                           placeholder="0"
-                          className="h-8 text-sm text-right min-w-0 px-1.5"
+                          aria-invalid={!!rowErrors[idx]?.tonase}
+                          className={cn('h-8 text-sm text-right min-w-0 px-1.5', rowErrors[idx]?.tonase && invalidFieldClass)}
                         />
                       </div>
                       <div className="px-1 py-1.5 min-w-0">
                         <NumberInput
                           aria-label="Harga per kg"
                           value={d.hargaLapangan}
-                          onChange={(n) => updateDetail(idx, 'hargaLapangan', String(n))}
+                          onChange={(n) => { updateDetail(idx, 'hargaLapangan', String(n)); if (rowErrors[idx]) setRowErrors((p) => { const m = { ...p }; delete m[idx]; return m }) }}
                           placeholder="0"
-                          className="h-8 text-sm min-w-0 px-1.5"
+                          aria-invalid={!!rowErrors[idx]?.harga}
+                          className={cn('h-8 text-sm min-w-0 px-1.5', rowErrors[idx]?.harga && invalidFieldClass)}
                         />
                       </div>
                       {/* Chip tanggal — 1 kotak ringkas; ketuk untuk buka editor native */}
@@ -418,6 +444,11 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
                         )}
                       </div>
                     </div>
+                    {rowErrors[idx] && (
+                      <div className="px-1 pb-1.5">
+                        <FieldError>Lengkapi tonase &amp; harga baris ini (wajib lebih dari 0).</FieldError>
+                      </div>
+                    )}
                     {/* Editor tanggal — muncul HANYA saat chip baris ini diketuk.
                         SATU baris: [Dari] [s/d] (label di dalam kotak, native picker). */}
                     {isEditing && (
