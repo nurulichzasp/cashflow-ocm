@@ -222,29 +222,35 @@ function TotalKasHero({ total, delta7 }: { total: number; delta7: number }) {
   const down = delta7 < 0
   return (
     <div
-      className="relative overflow-hidden rounded-3xl border border-white/[0.08] p-6 text-white shadow-[var(--shadow-card)]"
+      className="relative overflow-hidden rounded-3xl border border-white/[0.06] p-6 text-white shadow-[var(--shadow-card)]"
       style={{
-        // Mesh gradasi gelap — kedalaman murni dari cahaya: sorotan utama pojok
-        // kanan-atas + sentuhan lembut kiri-bawah, memudar ke hampir hitam-hijau.
-        // Titik fade pakai rgba(6,34,26,0) (alpha-0 dari warna base, BUKAN
-        // `transparent` murni → cegah "abu mati" di transisi sebagian browser).
-        // Tanpa pola/garis, tanpa warna kedua, tanpa glossy/animasi. Sama di light & dark.
+        // Dasar NETRAL gelap + dua cahaya hijau TIPIS (aksen, bukan dominan) → hero
+        // nyatu dgn surface lain di app. Titik fade pakai rgba(24,24,27,0) (alpha-0
+        // dari base, BUKAN `transparent` → cegah "abu mati"). Tanpa warna kedua,
+        // tanpa glossy/animasi. Komposisi sama di light & dark (teks putih kontras).
         background:
-          'radial-gradient(95% 130% at 86% -15%, #277052 0%, #124B38 44%, rgba(6,34,26,0) 78%), radial-gradient(90% 115% at 6% 122%, #154D3B 0%, rgba(6,34,26,0) 60%), #06221A',
+          'radial-gradient(80% 105% at 90% -12%, rgba(33,105,77,.34) 0%, rgba(24,24,27,0) 50%), radial-gradient(80% 100% at 8% 120%, rgba(33,105,77,.18) 0%, rgba(24,24,27,0) 55%), #18181B',
       }}
     >
-      <p className="text-[11px] font-semibold uppercase tracking-widest text-white/60">Total Kas</p>
+      {/* Garis aksen hijau tipis di tepi atas — overlay (BUKAN border 1 sisi) supaya
+          sudut kartu tetap membulat; 2px, memudar di kedua ujung. */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-0.5"
+        style={{ background: 'linear-gradient(90deg, transparent, rgba(53,200,146,.7), transparent)' }}
+      />
+      <p className="text-[11px] font-semibold uppercase tracking-widest text-white/50">Total Kas</p>
       <p className="mt-2 num tabular-nums text-[2.6rem] font-bold leading-none tracking-[-0.03em]">
         {formatCompact(total)}
       </p>
       <div className="mt-3 flex items-center gap-1.5 text-[12px]">
         {up && (
           <>
-            <span className="inline-flex items-center gap-0.5 font-semibold num tabular-nums" style={{ color: '#5BC79B' }}>
+            <span className="inline-flex items-center gap-0.5 font-semibold num tabular-nums" style={{ color: '#35C892' }}>
               <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.5} />
               {formatCompact(delta7)}
             </span>
-            <span className="text-white/60">· 7 hari terakhir</span>
+            <span className="text-white/50">· 7 hari terakhir</span>
           </>
         )}
         {down && (
@@ -253,10 +259,10 @@ function TotalKasHero({ total, delta7 }: { total: number; delta7: number }) {
               <ArrowDownRight className="h-3.5 w-3.5" strokeWidth={2.5} />
               {formatCompact(Math.abs(delta7))}
             </span>
-            <span className="text-white/60">· 7 hari terakhir</span>
+            <span className="text-white/50">· 7 hari terakhir</span>
           </>
         )}
-        {!up && !down && <span className="text-white/60">Per hari ini</span>}
+        {!up && !down && <span className="text-white/50">Per hari ini</span>}
       </div>
     </div>
   )
