@@ -40,10 +40,10 @@ export default async function PeronDetailPage({ params }: { params: Promise<{ id
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold">{data.nama}</h1>
-            <Badge variant={data.status === 'aktif' ? 'default' : 'secondary'}>{data.status}</Badge>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <h1 className="text-xl font-bold truncate">{data.nama}</h1>
+            <Badge variant={data.status === 'aktif' ? 'default' : 'secondary'} className="shrink-0">{data.status}</Badge>
           </div>
           {data.kontak && <p className="text-sm text-muted-foreground">{data.kontak}</p>}
           {data.alamat && <p className="text-sm text-muted-foreground">{data.alamat}</p>}

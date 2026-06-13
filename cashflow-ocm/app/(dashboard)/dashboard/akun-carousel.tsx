@@ -68,7 +68,7 @@ export function AkunCarousel({ items }: { items: AkunCard[] }) {
           Akun Kas
         </p>
         {!single && (
-          <span className="text-[11px] font-medium text-stone-400 dark:text-zinc-500">Geser →</span>
+          <span className="text-[11px] font-medium text-stone-400 dark:text-zinc-500">Geser <span aria-hidden="true">→</span></span>
         )}
       </div>
 

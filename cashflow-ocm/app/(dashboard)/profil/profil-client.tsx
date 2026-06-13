@@ -49,7 +49,7 @@ export function ProfilClient({ user, isOwner }: { user: ProfilUser; isOwner: boo
       {/* Kartu profil — dirampingkan */}
       <div className="surface flex flex-col items-center px-5 py-5 text-center">
         {user.image ? (
-          <img src={fotoUrl(user.image)} alt="Avatar" className="h-16 w-16 rounded-full object-cover" />
+          <img src={fotoUrl(user.image)} alt="Avatar" width={64} height={64} className="h-16 w-16 rounded-full object-cover" />
         ) : (
           <div className="grid h-16 w-16 place-items-center rounded-full bg-stone-200 text-xl font-bold text-stone-600 dark:bg-white/[0.08] dark:text-zinc-200">
             {getInitials(displayName)}
