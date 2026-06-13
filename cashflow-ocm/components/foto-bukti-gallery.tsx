@@ -1,12 +1,26 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { X, ChevronLeft, ChevronRight, Image as ImageIcon } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, Image as ImageIcon, ImageOff } from 'lucide-react'
 import { fotoUrl } from '@/lib/foto-url'
+import { cn } from '@/lib/utils'
 
 interface Props {
   urls: string[]
   maxThumbnails?: number
+}
+
+/** <img> dengan fallback rapi saat foto gagal dimuat (sinyal jelek di lapangan). */
+function FotoImg({ src, alt, className }: { src: string; alt: string; className?: string }) {
+  const [broken, setBroken] = useState(false)
+  if (broken) {
+    return (
+      <div className={cn('flex items-center justify-center bg-stone-100 text-stone-400 dark:bg-white/[0.06] dark:text-zinc-500', className)}>
+        <ImageOff className="h-1/2 w-1/2" strokeWidth={1.5} />
+      </div>
+    )
+  }
+  return <img src={src} alt={alt} onError={() => setBroken(true)} className={className} />
 }
 
 export function FotoBuktiGallery({ urls, maxThumbnails = 4 }: Props) {
@@ -43,7 +57,7 @@ export function FotoBuktiGallery({ urls, maxThumbnails = 4 }: Props) {
             onClick={() => openLightbox(i)}
             className="relative h-14 w-14 rounded-md overflow-hidden border border-stone-200 hover:border-stone-400 dark:hover:border-stone-500 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-foreground/40"
           >
-            <img src={fotoUrl(url)} alt={`Foto ${i + 1}`} className="h-full w-full object-cover" />
+            <FotoImg src={fotoUrl(url)} alt={`Foto ${i + 1}`} className="h-full w-full object-cover" />
           </button>
         ))}
         {rest > 0 && (

@@ -23,7 +23,7 @@ const KATEGORI_LABEL: Record<string, string> = {
 
 function NotFound() {
   return (
-    <main className="flex min-h-[100dvh] flex-col items-center justify-center bg-[#F6F7F6] px-6 text-center">
+    <main className="flex min-h-[100dvh] flex-col items-center justify-center bg-[#F6F7F6] px-6 text-center" style={{ colorScheme: 'light' }}>
       <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#0E7A58] text-base font-bold text-white">OCM</div>
       <h1 className="mt-5 text-lg font-semibold text-zinc-900">Link tidak berlaku</h1>
       <p className="mt-1.5 max-w-[30ch] text-sm text-zinc-500">
@@ -53,7 +53,7 @@ export default async function PortalPeronPage({
   return (
     <main
       className="min-h-[100dvh] bg-[#F6F7F6] text-zinc-900"
-      style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'calc(env(safe-area-inset-bottom) + 1rem)' }}
+      style={{ colorScheme: 'light', paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'calc(env(safe-area-inset-bottom) + 1rem)' }}
     >
       <div className="mx-auto w-full max-w-md px-4 pb-10">
         {/* Header */}
@@ -80,7 +80,7 @@ export default async function PortalPeronPage({
                 key={p.v}
                 href={`/p/${token}?periode=${p.v}`}
                 className={`flex-1 rounded-full px-3 py-2 text-center text-[13px] font-medium transition-colors ${
-                  active ? 'bg-[#0E7A58] text-white' : 'bg-white text-zinc-600 ring-1 ring-zinc-200'
+                  active ? 'bg-[#0E7A58] text-white' : 'bg-[#FFFFFF] text-zinc-600 ring-1 ring-zinc-200'
                 }`}
               >
                 {p.l}
@@ -90,7 +90,7 @@ export default async function PortalPeronPage({
         </div>
 
         {/* Ringkasan periode */}
-        <section className="mt-3 rounded-2xl bg-white p-4 ring-1 ring-zinc-100">
+        <section className="mt-3 rounded-2xl bg-[#FFFFFF] p-4 ring-1 ring-zinc-100">
           <Row label="Total setor" value={`${data.totalKg.toLocaleString('id-ID')} kg`} />
           <Row label="Total nilai" value={formatRupiah(data.totalNilai)} />
           <Row label="Sudah dibayar" value={formatRupiah(data.sudahDibayar)} last />
@@ -98,7 +98,7 @@ export default async function PortalPeronPage({
 
         {/* Harga acuan hari ini */}
         {data.hargaTerkini.length > 0 && (
-          <section className="mt-3 rounded-2xl bg-white p-4 ring-1 ring-zinc-100">
+          <section className="mt-3 rounded-2xl bg-[#FFFFFF] p-4 ring-1 ring-zinc-100">
             <p className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-zinc-400">Harga acuan terkini</p>
             <div className="flex flex-wrap gap-x-5 gap-y-1.5">
               {data.hargaTerkini.map((h) => (
@@ -115,7 +115,7 @@ export default async function PortalPeronPage({
         {data.setoran.length === 0 ? (
           <Empty>Belum ada setoran di periode ini.</Empty>
         ) : (
-          <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-zinc-100">
+          <div className="overflow-hidden rounded-2xl bg-[#FFFFFF] ring-1 ring-zinc-100">
             {data.setoran.map((s, i) => (
               <div key={i} className={`flex items-center justify-between gap-3 px-4 py-3 ${i > 0 ? 'border-t border-zinc-100' : ''}`}>
                 <div className="min-w-0">
@@ -135,7 +135,7 @@ export default async function PortalPeronPage({
         {data.pembayaran.length === 0 ? (
           <Empty>Belum ada pembayaran di periode ini.</Empty>
         ) : (
-          <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-zinc-100">
+          <div className="overflow-hidden rounded-2xl bg-[#FFFFFF] ring-1 ring-zinc-100">
             {data.pembayaran.map((p, i) => (
               <div key={i} className={`flex items-center justify-between gap-3 px-4 py-3 ${i > 0 ? 'border-t border-zinc-100' : ''}`}>
                 <p className="text-[13px] font-medium text-zinc-900">{formatTanggal(p.tanggal)}</p>
@@ -175,5 +175,5 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   return <p className="mb-2 mt-5 px-1 text-[12px] font-semibold uppercase tracking-widest text-zinc-400">{children}</p>
 }
 function Empty({ children }: { children: React.ReactNode }) {
-  return <div className="rounded-2xl bg-white px-4 py-6 text-center text-[13px] text-zinc-400 ring-1 ring-zinc-100">{children}</div>
+  return <div className="rounded-2xl bg-[#FFFFFF] px-4 py-6 text-center text-[13px] text-zinc-400 ring-1 ring-zinc-100">{children}</div>
 }
