@@ -39,8 +39,8 @@ const C_AXIS = 'var(--chart-axis)'
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null
   return (
-    <div className="rounded-lg bg-[#28282B] border border-white/10 px-3 py-2.5 shadow-xl text-xs">
-      <p className="text-[#9CA3AF] mb-2 font-medium">{label}</p>
+    <div className="rounded-lg bg-popover border border-border px-3 py-2.5 shadow-xl text-xs">
+      <p className="text-muted-foreground mb-2 font-medium">{label}</p>
       {payload.map((entry: any, i: number) => (
         <p
           key={i}

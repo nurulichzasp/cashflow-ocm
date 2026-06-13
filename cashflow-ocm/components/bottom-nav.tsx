@@ -48,7 +48,7 @@ function NavTab({
         <motion.span
           layoutId="nav-active-pill"
           transition={{ type: 'spring', stiffness: 460, damping: 36 }}
-          className="absolute inset-x-1 inset-y-[7px] rounded-full bg-white/[0.12] dark:bg-white/[0.14]"
+          className="absolute inset-x-1 inset-y-[7px] rounded-full bg-black/[0.06] dark:bg-white/[0.14]"
         />
       )}
       <Icon
@@ -113,7 +113,7 @@ export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) 
             animate={{ scale: compact ? 0.9 : 1 }}
             transition={prefersReduced ? { duration: 0 } : { type: 'spring', stiffness: 300, damping: 30 }}
             style={{ transformOrigin: 'bottom center' }}
-            className="pointer-events-auto relative flex w-fit items-center gap-0.5 rounded-full p-1 backdrop-blur-2xl backdrop-saturate-150 bg-white/[0.07] border border-white/[0.12] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.20),0_10px_30px_-6px_rgba(0,0,0,0.5)]"
+            className="pointer-events-auto relative flex w-fit items-center gap-0.5 rounded-full p-1 backdrop-blur-2xl backdrop-saturate-150 bg-white/60 dark:bg-white/[0.07] border border-black/[0.06] dark:border-white/[0.12] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.20),0_10px_30px_-6px_rgba(0,0,0,0.5)]"
           >
             <div className="flex items-center gap-0.5">
               {leftNav.map((item) => (

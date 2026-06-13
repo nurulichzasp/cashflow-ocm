@@ -109,7 +109,7 @@ export function BiayaTable({ biayaList, isOwner, akunOptions }: Props) {
       <div className="hidden md:block surface overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-stone-50 border-b border-stone-200">
+            <tr className="bg-stone-50 dark:bg-white/[0.03] border-b border-stone-200 dark:border-border">
               <th scope="col" className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">
                 <button type="button" onClick={() => handleSort('tanggal')} className={`inline-flex items-center gap-1 hover:text-stone-900 dark:hover:text-zinc-200 transition-colors ${sortBy === 'tanggal' ? 'text-stone-900 dark:text-zinc-100' : ''}`}>
                   Tanggal <SortIcon col="tanggal" />
@@ -213,7 +213,7 @@ export function BiayaTable({ biayaList, isOwner, akunOptions }: Props) {
       {/* Mobile */}
       <div className="md:hidden space-y-2">
         {sorted.map((item) => (
-          <div key={item.id} className="rounded-xl border border-stone-200 bg-white shadow-sm p-4">
+          <div key={item.id} className="surface p-4">
             <div className="flex items-start justify-between gap-2 mb-3">
               <div>
                 <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${kategoriColors[item.kategori]}`}>

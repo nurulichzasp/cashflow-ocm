@@ -194,7 +194,7 @@ export function KasTable({ transaksiList, isOwner }: Props) {
       {/* Mobile */}
       <div className="md:hidden space-y-2">
         {filtered.map((item) => (
-          <div key={item.id} className="rounded-xl border border-stone-200 bg-white shadow-sm p-4">
+          <div key={item.id} className="surface p-4">
             <div className="flex items-start justify-between gap-2 mb-2">
               <div>
                 <p className="font-medium text-stone-900">{kategoriLabels[item.kategori]}</p>

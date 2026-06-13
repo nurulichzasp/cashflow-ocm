@@ -96,7 +96,7 @@ export function HargaTable({ hargaList, isOwner }: Props) {
       <div className="hidden md:block surface overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-stone-50 border-b border-stone-200">
+            <tr className="bg-stone-50 dark:bg-white/[0.03] border-b border-stone-200 dark:border-border">
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Tgl Berlaku</th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Produk</th>
               <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Harga Lapangan</th>
@@ -109,7 +109,7 @@ export function HargaTable({ hargaList, isOwner }: Props) {
             {filtered.map((harga) => {
               const hargaJual = harga.hargaLapangan + harga.selisihJualBga
               return (
-                <tr key={harga.id} className="bg-white hover:bg-stone-50/60 transition-colors">
+                <tr key={harga.id} className="bg-white hover:bg-stone-50/60 dark:hover:bg-white/[0.03] transition-colors">
                   <td className="px-4 py-3 text-stone-900">{formatTanggal(harga.tanggalBerlaku)}</td>
                   <td className="px-4 py-3">
                     <ProdukBadge produk={harga.produk} />
@@ -159,7 +159,7 @@ export function HargaTable({ hargaList, isOwner }: Props) {
         {filtered.map((harga) => {
           const hargaJual = harga.hargaLapangan + harga.selisihJualBga
           return (
-            <div key={harga.id} className="rounded-xl border border-stone-200 bg-white shadow-sm p-4">
+            <div key={harga.id} className="surface p-4">
               <div className="flex items-center justify-between gap-3 mb-3">
                 <div>
                   <ProdukBadge produk={harga.produk} />
