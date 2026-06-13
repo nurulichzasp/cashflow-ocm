@@ -1,7 +1,7 @@
 # 📸 Snapshot Teknis — Cashflow OCM
 
 > **Sumber kebenaran kode. Diverifikasi langsung dari source (bukan ingatan/README/snapshot lama).**
-> HEAD lokal: `0fe0f0d` · Branch `main` = `origin/main` (0 ahead / 0 behind) · **fully deployed** ke produksi (Vercel `cashflow-ocm-d61i` → omandacerli.com).
+> HEAD kode: `3319ecd` · Branch `main` = `origin/main` (0 ahead / 0 behind) · **fully deployed** ke produksi (Vercel `cashflow-ocm-d61i` → omandacerli.com).
 > Status pohon kerja saat snapshot dibuat: **bersih** (tak ada perubahan kode belum-commit). Snapshot ini menggantikan snapshot 13 Jun pagi (HEAD `d439cfd`).
 
 ---
@@ -39,6 +39,8 @@
 | 10 `0594b2d` | **Validasi inline Tambah Pengguna** (`FieldError` per field + `aria-invalid` + `noValidate`); fix placeholder sandi "6"→"8" |
 | 11 `fbcabde` | **Validasi inline pembelian per-baris** (baris setengah-isi ditandai merah, tak di-drop diam-diam) |
 | 12-13 `0fe0f0d` | **CTA emerald** (9 tombol Simpan/Tambah di settings/profile-dialog/thermal hapus override `bg-stone-900/dark:bg-white` → Button default emerald); **validasi inline Pajak** (4 field: tarif 0–100%, nominal ≥0) |
+
+> Follow-up `3319ecd`: `components/offline-indicator.tsx` amber-500 → token `--warn` → **oranye benar-benar NOL** (sweep `app`+`components` bersih).
 
 ---
 
@@ -190,7 +192,7 @@ public/ icon-{192,512,maskable}.png, sw.js
 - Token fungsional: `--ok-fg` #0B6E4F→#35C892, `--warn-fg` #854F0B→#FBBF24, `--crit-fg` #A32D2D→#E68A8A (+`.pill-*`, komponen `StatusPill`). Keuangan: `--masuk` #16A34A, `--keluar` #DC2626, `--warning` #D97706.
 - `--destructive` = **netral abu** (#78716C light / #9CA3AF dark) — **tombol hapus jadi abu, bukan merah** (disengaja). `--radius` 0.625rem.
 - **Catch-all dark/light** di `globals.css` (di luar `@layer`) menetralkan kelas Tailwind warna mentah (`text-green/red/violet/blue`, `bg-*-50/100`). Komponen yg butuh warna bertahan harus pakai token/`.text-ok/crit`/hex eksplisit.
-- ⚠️ **Oranye hampir nol** — sisa `amber-500` di `components/offline-indicator.tsx:31-32` (lihat §6).
+- **Oranye/amber mentah = NOL** ✅ — semua sinyal warning lewat token `--warn` (`--warn-fg/--warn-bg`), bukan `amber-500`/`orange-*` mentah.
 
 **Tipografi**: system font stack (`-apple-system, BlinkMacSystemFont, "SF Pro Text"…`) — **Geist sudah dibuang**. `h1–h3` `text-wrap: balance`.
 
@@ -212,7 +214,7 @@ public/ icon-{192,512,maskable}.png, sw.js
 1. **Build = Turbopack**, `ignoreBuildErrors:false` → **type error = build gagal**. Wajib lulus `tsc --noEmit`. Hapus duplikat iCloud (`* 2.*`, `* 3.*`) di `.next` sebelum build lokal.
 2. **Auth gate = `proxy.ts`** (bukan `middleware.ts`) — Next 16. `'/p/'` di `publicPaths` **wajib trailing slash**.
 3. **JANGAN `drizzle-kit push/migrate`** — skema dikelola via skrip migrasi idempotent (`scripts/add-*`) yg jalan di `vercel-build`.
-4. ⚠️ **Oranye belum 100% nol**: `components/offline-indicator.tsx` masih `bg-amber-500/15` + `text-amber-500` (catch-all tak meng-cover `amber-500`). Offline *page* sudah difix (#FBBF24); *indicator* belum. **Utang kecil.**
+4. **Oranye = NOL** ✅ — semua warning pakai token `--warn` (`--warn-fg/--warn-bg`), bukan `amber-500`/`orange-*` mentah. (offline-indicator = pengecualian terakhir, difix `3319ecd`; sweep `app`+`components` bersih.)
 5. ⚠️ **Dua library primitif UI**: `@base-ui/react` (Button, Sheet, Select, AlertDialog, Dropdown) + `@radix-ui` (Dialog, Checkbox). Belum disatukan (skip sadar; tak terlihat user).
 6. ⚠️ **Gating delete tak seragam**: `deletePembelian`/`deleteBiaya` pakai `requirePermission('canDelete')`, tapi `deletePenjualan`/`deleteTransaksiKas`/`deleteHargaAcuan`/`deletePeron`/`deleteModalPeron` **owner-only**. Cek bila ingin konsisten.
 7. **Edit Profil & Pajak kini owner-only** (sejak Batch 9 → `setAppSettings` owner-only). Non-owner: tombol disabled + pesan izin. `thermal_paper_width` tetap localStorage (per-perangkat, disengaja); `company_*`/`tax_*` kini server (localStorage = cadangan).
