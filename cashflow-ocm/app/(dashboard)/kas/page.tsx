@@ -60,7 +60,7 @@ export default async function KasPage() {
               <p className="text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-zinc-400 truncate">{akunUtama.nama}</p>
               <span className="text-[10px] font-semibold uppercase tracking-wider text-stone-400 dark:text-zinc-500 shrink-0">Utama</span>
             </div>
-            <p className={`mt-1.5 text-3xl sm:text-4xl font-bold num tabular-nums tracking-[-0.02em] leading-none ${akunUtama.saldo >= 0 ? 'text-stone-900 dark:text-zinc-50' : 'text-red-500'}`}>
+            <p className={`mt-1.5 text-3xl sm:text-4xl font-bold num tabular-nums tracking-[-0.02em] leading-none ${akunUtama.saldo >= 0 ? 'text-stone-900 dark:text-zinc-50' : 'text-crit'}`}>
               {formatRupiah(akunUtama.saldo)}
             </p>
             <p className="mt-1.5 text-xs text-stone-400 dark:text-zinc-500">
@@ -79,7 +79,7 @@ export default async function KasPage() {
                     {a.tipe === 'bank' ? 'Bank' : 'Tunai'}
                   </span>
                 </div>
-                <p className={`text-sm font-semibold num tabular-nums shrink-0 ${a.saldo >= 0 ? 'text-stone-800 dark:text-stone-200' : 'text-red-500'}`}>
+                <p className={`text-sm font-semibold num tabular-nums shrink-0 ${a.saldo >= 0 ? 'text-stone-800 dark:text-stone-200' : 'text-crit'}`}>
                   {formatRupiah(a.saldo)}
                 </p>
               </div>

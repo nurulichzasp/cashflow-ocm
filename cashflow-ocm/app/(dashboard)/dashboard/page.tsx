@@ -221,8 +221,17 @@ function TotalKasHero({ total, delta7 }: { total: number; delta7: number }) {
   const up = delta7 > 0
   const down = delta7 < 0
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-white/[0.06] bg-[#191919] p-6 text-white shadow-[var(--shadow-card)] dark:bg-[#0F0F0F]">
-      <p className="text-[11px] font-semibold uppercase tracking-widest text-white/45">Total Kas</p>
+    <div
+      className="relative overflow-hidden rounded-3xl border border-white/[0.08] p-6 text-white shadow-[var(--shadow-card)]"
+      style={{
+        backgroundColor: '#0C3D2D',
+        // Cahaya radial halus dari pojok kanan-atas (bukan gradasi linear, tanpa
+        // glossy) — satu keluarga hijau, kontras rendah → premium, tak "lebay".
+        backgroundImage:
+          'radial-gradient(125% 125% at 100% 0%, #155C44 0%, #0C3D2D 46%, #0A3325 100%)',
+      }}
+    >
+      <p className="text-[11px] font-semibold uppercase tracking-widest text-white/55">Total Kas</p>
       <p className="mt-2 num tabular-nums text-[2.6rem] font-bold leading-none tracking-[-0.03em]">
         {formatCompact(total)}
       </p>
@@ -366,8 +375,14 @@ function RecentTransactions({ items }: { items: RecentTxRow[] }) {
             const sub = [t.akun?.nama, t.catatan?.trim()].filter(Boolean).join(' · ')
             return (
               <div key={t.id} className="flex items-center gap-3 px-4 py-3">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-stone-100 dark:bg-white/[0.06]">
-                  <Icon className="h-4 w-4 text-stone-600 dark:text-zinc-300" strokeWidth={2} />
+                {/* Arah masuk (penerimaan/penjualan) → lingkaran emerald-soft; keluar/lainnya netral. */}
+                <span
+                  className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${masuk ? 'pill-ok' : 'bg-stone-100 dark:bg-white/[0.06]'}`}
+                >
+                  <Icon
+                    className={`h-4 w-4 ${masuk ? '' : 'text-stone-600 dark:text-zinc-300'}`}
+                    strokeWidth={2}
+                  />
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-stone-900 dark:text-zinc-100">{meta.label}</p>
@@ -376,7 +391,7 @@ function RecentTransactions({ items }: { items: RecentTxRow[] }) {
                 <div className="shrink-0 text-right">
                   <p
                     className="num tabular-nums text-sm font-bold"
-                    style={masuk ? { color: 'var(--masuk)' } : undefined}
+                    style={masuk ? { color: 'var(--ok-fg)' } : undefined}
                   >
                     <span className={masuk ? '' : 'text-stone-900 dark:text-zinc-100'}>
                       {masuk ? '+' : '−'}{formatCompact(t.jumlah)}

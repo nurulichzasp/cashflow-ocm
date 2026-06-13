@@ -530,7 +530,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
 
           <div className="flex justify-end gap-2 pt-4 -mx-6 px-6 -mb-6 pb-6 border-t border-border bg-muted/30 rounded-b-3xl">
             <Button variant="outline" type="button" onClick={() => setOpen(false)}>Batal</Button>
-            <Button type="submit" disabled={loading} className="bg-stone-900 hover:bg-stone-800 dark:bg-white dark:hover:bg-zinc-200 dark:text-stone-900 text-white">
+            <Button type="submit" disabled={loading}>
               {loading ? 'Menyimpan...' : initialData ? 'Simpan Perubahan' : 'Tambah Tiket'}
             </Button>
           </div>

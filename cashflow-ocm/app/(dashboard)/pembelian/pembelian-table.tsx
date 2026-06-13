@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useCallback } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { StatusPill } from '@/components/ui/status-pill'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -52,14 +53,10 @@ const kategoriColor: Record<string, string> = {
 }
 
 function StatusBayar({ status }: { status: 'lunas' | 'belum' }) {
-  const isLunas = status === 'lunas'
   return (
-    <span className="inline-flex items-center gap-1.5">
-      <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${isLunas ? 'bg-foreground' : 'bg-transparent border border-muted-foreground'}`} />
-      <span className="text-[11px] font-medium text-muted-foreground">
-        {isLunas ? 'Lunas' : 'Belum'}
-      </span>
-    </span>
+    <StatusPill tone={status === 'lunas' ? 'ok' : 'warn'}>
+      {status === 'lunas' ? 'Lunas' : 'Belum'}
+    </StatusPill>
   )
 }
 
@@ -243,7 +240,8 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
             </div>
             <div className="text-right">
               <p className="text-[10px] uppercase tracking-wider text-stone-400 dark:text-zinc-500 font-medium">Belum Dibayar</p>
-              <p className="mt-1 text-sm font-semibold num tabular-nums text-stone-700 dark:text-zinc-300">{jumlahBelum.toLocaleString('id-ID')}</p>
+              {/* Aksen amber = sinyal perhatian saat masih ada tiket belum dibayar. */}
+              <p className={`mt-1 text-sm font-semibold num tabular-nums ${jumlahBelum > 0 ? 'text-warn' : 'text-stone-700 dark:text-zinc-300'}`}>{jumlahBelum.toLocaleString('id-ID')}</p>
             </div>
           </div>
         </div>
@@ -364,7 +362,7 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
                 {totalTonase.toLocaleString('id-ID')} kg
               </td>
               <td className="px-3 py-2.5 text-right num text-stone-900">{formatRupiah(totalBeli)}</td>
-              <td className="px-3 py-2.5 text-right num text-green-700">{formatRupiah(totalUntung)}</td>
+              <td className={`px-3 py-2.5 text-right num ${totalUntung > 0 ? 'text-ok' : totalUntung < 0 ? 'text-crit' : 'text-stone-700 dark:text-zinc-300'}`}>{formatRupiah(totalUntung)}</td>
               <td colSpan={isOwner ? 5 : 4} />
             </tr>
           </tfoot>
@@ -399,7 +397,8 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
               </div>
               <div className="text-right shrink-0">
                 <p className="text-[10px] uppercase tracking-widest text-stone-400 dark:text-zinc-500 font-medium">Margin</p>
-                <p className="mt-1 text-[15px] font-semibold text-stone-900 dark:text-zinc-50 num tabular-nums leading-none">
+                {/* Margin positif = cue emerald hemat (satu nilai per kartu). */}
+                <p className={`mt-1 text-[15px] font-semibold num tabular-nums leading-none ${margin > 0 ? 'text-ok' : 'text-stone-900 dark:text-zinc-50'}`}>
                   +{margin.toFixed(1)}%
                 </p>
               </div>
@@ -495,7 +494,7 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
             </div>
             <div>
               <p className="text-xs text-stone-400">Keuntungan</p>
-              <p className="font-bold text-green-600 num">{formatRupiah(totalUntung)}</p>
+              <p className={`font-bold num ${totalUntung > 0 ? 'text-ok' : totalUntung < 0 ? 'text-crit' : 'text-stone-900 dark:text-zinc-50'}`}>{formatRupiah(totalUntung)}</p>
             </div>
           </div>
         </div>

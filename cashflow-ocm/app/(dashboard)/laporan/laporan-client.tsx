@@ -5,6 +5,7 @@ import { getLaporanData, getPajakData, getLabaRugiTahunan, getNeracaData } from 
 import { formatRupiah, formatTanggal } from '@/lib/format'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { StatusPill } from '@/components/ui/status-pill'
 import { DateRangeInline } from '@/components/date-range-inline'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Download, FileSpreadsheet } from 'lucide-react'
@@ -133,12 +134,13 @@ function LabaRugiTab({ data, dari, sampai }: { data: LaporanData; dari: string; 
               { label: 'HPP – Pembelian (akrual)', value: totalPembelian, cls: 'text-muted-foreground' },
               { label: 'Laba Kotor', value: labaKotor, cls: 'font-semibold text-foreground', bg: 'bg-muted/30', sep: true },
               { label: 'Biaya Operasional', value: totalBiaya, cls: 'text-muted-foreground' },
-              { label: 'Laba Bersih', value: labaBersih, cls: 'font-semibold text-foreground', bg: 'bg-muted/30', sep: true },
+              { label: 'Laba Bersih', value: labaBersih, cls: 'font-semibold text-foreground', bg: 'bg-muted/30', sep: true, valueCls: labaBersih > 0 ? 'text-ok' : labaBersih < 0 ? 'text-crit' : '' },
               { label: 'Margin Dagang (markup peron)', value: totalKeuntungan, cls: 'text-foreground font-semibold' },
             ].map((row, i) => (
               <tr key={i} className={cn('border-b last:border-0', row.sep ? 'border-t-2 border-t-border' : '', row.bg ?? '')}>
                 <td className={cn('px-4 py-3', row.cls)}>{row.label}</td>
-                <td className={cn('px-4 py-3 text-right tabular-nums', row.cls)}>{formatRupiah(row.value)}</td>
+                {/* Aksen emerald hanya pada ANGKA hasil akhir (Laba Bersih), bukan label. */}
+                <td className={cn('px-4 py-3 text-right tabular-nums', row.cls, row.valueCls)}>{formatRupiah(row.value)}</td>
               </tr>
             ))}
           </tbody>
@@ -253,7 +255,7 @@ function KasTab({
         <Card className="flex-1 min-w-[140px]">
           <CardContent className="pt-4">
             <p className="text-xs text-muted-foreground">Saldo Akhir Periode</p>
-            <p className={cn('text-lg font-semibold', saldoAkhir < 0 ? 'text-destructive' : '')}>
+            <p className={cn('text-lg font-semibold', saldoAkhir < 0 && 'text-crit')}>
               {formatRupiah(saldoAkhir)}
             </p>
           </CardContent>
@@ -286,21 +288,19 @@ function KasTab({
                   <td className="px-4 py-3 text-xs text-muted-foreground">{t.akun?.nama ?? t.akunId}</td>
                   <td className="px-4 py-3">{kategoriLabels[t.kategori]}</td>
                   <td className="px-4 py-3">
-                    {t.arah === 'masuk' ? (
-                      <span className="inline-flex rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-foreground border border-border">
-                        Masuk
-                      </span>
-                    ) : (
-                      <span className="inline-flex rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground border border-border">
-                        Keluar
-                      </span>
-                    )}
+                    {/* Arah masuk → pill emerald-soft; keluar tetap netral. */}
+                    <StatusPill tone={t.arah === 'masuk' ? 'ok' : 'neutral'}>
+                      {t.arah === 'masuk' ? 'Masuk' : 'Keluar'}
+                    </StatusPill>
                   </td>
                   <td className={cn('px-4 py-3 text-right tabular-nums font-semibold', t.arah === 'masuk' ? 'text-stone-900 dark:text-zinc-50' : 'text-stone-500 dark:text-zinc-400')}>
                     {t.arah === 'masuk' ? '+' : '-'}{formatRupiah(t.jumlah)}
                   </td>
-                  <td className="px-4 py-3 text-right tabular-nums font-medium">{formatRupiah(t.saldo)}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{t.catatan ?? '-'}</td>
+                  {/* Saldo berjalan negatif → merah teredam (anomali kebaca). */}
+                  <td className={cn('px-4 py-3 text-right tabular-nums font-medium', t.saldo < 0 && 'text-crit')}>{formatRupiah(t.saldo)}</td>
+                  {/* Truncate catatan: tanpa ini, catatan panjang membungkus → baris tinggi
+                      tak rata (gap besar antar entri Mutasi Bank). Samakan dgn tabel lain. */}
+                  <td className="px-4 py-3 text-muted-foreground max-w-[220px] truncate">{t.catatan ?? '-'}</td>
                 </tr>
               ))}
             </tbody>
@@ -373,7 +373,7 @@ function PajakTab({ tahun, onTahunChange }: { tahun: string; onTahunChange: (t: 
                   <td className="px-4 py-2 text-right tabular-nums font-semibold">{formatRupiah(d.ppn)}</td>
                   <td className="px-4 py-2 text-center">
                     <button
-                      className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium cursor-pointer ${d.status === 'sudah' ? 'bg-muted text-foreground border border-border' : 'bg-transparent text-muted-foreground border border-border'}`}
+                      className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold cursor-pointer transition-opacity hover:opacity-80 ${d.status === 'sudah' ? 'pill-ok' : 'pill-warn'}`}
                       onClick={async () => {
                         const next = d.status === 'sudah' ? 'belum' : 'sudah'
                         const tgl = next === 'sudah' ? new Date().toISOString().slice(0, 10) : undefined
@@ -410,7 +410,7 @@ function PajakTab({ tahun, onTahunChange }: { tahun: string; onTahunChange: (t: 
                   <td className="px-4 py-2 text-right tabular-nums">{formatRupiah(d.nominal)}</td>
                   <td className="px-4 py-2 text-center">
                     <button
-                      className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium cursor-pointer ${d.status === 'sudah' ? 'bg-muted text-foreground border border-border' : 'bg-transparent text-muted-foreground border border-border'}`}
+                      className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold cursor-pointer transition-opacity hover:opacity-80 ${d.status === 'sudah' ? 'pill-ok' : 'pill-warn'}`}
                       onClick={async () => {
                         const next = d.status === 'sudah' ? 'belum' : 'sudah'
                         const tgl = next === 'sudah' ? new Date().toISOString().slice(0, 10) : undefined
@@ -461,7 +461,7 @@ function LabaRugiTahunanTab({ tahun, onTahunChange }: { tahun: string; onTahunCh
     { label: 'Biaya Operasional', value: data.totalBiaya, cls: 'text-muted-foreground' },
     { label: 'Laba Operasional (sebelum pajak)', value: data.labaOperasional, cls: 'font-semibold', sep: true },
     { label: 'PPh Badan (22%)', value: data.pphBadan, cls: 'text-muted-foreground' },
-    { label: 'Laba Bersih Setelah Pajak', value: data.labaBersih, cls: 'font-bold text-lg', sep: true },
+    { label: 'Laba Bersih Setelah Pajak', value: data.labaBersih, cls: 'font-bold text-lg', sep: true, valueCls: data.labaBersih > 0 ? 'text-ok' : data.labaBersih < 0 ? 'text-crit' : '' },
     { label: 'Total PPh Pasal 25 Dibayar', value: data.totalPph25Dibayar, cls: 'text-muted-foreground' },
     { label: data.pphKurangBayar >= 0 ? 'PPh Kurang Bayar' : 'PPh Lebih Bayar', value: Math.abs(data.pphKurangBayar), cls: 'font-semibold text-foreground' },
   ]
@@ -486,7 +486,8 @@ function LabaRugiTahunanTab({ tahun, onTahunChange }: { tahun: string; onTahunCh
             {rows.map((row, i) => (
               <tr key={i} className={cn('border-b last:border-0', row.sep ? 'border-t-2 border-t-border bg-muted/30' : '')}>
                 <td className={cn('px-4 py-3', row.cls)}>{row.label}</td>
-                <td className={cn('px-4 py-3 text-right tabular-nums', row.cls)}>{formatRupiah(row.value)}</td>
+                {/* Aksen emerald hanya pada angka Laba Bersih Setelah Pajak (hasil akhir). */}
+                <td className={cn('px-4 py-3 text-right tabular-nums', row.cls, row.valueCls)}>{formatRupiah(row.value)}</td>
               </tr>
             ))}
           </tbody>
@@ -556,7 +557,7 @@ function NeracaTab() {
         </div>
       </div>
 
-      <div className={cn('rounded-lg px-4 py-3 text-sm font-semibold', balanced ? 'bg-muted text-muted-foreground border border-border' : 'bg-red-50 text-red-700 border border-red-200')}>
+      <div className={cn('rounded-lg px-4 py-3 text-sm font-semibold', balanced ? 'bg-muted text-muted-foreground border border-border' : 'pill-crit')}>
         {balanced
           ? 'Aset = Kewajiban + Ekuitas (Balance)'
           : `Selisih: ${formatRupiah(Math.abs(selisih))} — Aset ${selisih > 0 ? '>' : '<'} Kewajiban + Ekuitas`
@@ -646,7 +647,8 @@ export function LaporanClient({
             <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">Estimasi Laba</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xl font-semibold text-stone-900 dark:text-stone-100">
+            {/* Hasil akhir → aksen emerald tipis (merah teredam bila rugi). */}
+            <p className={`text-xl font-semibold ${data.labaRugi.totalKeuntungan > 0 ? 'text-ok' : data.labaRugi.totalKeuntungan < 0 ? 'text-crit' : 'text-stone-900 dark:text-stone-100'}`}>
               {formatRupiah(data.labaRugi.totalKeuntungan)}
             </p>
           </CardContent>

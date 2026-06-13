@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { StatusPill } from '@/components/ui/status-pill'
 import { EmptyState } from '@/components/empty-state'
 import {
   AlertDialog,
@@ -133,9 +134,9 @@ export function KasTable({ transaksiList, isOwner }: Props) {
                 <td className="px-4 py-3 text-stone-700">{kategoriLabels[item.kategori]}</td>
                 <td className="px-4 py-3">
                   {item.arah === 'masuk' ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-foreground border border-border"><ArrowUp className="h-3 w-3 shrink-0" aria-hidden />Masuk</span>
+                    <StatusPill tone="ok"><ArrowUp className="h-3 w-3 shrink-0" aria-hidden />Masuk</StatusPill>
                   ) : (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground border border-border"><ArrowDown className="h-3 w-3 shrink-0" aria-hidden />Keluar</span>
+                    <StatusPill tone="neutral"><ArrowDown className="h-3 w-3 shrink-0" aria-hidden />Keluar</StatusPill>
                   )}
                 </td>
                 <td className={`px-4 py-3 text-right font-semibold num ${item.arah === 'masuk' ? 'text-stone-900 dark:text-zinc-50' : 'text-stone-500 dark:text-zinc-400'}`}>
@@ -200,9 +201,9 @@ export function KasTable({ transaksiList, isOwner }: Props) {
                 <p className="text-xs text-stone-500 mt-0.5">{formatTanggal(item.tanggal)} · {item.akun?.nama ?? item.akunId}</p>
               </div>
               {item.arah === 'masuk' ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-foreground border border-border shrink-0"><ArrowUp className="h-3 w-3 shrink-0" aria-hidden />Masuk</span>
+                <StatusPill tone="ok" className="shrink-0"><ArrowUp className="h-3 w-3 shrink-0" aria-hidden />Masuk</StatusPill>
               ) : (
-                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground border border-border shrink-0"><ArrowDown className="h-3 w-3 shrink-0" aria-hidden />Keluar</span>
+                <StatusPill tone="neutral" className="shrink-0"><ArrowDown className="h-3 w-3 shrink-0" aria-hidden />Keluar</StatusPill>
               )}
             </div>
             <p className={`text-base font-bold num inline-flex items-center gap-1 ${item.arah === 'masuk' ? 'text-stone-900 dark:text-zinc-50' : 'text-stone-500 dark:text-zinc-400'}`}>

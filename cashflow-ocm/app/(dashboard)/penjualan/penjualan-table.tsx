@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { StatusPill } from '@/components/ui/status-pill'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,24 +28,16 @@ interface Props {
   isOwner: boolean
 }
 
-/** Status dot konsisten — muted text, blue/red dot 6px. */
+/** Status pembayaran konsisten — pill emerald-soft (Lunas) / amber-soft (Belum). */
 export function StatusDot({ status, onToggle, loading }: { status: 'lunas' | 'belum'; onToggle?: () => void; loading?: boolean }) {
   const isLunas = status === 'lunas'
-  // Netral: lunas = titik terisi (foreground), belum = titik berongga (ring).
-  // Status terbaca dari bentuk + label, bukan warna.
-  const dotClass = isLunas ? 'bg-foreground' : 'bg-transparent border border-muted-foreground'
-  const textClass = 'text-muted-foreground'
-  const label = isLunas ? 'Lunas' : 'Belum'
-
-  const inner = (
-    <>
-      {loading ? (
-        <span className="h-1.5 w-1.5 border border-current border-t-transparent rounded-full animate-spin shrink-0" />
-      ) : (
-        <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${dotClass}`} />
+  const pill = (
+    <StatusPill tone={isLunas ? 'ok' : 'warn'}>
+      {loading && (
+        <span className="h-2.5 w-2.5 shrink-0 animate-spin rounded-full border border-current border-t-transparent" />
       )}
-      <span className={`text-[11px] font-medium ${textClass}`}>{label}</span>
-    </>
+      {isLunas ? 'Lunas' : 'Belum'}
+    </StatusPill>
   )
 
   if (onToggle && !isLunas) {
@@ -53,13 +46,13 @@ export function StatusDot({ status, onToggle, loading }: { status: 'lunas' | 'be
         onClick={onToggle}
         disabled={loading}
         title="Klik untuk tandai Lunas"
-        className="inline-flex items-center gap-1.5 hover:opacity-80 transition-opacity disabled:opacity-50 cursor-pointer"
+        className="inline-flex transition-opacity hover:opacity-80 disabled:opacity-50 cursor-pointer"
       >
-        {inner}
+        {pill}
       </button>
     )
   }
-  return <span className="inline-flex items-center gap-1.5">{inner}</span>
+  return pill
 }
 
 const StatusBadge = StatusDot

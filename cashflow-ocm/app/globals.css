@@ -106,6 +106,16 @@
   --keluar: #DC2626;
   --warning: #D97706;
 
+  /* ── Token semantik fungsional — dipakai HEMAT, tiap warna punya makna. ──
+     Hex eksplisit agar LOLOS "DARK MODE CATCH-ALL" yang menetralkan emerald/merah.
+     ok   = positif: lunas / sudah / normal / arah masuk / hasil laba (+)
+     warn = perhatian: belum / belum bayar
+     crit = anomali: status kritis / saldo & laba negatif / error sejati
+     Pill = bg lembut + teks gelap satu keluarga (bukan saturasi penuh). */
+  --ok-fg: #0B6E4F;   --ok-bg: #DCEFE6;
+  --warn-fg: #854F0B; --warn-bg: #FAEEDA;
+  --crit-fg: #A32D2D; --crit-bg: #F7E2E0;
+
   /* Neutral shadows */
   --shadow-brand-sm: 0 2px 8px rgba(0,0,0,0.08);
   --shadow-brand-md: 0 4px 14px rgba(0,0,0,0.10);
@@ -136,6 +146,12 @@ html.dark {
   --primary: #FAFAFA;            /* neutral high-contrast white */
   --brand: #35C892;             /* emerald lebih terang agar pop di charcoal */
   --primary-foreground: #1C1917;
+
+  /* Token semantik fungsional — versi dark (lihat :root utk arti). Teks lebih
+     terang + bg tint transparan tipis agar terbaca di charcoal, tetap teredam. */
+  --ok-fg: #35C892;   --ok-bg: rgba(53,200,146,0.15);
+  --warn-fg: #FBBF24; --warn-bg: rgba(245,158,11,0.16);
+  --crit-fg: #E68A8A; --crit-bg: rgba(230,138,138,0.16);
   --secondary: #28282B;
   --secondary-foreground: #F3F4F6;
   --muted: #232325;
@@ -557,6 +573,15 @@ html.dark [class~="hover:bg-orange-700"]:hover       { background-color: #c8654a
   .bg-masuk     { background-color: #F0FDF4; }
   .bg-keluar    { background-color: #FEF2F2; }
   .bg-warning   { background-color: #FFFBEB; }
+
+  /* ── Teks & pill semantik fungsional (ok/warn/crit) — token di :root/html.dark.
+     Nama class custom → tak tersentuh catch-all neutralizer. Pill lembut. ── */
+  .text-ok   { color: var(--ok-fg); }
+  .text-warn { color: var(--warn-fg); }
+  .text-crit { color: var(--crit-fg); }
+  .pill-ok   { background-color: var(--ok-bg);   color: var(--ok-fg); }
+  .pill-warn { background-color: var(--warn-bg); color: var(--warn-fg); }
+  .pill-crit { background-color: var(--crit-bg); color: var(--crit-fg); }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
