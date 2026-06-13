@@ -213,6 +213,7 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
   const [showPassword, setShowPassword] = useState(false)
   const [submittingUser, setSubmittingUser] = useState(false)
   const [userErrors, setUserErrors] = useState<{ name?: string; email?: string; password?: string; role?: string }>({})
+  const [taxErrors, setTaxErrors] = useState<{ ppn?: string; pph?: string; pph25?: string; modal?: string }>({})
 
   // Permissions state
   const [accessPembelian, setAccessPembelian] = useState(true)
@@ -577,7 +578,7 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
                 </div>
 
                 <div className="pt-3">
-                  <Button type="submit" disabled={!isOwner} className="bg-stone-900 hover:bg-stone-800 dark:bg-white dark:hover:bg-zinc-200 dark:text-stone-900 text-white cursor-pointer">
+                  <Button type="submit" disabled={!isOwner} className="cursor-pointer cursor-pointer">
                     Simpan Profil Perusahaan
                   </Button>
                 </div>
@@ -598,7 +599,7 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
               {isOwner && (
                 <Dialog open={addUserOpen} onOpenChange={setAddUserOpen}>
                   <DialogTrigger asChild>
-                    <Button size="sm" className="ml-auto bg-stone-900 hover:bg-stone-800 dark:bg-white dark:hover:bg-zinc-200 dark:text-stone-900 text-white cursor-pointer gap-1.5">
+                    <Button size="sm" className="ml-auto cursor-pointer cursor-pointer gap-1.5">
                       <UserPlus className="h-4 w-4" /> Tambah Pengguna
                     </Button>
                   </DialogTrigger>
@@ -728,7 +729,7 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
                         <Button type="button" variant="outline" onClick={() => { setAddUserOpen(false); setUserErrors({}) }} className="border-stone-200">
                           Batal
                         </Button>
-                        <Button type="submit" disabled={submittingUser} className="bg-stone-900 hover:bg-stone-800 dark:bg-white dark:hover:bg-zinc-200 dark:text-stone-900 text-white">
+                        <Button type="submit" disabled={submittingUser} className="cursor-pointer">
                           {submittingUser ? 'Menyimpan...' : 'Tambahkan'}
                         </Button>
                       </DialogFooter>
@@ -812,7 +813,7 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
                                       <Button type="button" variant="outline" onClick={() => setEmailDialogOpen(false)} className="border-stone-200">
                                         Batal
                                       </Button>
-                                      <Button type="submit" disabled={submittingEmail} className="bg-stone-900 hover:bg-stone-800 dark:bg-white dark:hover:bg-zinc-200 dark:text-stone-900 text-white">
+                                      <Button type="submit" disabled={submittingEmail} className="cursor-pointer">
                                         {submittingEmail ? 'Memproses...' : 'Ubah Email'}
                                       </Button>
                                     </DialogFooter>
@@ -884,7 +885,7 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
                                       <Button type="button" variant="outline" onClick={() => setResetPassOpen(false)} className="border-stone-200">
                                         Batal
                                       </Button>
-                                      <Button type="submit" disabled={resettingPass} className="bg-stone-900 hover:bg-stone-800 dark:bg-white dark:hover:bg-zinc-200 dark:text-stone-900 text-white">
+                                      <Button type="submit" disabled={resettingPass} className="cursor-pointer">
                                         {resettingPass ? 'Memproses...' : 'Ubah Sandi'}
                                       </Button>
                                     </DialogFooter>
@@ -991,7 +992,7 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
                       <Button type="button" variant="outline" onClick={() => setEditAccessOpen(false)} className="border-stone-200">
                         Batal
                       </Button>
-                      <Button type="submit" disabled={savingAccess} className="bg-stone-900 hover:bg-stone-800 dark:bg-white dark:hover:bg-zinc-200 dark:text-stone-900 text-white">
+                      <Button type="submit" disabled={savingAccess} className="cursor-pointer">
                         {savingAccess ? 'Menyimpan...' : 'Simpan Akses'}
                       </Button>
                     </DialogFooter>
@@ -1014,6 +1015,15 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
               <form
                 onSubmit={async (e) => {
                   e.preventDefault()
+                  // Validasi inline per-field — tarif 0–100%, nominal ≥ 0, harus angka.
+                  const num = (v: string) => (v.trim() === '' || isNaN(Number(v)) ? null : Number(v))
+                  const te: { ppn?: string; pph?: string; pph25?: string; modal?: string } = {}
+                  const nPpn = num(tarifPpn); if (nPpn === null || nPpn < 0 || nPpn > 100) te.ppn = 'Isi tarif 0–100%'
+                  const nPph = num(tarifPphBadan); if (nPph === null || nPph < 0 || nPph > 100) te.pph = 'Isi tarif 0–100%'
+                  const nP25 = num(nominalPph25); if (nP25 === null || nP25 < 0) te.pph25 = 'Isi angka ≥ 0'
+                  const nMod = num(modalAwal); if (nMod === null || nMod < 0) te.modal = 'Isi angka ≥ 0'
+                  setTaxErrors(te)
+                  if (Object.keys(te).length > 0) return
                   try {
                     // Sumber kebenaran: server (tarif pajak + modal awal sinkron lintas perangkat).
                     await setAppSettings({
@@ -1032,32 +1042,37 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
                     toast.error(err instanceof Error ? err.message : 'Gagal menyimpan. Coba lagi.')
                   }
                 }}
+                noValidate
                 className="space-y-4"
               >
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-1.5">
                     <Label htmlFor="tarifPpn">Tarif PPN (%)</Label>
-                    <Input id="tarifPpn" type="number" step="0.1" value={tarifPpn} onChange={(e) => setTarifPpn(e.target.value)} />
+                    <Input id="tarifPpn" type="number" step="0.1" value={tarifPpn} onChange={(e) => { setTarifPpn(e.target.value); if (taxErrors.ppn) setTaxErrors((p) => ({ ...p, ppn: undefined })) }} aria-invalid={!!taxErrors.ppn} className={taxErrors.ppn ? invalidFieldClass : undefined} />
+                    <FieldError>{taxErrors.ppn}</FieldError>
                     <p className="text-[11px] text-muted-foreground">Saat ini 11%. Berlaku untuk setiap penjualan ke BGA.</p>
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="tarifPph">Tarif PPh Badan (%)</Label>
-                    <Input id="tarifPph" type="number" step="0.1" value={tarifPphBadan} onChange={(e) => setTarifPphBadan(e.target.value)} />
+                    <Input id="tarifPph" type="number" step="0.1" value={tarifPphBadan} onChange={(e) => { setTarifPphBadan(e.target.value); if (taxErrors.pph) setTaxErrors((p) => ({ ...p, pph: undefined })) }} aria-invalid={!!taxErrors.pph} className={taxErrors.pph ? invalidFieldClass : undefined} />
+                    <FieldError>{taxErrors.pph}</FieldError>
                     <p className="text-[11px] text-muted-foreground">22% dari laba kena pajak (tahunan).</p>
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="nominalPph25">PPh Pasal 25 / bulan (Rp)</Label>
-                    <Input id="nominalPph25" type="number" value={nominalPph25} onChange={(e) => setNominalPph25(e.target.value)} />
+                    <Input id="nominalPph25" type="number" value={nominalPph25} onChange={(e) => { setNominalPph25(e.target.value); if (taxErrors.pph25) setTaxErrors((p) => ({ ...p, pph25: undefined })) }} aria-invalid={!!taxErrors.pph25} className={taxErrors.pph25 ? invalidFieldClass : undefined} />
+                    <FieldError>{taxErrors.pph25}</FieldError>
                     <p className="text-[11px] text-muted-foreground">Cicilan bulanan. Dibayar paling lambat tgl 15 bulan berikutnya.</p>
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="modalAwal">Modal Awal Neraca (Rp)</Label>
-                    <Input id="modalAwal" type="number" value={modalAwal} onChange={(e) => setModalAwal(e.target.value)} />
+                    <Input id="modalAwal" type="number" value={modalAwal} onChange={(e) => { setModalAwal(e.target.value); if (taxErrors.modal) setTaxErrors((p) => ({ ...p, modal: undefined })) }} aria-invalid={!!taxErrors.modal} className={taxErrors.modal ? invalidFieldClass : undefined} />
+                    <FieldError>{taxErrors.modal}</FieldError>
                     <p className="text-[11px] text-muted-foreground">Modal awal pemilik untuk laporan neraca.</p>
                   </div>
                 </div>
                 <div className="pt-3">
-                  <Button type="submit" disabled={!isOwner} className="bg-stone-900 hover:bg-stone-800 dark:bg-white dark:hover:bg-zinc-200 dark:text-stone-900 text-white cursor-pointer">
+                  <Button type="submit" disabled={!isOwner} className="cursor-pointer cursor-pointer">
                     Simpan Konfigurasi Pajak
                   </Button>
                 </div>

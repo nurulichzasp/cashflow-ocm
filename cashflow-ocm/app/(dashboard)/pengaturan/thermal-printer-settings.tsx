@@ -74,7 +74,7 @@ export function ThermalPrinterSettings() {
 
         <Button
           onClick={handleSave}
-          className="gap-2 bg-stone-900 hover:bg-stone-800 dark:bg-white dark:hover:bg-zinc-200 dark:text-stone-900 text-white"
+          className="gap-2 cursor-pointer"
           size="sm"
         >
           {saved ? <CheckCircle2 className="h-4 w-4" /> : <Printer className="h-4 w-4" />}

@@ -360,7 +360,7 @@ export function ProfileDialog({ user, children }: ProfileDialogProps) {
               >
                 Batal
               </Button>
-              <Button type="submit" disabled={saving || uploading} className="bg-stone-900 hover:bg-stone-800 dark:bg-white dark:hover:bg-zinc-200 dark:text-stone-900 text-white">
+              <Button type="submit" disabled={saving || uploading} className="cursor-pointer">
                 {saving ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
