@@ -5,7 +5,7 @@
 export function SplashScreen() {
   return (
     <div
-      className="flex min-h-[100dvh] flex-col items-center justify-center bg-[#141417] px-6"
+      className="flex min-h-[100dvh] flex-col items-center justify-center bg-[#0A0A0A] px-6"
       style={{
         paddingTop: 'env(safe-area-inset-top)',
         paddingBottom: 'env(safe-area-inset-bottom)',

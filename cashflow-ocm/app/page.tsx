@@ -1,18 +1,13 @@
-export const dynamic = 'force-dynamic'
-
-import { redirect } from 'next/navigation'
-import { headers } from 'next/headers'
-import { auth } from '@/lib/auth'
 import { WelcomeScreen } from '@/components/welcome-screen'
 
 /**
- * Root — momen "buka app". Cek sesi di server:
- *   sudah login → /dashboard
- *   belum login → WelcomeScreen (BUKAN langsung form /login)
- * Saat cek sesi berjalan, app/loading.tsx (splash) tampil otomatis.
+ * Root "/" — momen "buka app". SELALU tampilkan opening (WelcomeScreen) untuk
+ * SEMUA user, lalu lanjut ke /login → /dashboard. Tidak ada lagi auto-skip
+ * authed → /dashboard, jadi alur entri konsisten: opening → login → masuk.
+ *
+ * Catatan: logo OCM di dalam app menuju /dashboard (lihat mobile-header.tsx),
+ * BUKAN "/", jadi klik logo di tengah sesi tidak terbawa ke opening.
  */
-export default async function Home() {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (session) redirect('/dashboard')
+export default function Home() {
   return <WelcomeScreen />
 }

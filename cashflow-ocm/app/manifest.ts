@@ -12,7 +12,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description:
       'Sistem keuangan CV Omanda Cerli Mandiri — supplier TBS & BRDL ke PKS PT. BGA.',
     lang: 'id',
-    start_url: '/dashboard',
+    // Buka app selalu dari opening (WelcomeScreen) → login → dashboard.
+    start_url: '/',
     scope: '/',
     display: 'standalone',
     background_color: '#0A0A0A',
