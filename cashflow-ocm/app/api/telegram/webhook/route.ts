@@ -6,7 +6,7 @@
  *
  * Env yang diperlukan:
  *   TELEGRAM_BOT_TOKEN     — token dari @BotFather
- *   TELEGRAM_CHAT_ID       — chat ID owner (hanya owner yang boleh akses)
+ *   TELEGRAM_CHAT_IDS      — daftar chat ID penerima/boleh-akses (koma); fallback TELEGRAM_CHAT_ID
  *   TELEGRAM_WEBHOOK_SECRET — random string, diverifikasi via ?secret=
  */
 
@@ -21,6 +21,7 @@ import {
   snapshotDailyRecap,
   snapshotHelp,
 } from '@/lib/telegram-snapshots'
+import { getTelegramChatIds } from '@/lib/telegram-recipients'
 import { timingSafeEqual } from 'node:crypto'
 
 export const dynamic = 'force-dynamic'
@@ -114,9 +115,11 @@ export async function POST(req: Request) {
   const chatId = message.chat?.id
   const text = (message.text || '').trim()
 
-  // 2. Whitelist: hanya chat owner yang resmi
-  const allowedChatId = process.env.TELEGRAM_CHAT_ID
-  if (!chatId || String(chatId) !== String(allowedChatId)) {
+  // 2. Whitelist: hanya chat di daftar resmi (TELEGRAM_CHAT_IDS / fallback
+  //    TELEGRAM_CHAT_ID). SATU sumber dgn pengirim notifikasi → semua penerima
+  //    di daftar punya akses command setara.
+  const allowedChatIds = getTelegramChatIds()
+  if (!chatId || !allowedChatIds.includes(String(chatId))) {
     // Diam-diam abaikan; jangan beri tahu bot tidak resmi
     return NextResponse.json({ ok: true })
   }
@@ -188,6 +191,6 @@ export async function GET(req: Request) {
     ok: true,
     hint: 'Use ?action=setup atau ?action=commands',
     botTokenConfigured: !!process.env.TELEGRAM_BOT_TOKEN,
-    chatIdConfigured: !!process.env.TELEGRAM_CHAT_ID,
+    chatIdsConfigured: getTelegramChatIds().length,
   })
 }

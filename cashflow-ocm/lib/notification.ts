@@ -1,44 +1,52 @@
 import { db } from './db'
 import { peron } from './db/schema'
 import { eq } from 'drizzle-orm'
+import { getTelegramChatIds } from './telegram-recipients'
+
+/** Kirim satu pesan ke SATU chat. Lempar error bila gagal (ditangkap broadcast). */
+async function sendToChat(token: string, chatId: string, text: string): Promise<void> {
+  const url = `https://api.telegram.org/bot${token}/sendMessage`
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML' }),
+  })
+  if (!response.ok) {
+    const errText = await response.text()
+    throw new Error(`chat ${chatId}: ${response.status} ${errText}`)
+  }
+}
 
 /**
- * Sends a message to a Telegram chat using Telegram Bot API.
+ * Broadcast pesan ke SEMUA chat ID terdaftar (getTelegramChatIds). Memakai
+ * Promise.allSettled: satu penerima gagal (mis. belum menekan Start → "chat not
+ * found") TIDAK menggagalkan pengiriman ke penerima lain; kegagalan di-log per
+ * chat ID. Return true bila minimal satu penerima berhasil.
  */
 export async function sendTelegramMessage(text: string): Promise<boolean> {
   const token = process.env.TELEGRAM_BOT_TOKEN
-  const chatId = process.env.TELEGRAM_CHAT_ID
+  const chatIds = getTelegramChatIds()
 
-  if (!token || !chatId) {
-    console.warn('Telegram Notification: TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID is not configured.')
+  if (!token || chatIds.length === 0) {
+    console.warn('Telegram Notification: TELEGRAM_BOT_TOKEN atau daftar chat ID (TELEGRAM_CHAT_IDS/TELEGRAM_CHAT_ID) belum dikonfigurasi.')
     return false
   }
 
-  try {
-    const url = `https://api.telegram.org/bot${token}/sendMessage`
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text,
-        parse_mode: 'HTML',
-      }),
-    })
+  const results = await Promise.allSettled(
+    chatIds.map((chatId) => sendToChat(token, chatId, text)),
+  )
 
-    if (!response.ok) {
-      const errText = await response.text()
-      console.error('Telegram API error:', errText)
-      return false
+  let anySuccess = false
+  results.forEach((r, i) => {
+    if (r.status === 'fulfilled') {
+      anySuccess = true
+    } else {
+      const reason = r.reason instanceof Error ? r.reason.message : String(r.reason)
+      console.error(`Telegram broadcast gagal ke chat ${chatIds[i]}:`, reason)
     }
+  })
 
-    return true
-  } catch (error) {
-    console.error('Failed to send Telegram message:', error)
-    return false
-  }
+  return anySuccess
 }
 
 /**
