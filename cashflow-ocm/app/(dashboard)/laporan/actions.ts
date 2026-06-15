@@ -10,6 +10,7 @@ import {
 } from '@/lib/db/schema'
 import { eq, sum, and, gte, lte, lt, asc, like } from 'drizzle-orm'
 import { requirePermission } from '@/lib/permissions'
+import { hitungPpn, hitungPphBadan, DEFAULT_PPH25_NOMINAL } from '@/lib/pajak'
 
 async function requireSession() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -92,18 +93,21 @@ export async function getLaporanData(dari: string, sampai: string) {
   const peronMap: Record<string, {
     id: string; nama: string
     totalBeli: number; keuntungan: number; jumlahTiket: number; dpAktif: number
+    tonase: number; targetPerKg: number
   }> = {}
   for (const p of allPeron) {
     peronMap[p.id] = {
       id: p.id, nama: p.nama,
       totalBeli: 0, keuntungan: 0, jumlahTiket: 0,
       dpAktif: dpMap[p.id] ?? 0,
+      tonase: 0, targetPerKg: p.keuntunganPerKg,
     }
   }
   for (const pb of pembelianList) {
     if (!peronMap[pb.peronId]) continue
     peronMap[pb.peronId].totalBeli += pb.totalBeli
     peronMap[pb.peronId].keuntungan += pb.keuntungan
+    peronMap[pb.peronId].tonase += pb.tonase
     peronMap[pb.peronId].jumlahTiket++
   }
 
@@ -111,6 +115,14 @@ export async function getLaporanData(dari: string, sampai: string) {
   const totalPembelian = pembelianList.reduce((s, p) => s + p.totalBeli, 0)
   const totalBiaya = Number(biayaTotalRow[0]?.total ?? 0)
   const totalKeuntungan = pembelianList.reduce((s, p) => s + p.keuntungan, 0)
+  const totalTonase = pembelianList.reduce((s, p) => s + p.tonase, 0)
+  // Margin BERSIH OCM = markup peron (totalKeuntungan) − biaya operasional OCM
+  // sendiri. Beda dari totalKeuntungan yang "sebelum biaya". Break-even volume =
+  // berapa kg harus ditangani agar markup menutup biaya. Per-kg = realisasi/kg.
+  const marginBersih = totalKeuntungan - totalBiaya
+  const markupPerKg = totalTonase > 0 ? totalKeuntungan / totalTonase : 0
+  const marginBersihPerKg = totalTonase > 0 ? Math.round(marginBersih / totalTonase) : 0
+  const breakEvenVolumeKg = markupPerKg > 0 ? Math.round(totalBiaya / markupPerKg) : 0
 
   // Kelompokkan transaksi: tunai (untuk "Buku Kas") dan bank (untuk "Mutasi Bank")
   const kasTransaksiTunai = kasTransaksi.filter((t) => t.akun?.tipe === 'tunai')
@@ -125,8 +137,15 @@ export async function getLaporanData(dari: string, sampai: string) {
       totalBiaya,
       labaBersih: totalPenjualan - totalPembelian - totalBiaya,
       totalKeuntungan,
+      totalTonase,
+      marginBersih,
+      marginBersihPerKg,
+      breakEvenVolumeKg,
     },
-    laporanPeron: Object.values(peronMap).filter((p) => p.totalBeli > 0 || p.dpAktif > 0),
+    laporanPeron: Object.values(peronMap)
+      .filter((p) => p.totalBeli > 0 || p.dpAktif > 0)
+      // Margin riil/kg per peron (realisasi) untuk dibandingkan ke target keuntunganPerKg.
+      .map((p) => ({ ...p, realizedPerKg: p.tonase > 0 ? Math.round(p.keuntungan / p.tonase) : 0 })),
     saldoAwalKas: saldoAwalTunai,
     saldoAwalBri: saldoAwalBank,
     kasTransaksi: kasTransaksiTunai,
@@ -158,7 +177,7 @@ export async function getPajakData(tahun: string) {
     const ppnRecord = ppnRows.find(r => r.bulan === bulan)
     ppnPerBulan[bulan] = {
       totalPenjualan,
-      ppn: Math.round(totalPenjualan * 0.11),
+      ppn: hitungPpn(totalPenjualan),
       status: ppnRecord?.statusSetor ?? 'belum',
       tanggalSetor: ppnRecord?.tanggalSetor ?? null,
     }
@@ -169,7 +188,7 @@ export async function getPajakData(tahun: string) {
     const bulan = `${tahun}-${String(m).padStart(2, '0')}`
     const pphRecord = pphRows.find(r => r.bulan === bulan)
     pphPerBulan[bulan] = {
-      nominal: pphRecord?.nominal ?? 698917,
+      nominal: pphRecord?.nominal ?? DEFAULT_PPH25_NOMINAL,
       status: pphRecord?.statusBayar ?? 'belum',
       tanggalBayar: pphRecord?.tanggalBayar ?? null,
     }
@@ -205,7 +224,7 @@ export async function getLabaRugiTahunan(tahun: string) {
   const labaKotor = totalPenjualan - totalPembelian
   const labaOperasional = labaKotor - totalBiaya
   // Rugi → PPh Badan 0 (tidak boleh negatif; kerugian dikompensasi, bukan jadi "pajak negatif").
-  const pphBadan = Math.max(0, Math.round(labaOperasional * 0.22))
+  const pphBadan = hitungPphBadan(labaOperasional)
   const labaBersih = labaOperasional - pphBadan
   const totalPph25Dibayar = pphRows.filter(r => r.statusBayar === 'sudah').reduce((s, r) => s + r.nominal, 0)
   const pphKurangBayar = pphBadan - totalPph25Dibayar

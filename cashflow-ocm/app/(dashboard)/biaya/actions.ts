@@ -200,8 +200,9 @@ export async function updateBiayaOperasional(id: string, formData: FormData) {
 }
 
 export async function deleteBiayaOperasional(id: string) {
-  const session = await requireSession()
-  requirePermission(session.user.role as any, 'canDelete')
+  // Hapus data keuangan = OWNER-ONLY (diseragamkan 15 Jun 2026; sebelumnya
+  // canDelete = owner+admin). Konsisten dengan penjualan/kas/peron.
+  const session = await requireOwner()
 
   const existing = await db.query.biayaOperasional.findFirst({ where: (t, { eq }) => eq(t.id, id) })
 

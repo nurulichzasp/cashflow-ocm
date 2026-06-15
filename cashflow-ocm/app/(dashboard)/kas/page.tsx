@@ -5,6 +5,7 @@ import { KasTable } from './kas-table'
 import { KasFormDialog } from './kas-form-dialog'
 import { FloatingFab } from '@/components/fab'
 import { formatRupiah, formatCompact } from '@/lib/format'
+import { saldoPerAkun } from '@/lib/saldo'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,17 +18,8 @@ export default async function KasPage() {
 
   const isOwner = session?.user.role === 'owner'
 
-  // Hitung saldo per akun = saldoAwal + mutasi
-  const mutasiPerAkun: Record<string, number> = {}
-  for (const t of transaksiList) {
-    const prev = mutasiPerAkun[t.akunId] ?? 0
-    mutasiPerAkun[t.akunId] = prev + (t.arah === 'masuk' ? t.jumlah : -t.jumlah)
-  }
-
-  const akunSaldo = akunList.map((a) => ({
-    ...a,
-    saldo: a.saldoAwal + (mutasiPerAkun[a.id] ?? 0),
-  }))
+  // Saldo per akun = saldoAwal + Σ(masuk) − Σ(keluar). Rumus dari lib/saldo.ts (teruji unit).
+  const akunSaldo = saldoPerAkun(akunList, transaksiList)
 
   const totalMasuk = transaksiList.filter((t) => t.arah === 'masuk').reduce((s, t) => s + t.jumlah, 0)
   const totalKeluar = transaksiList.filter((t) => t.arah === 'keluar').reduce((s, t) => s + t.jumlah, 0)

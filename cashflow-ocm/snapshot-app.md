@@ -197,7 +197,7 @@ public/ icon-{192,512,maskable}.png, sw.js
 **Tipografi**: system font stack (`-apple-system, BlinkMacSystemFont, "SF Pro Text"…`) — **Geist sudah dibuang**. `h1–h3` `text-wrap: balance`.
 
 **Navigasi**:
-- **Bottom-nav** (`components/bottom-nav.tsx`, mobile) = **IKON-ONLY** ✅ (verifikasi: `NavTab` render `<Icon>` saja; teks `label` hanya `aria-label`). 5 slot: Beranda(grid) · Pembelian · **Cari** (tengah, command palette) · Penjualan(trending) · Lainnya(drawer "Pintasan"). Pill aktif gaya IG (liquid-glass; light `bg-white/60`).
+- **Bottom-nav** (`components/bottom-nav.tsx`, mobile) = **IKON-ONLY — KEPUTUSAN FINAL (15 Jun 2026), JANGAN diubah ke berlabel** ✅ (verifikasi: `NavTab` render `<Icon>` saja; teks `label` hanya `aria-label`). Aturan lama/eksternal yang meminta nav berlabel sudah dibatalkan — ikon-only adalah kanonik. 5 slot: Beranda(grid) · Pembelian · **Cari** (tengah, command palette) · Penjualan(trending) · Lainnya(drawer "Pintasan"). Pill aktif gaya IG (liquid-glass; light `bg-white/60`).
 - **Sidebar desktop** (`components/sidebar.tsx`/`desktop-sidebar.tsx`) = BERLABEL (10 item). **Dua sumber nav harus sinkron**: `lib/nav-routes.ts` (mobile/palette) & `sidebar.tsx`/`desktop-sidebar.tsx` (desktop).
 - Active-state **longest-match** (`isRouteActive` di `nav-routes.ts`) — `/peron/kesehatan` ≠ `/peron`.
 - **Toast** (sonner) `position="top-center"` + offset `safe-area-inset-top` (`globals.css`) → tak ketutup Dynamic Island.

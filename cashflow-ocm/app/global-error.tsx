@@ -1,5 +1,8 @@
 'use client'
 
+import { useEffect } from 'react'
+import { reportClientError } from '@/lib/report-client-error'
+
 /**
  * Fallback paling luar — dipakai bila root layout sendiri gagal. Mengganti
  * <html>/<body>, jadi tak bisa andalkan style app; pakai inline style minimal
@@ -12,6 +15,10 @@ export default function GlobalError({
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  useEffect(() => {
+    reportClientError(error) // crash root layout pun tercatat di server sink
+  }, [error])
+
   return (
     <html lang="id">
       <body

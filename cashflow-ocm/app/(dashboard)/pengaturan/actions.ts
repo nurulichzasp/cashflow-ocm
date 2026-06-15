@@ -115,8 +115,21 @@ export async function deleteUser(targetUserId: string) {
     throw new Error('Anda tidak dapat menghapus akun Anda sendiri')
   }
 
+  // Ambil data target dulu untuk jejak audit — hapus user = aksi admin sensitif
+  // (cascade ke account + session), wajib tercatat siapa & kapan.
+  const target = await db.query.user.findFirst({ where: eq(user.id, targetUserId) })
+
   // Hapus dari tabel user (cascade akan menghapus data di account dan session)
   await db.delete(user).where(eq(user.id, targetUserId))
+
+  await logActivity({
+    userId: session.user.id,
+    action: 'delete',
+    entityType: 'user',
+    entityId: targetUserId,
+    description: `Hapus pengguna ${target?.name ?? targetUserId}${target?.email ? ` (${target.email})` : ''}${target?.role ? ` • role ${target.role}` : ''}`,
+    oldValues: target ? { name: target.name, email: target.email, role: target.role } : undefined,
+  })
 
   revalidatePath('/')
   return { success: true }

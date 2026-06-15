@@ -178,17 +178,22 @@ export async function snapshotHarga(): Promise<string> {
   ].join('\n')
 }
 
-/** Net margin & profitabilitas lifetime. */
+/** Margin & profitabilitas lifetime — markup peron + margin bersih setelah biaya. */
 export async function snapshotMargin(): Promise<string> {
-  const [pembelianAgg, penjualanAgg, untungAgg] = await Promise.all([
+  const [pembelianAgg, penjualanAgg, untungAgg, biayaAgg] = await Promise.all([
     db.select({ total: sum(pembelian.totalBeli) }).from(pembelian),
     db.select({ total: sum(penjualan.totalBersih) }).from(penjualan),
     db.select({ total: sum(pembelian.keuntungan) }).from(pembelian),
+    db.select({ total: sum(biayaOperasional.jumlah) }).from(biayaOperasional),
   ])
 
   const totalBeli = Number(pembelianAgg[0]?.total ?? 0)
   const totalJual = Number(penjualanAgg[0]?.total ?? 0)
-  const totalUntung = Number(untungAgg[0]?.total ?? 0)
+  const totalUntung = Number(untungAgg[0]?.total ?? 0) // markup peron — SEBELUM biaya OCM
+  const totalBiaya = Number(biayaAgg[0]?.total ?? 0)
+  const marginBersih = totalUntung - totalBiaya // setelah biaya OCM sendiri
+  // Persentase tetap dihitung dari markup thd pembelian (ambang sehat/tipis sudah
+  // dikalibrasi ke rasio ini); kini DILABELI jujur sebagai markup, bukan "net".
   const margin = totalBeli > 0 ? (totalUntung / totalBeli) * 100 : 0
   const health = margin >= 1.5 ? '🟢 Sehat' : margin >= 0.5 ? '🟡 Moderat' : '🔴 Tipis'
 
@@ -197,10 +202,12 @@ export async function snapshotMargin(): Promise<string> {
     ``,
     `💰 Total revenue: <b>${formatRupiah(totalJual)}</b>`,
     `📥 Total pembelian: <b>${formatRupiah(totalBeli)}</b>`,
-    `📈 Total estimasi laba: <b>${formatRupiah(totalUntung)}</b>`,
+    `📈 Markup peron (sblm biaya): <b>${formatRupiah(totalUntung)}</b>`,
+    `💸 Biaya operasional: <b>${formatRupiah(totalBiaya)}</b>`,
+    `🧮 Margin bersih (stlh biaya): <b>${formatRupiah(marginBersih)}</b>`,
     ``,
     `━━━━━━━━━━━━━━━`,
-    `📊 <b>Net margin: ${margin.toFixed(2)}%</b>`,
+    `📊 <b>Margin markup: ${margin.toFixed(2)}%</b> (thd pembelian, sblm biaya)`,
     `🩺 Status: ${health}`,
   ].join('\n')
 }

@@ -320,8 +320,9 @@ export async function updatePembelian(id: string, data: {
 }
 
 export async function deletePembelian(id: string) {
-  const session = await requireSession()
-  requirePermission(session.user.role as any, 'canDelete')
+  // Hapus data keuangan = OWNER-ONLY (diseragamkan 15 Jun 2026; sebelumnya
+  // canDelete = owner+admin). Penjualan/kas/peron sudah owner-only — kini sama.
+  const session = await requireOwner()
 
   // Ambil data lama dulu untuk jejak audit
   const existing = await db.query.pembelian.findFirst({

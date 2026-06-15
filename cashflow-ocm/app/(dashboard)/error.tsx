@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { reportClientError } from '@/lib/report-client-error'
 
 /**
  * Error boundary untuk seluruh route dashboard. Kalau server component gagal
@@ -18,6 +19,7 @@ export default function DashboardError({
 }) {
   useEffect(() => {
     console.error('[dashboard error boundary]', error)
+    reportClientError(error) // teruskan ke sink server (/api/client-error)
   }, [error])
 
   return (

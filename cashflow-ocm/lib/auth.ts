@@ -71,6 +71,16 @@ export const auth = betterAuth({
   session: {
     expiresIn: 60 * 60 * 24 * 7,
     updateAge: 60 * 60 * 24,
+    // Cache sesi di cookie bertanda-tangan agar getSession tidak hit DB tiap
+    // render (layout + page sama-sama panggil getSession per navigasi → 2 query
+    // sesi per load sebelum ini). role (user.additionalFields) ikut tersimpan
+    // via parseUserOutput, jadi SEMUA gate owner/permission tetap jalan.
+    // maxAge sengaja pendek (60 dtk): perubahan role / pencabutan sesi basi
+    // paling lama 1 menit — penting untuk app keuangan.
+    cookieCache: {
+      enabled: true,
+      maxAge: 60,
+    },
   },
 })
 

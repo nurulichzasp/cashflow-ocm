@@ -8,8 +8,15 @@ import {
   peron,
   akunKas,
   modalPeron,
-  user,
   activityLog,
+  pembelianDetail,
+  penjualanDetail,
+  pembelianFoto,
+  biayaFoto,
+  hargaAcuan,
+  ppnBulanan,
+  pphBulanan,
+  appSettings,
 } from './db/schema'
 
 export interface BackupData {
@@ -24,6 +31,15 @@ export interface BackupData {
     transaksi_kas: any[]
     modal_peron: any[]
     activity_log: any[]
+    // v2.0 — ditambah agar backup bisa direstore UTUH (bukan header saja):
+    pembelian_detail: any[]
+    penjualan_detail: any[]
+    pembelian_foto: any[]
+    biaya_foto: any[]
+    harga_acuan: any[]
+    ppn_bulanan: any[]
+    pph_bulanan: any[]
+    app_settings: any[]
   }
   summary: {
     totalPembelian: number
@@ -49,6 +65,14 @@ export async function createBackup(): Promise<BackupData> {
       transaksiList,
       modalList,
       activityList,
+      pembelianDetailList,
+      penjualanDetailList,
+      pembelianFotoList,
+      biayaFotoList,
+      hargaList,
+      ppnList,
+      pphList,
+      appSettingsList,
     ] = await Promise.all([
       db.select().from(akunKas),
       db.select().from(peron),
@@ -58,11 +82,21 @@ export async function createBackup(): Promise<BackupData> {
       db.select().from(transaksiKas),
       db.select().from(modalPeron),
       db.select().from(activityLog),
+      db.select().from(pembelianDetail),
+      db.select().from(penjualanDetail),
+      db.select().from(pembelianFoto),
+      db.select().from(biayaFoto),
+      db.select().from(hargaAcuan),
+      db.select().from(ppnBulanan),
+      db.select().from(pphBulanan),
+      db.select().from(appSettings),
     ])
 
     const backup: BackupData = {
       timestamp: new Date().toISOString(),
-      version: '1.0',
+      // v2.0: backup LENGKAP (termasuk detail/foto/harga/pajak/app_settings) agar
+      // bisa direstore utuh. Backup v1.0 lama (header-saja) tetap bisa dibaca restore.
+      version: '2.0',
       tables: {
         akun_kas: akunList,
         peron: peronList,
@@ -72,6 +106,14 @@ export async function createBackup(): Promise<BackupData> {
         transaksi_kas: transaksiList,
         modal_peron: modalList,
         activity_log: activityList,
+        pembelian_detail: pembelianDetailList,
+        penjualan_detail: penjualanDetailList,
+        pembelian_foto: pembelianFotoList,
+        biaya_foto: biayaFotoList,
+        harga_acuan: hargaList,
+        ppn_bulanan: ppnList,
+        pph_bulanan: pphList,
+        app_settings: appSettingsList,
       },
       summary: {
         totalPembelian: pembelianList.length,

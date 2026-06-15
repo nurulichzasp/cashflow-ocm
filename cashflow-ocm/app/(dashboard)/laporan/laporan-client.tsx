@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useTransition } from 'react'
 import { getLaporanData, getPajakData, getLabaRugiTahunan, getNeracaData } from './actions'
-import { formatRupiah, formatTanggal } from '@/lib/format'
+import { formatRupiah, formatNumber, formatTanggal } from '@/lib/format'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { StatusPill } from '@/components/ui/status-pill'
@@ -105,7 +105,7 @@ function ExportButtons({ onCSV, onXLSX }: { onCSV: () => void; onXLSX: () => voi
 }
 
 function LabaRugiTab({ data, dari, sampai }: { data: LaporanData; dari: string; sampai: string }) {
-  const { totalPenjualan, totalPembelian, totalBiaya, labaBersih, totalKeuntungan } = data.labaRugi
+  const { totalPenjualan, totalPembelian, totalBiaya, labaBersih, totalKeuntungan, marginBersih, marginBersihPerKg, breakEvenVolumeKg, totalTonase } = data.labaRugi
   const labaKotor = totalPenjualan - totalPembelian
 
   const exportRows = [
@@ -114,7 +114,10 @@ function LabaRugiTab({ data, dari, sampai }: { data: LaporanData; dari: string; 
     { Keterangan: 'Laba Kotor', 'Jumlah (Rp)': labaKotor },
     { Keterangan: 'Biaya Operasional', 'Jumlah (Rp)': totalBiaya },
     { Keterangan: 'Laba Bersih', 'Jumlah (Rp)': labaBersih },
-    { Keterangan: 'Margin Dagang (markup peron)', 'Jumlah (Rp)': totalKeuntungan },
+    { Keterangan: 'Margin Dagang (markup peron, sblm biaya)', 'Jumlah (Rp)': totalKeuntungan },
+    { Keterangan: 'Margin Bersih OCM (stlh biaya)', 'Jumlah (Rp)': marginBersih },
+    { Keterangan: 'Margin Bersih per kg (Rp/kg)', 'Jumlah (Rp)': marginBersihPerKg },
+    { Keterangan: 'Break-even Volume (kg)', 'Jumlah (Rp)': breakEvenVolumeKg },
   ]
 
   return (
@@ -135,7 +138,8 @@ function LabaRugiTab({ data, dari, sampai }: { data: LaporanData; dari: string; 
               { label: 'Laba Kotor', value: labaKotor, cls: 'font-semibold text-foreground', bg: 'bg-muted/30', sep: true },
               { label: 'Biaya Operasional', value: totalBiaya, cls: 'text-muted-foreground' },
               { label: 'Laba Bersih', value: labaBersih, cls: 'font-semibold text-foreground', bg: 'bg-muted/30', sep: true, valueCls: labaBersih > 0 ? 'text-ok' : labaBersih < 0 ? 'text-crit' : '' },
-              { label: 'Margin Dagang (markup peron)', value: totalKeuntungan, cls: 'text-foreground font-semibold' },
+              { label: 'Margin Dagang (markup peron, sblm biaya)', value: totalKeuntungan, cls: 'text-foreground font-semibold' },
+              { label: 'Margin Bersih OCM (stlh biaya)', value: marginBersih, cls: 'font-semibold text-foreground', bg: 'bg-muted/30', sep: true, valueCls: marginBersih > 0 ? 'text-ok' : marginBersih < 0 ? 'text-crit' : '' },
             ].map((row, i) => (
               <tr key={i} className={cn('border-b last:border-0', row.sep ? 'border-t-2 border-t-border' : '', row.bg ?? '')}>
                 <td className={cn('px-4 py-3', row.cls)}>{row.label}</td>
@@ -146,6 +150,12 @@ function LabaRugiTab({ data, dari, sampai }: { data: LaporanData; dari: string; 
           </tbody>
         </table>
       </div>
+      {/* Metrik keputusan: margin BERSIH per kg & break-even volume (satuan kg, bukan Rp total). */}
+      <p className="px-1 text-xs text-muted-foreground leading-relaxed max-w-md md:max-w-xl">
+        Margin bersih ≈ <span className="tabular-nums font-medium text-foreground">{formatRupiah(marginBersihPerKg)}/kg</span>
+        {' · '}Break-even ≈ <span className="tabular-nums font-medium text-foreground">{formatNumber(breakEvenVolumeKg)} kg</span>
+        {' '}(dari {formatNumber(Math.round(totalTonase))} kg ditangani). Markup peron belum dikurangi biaya OCM; margin bersih sudah.
+      </p>
     </div>
   )
 }
@@ -154,8 +164,11 @@ function PerPeronTab({ data, dari, sampai }: { data: LaporanData; dari: string; 
   const exportRows = data.laporanPeron.map((p) => ({
     Peron: p.nama,
     'Jumlah Tiket': p.jumlahTiket,
+    'Tonase (kg)': p.tonase,
     'Total Beli (Rp)': p.totalBeli,
     'Keuntungan (Rp)': p.keuntungan,
+    'Realisasi/kg (Rp)': p.realizedPerKg,
+    'Target/kg (Rp)': p.targetPerKg,
     'DP Aktif (Rp)': p.dpAktif,
   }))
 
@@ -178,13 +191,16 @@ function PerPeronTab({ data, dari, sampai }: { data: LaporanData; dari: string; 
         </Card>
       ) : (
         <div className="rounded-lg border overflow-x-auto">
-          <table className="w-full text-sm min-w-[500px]">
+          <table className="w-full text-sm min-w-[760px]">
             <thead className="bg-muted/50">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">Peron</th>
                 <th className="text-right px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">Tiket</th>
+                <th className="text-right px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">Tonase (kg)</th>
                 <th className="text-right px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">Total Beli</th>
                 <th className="text-right px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">Keuntungan</th>
+                <th className="text-right px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">Realisasi/kg</th>
+                <th className="text-right px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">Target/kg</th>
                 <th className="text-right px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">DP Aktif</th>
               </tr>
             </thead>
@@ -193,8 +209,12 @@ function PerPeronTab({ data, dari, sampai }: { data: LaporanData; dari: string; 
                 <tr key={p.id} className={i % 2 === 0 ? 'bg-background' : 'bg-muted/20'}>
                   <td className="px-4 py-3 font-medium">{p.nama}</td>
                   <td className="px-4 py-3 text-right tabular-nums">{p.jumlahTiket}</td>
+                  <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{formatNumber(p.tonase)}</td>
                   <td className="px-4 py-3 text-right tabular-nums">{formatRupiah(p.totalBeli)}</td>
                   <td className="px-4 py-3 text-right tabular-nums text-foreground">{formatRupiah(p.keuntungan)}</td>
+                  {/* Realisasi/kg dibandingkan target peron: capai/lewati target = ok, di bawah = warn. */}
+                  <td className={cn('px-4 py-3 text-right tabular-nums', p.tonase === 0 ? 'text-muted-foreground' : p.realizedPerKg >= p.targetPerKg ? 'text-ok' : 'text-warn')}>{p.tonase === 0 ? '—' : formatRupiah(p.realizedPerKg)}</td>
+                  <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{formatRupiah(p.targetPerKg)}</td>
                   <td className="px-4 py-3 text-right tabular-nums">{formatRupiah(p.dpAktif)}</td>
                 </tr>
               ))}

@@ -1172,7 +1172,12 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
                           variant="destructive"
                           onClick={async () => {
                             try {
-                              const res = await fetch('/api/health?clear=1', { method: 'POST' })
+                              const res = await fetch('/api/health?clear=1', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                // Endpoint mewajibkan frasa konfirmasi di body (guard anti-tak-sengaja).
+                                body: JSON.stringify({ confirm: 'HAPUS-SEMUA-DATA' }),
+                              })
                               if (res.ok) {
                                 toast.success('Database transaksi berhasil dibersihkan')
                                 router.push('/dashboard')

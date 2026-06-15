@@ -8,6 +8,7 @@ import { hargaAcuan } from '@/lib/db/schema'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
 import { requirePermission } from '@/lib/permissions'
+import { logActivity, describeActivity } from '@/lib/audit'
 
 async function requireSession() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -46,8 +47,23 @@ export async function createHargaAcuan(formData: FormData) {
 }
 
 export async function deleteHargaAcuan(id: string) {
-  await requireOwner()
+  const session = await requireOwner()
+  // Jejak audit: harga acuan menggerakkan pricing pembelian/penjualan, hapusnya
+  // harus tercatat (siapa & nilai apa yang dibuang).
+  const [existing] = await db.select().from(hargaAcuan).where(eq(hargaAcuan.id, id)).limit(1)
   await db.delete(hargaAcuan).where(eq(hargaAcuan.id, id))
+  await logActivity({
+    userId: session.user.id,
+    action: 'delete',
+    entityType: 'harga_acuan',
+    entityId: id,
+    description: describeActivity(
+      'delete',
+      'harga_acuan',
+      existing ? `${existing.produk} • Rp${existing.hargaLapangan} (${existing.tanggalBerlaku})` : id,
+    ),
+    oldValues: existing ?? undefined,
+  })
   revalidatePath('/harga')
   return { success: true }
 }

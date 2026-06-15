@@ -141,6 +141,12 @@ export async function deleteTransaksiKas(id: string) {
   const session = await requireOwner()
 
   const existing = await db.query.transaksiKas.findFirst({ where: (t, { eq }) => eq(t.id, id) })
+  // Guard (selaras updateTransaksiKas): baris kas OTOMATIS (dari pembelian/
+  // penjualan/biaya) tak boleh dihapus manual di sini. Kalau dihapus, induknya
+  // tetap 'lunas' tapi tanpa offset kas → gap rekonsiliasi. Hapus lewat sumbernya.
+  if (existing?.refTabel) {
+    throw new Error('Transaksi ini otomatis dari pembelian/penjualan/biaya — ubah di catatan sumbernya.')
+  }
   await db.delete(transaksiKas).where(eq(transaksiKas.id, id))
 
   await logActivity({

@@ -20,7 +20,7 @@ curl https://cashflow-ocm.vercel.app/api/backup?format=json \
 
 ### Features
 
-- **Full Database Export**: All tables exported (akun_kas, peron, pembelian, penjualan, biaya_operasional, transaksi_kas, modal_peron, activity_log)
+- **Full Database Export (backup v2.0)**: Semua tabel data diekspor — akun_kas, peron, pembelian, penjualan, biaya_operasional, transaksi_kas, modal_peron, activity_log, **pembelian_detail, penjualan_detail, pembelian_foto, biaya_foto, harga_acuan, ppn_bulanan, pph_bulanan, app_settings**. (Tabel auth user/account/session SENGAJA tidak disertakan agar login tak ikut tertimpa saat restore.)
 - **Summary Statistics**: Total records per table included in backup
 - **Multiple Formats**: Excel (.xlsx) or JSON
 - **Audit Logging**: All backup operations logged to activity_log
@@ -54,8 +54,9 @@ curl https://cashflow-ocm.vercel.app/api/backup?format=json \
   "message": "Backup created successfully",
   "metadata": {
     "timestamp": "2026-06-06T10:30:00.000Z",
-    "format": "xlsx",
     "size": 1024000,
+    "url": "https://<...>.blob.vercel-storage.com/backup-2026-06-06-103000.json",
+    "pathname": "backup-2026-06-06-103000.json",
     "summary": {
       "totalPembelian": 45,
       "totalPenjualan": 38,
@@ -80,12 +81,18 @@ Each backup includes:
 ### Data Sheets
 1. **akun_kas** - Bank accounts and cash
 2. **peron** - Supplier/contractor information
-3. **pembelian** - Purchase transactions
-4. **penjualan** - Sales transactions
+3. **pembelian** - Purchase transactions (header)
+4. **penjualan** - Sales transactions (header)
 5. **biaya_operasional** - Operating expenses
 6. **transaksi_kas** - Cash flow transactions
 7. **modal_peron** - Supplier capital/debt
 8. **activity_log** - Audit trail
+9. **pembelian_detail** - Purchase line items (per TID/replas)
+10. **penjualan_detail** - Sales line items
+11. **pembelian_foto** / **biaya_foto** - Photo evidence references
+12. **harga_acuan** - Reference prices
+13. **ppn_bulanan** / **pph_bulanan** - Monthly tax records
+14. **app_settings** - Company profile, tax rates, modal awal
 
 ## Best Practices
 
@@ -97,14 +104,25 @@ Each backup includes:
 
 ## Restore Procedure
 
-To restore from backup:
+> ⚠️ Restore = operasi PALING berbahaya (menimpa data hidup). WAJIB diuji ke DB cabang (Turso branch) dulu — JANGAN langsung ke produksi.
 
-1. Open backup Excel file
-2. Copy data from each sheet
-3. Import into database using appropriate tools
-4. Or manually re-enter critical transactions if needed
+### Primer (paling andal): Turso native PITR / dump–restore
+Database asli direstore dengan tipe data persis — ini jalur pemulihan utama untuk bencana (DB rusak / terhapus / salah hapus massal).
 
-For full database restoration, consider using database-specific backup tools (SQL dump, database export from Turso).
+1. Buat DB cabang dari titik waktu sebelum insiden, lalu verifikasi isinya:
+   ```bash
+   turso db create cashflow-restore --from-db <nama-db> --timestamp <ISO8601>
+   turso db shell cashflow-restore "SELECT count(*) FROM pembelian;"
+   ```
+2. Setelah yakin, arahkan app ke DB hasil restore (ganti `TURSO_CONNECTION_URL`) atau promosikan.
+
+Alternatif: `turso db dump <nama-db> > dump.sql` lalu `turso db shell <target> < dump.sql`.
+
+### Sekunder (portabel): backup JSON v2.0 dari `/api/backup`
+Sejak v2.0 backup ini LENGKAP (16 tabel; lihat daftar di atas — tabel auth sengaja tidak disertakan). Cocok untuk arsip portabel, inspeksi, atau impor manual per-tabel ke tools DB.
+
+### Kenapa TIDAK ada tombol/endpoint restore-otomatis (disengaja)
+Wipe-and-reinsert seluruh DB lewat satu klik berisiko tinggi dan rawan jebakan serialisasi (kolom `timestamp` jadi ISO string di JSON, kolom tanggal yang memang teks tidak boleh dikonversi). Jalur restore yang bisa diandalkan adalah Turso PITR di atas. Jika kelak butuh restore terprogram dari JSON, bangun script khusus yang mengonversi kolom timestamp dengan benar dan **uji ke Turso branch dulu** sebelum dipakai produksi.
 
 ## Troubleshooting
 
