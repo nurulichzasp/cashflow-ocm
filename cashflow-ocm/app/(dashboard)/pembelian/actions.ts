@@ -10,6 +10,7 @@ import { z } from 'zod'
 import { notifyNewPembelian } from '@/lib/notification'
 import { requirePermission } from '@/lib/permissions'
 import { logActivity, describeActivity } from '@/lib/audit'
+import { effectiveKeuntunganPerKg, isKategoriTBS } from '@/lib/harga'
 
 async function requireSession() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -54,10 +55,13 @@ const pembelianSchema = z.object({
   idempotencyKey: z.string().optional(),
 })
 
-function computeTotals(details: DetailInput[], keuntunganPerKg: number) {
+function computeTotals(details: DetailInput[], keuntunganPerKg: number, isTBS: boolean) {
+  // Untung CV efektif: untuk non-TBS, kelebihan peron di-cap (CAP_KEUNTUNGAN_PERON)
+  // sehingga untung CV ter-floor & Harga Jual BGA tetap acuan + selisih. TBS apa adanya.
+  const untungEfektif = effectiveKeuntunganPerKg(keuntunganPerKg, isTBS)
   let totalTonase = 0, totalBeli = 0, totalJual = 0, totalKeuntungan = 0
   const computed = details.map((d, i) => {
-    const hargaJual = d.hargaLapangan + keuntunganPerKg
+    const hargaJual = d.hargaLapangan + untungEfektif
     // Tonase bisa pecahan (mis. 15.53 kg) sehingga subtotal bisa menghasilkan
     // pecahan rupiah. Bulatkan ke rupiah utuh agar tidak ada sen yang menumpuk.
     const subtotalBeli = Math.round(d.tonase * d.hargaLapangan)
@@ -97,7 +101,7 @@ export async function createPembelian(data: {
   const peronData = await db.query.peron.findFirst({ where: (t, { eq }) => eq(t.id, parsed.peronId) })
   if (!peronData) throw new Error('Peron tidak ditemukan')
 
-  const { computed, totalTonase, totalBeli, totalJual, totalKeuntungan, hargaBeliRata, hargaJualRata } = computeTotals(parsed.details, peronData.keuntunganPerKg)
+  const { computed, totalTonase, totalBeli, totalJual, totalKeuntungan, hargaBeliRata, hargaJualRata } = computeTotals(parsed.details, peronData.keuntunganPerKg, isKategoriTBS(parsed.kategori))
 
   // Anti-dobel: tolak pembelian identik dari user yang sama dalam ~60 detik terakhir
   // (retry saat sinyal lapangan jelek / double-submit). Match sangat spesifik
@@ -238,7 +242,7 @@ export async function updatePembelian(id: string, data: {
   const peronData = await db.query.peron.findFirst({ where: (t, { eq }) => eq(t.id, parsed.peronId) })
   if (!peronData) throw new Error('Peron tidak ditemukan')
 
-  const { computed, totalTonase, totalBeli, totalJual, totalKeuntungan, hargaBeliRata, hargaJualRata } = computeTotals(parsed.details, peronData.keuntunganPerKg)
+  const { computed, totalTonase, totalBeli, totalJual, totalKeuntungan, hargaBeliRata, hargaJualRata } = computeTotals(parsed.details, peronData.keuntunganPerKg, isKategoriTBS(parsed.kategori))
 
   // Update + ganti detail + sinkron mutasi kas, atomic dalam satu transaksi.
   await db.transaction(async (tx) => {
@@ -392,9 +396,11 @@ export async function getKeuntunganPerKg(peronId: string): Promise<number> {
 export async function getLatestHargaAcuan(produk: 'TBS' | 'BRDL KTWM' | 'BRDL TRYM' | 'BRDL LMDM', tanggal?: string) {
   await requireSession()
   const targetDate = tanggal || new Date().toISOString().slice(0, 10)
+  // LMDM selalu mirror TRYM — lookup LMDM dialihkan ke TRYM agar tak pernah blank.
+  const lookupProduk = produk === 'BRDL LMDM' ? 'BRDL TRYM' : produk
   const result = await db.query.hargaAcuan.findFirst({
     where: (t, { and, eq, lte }) => and(
-      eq(t.produk, produk),
+      eq(t.produk, lookupProduk),
       lte(t.tanggalBerlaku, targetDate),
     ),
     orderBy: (t, { desc }) => [desc(t.tanggalBerlaku), desc(t.createdAt)],

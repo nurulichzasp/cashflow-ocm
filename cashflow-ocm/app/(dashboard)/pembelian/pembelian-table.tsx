@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useCallback } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { StatusPill } from '@/components/ui/status-pill'
+import { PaymentStatusDot } from '@/components/ui/status-pill'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -53,11 +53,7 @@ const kategoriColor: Record<string, string> = {
 }
 
 function StatusBayar({ status }: { status: 'lunas' | 'belum' }) {
-  return (
-    <StatusPill tone={status === 'lunas' ? 'ok' : 'warn'}>
-      {status === 'lunas' ? 'Lunas' : 'Belum'}
-    </StatusPill>
-  )
+  return <PaymentStatusDot status={status} />
 }
 
 function FotoIndicator({ count }: { count: number }) {

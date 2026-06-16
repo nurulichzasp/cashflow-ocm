@@ -1,0 +1,91 @@
+import { describe, it, expect } from 'vitest'
+import {
+  CAP_KEUNTUNGAN_PERON,
+  SELISIH_JUAL_BGA,
+  effectiveKelebihanPeron,
+  effectiveKeuntunganPerKg,
+  isKategoriTBS,
+  isProdukTBS,
+} from '../harga'
+
+// untungCV → kelebihan = 120 − untungCV
+const untungDariKelebihan = (kelebihan: number) => SELISIH_JUAL_BGA - kelebihan
+
+describe('cap kelebihan peron (non-TBS)', () => {
+  it('di bawah cap → tetap (kelebihan 40)', () => {
+    expect(effectiveKelebihanPeron(untungDariKelebihan(40), false)).toBe(40)
+  })
+  it('di atas cap → jadi 50 (kelebihan 65)', () => {
+    expect(effectiveKelebihanPeron(untungDariKelebihan(65), false)).toBe(50)
+  })
+  it('jauh di atas cap → jadi 50 (kelebihan 90)', () => {
+    expect(effectiveKelebihanPeron(untungDariKelebihan(90), false)).toBe(50)
+  })
+  it('tepat di cap → 50 (kelebihan 50)', () => {
+    expect(effectiveKelebihanPeron(untungDariKelebihan(50), false)).toBe(50)
+  })
+  it('default peron untungCV 50 → kelebihan 70 → di-cap 50', () => {
+    expect(effectiveKelebihanPeron(50, false)).toBe(50)
+  })
+})
+
+describe('TBS tidak di-cap', () => {
+  it('kelebihan 90 tetap 90', () => {
+    expect(effectiveKelebihanPeron(untungDariKelebihan(90), true)).toBe(90)
+  })
+  it('kelebihan 40 tetap 40', () => {
+    expect(effectiveKelebihanPeron(untungDariKelebihan(40), true)).toBe(40)
+  })
+})
+
+describe('untung CV efektif (floor non-TBS)', () => {
+  it('non-TBS untungCV 30 → floor ke 70 (120−50)', () => {
+    expect(effectiveKeuntunganPerKg(30, false)).toBe(SELISIH_JUAL_BGA - CAP_KEUNTUNGAN_PERON)
+    expect(effectiveKeuntunganPerKg(30, false)).toBe(70)
+  })
+  it('non-TBS untungCV 80 (di atas floor) → tetap 80', () => {
+    expect(effectiveKeuntunganPerKg(80, false)).toBe(80)
+  })
+  it('TBS untungCV 30 → tetap 30 (tanpa floor)', () => {
+    expect(effectiveKeuntunganPerKg(30, true)).toBe(30)
+  })
+  it('konsisten: harga jual BGA = acuan + selisih (untung + kelebihan = 120)', () => {
+    for (const untungCV of [10, 30, 50, 70, 90]) {
+      const kel = effectiveKelebihanPeron(untungCV, false)
+      const unt = effectiveKeuntunganPerKg(untungCV, false)
+      expect(kel + unt).toBe(SELISIH_JUAL_BGA)
+    }
+  })
+})
+
+describe('contoh before/after Harga Beli (acuan 1500, untungCV 30 → kelebihan 90)', () => {
+  const acuan = 1500
+  it('peron dibayar TURUN (1590 → 1550), untung CV NAIK (30 → 70)', () => {
+    const before = acuan + (SELISIH_JUAL_BGA - 30) // tanpa cap
+    const after = acuan + effectiveKelebihanPeron(30, false) // dengan cap
+    expect(before).toBe(1590)
+    expect(after).toBe(1550)
+    expect(after).toBeLessThan(before)
+    // Harga Jual BGA tetap acuan + 120 di kedua kasus
+    expect(acuan + effectiveKelebihanPeron(30, false) + effectiveKeuntunganPerKg(30, false)).toBe(acuan + SELISIH_JUAL_BGA)
+    expect(effectiveKeuntunganPerKg(30, false)).toBe(70)
+  })
+})
+
+describe('klasifikasi produk/kategori', () => {
+  it('kategori TBS', () => {
+    expect(isKategoriTBS('OCM R1')).toBe(true)
+    expect(isKategoriTBS('OCM R2')).toBe(true)
+    expect(isKategoriTBS('OCMP SAGU')).toBe(true)
+  })
+  it('kategori brondolan = non-TBS', () => {
+    for (const k of ['OCM BRDL', 'OCM BRDL KTWM', 'OCM BRDL TRYM', 'OCM BRDL LMDM']) {
+      expect(isKategoriTBS(k)).toBe(false)
+    }
+  })
+  it('produk acuan', () => {
+    expect(isProdukTBS('TBS')).toBe(true)
+    expect(isProdukTBS('BRDL KTWM')).toBe(false)
+    expect(isProdukTBS('BRDL LMDM')).toBe(false)
+  })
+})

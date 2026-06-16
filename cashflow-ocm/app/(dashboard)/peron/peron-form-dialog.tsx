@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { NumberInput } from '@/components/number-input'
 import { createPeron, updatePeron } from './actions'
+import { SELISIH_JUAL_BGA, CAP_KEUNTUNGAN_PERON } from '@/lib/harga'
 import type { Peron } from '@/lib/db/schema'
 
 interface Props {
@@ -108,8 +109,13 @@ export function PeronFormDialog({ mode, peron, children, open: openProp, onOpenC
 
           {keuntunganPerKg > 0 && (
             <div className="rounded-lg bg-stone-50 dark:bg-white/[0.03] border border-stone-200 dark:border-border px-3 py-2 text-xs text-stone-500 dark:text-stone-400">
-              Kelebihan peron: <strong className="text-stone-700 dark:text-stone-200">Rp {(120 - keuntunganPerKg).toLocaleString('id-ID')}/kg</strong>
-              <span className="text-stone-400 ml-1">(selisih jual 120 - untung {keuntunganPerKg})</span>
+              Kelebihan peron: <strong className="text-stone-700 dark:text-stone-200">Rp {(SELISIH_JUAL_BGA - keuntunganPerKg).toLocaleString('id-ID')}/kg</strong>
+              <span className="text-stone-400 ml-1">(selisih jual {SELISIH_JUAL_BGA} - untung {keuntunganPerKg})</span>
+              {SELISIH_JUAL_BGA - keuntunganPerKg > CAP_KEUNTUNGAN_PERON && (
+                <span className="mt-1 block text-stone-400">
+                  Untuk brondolan, kelebihan dibatasi maks Rp {CAP_KEUNTUNGAN_PERON.toLocaleString('id-ID')}/kg.
+                </span>
+              )}
             </div>
           )}
 

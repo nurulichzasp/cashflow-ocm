@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import {
   Dialog,
@@ -12,13 +12,9 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { NumberInput } from '@/components/number-input'
-import { Textarea } from '@/components/ui/textarea'
-import { createHargaAcuan } from './actions'
+import { createHargaAcuanBatch, getHargaAktifSemua } from './actions'
 import { todayString } from '@/lib/format'
-
-type Produk = 'TBS' | 'BRDL KTWM' | 'BRDL TRYM' | 'BRDL LMDM'
 
 interface Props {
   children: React.ReactNode
@@ -27,22 +23,44 @@ interface Props {
 export function HargaFormDialog({ children }: Props) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [produk, setProduk] = useState<Produk>('TBS')
-  const [hargaLapangan, setHargaLapangan] = useState(0)
+  const [prefilling, setPrefilling] = useState(false)
+
+  const [tanggalBerlaku, setTanggalBerlaku] = useState(todayString())
+  const [tbs, setTbs] = useState(0)
+  const [brdlKtwm, setBrdlKtwm] = useState(0)
+  const [brdlTrym, setBrdlTrym] = useState(0)
+
+  // Pre-fill dengan harga aktif terakhir tiap produk saat dialog dibuka — user
+  // cukup ubah yang berubah. LMDM tidak diinput (otomatis = TRYM).
+  useEffect(() => {
+    if (!open) return
+    let cancelled = false
+    setPrefilling(true)
+    getHargaAktifSemua(tanggalBerlaku)
+      .then((h) => {
+        if (cancelled) return
+        setTbs(h.tbs ?? 0)
+        setBrdlKtwm(h.brdlKtwm ?? 0)
+        setBrdlTrym(h.brdlTrym ?? 0)
+      })
+      .finally(() => { if (!cancelled) setPrefilling(false) })
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
+
+  const valid = tbs > 0 && brdlKtwm > 0 && brdlTrym > 0 && tanggalBerlaku !== ''
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    if (!hargaLapangan) { toast.error('Harga lapangan wajib diisi'); return }
+    if (!valid) {
+      toast.error('Lengkapi tanggal & semua harga (harus lebih dari 0)')
+      return
+    }
     setLoading(true)
     try {
-      const fd = new FormData(e.currentTarget)
-      fd.set('produk', produk)
-      fd.set('hargaLapangan', String(hargaLapangan))
-      await createHargaAcuan(fd)
-      toast.success('Harga acuan berhasil ditambahkan')
+      await createHargaAcuanBatch({ tanggalBerlaku, tbs, brdlKtwm, brdlTrym })
+      toast.success('Harga acuan semua produk berhasil disimpan')
       setOpen(false)
-      setHargaLapangan(0)
-      setProduk('TBS')
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Terjadi kesalahan')
     } finally {
@@ -53,55 +71,61 @@ export function HargaFormDialog({ children }: Props) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Tambah Harga Acuan</DialogTitle>
+          <DialogTitle>Harga Acuan</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="hg-tanggal">Tanggal Berlaku *</Label>
+            <Input
+              id="hg-tanggal"
+              type="date"
+              value={tanggalBerlaku}
+              onChange={(e) => setTanggalBerlaku(e.target.value)}
+              required
+            />
+            <p className="text-xs text-muted-foreground">Satu tanggal untuk semua produk sekaligus.</p>
+          </div>
+
+          <div className="space-y-3">
             <div className="space-y-1.5">
-              <Label>Produk</Label>
-              <Select value={produk} onValueChange={(v) => setProduk(v as Produk)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="TBS">TBS</SelectItem>
-                  <SelectItem value="BRDL KTWM">BRDL KTWM</SelectItem>
-                  <SelectItem value="BRDL TRYM">BRDL TRYM</SelectItem>
-                  <SelectItem value="BRDL LMDM">BRDL LMDM</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label>TBS (Rp/kg) *</Label>
+              <NumberInput value={tbs} onChange={setTbs} placeholder="0" />
             </div>
             <div className="space-y-1.5">
-              <Label>Tanggal Berlaku</Label>
-              <Input
-                type="date"
-                name="tanggalBerlaku"
-                defaultValue={todayString()}
-                required
-              />
+              <Label>BRDL KTWM (Rp/kg) *</Label>
+              <NumberInput value={brdlKtwm} onChange={setBrdlKtwm} placeholder="0" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>BRDL TRYM (Rp/kg) *</Label>
+              <NumberInput value={brdlTrym} onChange={setBrdlTrym} placeholder="0" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-muted-foreground">BRDL LMDM (Rp/kg)</Label>
+              <div className="flex h-9 items-center justify-between rounded-md border border-input bg-muted/40 px-3 text-sm">
+                <span className="num font-medium text-foreground">
+                  Rp {brdlTrym.toLocaleString('id-ID')}
+                </span>
+                <span className="text-xs text-muted-foreground">= TRYM (otomatis)</span>
+              </div>
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <Label>Harga Lapangan (Rp/kg)</Label>
-            <NumberInput value={hargaLapangan} onChange={setHargaLapangan} placeholder="0" />
-            <p className="text-xs text-muted-foreground">Harga acuan dari lapangan/pasar</p>
-          </div>
+          {prefilling && (
+            <p className="text-xs text-muted-foreground">Memuat harga terakhir…</p>
+          )}
 
-          <div className="space-y-1.5">
-            <Label>Catatan</Label>
-            <Textarea name="catatan" placeholder="Opsional..." rows={2} />
-          </div>
-
-          <div className="flex justify-end gap-2 pt-1">
+          <div
+            className="flex justify-end gap-2 pt-2"
+            style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+          >
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Batal
             </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Menyimpan...' : 'Tambah'}
+            <Button type="submit" disabled={loading || !valid}>
+              {loading ? 'Menyimpan...' : 'Simpan Semua'}
             </Button>
           </div>
         </form>

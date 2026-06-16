@@ -13,6 +13,7 @@ import { FotoBuktiUploader } from '@/components/foto-bukti-uploader'
 import { Textarea } from '@/components/ui/textarea'
 import { DateRangeInline } from '@/components/date-range-inline'
 import { createPembelian, updatePembelian, getHargaAcuanListForProduk, type KategoriPembelian, type DetailInput } from './actions'
+import { effectiveKelebihanPeron, effectiveKeuntunganPerKg } from '@/lib/harga'
 import { formatRupiah, formatRentangKotak, buildKeteranganReplas, todayString } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { Plus, Trash2, CalendarDays, AlertTriangle } from 'lucide-react'
@@ -117,6 +118,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
       : kategori === 'OCM BRDL TRYM' || kategori === 'OCM BRDL LMDM'
         ? 'BRDL TRYM'
         : 'TBS'
+  const isTBS = derivedProduk === 'TBS'
 
   // Step-function harga acuan: baris paling baru dengan tanggalBerlaku <= tanggal.
   function lookupAcuan(date: string): AcuanRow | null {
@@ -126,11 +128,11 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
     }
     return best
   }
-  // Harga beli auto = acuan + (selisihJualBga − untungCV). null bila tak ada acuan.
+  // Harga beli auto = acuan + kelebihan peron EFEKTIF (non-TBS di-cap). null bila tak ada acuan.
   function autoHargaForDate(date: string): number | null {
     const a = lookupAcuan(date)
     if (!a) return null
-    return a.hargaLapangan + (a.selisihJualBga - keuntunganPerKg)
+    return a.hargaLapangan + effectiveKelebihanPeron(keuntunganPerKg, isTBS, a.selisihJualBga)
   }
   // Rentang baris melewati >1 harga acuan? (ada tanggalBerlaku di dalam (dari, sampai])
   function warnRange(d: DetailRow): boolean {
@@ -212,9 +214,10 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
     tonase: parseFloat(d.tonase) || 0,
     hargaLapangan: parseFloat(d.hargaLapangan) || 0,
   }))
+  const untungEfektif = effectiveKeuntunganPerKg(keuntunganPerKg, isTBS)
   const totalTonase = parsedDetails.reduce((s, d) => s + d.tonase, 0)
   const totalBeli = parsedDetails.reduce((s, d) => s + d.tonase * d.hargaLapangan, 0)
-  const totalJual = parsedDetails.reduce((s, d) => s + d.tonase * (d.hargaLapangan + keuntunganPerKg), 0)
+  const totalJual = parsedDetails.reduce((s, d) => s + d.tonase * (d.hargaLapangan + untungEfektif), 0)
   const totalKeuntungan = totalJual - totalBeli
 
   function resetForm() {
@@ -350,7 +353,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
               <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-[#6B7280] mb-1.5">Harga Otomatis ({derivedProduk})</p>
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-600 dark:text-stone-300">
                 <span>Acuan: <strong className="num">Rp {headerAcuan.hargaLapangan.toLocaleString('id-ID')}</strong>/kg</span>
-                <span>Kelebihan: <strong className="num">Rp {(headerAcuan.selisihJualBga - keuntunganPerKg).toLocaleString('id-ID')}</strong></span>
+                <span>Kelebihan: <strong className="num">Rp {effectiveKelebihanPeron(keuntunganPerKg, isTBS, headerAcuan.selisihJualBga).toLocaleString('id-ID')}</strong></span>
               </div>
             </div>
           )}

@@ -42,3 +42,39 @@ export function StatusPill({
     </span>
   )
 }
+
+/**
+ * Status PEMBAYARAN (Lunas/Belum) — dot kecil + teks netral, TANPA background/border.
+ * Sengaja beda dari StatusPill: status bayar muncul berulang di list, jadi lebih
+ * tenang sebagai dot. Dot dekoratif (aria-hidden); label teks tetap untuk a11y.
+ *   Lunas → dot emerald (--ok-fg) · Belum → dot amber (--warn-fg)
+ */
+export function PaymentStatusDot({
+  status,
+  loading,
+  className,
+}: {
+  status: 'lunas' | 'belum'
+  loading?: boolean
+  className?: string
+}) {
+  const isLunas = status === 'lunas'
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-1.5 text-[13px] font-medium text-foreground whitespace-nowrap',
+        className,
+      )}
+    >
+      <span
+        aria-hidden
+        className={cn(
+          'h-2 w-2 shrink-0 rounded-full',
+          loading && 'animate-spin border border-current border-t-transparent',
+        )}
+        style={loading ? undefined : { backgroundColor: isLunas ? 'var(--ok-fg)' : 'var(--warn-fg)' }}
+      />
+      {isLunas ? 'Lunas' : 'Belum'}
+    </span>
+  )
+}
