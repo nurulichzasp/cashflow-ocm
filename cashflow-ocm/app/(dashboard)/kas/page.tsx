@@ -21,8 +21,6 @@ export default async function KasPage() {
   // Saldo per akun = saldoAwal + Σ(masuk) − Σ(keluar). Rumus dari lib/saldo.ts (teruji unit).
   const akunSaldo = saldoPerAkun(akunList, transaksiList)
 
-  const totalMasuk = transaksiList.filter((t) => t.arah === 'masuk').reduce((s, t) => s + t.jumlah, 0)
-  const totalKeluar = transaksiList.filter((t) => t.arah === 'keluar').reduce((s, t) => s + t.jumlah, 0)
   const totalSaldo = akunSaldo.reduce((s, a) => s + a.saldo, 0)
 
   const akunOptions = akunList.map((a) => ({ id: a.id, nama: a.nama, tipe: a.tipe }))
@@ -80,18 +78,7 @@ export default async function KasPage() {
         )}
       </div>
 
-      {/* Total masuk / keluar — ringkas, berdampingan */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="surface p-3.5">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-stone-400 mb-1.5">Masuk</p>
-          <p className="text-xl font-bold text-stone-900 dark:text-zinc-50 num">{formatCompact(totalMasuk)}</p>
-        </div>
-        <div className="surface p-3.5">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-stone-400 mb-1.5">Keluar</p>
-          <p className="text-xl font-bold text-stone-900 dark:text-zinc-50 num">{formatCompact(totalKeluar)}</p>
-        </div>
-      </div>
-
+      {/* Masuk / Keluar (ikut filter) pindah ke dalam KasTable. */}
       <KasTable transaksiList={transaksiList} isOwner={isOwner} />
     </div>
   )

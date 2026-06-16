@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { StatusPill } from '@/components/ui/status-pill'
+import { ArahIndicator } from '@/components/ui/status-pill'
 import { EmptyState } from '@/components/empty-state'
 import {
   AlertDialog,
@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { deleteTransaksiKas } from './actions'
 import { KasFormDialog } from './kas-form-dialog'
-import { formatRupiah, formatTanggal } from '@/lib/format'
+import { formatRupiah, formatTanggal, formatCompact, formatRentangFilter } from '@/lib/format'
 import { Trash2, Wallet, ArrowUpDown, ArrowUp, ArrowDown, Pencil } from 'lucide-react'
 import { DateRangeFilter } from '@/components/date-range-filter'
 import type { TransaksiKas, AkunKas } from '@/lib/db/schema'
@@ -99,8 +99,28 @@ export function KasTable({ transaksiList, isOwner }: Props) {
     )
   }
 
+  const isFiltered = !!dari || !!sampai
+  const rangeLabel = formatRentangFilter(dari, sampai)
+  const totalMasuk = filtered.filter((t) => t.arah === 'masuk').reduce((s, t) => s + t.jumlah, 0)
+  const totalKeluar = filtered.filter((t) => t.arah === 'keluar').reduce((s, t) => s + t.jumlah, 0)
+
   return (
     <div className="space-y-3">
+      {/* Masuk / Keluar — IKUT filter (saldo akun = kumulatif, tetap di page). */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="surface p-3.5">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-stone-400 mb-1.5">Masuk</p>
+          <p className="text-xl font-bold num tabular-nums text-stone-900 dark:text-zinc-50">{formatCompact(totalMasuk)}</p>
+        </div>
+        <div className="surface p-3.5">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-stone-400 mb-1.5">Keluar</p>
+          <p className="text-xl font-bold num tabular-nums text-stone-900 dark:text-zinc-50">{formatCompact(totalKeluar)}</p>
+        </div>
+      </div>
+      {isFiltered && (
+        <p className="px-1 text-[11px] text-stone-400 dark:text-zinc-500">Ringkasan untuk {rangeLabel}</p>
+      )}
+
       {/* Filter tanggal/bulan */}
       <DateRangeFilter dari={dari} sampai={sampai} onChange={(d, s) => { setDari(d); setSampai(s) }} />
 
@@ -133,11 +153,7 @@ export function KasTable({ transaksiList, isOwner }: Props) {
                 </td>
                 <td className="px-4 py-3 text-stone-700">{kategoriLabels[item.kategori]}</td>
                 <td className="px-4 py-3">
-                  {item.arah === 'masuk' ? (
-                    <StatusPill tone="ok"><ArrowUp className="h-3 w-3 shrink-0" aria-hidden />Masuk</StatusPill>
-                  ) : (
-                    <StatusPill tone="neutral"><ArrowDown className="h-3 w-3 shrink-0" aria-hidden />Keluar</StatusPill>
-                  )}
+                  <ArahIndicator arah={item.arah} />
                 </td>
                 <td className={`px-4 py-3 text-right font-semibold num ${item.arah === 'masuk' ? 'text-stone-900 dark:text-zinc-50' : 'text-stone-500 dark:text-zinc-400'}`}>
                   <span className="inline-flex items-center justify-end gap-1">
@@ -200,11 +216,7 @@ export function KasTable({ transaksiList, isOwner }: Props) {
                 <p className="font-medium text-stone-900">{kategoriLabels[item.kategori]}</p>
                 <p className="text-xs text-stone-500 mt-0.5">{formatTanggal(item.tanggal)} · {item.akun?.nama ?? item.akunId}</p>
               </div>
-              {item.arah === 'masuk' ? (
-                <StatusPill tone="ok" className="shrink-0"><ArrowUp className="h-3 w-3 shrink-0" aria-hidden />Masuk</StatusPill>
-              ) : (
-                <StatusPill tone="neutral" className="shrink-0"><ArrowDown className="h-3 w-3 shrink-0" aria-hidden />Keluar</StatusPill>
-              )}
+              <ArahIndicator arah={item.arah} className="shrink-0" />
             </div>
             <p className={`text-base font-bold num inline-flex items-center gap-1 ${item.arah === 'masuk' ? 'text-stone-900 dark:text-zinc-50' : 'text-stone-500 dark:text-zinc-400'}`}>
               {item.arah === 'masuk' ? <ArrowUp className="h-3.5 w-3.5 shrink-0" aria-hidden /> : <ArrowDown className="h-3.5 w-3.5 shrink-0" aria-hidden />}

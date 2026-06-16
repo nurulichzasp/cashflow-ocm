@@ -22,6 +22,7 @@ type EditItem = {
   id: string
   tanggal: string
   kategori: BiayaKategori
+  kategoriLain?: string | null
   jumlah: number
   akunSumberId: string
   catatan: string | null
@@ -40,13 +41,15 @@ export function BiayaFormDialog({ children, akunOptions, editItem }: Props) {
   const [loading, setLoading] = useState(false)
   const [idemKey, setIdemKey] = useState(() => crypto.randomUUID())
   const [kategori, setKategori] = useState<BiayaKategori>(editItem?.kategori ?? 'gaji')
+  const [kategoriLain, setKategoriLain] = useState(editItem?.kategoriLain ?? '')
   const [akunSumberId, setAkunSumberId] = useState(editItem?.akunSumberId ?? akunOptions?.[0]?.id ?? '')
   const [jumlah, setJumlah] = useState(editItem?.jumlah ?? 0)
   const [fotos, setFotos] = useState<string[]>(editItem?.fotos.map((f) => f.url) ?? [])
-  const [errors, setErrors] = useState<{ jumlah?: string }>({})
+  const [errors, setErrors] = useState<{ jumlah?: string; kategoriLain?: string }>({})
 
   function resetForm() {
     setKategori(editItem?.kategori ?? 'gaji')
+    setKategoriLain(editItem?.kategoriLain ?? '')
     setAkunSumberId(editItem?.akunSumberId ?? akunOptions?.[0]?.id ?? '')
     setJumlah(editItem?.jumlah ?? 0)
     setFotos(editItem?.fotos.map((f) => f.url) ?? [])
@@ -56,8 +59,11 @@ export function BiayaFormDialog({ children, akunOptions, editItem }: Props) {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
 
-    if (jumlah <= 0) {
-      setErrors({ jumlah: 'Jumlah harus diisi dan lebih besar dari nol.' })
+    const nextErrors: { jumlah?: string; kategoriLain?: string } = {}
+    if (jumlah <= 0) nextErrors.jumlah = 'Jumlah harus diisi dan lebih besar dari nol.'
+    if (kategori === 'lainnya' && !kategoriLain.trim()) nextErrors.kategoriLain = 'Sebutkan kategori untuk "Lainnya".'
+    if (nextErrors.jumlah || nextErrors.kategoriLain) {
+      setErrors(nextErrors)
       return
     }
     setErrors({})
@@ -66,6 +72,7 @@ export function BiayaFormDialog({ children, akunOptions, editItem }: Props) {
     try {
       const formData = new FormData(e.currentTarget)
       formData.set('kategori', kategori)
+      formData.set('kategoriLain', kategori === 'lainnya' ? kategoriLain.trim() : '')
       formData.set('akunSumberId', akunSumberId)
       formData.set('jumlah', String(jumlah))
       formData.set('fotoUrls', JSON.stringify(fotos))
@@ -116,6 +123,21 @@ export function BiayaFormDialog({ children, akunOptions, editItem }: Props) {
               </Select>
             </div>
           </div>
+
+          {kategori === 'lainnya' && (
+            <div className="space-y-1.5">
+              <Label htmlFor="by-kategori-lain">Sebutkan kategori</Label>
+              <Input
+                id="by-kategori-lain"
+                value={kategoriLain}
+                onChange={(e) => { setKategoriLain(e.target.value); if (errors.kategoriLain) setErrors((p) => ({ ...p, kategoriLain: undefined })) }}
+                placeholder="mis. Servis kendaraan"
+                aria-invalid={!!errors.kategoriLain}
+                className={cn(errors.kategoriLain && invalidFieldClass)}
+              />
+              <FieldError>{errors.kategoriLain}</FieldError>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">

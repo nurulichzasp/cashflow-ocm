@@ -100,6 +100,20 @@ export function formatRentangKotak(dari: string, sampai?: string | null): string
 }
 
 /**
+ * Label rentang filter untuk subteks hero (ikut DateRangeFilter, bisa 1 sisi):
+ *   dari & sampai → "1–10 Jun" (pakai formatRentangKotak)
+ *   dari saja     → "sejak 1 Jun"
+ *   sampai saja   → "s/d 10 Jun"
+ *   keduanya kosong → "" (pemanggil pakai teks all-time)
+ */
+export function formatRentangFilter(dari?: string, sampai?: string): string {
+  if (dari && sampai) return formatRentangKotak(dari, sampai)
+  if (dari) return `sejak ${formatTanggalPendek(dari)}`
+  if (sampai) return `s/d ${formatTanggalPendek(sampai)}`
+  return ''
+}
+
+/**
  * Rentang tanggal untuk keterangan tiket (bulan panjang):
  *   min == max            → "7 Juni"
  *   sebulan & setahun     → "4–7 Juni"

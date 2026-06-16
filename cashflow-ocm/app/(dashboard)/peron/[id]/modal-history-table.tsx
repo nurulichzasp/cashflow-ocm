@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { formatRupiah, formatTanggal } from '@/lib/format'
 import { deleteModalPeron } from '../actions'
-import { Trash2 } from 'lucide-react'
+import { Trash2, ArrowUp, ArrowDown } from 'lucide-react'
 import type { ModalPeron } from '@/lib/db/schema'
 
 interface Props {
@@ -79,7 +79,12 @@ export function ModalHistoryTable({ modal, isOwner }: Props) {
                         <Badge variant={variant}>{label}</Badge>
                       </td>
                       <td className={`px-4 py-2.5 text-right font-semibold num ${m.jenis === 'tambah' ? 'text-masuk' : 'text-keluar'}`}>
-                        {m.jenis === 'tambah' ? '+' : '-'} {formatRupiah(m.jumlah)}
+                        <span className="inline-flex items-center justify-end gap-1">
+                          {m.jenis === 'tambah'
+                            ? <ArrowUp className="h-3 w-3 shrink-0" aria-hidden />
+                            : <ArrowDown className="h-3 w-3 shrink-0" aria-hidden />}
+                          {m.jenis === 'tambah' ? '+' : '-'} {formatRupiah(m.jumlah)}
+                        </span>
                       </td>
                       <td className="px-4 py-2.5 text-muted-foreground">{m.catatan ?? '-'}</td>
                       {isOwner && (

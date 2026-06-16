@@ -57,11 +57,7 @@ export function ProfilClient({ user, isOwner }: { user: ProfilUser; isOwner: boo
         )}
         <p className="mt-2.5 text-base font-bold tracking-tight text-stone-900 dark:text-zinc-50">{displayName}</p>
         <p className="text-[13px] text-stone-500 dark:text-zinc-400">{user.email}</p>
-        <ProfileDialog user={user}>
-          <button className="mt-3 rounded-full border border-stone-300 px-4 py-1.5 text-[13px] font-semibold text-stone-700 transition-colors hover:bg-stone-100 dark:border-white/[0.12] dark:text-zinc-200 dark:hover:bg-white/[0.06]">
-            Edit profil
-          </button>
-        </ProfileDialog>
+        {/* Header = display murni. Satu-satunya pintu edit = baris "Informasi pribadi" di bawah. */}
       </div>
 
       {/* Akun */}

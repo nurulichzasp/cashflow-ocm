@@ -15,7 +15,8 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { formatTanggal, formatRupiah, formatCompact } from '@/lib/format'
+import { formatTanggal, formatRupiah, formatCompact, formatRentangFilter } from '@/lib/format'
+import { shareNota } from '@/lib/share'
 import { deletePembelian } from './actions'
 import { PembelianFormDialog } from './pembelian-form-dialog'
 import { PrintRekapButton, PrintNotaButton } from './invoice-print'
@@ -29,7 +30,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { DateRangeFilter } from '@/components/date-range-filter'
-import { Edit3, Trash2, ShoppingCart, ImageIcon, ArrowUpDown, ArrowUp, ArrowDown, MoreVertical } from 'lucide-react'
+import { Edit3, Trash2, ShoppingCart, ImageIcon, ArrowUpDown, ArrowUp, ArrowDown, MoreVertical, Share2 } from 'lucide-react'
 import type { Pembelian, Peron, AkunKas, PembelianFoto, PembelianDetail } from '@/lib/db/schema'
 
 type PembelianRow = Pembelian & { peron: Peron | null; sumberBayar: AkunKas | null; fotos: PembelianFoto[]; details: PembelianDetail[] }
@@ -175,6 +176,23 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
   const totalUntung = filtered.reduce((s, p) => s + p.keuntungan, 0)
   const jumlahBelum = filtered.filter((p) => p.statusBayarPeron === 'belum').length
   const isFiltered = !!filterDari || !!filterSampai || filterPeronId !== 'all'
+  const rangeLabel = formatRentangFilter(filterDari, filterSampai)
+
+  // Bagikan nota via Web Share API (share sheet native iOS); fallback clipboard / WA.
+  async function handleShare(p: PembelianRow) {
+    const lines = [
+      `Pembelian ${formatTanggal(p.tanggal)}`,
+      `Peron: ${p.peron?.nama ?? p.peronId}`,
+      `Kategori: ${p.kategori}`,
+      `Tonase: ${p.tonase.toLocaleString('id-ID')} kg`,
+      `Harga: Rp ${p.hargaBeli.toLocaleString('id-ID')}/kg`,
+      `Total: ${formatRupiah(p.totalBeli)}`,
+      `Status: ${p.statusBayarPeron === 'lunas' ? 'Lunas' : 'Belum dibayar'}`,
+      p.keterangan ? `Keterangan: ${p.keterangan}` : '',
+    ].filter(Boolean).join('\n')
+    const res = await shareNota({ title: `Pembelian ${p.peron?.nama ?? ''} — CV OCM`, text: lines })
+    if (res === 'copied') toast.success('Nota disalin ke clipboard')
+  }
 
   if (pembelianList.length === 0) {
     return (
@@ -222,7 +240,9 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
               {formatCompact(totalBeli)}
             </p>
             <p className="mt-1.5 text-[11px] text-stone-400 dark:text-zinc-500">
-              {isFiltered ? `Dibayar ke peron · ${filtered.length} tiket terfilter` : 'Dibayar ke peron · seluruh tiket'}
+              {isFiltered
+                ? `Dibayar ke peron · ${filtered.length} tiket${rangeLabel ? ` · ${rangeLabel}` : ''}`
+                : 'Dibayar ke peron · seluruh tiket'}
             </p>
           </div>
           <div className="flex items-center gap-5 sm:gap-6 shrink-0">
@@ -416,53 +436,63 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
               </div>
             </div>
 
-            {isOwner && (
-              <div className="mt-3 pt-3 border-t border-black/[0.05] dark:border-white/[0.05] flex items-center gap-1">
-                <PrintNotaButton pembelian={p} nomorUrut={nomorUrutMap.get(p.id) ?? 1} />
-                {p.fotos.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setExpandedFotoId(expandedFotoId === p.id ? null : p.id)}
-                    className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-[12px] font-medium text-stone-500 dark:text-zinc-400 hover:text-stone-800 dark:hover:text-zinc-200 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors"
-                  >
-                    <ImageIcon className="h-3.5 w-3.5" />
-                    {p.fotos.length}
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setEditTarget(p)}
-                  className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-stone-600 dark:text-zinc-300 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors"
-                >
-                  <Edit3 className="h-3.5 w-3.5" />Edit
-                </button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
+            <div className="mt-3 pt-3 border-t border-black/[0.05] dark:border-white/[0.05] flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => handleShare(p)}
+                className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-stone-600 dark:text-zinc-300 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors"
+                aria-label="Bagikan nota"
+              >
+                <Share2 className="h-3.5 w-3.5" />Bagikan
+              </button>
+              {isOwner && (
+                <>
+                  <PrintNotaButton pembelian={p} nomorUrut={nomorUrutMap.get(p.id) ?? 1} />
+                  {p.fotos.length > 0 && (
                     <button
                       type="button"
-                      className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-stone-500 dark:text-zinc-400 hover:text-destructive hover:bg-destructive/10 transition-colors"
+                      onClick={() => setExpandedFotoId(expandedFotoId === p.id ? null : p.id)}
+                      className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-[12px] font-medium text-stone-500 dark:text-zinc-400 hover:text-stone-800 dark:hover:text-zinc-200 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors"
                     >
-                      <Trash2 className="h-3.5 w-3.5" />Hapus
+                      <ImageIcon className="h-3.5 w-3.5" />
+                      {p.fotos.length}
                     </button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Hapus tiket pembelian?</AlertDialogTitle>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Batal</AlertDialogCancel>
-                      <AlertDialogAction
-                        variant="destructive"
-                        onClick={() => handleDelete(p.id)}
-                        disabled={deletingId === p.id}
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setEditTarget(p)}
+                    className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-stone-600 dark:text-zinc-300 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors"
+                  >
+                    <Edit3 className="h-3.5 w-3.5" />Edit
+                  </button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <button
+                        type="button"
+                        className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-stone-500 dark:text-zinc-400 hover:text-destructive hover:bg-destructive/10 transition-colors"
                       >
-                        {deletingId === p.id ? 'Menghapus...' : 'Hapus'}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            )}
+                        <Trash2 className="h-3.5 w-3.5" />Hapus
+                      </button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Hapus tiket pembelian?</AlertDialogTitle>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                        <AlertDialogAction
+                          variant="destructive"
+                          onClick={() => handleDelete(p.id)}
+                          disabled={deletingId === p.id}
+                        >
+                          {deletingId === p.id ? 'Menghapus...' : 'Hapus'}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </>
+              )}
+            </div>
             {expandedFotoId === p.id && p.fotos.length > 0 && (
               <div className="mt-2 pt-2 border-t border-black/[0.05] dark:border-white/[0.05]">
                 <FotoBuktiGallery urls={p.fotos.map((f) => f.url)} />

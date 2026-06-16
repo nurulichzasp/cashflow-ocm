@@ -27,10 +27,24 @@ async function requireOwner() {
 const biayaSchema = z.object({
   tanggal: z.string().min(1, 'Tanggal wajib diisi'),
   kategori: z.enum(['gaji', 'solar', 'transport', 'lainnya']),
+  kategoriLain: z.string().optional(),
   jumlah: z.coerce.number().positive('Jumlah harus positif'),
   akunSumberId: z.string().min(1, 'Akun sumber wajib dipilih'),
   catatan: z.string().optional(),
+}).refine((d) => d.kategori !== 'lainnya' || !!d.kategoriLain?.trim(), {
+  message: 'Sebutkan kategori untuk "Lainnya"',
+  path: ['kategoriLain'],
 })
+
+/** kategori_lain hanya disimpan saat kategori = 'lainnya'; selain itu null. */
+function resolveKategoriLain(kategori: string, kategoriLain?: string): string | null {
+  return kategori === 'lainnya' ? (kategoriLain?.trim() || null) : null
+}
+
+/** Label kategori untuk catatan kas/audit (pakai nama custom bila 'lainnya'). */
+function labelKategori(kategori: string, kategoriLain?: string | null): string {
+  return kategori === 'lainnya' && kategoriLain?.trim() ? kategoriLain.trim() : kategori
+}
 
 export async function createBiayaOperasional(formData: FormData) {
   const session = await requireSession()
@@ -39,10 +53,12 @@ export async function createBiayaOperasional(formData: FormData) {
   const data = biayaSchema.parse({
     tanggal: formData.get('tanggal'),
     kategori: formData.get('kategori'),
+    kategoriLain: formData.get('kategoriLain') || undefined,
     jumlah: formData.get('jumlah'),
     akunSumberId: formData.get('akunSumberId'),
     catatan: formData.get('catatan') || undefined,
   })
+  const kategoriLain = resolveKategoriLain(data.kategori, data.kategoriLain)
 
   // Foto nota dikirim sebagai JSON array string lewat FormData
   const fotoUrls: string[] = (() => {
@@ -74,7 +90,12 @@ export async function createBiayaOperasional(formData: FormData) {
   // Atomic: catat biaya + mutasi kas (uang keluar) + foto sekaligus
   const inserted = await db.transaction(async (tx) => {
     const ins = await tx.insert(biayaOperasional).values({
-      ...data,
+      tanggal: data.tanggal,
+      kategori: data.kategori,
+      kategoriLain,
+      jumlah: data.jumlah,
+      akunSumberId: data.akunSumberId,
+      catatan: data.catatan,
       createdBy: session.user.id,
       idempotencyKey,
     }).onConflictDoNothing({ target: biayaOperasional.idempotencyKey }).returning()
@@ -88,7 +109,7 @@ export async function createBiayaOperasional(formData: FormData) {
       kategori: 'biaya_operasional',
       refTabel: 'biaya_operasional',
       refId: ins[0].id,
-      catatan: `Biaya ${data.kategori}${data.catatan ? `: ${data.catatan}` : ''}`,
+      catatan: `Biaya ${labelKategori(data.kategori, kategoriLain)}${data.catatan ? `: ${data.catatan}` : ''}`,
       createdBy: session.user.id,
     })
 
@@ -112,7 +133,7 @@ export async function createBiayaOperasional(formData: FormData) {
   try {
     await notifyNewBiaya({
       tanggal: data.tanggal,
-      kategori: data.kategori,
+      kategori: labelKategori(data.kategori, kategoriLain),
       jumlah: data.jumlah,
       catatan: data.catatan,
       createdByName: session.user.name,
@@ -133,10 +154,12 @@ export async function updateBiayaOperasional(id: string, formData: FormData) {
   const data = biayaSchema.parse({
     tanggal: formData.get('tanggal'),
     kategori: formData.get('kategori'),
+    kategoriLain: formData.get('kategoriLain') || undefined,
     jumlah: formData.get('jumlah'),
     akunSumberId: formData.get('akunSumberId'),
     catatan: formData.get('catatan') || undefined,
   })
+  const kategoriLain = resolveKategoriLain(data.kategori, data.kategoriLain)
 
   // Foto nota dikirim sebagai JSON array string lewat FormData
   const fotoUrls: string[] = (() => {
@@ -157,6 +180,7 @@ export async function updateBiayaOperasional(id: string, formData: FormData) {
     await tx.update(biayaOperasional).set({
       tanggal: data.tanggal,
       kategori: data.kategori,
+      kategoriLain,
       jumlah: data.jumlah,
       akunSumberId: data.akunSumberId,
       catatan: data.catatan ?? null,
@@ -172,7 +196,7 @@ export async function updateBiayaOperasional(id: string, formData: FormData) {
       kategori: 'biaya_operasional',
       refTabel: 'biaya_operasional',
       refId: id,
-      catatan: `Biaya ${data.kategori}${data.catatan ? `: ${data.catatan}` : ''}`,
+      catatan: `Biaya ${labelKategori(data.kategori, kategoriLain)}${data.catatan ? `: ${data.catatan}` : ''}`,
       createdBy: session.user.id,
     })
 

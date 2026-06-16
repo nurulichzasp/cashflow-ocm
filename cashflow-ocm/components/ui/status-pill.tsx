@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { ArrowUp, ArrowDown } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 
@@ -39,6 +40,36 @@ export function StatusPill({
       )}
     >
       {children}
+    </span>
+  )
+}
+
+/**
+ * Indikator ARAH kas (Masuk/Keluar) — glyph panah + label, TANPA background/border.
+ * Sengaja minimalis (sebahasa dengan dot Lunas), bukan pill solid.
+ *   Masuk → panah naik hijau (--masuk) · Keluar → panah turun merah (--keluar)
+ * Glyph dekoratif (aria-hidden); label teks tetap untuk a11y.
+ */
+export function ArahIndicator({
+  arah,
+  className,
+}: {
+  arah: 'masuk' | 'keluar'
+  className?: string
+}) {
+  const masuk = arah === 'masuk'
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-1 text-[11px] font-semibold whitespace-nowrap',
+        masuk ? 'text-masuk' : 'text-keluar',
+        className,
+      )}
+    >
+      {masuk
+        ? <ArrowUp className="h-3 w-3 shrink-0" aria-hidden />
+        : <ArrowDown className="h-3 w-3 shrink-0" aria-hidden />}
+      {masuk ? 'Masuk' : 'Keluar'}
     </span>
   )
 }

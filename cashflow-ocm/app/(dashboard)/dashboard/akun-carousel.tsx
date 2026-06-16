@@ -117,27 +117,24 @@ function AccountCard({ akun, single }: { akun: AkunCard; single: boolean }) {
   const Icon = akun.tipe === 'bank' ? Landmark : Wallet
   return (
     <article
-      className={`surface press-card flex shrink-0 snap-start flex-col justify-between p-5 ${
-        single ? 'w-full' : 'w-[78%] sm:w-[260px]'
+      className={`surface press-card flex shrink-0 snap-start flex-col justify-between p-3.5 ${
+        single ? 'w-full' : 'w-[78%] sm:w-[248px]'
       }`}
-      style={{ minHeight: 128 }}
+      style={{ minHeight: 92 }}
     >
-      <div className="flex items-center gap-2.5">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-stone-100 dark:bg-white/[0.06]">
-          <Icon className="h-4 w-4 text-stone-600 dark:text-zinc-300" strokeWidth={2} />
+      <div className="flex items-center gap-2">
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-stone-100 dark:bg-white/[0.06]">
+          <Icon className="h-3.5 w-3.5 text-stone-600 dark:text-zinc-300" strokeWidth={2} />
         </span>
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-stone-900 dark:text-zinc-100">{akun.nama}</p>
-          <p className="text-[10px] font-medium uppercase tracking-wider text-stone-400 dark:text-zinc-500">
-            {akun.tipe === 'bank' ? 'Bank' : 'Tunai'}
-            {akun.utama ? ' · Utama' : ''}
-          </p>
-        </div>
+        <p className="min-w-0 truncate text-[13px] font-semibold text-stone-900 dark:text-zinc-100">{akun.nama}</p>
+        <span className="ml-auto shrink-0 text-[9px] font-medium uppercase tracking-wider text-stone-400 dark:text-zinc-500">
+          {akun.tipe === 'bank' ? 'Bank' : 'Tunai'}{akun.utama ? ' · Utama' : ''}
+        </span>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-2.5 flex items-baseline justify-between gap-2">
         <p className="text-[10px] font-semibold uppercase tracking-widest text-stone-400 dark:text-zinc-500">Saldo</p>
-        <p className="mt-1 truncate text-[1.4rem] font-bold leading-none tracking-tight num tabular-nums text-stone-900 dark:text-zinc-50">
+        <p className="truncate text-[1.3rem] font-bold leading-none tracking-tight num tabular-nums text-stone-900 dark:text-zinc-50">
           {formatRupiah(akun.saldo)}
         </p>
       </div>

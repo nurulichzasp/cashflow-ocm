@@ -17,8 +17,9 @@ import {
 } from '@/components/ui/alert-dialog'
 import { deletePenjualan, updatePenjualanStatus } from './actions'
 import { PenjualanFormDialog } from './penjualan-form-dialog'
-import { formatTanggal, formatRupiah, todayString } from '@/lib/format'
-import { Trash2, FileText, ArrowUpDown, ArrowUp, ArrowDown, Pencil } from 'lucide-react'
+import { formatTanggal, formatRupiah, todayString, formatCompact, formatRentangFilter } from '@/lib/format'
+import { shareNota } from '@/lib/share'
+import { Trash2, FileText, ArrowUpDown, ArrowUp, ArrowDown, Pencil, Share2 } from 'lucide-react'
 import { DateRangeFilter } from '@/components/date-range-filter'
 import { EmptyState } from '@/components/empty-state'
 import type { Penjualan } from '@/lib/db/schema'
@@ -26,6 +27,8 @@ import type { Penjualan } from '@/lib/db/schema'
 interface Props {
   penjualanList: Penjualan[]
   isOwner: boolean
+  /** Margin (estimasi laba) = Σ markup peron all-time (lintas modul, bukan per-rentang). */
+  estimasiLaba: number
 }
 
 /** Status pembayaran — dot kecil + teks netral (Lunas=emerald, Belum=amber). */
@@ -57,7 +60,7 @@ function SortIcon({ active, dir }: { active: boolean; dir: 'asc' | 'desc' }) {
   return dir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
 }
 
-export function PenjualanTable({ penjualanList, isOwner }: Props) {
+export function PenjualanTable({ penjualanList, isOwner, estimasiLaba }: Props) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [dari, setDari] = useState('')
@@ -119,8 +122,47 @@ export function PenjualanTable({ penjualanList, isOwner }: Props) {
     )
   }
 
+  const isFiltered = !!dari || !!sampai
+  const rangeLabel = formatRentangFilter(dari, sampai)
+  const totalPenjualan = filtered.reduce((s, p) => s + (p.totalBersih ?? 0), 0)
+  const totalPpn = filtered.reduce((s, p) => {
+    const bersih = p.totalBersih ?? 0
+    const nilai = p.totalNilai ?? 0
+    return s + (nilai > bersih ? nilai - bersih : 0)
+  }, 0)
+
   return (
     <div className="space-y-3">
+      {/* Hero — IKUT filter (pola Pembelian). Total/Transaksi/PPN dari rentang;
+          Margin = estimasi laba all-time (lintas modul, tak ber-rentang). */}
+      <div className="surface px-5 py-4 sm:px-6 sm:py-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Total Penjualan</p>
+            <p className="mt-1.5 text-[2.25rem] sm:text-[2.75rem] font-bold num tabular-nums tracking-[-0.03em] leading-none text-stone-900 dark:text-zinc-50">
+              {formatCompact(totalPenjualan)}
+            </p>
+            <p className="mt-1.5 text-[11px] text-stone-400 dark:text-zinc-500">
+              {isFiltered ? `Nilai bersih · ${rangeLabel}` : 'Nilai bersih · seluruh transaksi'}
+            </p>
+          </div>
+          <div className="flex items-center gap-5 sm:gap-6 shrink-0">
+            <div className="text-right">
+              <p className="text-[10px] uppercase tracking-wider text-stone-400 dark:text-zinc-500 font-medium">Transaksi</p>
+              <p className="mt-1 text-sm font-semibold num tabular-nums text-stone-700 dark:text-zinc-300">{filtered.length.toLocaleString('id-ID')}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] uppercase tracking-wider text-stone-400 dark:text-zinc-500 font-medium">PPN</p>
+              <p className="mt-1 text-sm font-semibold num tabular-nums text-stone-700 dark:text-zinc-300">{formatCompact(totalPpn)}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] uppercase tracking-wider text-stone-400 dark:text-zinc-500 font-medium">Margin</p>
+              <p className="mt-1 text-sm font-semibold num tabular-nums text-stone-700 dark:text-zinc-300">{formatCompact(estimasiLaba)}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Filter tanggal/bulan */}
       <DateRangeFilter dari={dari} sampai={sampai} onChange={(d, s) => { setDari(d); setSampai(s) }} />
       {/* Desktop */}
@@ -288,7 +330,7 @@ function PenjualanCard({ item, isOwner, updatingId, deletingId, onToggleLunas, o
 
   const catatan = item.catatan ?? ''
 
-  function handleShare() {
+  async function handleShare() {
     const lines = [
       `Penjualan ${formatTanggal(item.tanggal)}`,
       invoices.length ? `Invoice:\n${invoices.join('\n')}` : '',
@@ -297,8 +339,9 @@ function PenjualanCard({ item, isOwner, updatingId, deletingId, onToggleLunas, o
       item.tanggalBayarBga ? `Tgl Bayar: ${formatTanggal(item.tanggalBayarBga)}` : '',
       catatan ? `\nCatatan:\n${catatan}` : '',
     ].filter(Boolean).join('\n')
-    const text = encodeURIComponent(lines)
-    window.open(`https://wa.me/?text=${text}`, '_blank')
+    // Web Share API → share sheet native iOS; fallback ke clipboard / WA.
+    const res = await shareNota({ title: `Penjualan ${formatTanggal(item.tanggal)} — CV OCM`, text: lines })
+    if (res === 'copied') toast.success('Nota disalin ke clipboard')
   }
 
   return (
@@ -392,9 +435,9 @@ function PenjualanCard({ item, isOwner, updatingId, deletingId, onToggleLunas, o
           type="button"
           onClick={handleShare}
           className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 min-h-[44px] text-[12px] font-medium text-stone-600 dark:text-zinc-300 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors"
-          aria-label="Bagikan via WhatsApp"
+          aria-label="Bagikan nota"
         >
-          <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M20.52 3.48A11.94 11.94 0 0 0 12.04 0C5.5 0 .2 5.3.2 11.84a11.79 11.79 0 0 0 1.66 6.04L0 24l6.27-1.65a11.86 11.86 0 0 0 5.77 1.47h.01c6.54 0 11.84-5.3 11.84-11.84 0-3.16-1.23-6.13-3.37-8.5ZM12.04 21.8h-.01a9.94 9.94 0 0 1-5.06-1.38l-.36-.22-3.72.98.99-3.63-.23-.37a9.94 9.94 0 1 1 8.39 4.62Zm5.45-7.45c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.66.15-.2.3-.76.97-.93 1.17-.17.2-.34.22-.64.07-.3-.15-1.25-.46-2.39-1.47a8.97 8.97 0 0 1-1.66-2.06c-.17-.3-.02-.46.13-.6.13-.13.3-.34.45-.51.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.66-1.6-.9-2.18-.24-.58-.49-.5-.66-.51l-.56-.01a1.1 1.1 0 0 0-.78.37c-.27.3-1.02 1-1.02 2.43 0 1.43 1.05 2.82 1.2 3.02.15.2 2.07 3.16 5.01 4.43.7.3 1.25.48 1.67.62.7.22 1.34.19 1.85.12.56-.08 1.76-.72 2.01-1.42.25-.7.25-1.3.17-1.42-.07-.12-.27-.2-.57-.35Z"/></svg>
+          <Share2 className="h-3.5 w-3.5" />
           Bagikan
         </button>
         <PenjualanFormDialog editItem={item}>

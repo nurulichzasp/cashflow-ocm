@@ -181,6 +181,8 @@ export const biayaOperasional = sqliteTable('biaya_operasional', {
   id: text('id').primaryKey().default(sql`(lower(hex(randomblob(8))))`),
   tanggal: text('tanggal').notNull(),
   kategori: text('kategori', { enum: ['gaji', 'solar', 'transport', 'lainnya'] }).notNull(),
+  // Nama kategori custom saat kategori = 'lainnya' (additive, nullable).
+  kategoriLain: text('kategori_lain'),
   jumlah: integer('jumlah').notNull(),
   akunSumberId: text('akun_sumber_id').notNull().references(() => akunKas.id),
   catatan: text('catatan'),

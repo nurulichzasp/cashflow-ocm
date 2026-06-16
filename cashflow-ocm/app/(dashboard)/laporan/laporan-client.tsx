@@ -5,7 +5,7 @@ import { getLaporanData, getPajakData, getLabaRugiTahunan, getNeracaData } from 
 import { formatRupiah, formatNumber, formatTanggal } from '@/lib/format'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { StatusPill } from '@/components/ui/status-pill'
+import { ArahIndicator } from '@/components/ui/status-pill'
 import { DateRangeInline } from '@/components/date-range-inline'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Download, FileSpreadsheet } from 'lucide-react'
@@ -308,10 +308,8 @@ function KasTab({
                   <td className="px-4 py-3 text-xs text-muted-foreground">{t.akun?.nama ?? t.akunId}</td>
                   <td className="px-4 py-3">{kategoriLabels[t.kategori]}</td>
                   <td className="px-4 py-3">
-                    {/* Arah masuk → pill emerald-soft; keluar tetap netral. */}
-                    <StatusPill tone={t.arah === 'masuk' ? 'ok' : 'neutral'}>
-                      {t.arah === 'masuk' ? 'Masuk' : 'Keluar'}
-                    </StatusPill>
+                    {/* Arah = indikator panah minimalis (sebahasa dot Lunas). */}
+                    <ArahIndicator arah={t.arah} />
                   </td>
                   <td className={cn('px-4 py-3 text-right tabular-nums font-semibold', t.arah === 'masuk' ? 'text-stone-900 dark:text-zinc-50' : 'text-stone-500 dark:text-zinc-400')}>
                     {t.arah === 'masuk' ? '+' : '-'}{formatRupiah(t.jumlah)}

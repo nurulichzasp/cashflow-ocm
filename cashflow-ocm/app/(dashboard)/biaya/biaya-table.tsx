@@ -3,7 +3,6 @@
 import React, { useState, useMemo } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { StatusPill } from '@/components/ui/status-pill'
 import { EmptyState } from '@/components/empty-state'
 import {
   AlertDialog,
@@ -18,7 +17,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { deleteBiayaOperasional } from './actions'
 import { BiayaFormDialog } from './biaya-form-dialog'
-import { formatRupiah, formatTanggal } from '@/lib/format'
+import { formatRupiah, formatTanggal, formatCompact, formatRentangFilter } from '@/lib/format'
 import { FotoBuktiGallery } from '@/components/foto-bukti-gallery'
 import { Trash2, Receipt, ImageIcon, ArrowUpDown, ArrowUp, ArrowDown, Pencil } from 'lucide-react'
 import { DateRangeFilter } from '@/components/date-range-filter'
@@ -31,6 +30,20 @@ const kategoriLabels: Record<BiayaOperasional['kategori'], string> = {
   solar: 'Solar',
   transport: 'Transport',
   lainnya: 'Lainnya',
+}
+
+/** Label kategori — pakai nama custom bila kategori = 'lainnya' & terisi. */
+function kategoriDisplay(item: Pick<BiayaRow, 'kategori' | 'kategoriLain'>): string {
+  return item.kategori === 'lainnya' && item.kategoriLain?.trim()
+    ? item.kategoriLain.trim()
+    : kategoriLabels[item.kategori]
+}
+
+const kategoriTextCls = 'text-[11px] font-medium uppercase tracking-wider text-stone-500 dark:text-zinc-400'
+
+function SortIcon({ active, dir }: { active: boolean; dir: 'asc' | 'desc' }) {
+  if (!active) return <ArrowUpDown className="h-3 w-3" />
+  return dir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
 }
 
 type AkunOption = { id: string; nama: string; tipe: string }
@@ -67,11 +80,6 @@ export function BiayaTable({ biayaList, isOwner, akunOptions }: Props) {
     return list
   }, [biayaList, sortBy, sortDir, dari, sampai])
 
-  function SortIcon({ col }: { col: SortCol }) {
-    if (sortBy !== col) return <ArrowUpDown className="h-3 w-3" />
-    return sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-  }
-
   async function handleDelete(id: string) {
     setDeletingId(id)
     try {
@@ -94,8 +102,40 @@ export function BiayaTable({ biayaList, isOwner, akunOptions }: Props) {
     )
   }
 
+  const isFiltered = !!dari || !!sampai
+  const rangeLabel = formatRentangFilter(dari, sampai)
+  const totalBiaya = sorted.reduce((s, b) => s + b.jumlah, 0)
+  const perKategori = (() => {
+    const map = new Map<string, number>()
+    for (const b of sorted) {
+      const label = kategoriDisplay(b)
+      map.set(label, (map.get(label) ?? 0) + b.jumlah)
+    }
+    return Array.from(map.entries()).map(([label, total]) => ({ label, total })).filter((k) => k.total > 0)
+  })()
+
   return (
     <div className="space-y-3">
+      {/* Hero Total Pengeluaran — IKUT filter (pola Pembelian). */}
+      <div className="space-y-2.5">
+        <div className="surface press-card p-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">Total Pengeluaran</p>
+          <p className="text-2xl font-bold text-stone-900 dark:text-zinc-50 num tabular-nums">{formatCompact(totalBiaya)}</p>
+          <p className="text-xs text-stone-400 mt-1">
+            {isFiltered ? `${sorted.length} entri · ${rangeLabel}` : `${sorted.length} entri tercatat`}
+          </p>
+        </div>
+        {perKategori.length > 0 && (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-[13px] text-stone-500 dark:text-stone-400">
+            {perKategori.map((k) => (
+              <span key={k.label}>
+                {k.label} <span className="font-semibold text-stone-800 dark:text-zinc-200 num">{formatCompact(k.total)}</span>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Filter tanggal/bulan */}
       <DateRangeFilter dari={dari} sampai={sampai} onChange={(d, s) => { setDari(d); setSampai(s) }} />
 
@@ -106,14 +146,14 @@ export function BiayaTable({ biayaList, isOwner, akunOptions }: Props) {
             <tr className="bg-stone-50 dark:bg-white/[0.03] border-b border-stone-200 dark:border-border">
               <th scope="col" className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">
                 <button type="button" onClick={() => handleSort('tanggal')} className={`inline-flex items-center gap-1 hover:text-stone-900 dark:hover:text-zinc-200 transition-colors ${sortBy === 'tanggal' ? 'text-stone-900 dark:text-zinc-100' : ''}`}>
-                  Tanggal <SortIcon col="tanggal" />
+                  Tanggal <SortIcon active={sortBy === 'tanggal'} dir={sortDir} />
                 </button>
               </th>
               <th scope="col" className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Kategori</th>
               <th scope="col" className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Sumber</th>
               <th scope="col" className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">
                 <button type="button" onClick={() => handleSort('jumlah')} className={`inline-flex items-center gap-1 hover:text-stone-900 dark:hover:text-zinc-200 transition-colors ${sortBy === 'jumlah' ? 'text-stone-900 dark:text-zinc-100' : ''}`}>
-                  Jumlah <SortIcon col="jumlah" />
+                  Jumlah <SortIcon active={sortBy === 'jumlah'} dir={sortDir} />
                 </button>
               </th>
               <th scope="col" className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Catatan</th>
@@ -127,10 +167,10 @@ export function BiayaTable({ biayaList, isOwner, akunOptions }: Props) {
                 <tr className="bg-white hover:bg-stone-50 dark:hover:bg-white/[0.03] transition-colors">
                   <td className="px-4 py-3 text-stone-900 dark:text-stone-100">{formatTanggal(item.tanggal)}</td>
                   <td className="px-4 py-3">
-                    <StatusPill tone="neutral">{kategoriLabels[item.kategori]}</StatusPill>
+                    <span className={kategoriTextCls}>{kategoriDisplay(item)}</span>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="inline-flex rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-700 max-w-[130px] truncate">
+                    <span className="block max-w-[140px] truncate text-sm text-stone-600 dark:text-zinc-300">
                       {item.akunSumber?.nama ?? item.akunSumberId}
                     </span>
                   </td>
@@ -168,7 +208,7 @@ export function BiayaTable({ biayaList, isOwner, akunOptions }: Props) {
                             <AlertDialogHeader>
                               <AlertDialogTitle>Hapus biaya?</AlertDialogTitle>
                               <AlertDialogDescription>
-                                Biaya <strong>{kategoriLabels[item.kategori]}</strong> tanggal{' '}
+                                Biaya <strong>{kategoriDisplay(item)}</strong> tanggal{' '}
                                 <strong>{formatTanggal(item.tanggal)}</strong> sebesar{' '}
                                 <strong>{formatRupiah(item.jumlah)}</strong> akan dihapus.
                               </AlertDialogDescription>
@@ -208,7 +248,7 @@ export function BiayaTable({ biayaList, isOwner, akunOptions }: Props) {
           <div key={item.id} className="surface p-4">
             <div className="flex items-start justify-between gap-2 mb-3">
               <div>
-                <StatusPill tone="neutral">{kategoriLabels[item.kategori]}</StatusPill>
+                <span className={kategoriTextCls}>{kategoriDisplay(item)}</span>
                 <p className="text-xs text-stone-500 mt-1">
                   {formatTanggal(item.tanggal)} · {item.akunSumber?.nama ?? item.akunSumberId}
                 </p>
@@ -235,7 +275,7 @@ export function BiayaTable({ biayaList, isOwner, akunOptions }: Props) {
                       <AlertDialogHeader>
                         <AlertDialogTitle>Hapus biaya?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Biaya {kategoriLabels[item.kategori]} pada {formatTanggal(item.tanggal)} akan dihapus.
+                          Biaya {kategoriDisplay(item)} pada {formatTanggal(item.tanggal)} akan dihapus.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
