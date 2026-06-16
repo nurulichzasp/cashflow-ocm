@@ -8,7 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Printer, FileText, Thermometer, Zap } from 'lucide-react'
+import { Printer, FileText, Thermometer, Zap, Share2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { formatRupiah, formatTanggal, buildKeteranganReplas } from '@/lib/format'
 import { fotoUrl } from '@/lib/foto-url'
@@ -352,6 +352,185 @@ function buildThermalHTML(p: PembelianRow, paperWidthMm: number, nomorUrut: numb
 </html>`
 }
 
+// ── Nota Thermal → GAMBAR (untuk Bagikan) ────────────────────────────────────
+// Render struk thermal ke <canvas> (PNG), dependency-free & aman di iOS Safari
+// (murni fillText + garis, tanpa foreignObject/gambar eksternal → toBlob tak taint).
+
+type ThermalLine =
+  | { kind: 'text'; text: string; align: 'l' | 'c' | 'r'; bold?: boolean; scale?: number }
+  | { kind: 'pair'; left: string; right: string; bold?: boolean; scale?: number }
+  | { kind: 'rule'; style: 'dash' | 'solid' }
+
+function buildThermalLines(p: PembelianRow, nomorUrut: number): ThermalLine[] {
+  const details = getDetails(p)
+  const waktu = formatWaktu(p.createdAt)
+  const sumberLabel = sumberBayarLabel(p.sumberBayar)
+  const noInvoice = generateNoPembelian(p.tanggal, p.peron?.kode, nomorUrut)
+  const keteranganReplas = p.keterangan?.trim() || buildKeteranganReplas(details, p.tanggal)
+  const tgl = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+
+  const lines: ThermalLine[] = [
+    { kind: 'text', text: 'CV OCM', align: 'c', bold: true, scale: 1.55 },
+    { kind: 'text', text: 'Supplier TBS & BRDL', align: 'c', scale: 0.85 },
+    { kind: 'text', text: 'PKS PT. BGA', align: 'c', scale: 0.85 },
+    { kind: 'rule', style: 'solid' },
+    { kind: 'text', text: 'NOTA PEMBELIAN', align: 'c', bold: true },
+    { kind: 'text', text: noInvoice, align: 'c', scale: 0.8 },
+    { kind: 'rule', style: 'dash' },
+    { kind: 'pair', left: 'Tanggal', right: formatTanggal(p.tanggal) },
+    ...(waktu ? [{ kind: 'pair', left: 'Waktu', right: waktu } as ThermalLine] : []),
+    { kind: 'pair', left: 'Peron', right: p.peron?.nama ?? p.peronId },
+    { kind: 'pair', left: 'Kategori', right: p.kategori },
+    { kind: 'rule', style: 'dash' },
+    { kind: 'text', text: 'RINCIAN TONASE', align: 'l', scale: 0.8 },
+    ...details.flatMap((d, i): ThermalLine[] => {
+      const nopolSupir = [d.nopol, d.supir].filter(Boolean).join(' / ')
+      return [
+        ...(i > 0 ? [{ kind: 'rule', style: 'dash' } as ThermalLine] : []),
+        { kind: 'text', text: `${d.tonase.toLocaleString('id-ID')} kg x Rp ${d.hargaLapangan.toLocaleString('id-ID')}`, align: 'l' },
+        { kind: 'pair', left: '= subtotal', right: formatRupiah(d.subtotalBeli) },
+        ...(nopolSupir ? [{ kind: 'text', text: nopolSupir, align: 'l', scale: 0.8 } as ThermalLine] : []),
+      ]
+    }),
+    { kind: 'rule', style: 'solid' },
+    { kind: 'pair', left: 'TOTAL', right: formatRupiah(p.totalBeli), bold: true, scale: 1.12 },
+    { kind: 'rule', style: 'dash' },
+    { kind: 'pair', left: 'Status', right: p.statusBayarPeron === 'lunas' ? 'LUNAS' : 'BELUM DIBAYAR', bold: true },
+    ...(p.sumberBayar ? [{ kind: 'pair', left: 'Pembayaran', right: sumberLabel } as ThermalLine] : []),
+    ...(p.catatan
+      ? [{ kind: 'rule', style: 'dash' } as ThermalLine, { kind: 'text', text: 'Catatan:', align: 'l', scale: 0.8 } as ThermalLine, { kind: 'text', text: p.catatan, align: 'l', scale: 0.9 } as ThermalLine]
+      : []),
+    ...(keteranganReplas
+      ? [{ kind: 'rule', style: 'dash' } as ThermalLine, { kind: 'text', text: keteranganReplas, align: 'c', bold: true, scale: 0.9 } as ThermalLine]
+      : []),
+    { kind: 'rule', style: 'solid' },
+    { kind: 'text', text: tgl, align: 'c', scale: 0.85 },
+    { kind: 'text', text: 'CV Omanda Cerli Mandiri', align: 'c', scale: 0.85 },
+    { kind: 'text', text: 'Terima kasih!', align: 'c', bold: true },
+  ]
+  return lines
+}
+
+function wrapText(ctx: CanvasRenderingContext2D, text: string, maxW: number): string[] {
+  const words = String(text).split(/\s+/)
+  const out: string[] = []
+  let cur = ''
+  for (const w of words) {
+    const test = cur ? `${cur} ${w}` : w
+    if (ctx.measureText(test).width <= maxW) { cur = test; continue }
+    if (cur) { out.push(cur); cur = '' }
+    if (ctx.measureText(w).width <= maxW) { cur = w; continue }
+    // kata tunggal kepanjangan → pecah per karakter
+    let chunk = ''
+    for (const ch of w) {
+      if (chunk && ctx.measureText(chunk + ch).width > maxW) { out.push(chunk); chunk = ch }
+      else chunk += ch
+    }
+    cur = chunk
+  }
+  if (cur) out.push(cur)
+  return out.length ? out : ['']
+}
+
+async function renderThermalNotaBlob(p: PembelianRow, nomorUrut: number): Promise<Blob | null> {
+  if (typeof document === 'undefined') return null
+  const SCALE = 2
+  const cssW = getThermalWidth() === 80 ? 480 : 384
+  const W = cssW * SCALE
+  const padX = 16 * SCALE
+  const innerW = W - padX * 2
+  const BASE = 13 * SCALE
+  const topPad = 16 * SCALE
+  const botPad = 18 * SCALE
+
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return null
+  const lines = buildThermalLines(p, nomorUrut)
+
+  const font = (scale = 1, bold = false) => {
+    const px = Math.round(BASE * scale)
+    ctx.font = `${bold ? 'bold ' : ''}${px}px "Courier New", Courier, monospace`
+    return px
+  }
+  const lh = (px: number) => Math.round(px * 1.5)
+
+  type Prim =
+    | { t: 'text'; text: string; align: 'l' | 'c' | 'r'; px: number; bold: boolean; y: number }
+    | { t: 'pair'; left: string; right: string; px: number; bold: boolean; y: number }
+    | { t: 'rule'; style: 'dash' | 'solid'; y: number }
+  const prims: Prim[] = []
+  let y = topPad
+
+  for (const line of lines) {
+    if (line.kind === 'rule') {
+      y += Math.round(5 * SCALE)
+      prims.push({ t: 'rule', style: line.style, y })
+      y += Math.round(5 * SCALE)
+      continue
+    }
+    if (line.kind === 'text') {
+      const px = font(line.scale ?? 1, line.bold)
+      const wrapped = wrapText(ctx, line.text, innerW)
+      for (const w of wrapped) {
+        prims.push({ t: 'text', text: w, align: line.align, px, bold: !!line.bold, y })
+        y += lh(px)
+      }
+      continue
+    }
+    // pair
+    const px = font(line.scale ?? 1, line.bold)
+    prims.push({ t: 'pair', left: line.left, right: line.right, px, bold: !!line.bold, y })
+    y += lh(px)
+  }
+  const H = y + botPad
+
+  canvas.width = W
+  canvas.height = H
+  // resize mereset state → set ulang.
+  ctx.fillStyle = '#ffffff'
+  ctx.fillRect(0, 0, W, H)
+  ctx.fillStyle = '#000000'
+  ctx.strokeStyle = '#000000'
+  ctx.textBaseline = 'top'
+
+  for (const pr of prims) {
+    if (pr.t === 'rule') {
+      ctx.save()
+      ctx.lineWidth = pr.style === 'solid' ? 2 : 1
+      ctx.setLineDash(pr.style === 'dash' ? [4 * SCALE, 4 * SCALE] : [])
+      ctx.beginPath()
+      ctx.moveTo(padX, pr.y)
+      ctx.lineTo(W - padX, pr.y)
+      ctx.stroke()
+      ctx.restore()
+      continue
+    }
+    font(pr.px / BASE, pr.bold)
+    if (pr.t === 'text') {
+      ctx.textAlign = pr.align === 'c' ? 'center' : pr.align === 'r' ? 'right' : 'left'
+      const x = pr.align === 'c' ? W / 2 : pr.align === 'r' ? W - padX : padX
+      ctx.fillText(pr.text, x, pr.y)
+    } else {
+      ctx.textAlign = 'left'
+      ctx.fillText(pr.left, padX, pr.y)
+      ctx.textAlign = 'right'
+      ctx.fillText(pr.right, W - padX, pr.y)
+    }
+  }
+
+  return new Promise((resolve) => canvas.toBlob((b) => resolve(b), 'image/png'))
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  setTimeout(() => URL.revokeObjectURL(url), 4000)
+}
+
 // ── Rekap Lengkap ────────────────────────────────────────────────────────────
 
 function buildRekapHTML(list: PembelianRow[]): string {
@@ -619,6 +798,48 @@ export function PrintNotaButton({ pembelian, nomorUrut }: { pembelian: Pembelian
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+  )
+}
+
+/** Bagikan nota sebagai GAMBAR struk thermal (share sheet native iOS; fallback unduh PNG). */
+export function ShareNotaButton({ pembelian, nomorUrut }: { pembelian: PembelianRow; nomorUrut: number }) {
+  const [busy, setBusy] = useState(false)
+  async function handleShare() {
+    if (busy) return
+    setBusy(true)
+    try {
+      const blob = await renderThermalNotaBlob(pembelian, nomorUrut)
+      if (!blob) { toast.error('Gagal membuat gambar nota'); return }
+      const slug = (pembelian.peron?.nama ?? 'ocm').replace(/\s+/g, '-').toLowerCase()
+      const file = new File([blob], `nota-${slug}-${pembelian.tanggal}.png`, { type: 'image/png' })
+      const nav = typeof navigator !== 'undefined' ? navigator : undefined
+      if (nav?.share && nav.canShare?.({ files: [file] })) {
+        try {
+          await nav.share({ files: [file], title: `Nota Pembelian — ${pembelian.peron?.nama ?? 'CV OCM'}` })
+        } catch (e) {
+          if (e instanceof DOMException && e.name === 'AbortError') return
+          downloadBlob(blob, file.name)
+          toast.success('Nota disimpan sebagai gambar')
+        }
+        return
+      }
+      // Tak bisa share file (sebagian desktop) → unduh gambar nota.
+      downloadBlob(blob, file.name)
+      toast.success('Nota disimpan sebagai gambar')
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <button
+      type="button"
+      onClick={handleShare}
+      disabled={busy}
+      aria-label="Bagikan nota"
+      className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-stone-600 dark:text-zinc-300 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors disabled:opacity-50"
+    >
+      <Share2 className="h-3.5 w-3.5" />{busy ? 'Menyiapkan…' : 'Bagikan'}
+    </button>
   )
 }
 

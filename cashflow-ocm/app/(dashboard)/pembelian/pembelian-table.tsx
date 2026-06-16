@@ -16,10 +16,9 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { formatTanggal, formatRupiah, formatCompact, formatRentangFilter } from '@/lib/format'
-import { shareNota } from '@/lib/share'
 import { deletePembelian } from './actions'
 import { PembelianFormDialog } from './pembelian-form-dialog'
-import { PrintRekapButton, PrintNotaButton } from './invoice-print'
+import { PrintRekapButton, PrintNotaButton, ShareNotaButton } from './invoice-print'
 import { EmptyState } from '@/components/empty-state'
 import { FotoBuktiGallery } from '@/components/foto-bukti-gallery'
 import {
@@ -30,7 +29,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { DateRangeFilter } from '@/components/date-range-filter'
-import { Edit3, Trash2, ShoppingCart, ImageIcon, ArrowUpDown, ArrowUp, ArrowDown, MoreVertical, Share2 } from 'lucide-react'
+import { Edit3, Trash2, ShoppingCart, ImageIcon, ArrowUpDown, ArrowUp, ArrowDown, MoreVertical } from 'lucide-react'
 import type { Pembelian, Peron, AkunKas, PembelianFoto, PembelianDetail } from '@/lib/db/schema'
 
 type PembelianRow = Pembelian & { peron: Peron | null; sumberBayar: AkunKas | null; fotos: PembelianFoto[]; details: PembelianDetail[] }
@@ -177,22 +176,6 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
   const jumlahBelum = filtered.filter((p) => p.statusBayarPeron === 'belum').length
   const isFiltered = !!filterDari || !!filterSampai || filterPeronId !== 'all'
   const rangeLabel = formatRentangFilter(filterDari, filterSampai)
-
-  // Bagikan nota via Web Share API (share sheet native iOS); fallback clipboard / WA.
-  async function handleShare(p: PembelianRow) {
-    const lines = [
-      `Pembelian ${formatTanggal(p.tanggal)}`,
-      `Peron: ${p.peron?.nama ?? p.peronId}`,
-      `Kategori: ${p.kategori}`,
-      `Tonase: ${p.tonase.toLocaleString('id-ID')} kg`,
-      `Harga: Rp ${p.hargaBeli.toLocaleString('id-ID')}/kg`,
-      `Total: ${formatRupiah(p.totalBeli)}`,
-      `Status: ${p.statusBayarPeron === 'lunas' ? 'Lunas' : 'Belum dibayar'}`,
-      p.keterangan ? `Keterangan: ${p.keterangan}` : '',
-    ].filter(Boolean).join('\n')
-    const res = await shareNota({ title: `Pembelian ${p.peron?.nama ?? ''} — CV OCM`, text: lines })
-    if (res === 'copied') toast.success('Nota disalin ke clipboard')
-  }
 
   if (pembelianList.length === 0) {
     return (
@@ -437,14 +420,7 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
             </div>
 
             <div className="mt-3 pt-3 border-t border-black/[0.05] dark:border-white/[0.05] flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => handleShare(p)}
-                className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-stone-600 dark:text-zinc-300 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors"
-                aria-label="Bagikan nota"
-              >
-                <Share2 className="h-3.5 w-3.5" />Bagikan
-              </button>
+              <ShareNotaButton pembelian={p} nomorUrut={nomorUrutMap.get(p.id) ?? 1} />
               {isOwner && (
                 <>
                   <PrintNotaButton pembelian={p} nomorUrut={nomorUrutMap.get(p.id) ?? 1} />
