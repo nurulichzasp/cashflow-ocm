@@ -9,6 +9,7 @@ import { timingSafeEqual } from 'node:crypto'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
+export const maxDuration = 60 // beri ruang utk backup harian (blok backup di bawah)
 
 // Bandingkan secret secara timing-safe untuk mempersempit timing attack.
 function safeEqual(a: string | null | undefined, b: string | null | undefined): boolean {
@@ -79,7 +80,30 @@ export async function GET(request: Request) {
       console.error('Daily peron-health rebuild error:', e)
     }
 
-    return NextResponse.json({ success, mode, peronHealth })
+    // Backup penuh DB → Vercel Blob (private, JSON ber-timestamp), HANYA di run SORE
+    // (sekali/hari, setelah transaksi harian masuk). Pelengkap Turso PITR (jalur
+    // pemulihan utama); ini arsip portabel otomatis. Digabung ke cron ini (pola sama
+    // spt peron-health) agar andal di plan Vercel mana pun tanpa cron terpisah —
+    // Hobby membatasi jumlah cron. Gagal di sini TIDAK mengganggu ringkasan.
+    let backupPath: string | null = null
+    if (mode === 'evening') {
+      try {
+        const { createBackup, exportBackupToJSON, getBackupFilename } = await import('@/lib/backup')
+        const { put } = await import('@vercel/blob')
+        const backup = await createBackup()
+        const jsonStr = exportBackupToJSON(backup)
+        const blob = await put(`backups/${getBackupFilename('json')}`, jsonStr, {
+          access: 'private',
+          contentType: 'application/json',
+        })
+        backupPath = blob.pathname
+        console.log('[Cron Backup] backup harian tersimpan ke Blob:', blob.pathname)
+      } catch (e) {
+        console.error('Daily backup error:', e)
+      }
+    }
+
+    return NextResponse.json({ success, mode, peronHealth, backupPath })
   } catch (error) {
     console.error('Daily summary error:', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
