@@ -1,5 +1,6 @@
 import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
+import { getPermissions } from '@/lib/permissions'
 import { getPembelianList, getAkunKasList } from './actions'
 import { getPeronList } from '../peron/actions'
 import { PembelianTable } from './pembelian-table'
@@ -16,7 +17,11 @@ export default async function PembelianPage() {
     getAkunKasList(),
   ])
 
-  const isOwner = session?.user.role === 'owner'
+  // Edit = canEdit (owner+admin). Hapus = owner-only (deletePembelian pakai
+  // requireOwner) → gate UI ke owner agar tak "tampil lalu error".
+  const perms = getPermissions(session?.user.role)
+  const canEdit = perms.canEdit
+  const canDelete = session?.user.role === 'owner'
 
   const peronOptions = peronList.map((p) => ({
     id: p.id,
@@ -36,7 +41,8 @@ export default async function PembelianPage() {
 
       <PembelianTable
         pembelianList={pembelianList}
-        isOwner={isOwner}
+        canEdit={canEdit}
+        canDelete={canDelete}
         peronOptions={peronOptions}
         akunOptions={akunOptions}
       />

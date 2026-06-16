@@ -4,39 +4,24 @@ import React, { useState, useMemo, useCallback } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { PaymentStatusDot } from '@/components/ui/status-pill'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { formatTanggal, formatRupiah, formatCompact, formatRentangFilter } from '@/lib/format'
 import { deletePembelian } from './actions'
 import { PembelianFormDialog } from './pembelian-form-dialog'
-import { PrintRekapButton, PrintNotaButton, ShareNotaButton } from './invoice-print'
+import { PrintRekapButton, usePrintNota, useShareNota, generateNoPembelian, type PrintMode } from './invoice-print'
+import { RowActionMenu, type RowAction } from '@/components/ui/row-action-menu'
 import { EmptyState } from '@/components/empty-state'
 import { FotoBuktiGallery } from '@/components/foto-bukti-gallery'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { DateRangeFilter } from '@/components/date-range-filter'
-import { Edit3, Trash2, ShoppingCart, ImageIcon, ArrowUpDown, ArrowUp, ArrowDown, MoreVertical } from 'lucide-react'
+import { Edit3, Trash2, ShoppingCart, ImageIcon, ArrowUpDown, ArrowUp, ArrowDown, FileText, Thermometer, Zap, Share2 } from 'lucide-react'
 import type { Pembelian, Peron, AkunKas, PembelianFoto, PembelianDetail } from '@/lib/db/schema'
 
 type PembelianRow = Pembelian & { peron: Peron | null; sumberBayar: AkunKas | null; fotos: PembelianFoto[]; details: PembelianDetail[] }
 
 interface Props {
   pembelianList: PembelianRow[]
-  isOwner: boolean
+  canEdit: boolean
+  canDelete: boolean
   peronOptions: Array<{ id: string; nama: string; keuntunganPerKg: number }>
   akunOptions: Array<{ id: string; nama: string; tipe: string }>
 }
@@ -66,49 +51,83 @@ function FotoIndicator({ count }: { count: number }) {
   )
 }
 
-function PembelianRowMenu({ onEdit, onDelete, deleting, id }: { onEdit: () => void; onDelete: (id: string) => void; deleting: string | null; id: string }) {
-  const [delOpen, setDelOpen] = useState(false)
+// Semua aksi baris (Cetak 3 mode, Bagikan, Lihat foto, Edit, Hapus) dikumpulkan
+// ke SATU kebab (⋯). Cetak/Bagikan/Foto = aksi lihat (semua role); Edit/Hapus
+// digate RBAC. Hapus = paling bawah, merah, lewat AlertDialog konfirmasi.
+function PembelianRowActions({
+  pembelian,
+  nomorUrut,
+  variant,
+  canEdit,
+  canDelete,
+  deleting,
+  onEdit,
+  onDelete,
+  onToggleFoto,
+}: {
+  pembelian: PembelianRow
+  nomorUrut: number
+  variant: 'menu' | 'sheet'
+  canEdit: boolean
+  canDelete: boolean
+  deleting: string | null
+  onEdit: () => void
+  onDelete: (id: string) => void
+  onToggleFoto: () => void
+}) {
+  const print = usePrintNota(pembelian, nomorUrut)
+  const share = useShareNota(pembelian, nomorUrut)
+  const fotoCount = pembelian.fotos.length
+  const noInvoice = generateNoPembelian(pembelian.tanggal, pembelian.peron?.kode, nomorUrut)
+
+  // Dot kecil = mode cetak terakhir dipakai (dipertahankan dari perilaku lama).
+  const dot = (mode: PrintMode) =>
+    print.lastMode === mode
+      ? <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--brand)]" title="Mode terakhir" />
+      : null
+
+  const actions: RowAction[] = [
+    { key: 'print-lengkap', label: 'Print Lengkap (A5)', icon: FileText, onSelect: print.printLengkap, trailing: dot('lengkap') },
+    { key: 'print-thermal', label: 'Print Thermal', icon: Thermometer, onSelect: print.printThermal, trailing: dot('thermal') },
+    { key: 'print-thermer', label: 'Cetak ke Thermer', icon: Zap, onSelect: print.printThermer, trailing: dot('thermer') },
+    { key: 'share', label: 'Bagikan nota', icon: Share2, onSelect: share.share, separated: true },
+    ...(fotoCount > 0
+      ? [{ key: 'foto', label: `Lihat foto (${fotoCount})`, icon: ImageIcon, onSelect: onToggleFoto } as RowAction]
+      : []),
+    ...(canEdit
+      ? [{ key: 'edit', label: 'Edit', icon: Edit3, onSelect: onEdit, separated: true } as RowAction]
+      : []),
+    ...(canDelete
+      ? [{
+          key: 'delete',
+          label: 'Hapus',
+          icon: Trash2,
+          destructive: true,
+          separated: !canEdit,
+          onSelect: () => onDelete(pembelian.id),
+          confirm: {
+            title: 'Hapus tiket pembelian?',
+            description: 'Tindakan ini permanen dan ikut menghapus mutasi kas terkait.',
+            confirmLabel: 'Hapus',
+            busyLabel: 'Menghapus…',
+            busy: deleting === pembelian.id,
+          },
+        } as RowAction]
+      : []),
+  ]
+
   return (
-    <>
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          className="tap-pad inline-flex h-7 w-7 items-center justify-center rounded-md text-stone-400 hover:text-stone-900 hover:bg-stone-100 dark:hover:bg-white/[0.06] transition-colors outline-none aria-expanded:bg-stone-100 dark:aria-expanded:bg-white/[0.06]"
-          aria-label="Aksi"
-        >
-          <MoreVertical className="h-4 w-4" />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="min-w-[150px]">
-          <DropdownMenuItem onClick={onEdit}>
-            <Edit3 className="h-4 w-4" /> Edit
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem variant="destructive" onClick={() => setDelOpen(true)}>
-            <Trash2 className="h-4 w-4" /> Hapus
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      <AlertDialog open={delOpen} onOpenChange={setDelOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Hapus tiket pembelian?</AlertDialogTitle>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              onClick={() => onDelete(id)}
-              disabled={deleting === id}
-            >
-              {deleting === id ? 'Menghapus...' : 'Hapus'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+    <RowActionMenu
+      variant={variant}
+      title={pembelian.peron?.nama ?? pembelian.peronId}
+      subtitle={noInvoice}
+      actions={actions}
+      triggerLabel="Aksi tiket"
+    />
   )
 }
 
-export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptions }: Props) {
+export function PembelianTable({ pembelianList, canEdit, canDelete, peronOptions, akunOptions }: Props) {
   const [editTarget, setEditTarget] = useState<PembelianRow | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [filterDari, setFilterDari] = useState('')
@@ -292,7 +311,7 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
               <th className="text-left px-3 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Kat</th>
               <th className="text-left px-3 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>
               <th className="text-left px-3 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Foto</th>
-              {isOwner && <th className="px-3 py-3 w-20" />}
+              <th className="px-3 py-3 w-14" />
             </tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
@@ -327,23 +346,25 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
                       <span className="text-stone-300 text-xs">—</span>
                     )}
                   </td>
-                  {isOwner && (
-                    <td className="px-3 py-2.5">
-                      <div className="flex items-center justify-end gap-1">
-                        <PrintNotaButton pembelian={p} nomorUrut={nomorUrutMap.get(p.id) ?? 1} />
-                        <PembelianRowMenu
-                          id={p.id}
-                          onEdit={() => setEditTarget(p)}
-                          onDelete={handleDelete}
-                          deleting={deletingId}
-                        />
-                      </div>
-                    </td>
-                  )}
+                  <td className="px-3 py-2.5">
+                    <div className="flex items-center justify-end">
+                      <PembelianRowActions
+                        pembelian={p}
+                        nomorUrut={nomorUrutMap.get(p.id) ?? 1}
+                        variant="menu"
+                        canEdit={canEdit}
+                        canDelete={canDelete}
+                        deleting={deletingId}
+                        onEdit={() => setEditTarget(p)}
+                        onDelete={handleDelete}
+                        onToggleFoto={() => setExpandedFotoId(expandedFotoId === p.id ? null : p.id)}
+                      />
+                    </div>
+                  </td>
                 </tr>
                 {expandedFotoId === p.id && p.fotos.length > 0 && (
                   <tr className="bg-stone-50/50 dark:bg-white/[0.02]">
-                    <td colSpan={isOwner ? 11 : 10} className="px-4 py-3">
+                    <td colSpan={10} className="px-4 py-3">
                       <FotoBuktiGallery urls={p.fotos.map((f) => f.url)} />
                     </td>
                   </tr>
@@ -362,7 +383,7 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
               </td>
               <td className="px-3 py-2.5 text-right num text-stone-900">{formatRupiah(totalBeli)}</td>
               <td className={`px-3 py-2.5 text-right num ${totalUntung > 0 ? 'text-ok' : totalUntung < 0 ? 'text-crit' : 'text-stone-700 dark:text-zinc-300'}`}>{formatRupiah(totalUntung)}</td>
-              <td colSpan={isOwner ? 5 : 4} />
+              <td colSpan={5} />
             </tr>
           </tfoot>
         </table>
@@ -374,16 +395,30 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
           const margin = p.totalBeli > 0 ? (p.keuntungan / p.totalBeli) * 100 : 0
           return (
           <div key={p.id} className="rounded-2xl border border-black/[0.06] dark:border-white/[0.07] bg-white dark:bg-white/[0.025] p-4">
-            {/* Header */}
-            <div className="flex items-start justify-between gap-3">
+            {/* Header — satu kebab (⋯) di ujung kanan menampung semua aksi baris. */}
+            <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-[15px] text-stone-900 dark:text-zinc-100 leading-snug truncate">{p.peron?.nama ?? p.peronId}</p>
-                <p className="text-[11px] text-stone-500 dark:text-zinc-500 mt-0.5">{formatTanggal(p.tanggal)}</p>
+                <div className="mt-0.5 flex items-center gap-2">
+                  <p className="text-[11px] text-stone-500 dark:text-zinc-500">{formatTanggal(p.tanggal)}</p>
+                  <FotoIndicator count={p.fotos.length} />
+                </div>
               </div>
               <div className="flex flex-col items-end gap-1.5 shrink-0">
                 <span className={`text-[10px] font-semibold uppercase tracking-wider ${kategoriColor[p.kategori] ?? 'text-stone-500'}`}>{p.kategori}</span>
                 <StatusBayar status={p.statusBayarPeron} />
               </div>
+              <PembelianRowActions
+                pembelian={p}
+                nomorUrut={nomorUrutMap.get(p.id) ?? 1}
+                variant="sheet"
+                canEdit={canEdit}
+                canDelete={canDelete}
+                deleting={deletingId}
+                onEdit={() => setEditTarget(p)}
+                onDelete={handleDelete}
+                onToggleFoto={() => setExpandedFotoId(expandedFotoId === p.id ? null : p.id)}
+              />
             </div>
 
             {/* Hero nominal + margin glance */}
@@ -419,56 +454,6 @@ export function PembelianTable({ pembelianList, isOwner, peronOptions, akunOptio
               </div>
             </div>
 
-            <div className="mt-3 pt-3 border-t border-black/[0.05] dark:border-white/[0.05] flex items-center gap-1">
-              <ShareNotaButton pembelian={p} nomorUrut={nomorUrutMap.get(p.id) ?? 1} />
-              {isOwner && (
-                <>
-                  <PrintNotaButton pembelian={p} nomorUrut={nomorUrutMap.get(p.id) ?? 1} />
-                  {p.fotos.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setExpandedFotoId(expandedFotoId === p.id ? null : p.id)}
-                      className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-[12px] font-medium text-stone-500 dark:text-zinc-400 hover:text-stone-800 dark:hover:text-zinc-200 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors"
-                    >
-                      <ImageIcon className="h-3.5 w-3.5" />
-                      {p.fotos.length}
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setEditTarget(p)}
-                    className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-stone-600 dark:text-zinc-300 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors"
-                  >
-                    <Edit3 className="h-3.5 w-3.5" />Edit
-                  </button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <button
-                        type="button"
-                        className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-stone-500 dark:text-zinc-400 hover:text-destructive hover:bg-destructive/10 transition-colors"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />Hapus
-                      </button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Hapus tiket pembelian?</AlertDialogTitle>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Batal</AlertDialogCancel>
-                        <AlertDialogAction
-                          variant="destructive"
-                          onClick={() => handleDelete(p.id)}
-                          disabled={deletingId === p.id}
-                        >
-                          {deletingId === p.id ? 'Menghapus...' : 'Hapus'}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </>
-              )}
-            </div>
             {expandedFotoId === p.id && p.fotos.length > 0 && (
               <div className="mt-2 pt-2 border-t border-black/[0.05] dark:border-white/[0.05]">
                 <FotoBuktiGallery urls={p.fotos.map((f) => f.url)} />

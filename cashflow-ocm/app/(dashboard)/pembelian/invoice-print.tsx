@@ -2,13 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Printer, FileText, Thermometer, Zap, Share2 } from 'lucide-react'
+import { Printer } from 'lucide-react'
 import { toast } from 'sonner'
 import { formatRupiah, formatTanggal, buildKeteranganReplas } from '@/lib/format'
 import { fotoUrl } from '@/lib/foto-url'
@@ -63,7 +57,7 @@ function getDetails(p: PembelianRow) {
 // ── Nomor Invoice otomatis ────────────────────────────────────────────────────
 // Format: NP/[Kode Peron]/[Bulan]/[Tahun]/[No Urut 3 digit per bulan per peron]
 // Contoh: NP/1/06/2026/001
-function generateNoPembelian(tanggal: string, peronKode: number | null | undefined, nomorUrut: number): string {
+export function generateNoPembelian(tanggal: string, peronKode: number | null | undefined, nomorUrut: number): string {
   const bulan = tanggal.slice(5, 7)
   const tahun = tanggal.slice(0, 4)
   const kode = peronKode !== null && peronKode !== undefined ? String(peronKode) : '0'
@@ -345,8 +339,8 @@ function buildThermalHTML(p: PembelianRow, paperWidthMm: number, nomorUrut: numb
   ${keteranganReplas ? `<div class="divider"></div><div class="center bold" style="font-size:9pt">${esc(keteranganReplas)}</div>` : ''}
 
   <div class="solid"></div>
-  <div class="center small" style="margin-top:2px">${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
   <div class="center small">CV Omanda Cerli Mandiri</div>
+  <div class="center bold" style="margin-top:2px">Terima kasih!</div>
 </div>
 </body>
 </html>`
@@ -367,7 +361,6 @@ function buildThermalLines(p: PembelianRow, nomorUrut: number): ThermalLine[] {
   const sumberLabel = sumberBayarLabel(p.sumberBayar)
   const noInvoice = generateNoPembelian(p.tanggal, p.peron?.kode, nomorUrut)
   const keteranganReplas = p.keterangan?.trim() || buildKeteranganReplas(details, p.tanggal)
-  const tgl = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
 
   const lines: ThermalLine[] = [
     { kind: 'text', text: 'CV OCM', align: 'c', bold: true, scale: 1.55 },
@@ -404,7 +397,7 @@ function buildThermalLines(p: PembelianRow, nomorUrut: number): ThermalLine[] {
       ? [{ kind: 'rule', style: 'dash' } as ThermalLine, { kind: 'text', text: keteranganReplas, align: 'c', bold: true, scale: 0.9 } as ThermalLine]
       : []),
     { kind: 'rule', style: 'solid' },
-    { kind: 'text', text: tgl, align: 'c', scale: 0.85 },
+    // Footer = acuan tunggal: tanpa tanggal (dulu new Date() = tgl cetak, menyesatkan).
     { kind: 'text', text: 'CV Omanda Cerli Mandiri', align: 'c', scale: 0.85 },
     { kind: 'text', text: 'Terima kasih!', align: 'c', bold: true },
   ]
@@ -683,13 +676,19 @@ function buildThermerURL(p: PembelianRow, nomorUrut: number): string {
   const keteranganReplas = p.keterangan?.trim() || buildKeteranganReplas(details, p.tanggal)
 
   const entries: ThermerEntry[] = [
+    // Header IDENTIK dengan nota visual (buildThermalLines): CV OCM / Supplier TBS
+    // & BRDL / PKS PT. BGA. (dulu subtitle keliru "Omanda Cerli Mandiri").
     txt('CV OCM', 1, 1, 2),
-    txt('Omanda Cerli Mandiri', 0, 1, 4),
+    txt('Supplier TBS & BRDL', 0, 1, 4),
+    txt('PKS PT. BGA', 0, 1, 4),
     txt(equ, 0, 1),
     txt('NOTA PEMBELIAN', 1, 1),
     txt(noInvoice, 0, 1, 4),
     txt(div, 0, 1),
-    txt(`Tanggal : ${formatTanggal(p.tanggal)}${waktu ? '  ' + waktu : ''}`),
+    // Tanggal & Waktu baris terpisah — samakan urutan dgn nota visual & cegah
+    // wrap di kertas 32-char.
+    txt(`Tanggal : ${formatTanggal(p.tanggal)}`),
+    ...(waktu ? [txt(`Waktu   : ${waktu}`)] : []),
     txt(`Peron   : ${p.peron?.nama ?? p.peronId}`),
     txt(`Kategori: ${p.kategori}`),
     txt(div, 0, 1),
@@ -720,11 +719,14 @@ function buildThermerURL(p: PembelianRow, nomorUrut: number): string {
   return `thermer://?data=${encodeURIComponent(JSON.stringify(dict))}`
 }
 
-// ── Komponen Tombol ──────────────────────────────────────────────────────────
+// ── Hooks aksi nota ──────────────────────────────────────────────────────────
+// Logika cetak/share dipisah dari tampilan agar bisa dipakai oleh kebab
+// RowActionMenu (sheet di mobile, dropdown di desktop) — satu sumber perilaku.
 
-type PrintMode = 'lengkap' | 'thermal' | 'thermer'
+export type PrintMode = 'lengkap' | 'thermal' | 'thermer'
 
-export function PrintNotaButton({ pembelian, nomorUrut }: { pembelian: PembelianRow; nomorUrut: number }) {
+/** Cetak nota 3 mode (A5 / thermal preview / Thermer langsung) + ingat mode terakhir antar sesi. */
+export function usePrintNota(pembelian: PembelianRow, nomorUrut: number) {
   const [lastMode, setLastMode] = useState<PrintMode | null>(null)
 
   // Mode terakhir diingat antar sesi.
@@ -738,7 +740,7 @@ export function PrintNotaButton({ pembelian, nomorUrut }: { pembelian: Pembelian
     setLastMode(mode)
   }
 
-  function handlePrintLengkap() {
+  function printLengkap() {
     remember('lengkap')
     const html = buildNotaHTML(pembelian, nomorUrut)
     const win = window.open('', '_blank', 'width=600,height=750')
@@ -746,7 +748,7 @@ export function PrintNotaButton({ pembelian, nomorUrut }: { pembelian: Pembelian
     win.document.open(); win.document.write(html); win.document.close()
   }
 
-  function handlePrintThermal() {
+  function printThermal() {
     remember('thermal')
     const width = getThermalWidth()
     const html = buildThermalHTML(pembelian, width, nomorUrut)
@@ -755,7 +757,7 @@ export function PrintNotaButton({ pembelian, nomorUrut }: { pembelian: Pembelian
     win.document.open(); win.document.write(html); win.document.close()
   }
 
-  function handlePrintThermer() {
+  function printThermer() {
     remember('thermer')
     const url = buildThermerURL(pembelian, nomorUrut)
     // Fallback: bila Thermer tak terpasang, iOS diam (tak ada error) → deteksi via
@@ -772,39 +774,13 @@ export function PrintNotaButton({ pembelian, nomorUrut }: { pembelian: Pembelian
     }, 1600)
   }
 
-  const dot = (mode: PrintMode) =>
-    lastMode === mode ? <span className="ml-auto h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--brand)]" title="Mode terakhir" /> : null
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger aria-label="Cetak nota" className="inline-flex items-center justify-center h-7 w-7 rounded-md text-stone-500 hover:text-stone-700 dark:text-zinc-300 hover:bg-stone-100 dark:hover:bg-white/[0.06] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50" title="Cetak Nota">
-        <Printer className="h-3.5 w-3.5" aria-hidden />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-52">
-        <DropdownMenuItem onClick={handlePrintLengkap} className="gap-2 cursor-pointer">
-          <FileText className="h-3.5 w-3.5" />
-          Print Lengkap (A5)
-          {dot('lengkap')}
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={handlePrintThermal} className="gap-2 cursor-pointer">
-          <Thermometer className="h-3.5 w-3.5" />
-          Print Thermal (preview)
-          {dot('thermal')}
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={handlePrintThermer} className="gap-2 cursor-pointer text-stone-700 dark:text-zinc-200 focus:text-stone-900 dark:focus:text-white focus:bg-stone-100 dark:focus:bg-white/[0.06]">
-          <Zap className="h-3.5 w-3.5" />
-          Thermer (langsung)
-          {dot('thermer')}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
+  return { lastMode, printLengkap, printThermal, printThermer }
 }
 
 /** Bagikan nota sebagai GAMBAR struk thermal (share sheet native iOS; fallback unduh PNG). */
-export function ShareNotaButton({ pembelian, nomorUrut }: { pembelian: PembelianRow; nomorUrut: number }) {
+export function useShareNota(pembelian: PembelianRow, nomorUrut: number) {
   const [busy, setBusy] = useState(false)
-  async function handleShare() {
+  async function share() {
     if (busy) return
     setBusy(true)
     try {
@@ -830,17 +806,7 @@ export function ShareNotaButton({ pembelian, nomorUrut }: { pembelian: Pembelian
       setBusy(false)
     }
   }
-  return (
-    <button
-      type="button"
-      onClick={handleShare}
-      disabled={busy}
-      aria-label="Bagikan nota"
-      className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-stone-600 dark:text-zinc-300 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors disabled:opacity-50"
-    >
-      <Share2 className="h-3.5 w-3.5" />{busy ? 'Menyiapkan…' : 'Bagikan'}
-    </button>
-  )
+  return { busy, share }
 }
 
 export function PrintRekapButton({ pembelianList }: { pembelianList: PembelianRow[] }) {
