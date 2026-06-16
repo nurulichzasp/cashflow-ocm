@@ -22,6 +22,7 @@ import { shareNota } from '@/lib/share'
 import { Trash2, FileText, ArrowUpDown, ArrowUp, ArrowDown, Pencil, Share2 } from 'lucide-react'
 import { DateRangeFilter } from '@/components/date-range-filter'
 import { EmptyState } from '@/components/empty-state'
+import { RowActionMenu, type RowAction } from '@/components/ui/row-action-menu'
 import type { Penjualan } from '@/lib/db/schema'
 
 interface Props {
@@ -324,6 +325,7 @@ function PenjualanRow({ item, isOwner, updatingId, deletingId, onToggleLunas, on
 
 function PenjualanCard({ item, isOwner, updatingId, deletingId, onToggleLunas, onDelete }: RowProps) {
   const [expanded, setExpanded] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
   const invoices = (item.noInvoice ?? '').split('\n').filter(Boolean)
   const primaryInvoice = invoices[0] || 'Tanpa nomor invoice'
   const moreInvoices = invoices.length > 1 ? invoices.length - 1 : 0
@@ -343,6 +345,28 @@ function PenjualanCard({ item, isOwner, updatingId, deletingId, onToggleLunas, o
     const res = await shareNota({ title: `Penjualan ${formatTanggal(item.tanggal)} — CV OCM`, text: lines })
     if (res === 'copied') toast.success('Nota disalin ke clipboard')
   }
+
+  const actions: RowAction[] = [
+    { key: 'share', label: 'Bagikan nota', icon: Share2, onSelect: handleShare },
+    { key: 'edit', label: 'Edit', icon: Pencil, separated: true, onSelect: () => setEditOpen(true) },
+    ...(isOwner
+      ? [{
+          key: 'delete',
+          label: 'Hapus',
+          icon: Trash2,
+          destructive: true,
+          separated: true,
+          onSelect: () => onDelete(item.id),
+          confirm: {
+            title: 'Hapus penjualan?',
+            description: `Invoice ${primaryInvoice} akan dihapus.`,
+            confirmLabel: 'Hapus',
+            busyLabel: 'Menghapus…',
+            busy: deletingId === item.id,
+          },
+        } as RowAction]
+      : []),
+  ]
 
   return (
     <div className="rounded-2xl border border-black/[0.06] dark:border-white/[0.07] bg-white dark:bg-white/[0.025] p-4">
@@ -365,11 +389,20 @@ function PenjualanCard({ item, isOwner, updatingId, deletingId, onToggleLunas, o
             )}
           </div>
         </div>
-        <StatusDot
-          status={item.statusBayar}
-          onToggle={item.statusBayar === 'belum' ? () => onToggleLunas(item.id) : undefined}
-          loading={updatingId === item.id}
-        />
+        <div className="flex shrink-0 items-center gap-1">
+          <StatusDot
+            status={item.statusBayar}
+            onToggle={item.statusBayar === 'belum' ? () => onToggleLunas(item.id) : undefined}
+            loading={updatingId === item.id}
+          />
+          <RowActionMenu
+            variant="sheet"
+            title={primaryInvoice}
+            subtitle={formatTanggal(item.tanggal)}
+            actions={actions}
+            triggerLabel="Aksi penjualan"
+          />
+        </div>
       </div>
 
       {/* Expanded extra invoices */}
@@ -429,58 +462,9 @@ function PenjualanCard({ item, isOwner, updatingId, deletingId, onToggleLunas, o
         </div>
       )}
 
-      {/* Actions */}
-      <div className="mt-3 pt-3 border-t border-black/[0.05] dark:border-white/[0.05] flex items-center gap-1">
-        <button
-          type="button"
-          onClick={handleShare}
-          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 min-h-[44px] text-[12px] font-medium text-stone-600 dark:text-zinc-300 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors"
-          aria-label="Bagikan nota"
-        >
-          <Share2 className="h-3.5 w-3.5" />
-          Bagikan
-        </button>
-        <PenjualanFormDialog editItem={item}>
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 min-h-[44px] text-[12px] font-medium text-stone-600 dark:text-zinc-300 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors"
-          >
-            <Pencil className="h-3.5 w-3.5" />
-            Edit
-          </button>
-        </PenjualanFormDialog>
-        {isOwner && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <button
-                type="button"
-                className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 min-h-[44px] text-[12px] font-medium text-stone-500 dark:text-zinc-400 hover:text-destructive hover:bg-destructive/10 transition-colors"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                Hapus
-              </button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Hapus penjualan?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Invoice {primaryInvoice} akan dihapus.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Batal</AlertDialogCancel>
-                <AlertDialogAction
-                  variant="destructive"
-                  onClick={() => onDelete(item.id)}
-                  disabled={deletingId === item.id}
-                >
-                  {deletingId === item.id ? 'Menghapus...' : 'Hapus'}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        )}
-      </div>
+      {editOpen && (
+        <PenjualanFormDialog editItem={item} open={editOpen} onOpenChange={setEditOpen} />
+      )}
     </div>
   )
 }

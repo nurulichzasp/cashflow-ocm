@@ -5,7 +5,7 @@ import { getLaporanData, getPajakData, getLabaRugiTahunan, getNeracaData } from 
 import { formatRupiah, formatNumber, formatTanggal } from '@/lib/format'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ArahIndicator } from '@/components/ui/status-pill'
+import { ArahIndicator, StatusDotLabel } from '@/components/ui/status-pill'
 import { DateRangeInline } from '@/components/date-range-inline'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Download, FileSpreadsheet } from 'lucide-react'
@@ -393,7 +393,7 @@ function PajakTab({ tahun, onTahunChange }: { tahun: string; onTahunChange: (t: 
                     <button
                       type="button"
                       aria-label={`Ubah status setor PPN bulan ${bulan} — sekarang ${d.status === 'sudah' ? 'sudah disetor' : 'belum'}`}
-                      className={`tap-pad inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold cursor-pointer transition-opacity hover:opacity-80 ${d.status === 'sudah' ? 'pill-ok' : 'pill-warn'}`}
+                      className="tap-pad inline-flex cursor-pointer transition-opacity hover:opacity-70"
                       onClick={async () => {
                         const next = d.status === 'sudah' ? 'belum' : 'sudah'
                         const tgl = next === 'sudah' ? new Date().toISOString().slice(0, 10) : undefined
@@ -402,7 +402,7 @@ function PajakTab({ tahun, onTahunChange }: { tahun: string; onTahunChange: (t: 
                         setData(fresh)
                       }}
                     >
-                      {d.status === 'sudah' ? 'Sudah Disetor' : 'Belum'}
+                      <StatusDotLabel tone={d.status === 'sudah' ? 'ok' : 'warn'} label={d.status === 'sudah' ? 'Sudah Disetor' : 'Belum'} />
                     </button>
                   </td>
                 </tr>
@@ -432,7 +432,7 @@ function PajakTab({ tahun, onTahunChange }: { tahun: string; onTahunChange: (t: 
                     <button
                       type="button"
                       aria-label={`Ubah status bayar PPh bulan ${bulan} — sekarang ${d.status === 'sudah' ? 'sudah dibayar' : 'belum'}`}
-                      className={`tap-pad inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold cursor-pointer transition-opacity hover:opacity-80 ${d.status === 'sudah' ? 'pill-ok' : 'pill-warn'}`}
+                      className="tap-pad inline-flex cursor-pointer transition-opacity hover:opacity-70"
                       onClick={async () => {
                         const next = d.status === 'sudah' ? 'belum' : 'sudah'
                         const tgl = next === 'sudah' ? new Date().toISOString().slice(0, 10) : undefined
@@ -441,7 +441,7 @@ function PajakTab({ tahun, onTahunChange }: { tahun: string; onTahunChange: (t: 
                         setData(fresh)
                       }}
                     >
-                      {d.status === 'sudah' ? 'Sudah Dibayar' : 'Belum'}
+                      <StatusDotLabel tone={d.status === 'sudah' ? 'ok' : 'warn'} label={d.status === 'sudah' ? 'Sudah Dibayar' : 'Belum'} />
                     </button>
                   </td>
                 </tr>

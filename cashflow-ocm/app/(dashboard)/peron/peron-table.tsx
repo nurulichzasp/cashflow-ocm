@@ -2,91 +2,55 @@
 
 import { useState, useMemo } from 'react'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
 import { StatusPill } from '@/components/ui/status-pill'
 import { EmptyState } from '@/components/empty-state'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
+import { RowActionMenu, type RowAction } from '@/components/ui/row-action-menu'
 import { formatRupiah } from '@/lib/format'
 import { PeronFormDialog } from './peron-form-dialog'
 import { ModalFormDialog } from './modal-form-dialog'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { deletePeron } from './actions'
-import { Edit, Trash2, Wallet, Users, ArrowUpDown, ArrowUp, ArrowDown, MoreVertical } from 'lucide-react'
+import { Edit, Trash2, Wallet, Users, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import type { Peron } from '@/lib/db/schema'
 
 type PeronRow = Peron & { dpAktif: number }
 
-function RowActions({ p, isOwner, onDelete, deleting, akunOptions = [] }: { p: PeronRow; isOwner: boolean; onDelete: (id: string) => void; deleting: string | null; akunOptions?: AkunOption[] }) {
+function RowActions({ p, isOwner, onDelete, deleting, akunOptions = [], variant = 'menu' }: { p: PeronRow; isOwner: boolean; onDelete: (id: string) => void; deleting: string | null; akunOptions?: AkunOption[]; variant?: 'menu' | 'sheet' }) {
   const [editOpen, setEditOpen] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
-  const [deleteOpen, setDeleteOpen] = useState(false)
+
+  const actions: RowAction[] = [
+    { key: 'modal', label: 'Kelola DP/Modal', icon: Wallet, onSelect: () => setModalOpen(true) },
+    { key: 'edit', label: 'Edit', icon: Edit, onSelect: () => setEditOpen(true) },
+    ...(isOwner
+      ? [{
+          key: 'delete',
+          label: 'Hapus',
+          icon: Trash2,
+          destructive: true,
+          separated: true,
+          onSelect: () => onDelete(p.id),
+          confirm: {
+            title: 'Hapus Peron?',
+            description: `Data peron ${p.nama} beserta seluruh riwayat modal akan dihapus permanen. Aksi ini tidak dapat dibatalkan.`,
+            confirmLabel: 'Ya, Hapus',
+            busyLabel: 'Menghapus…',
+            busy: deleting === p.id,
+          },
+        } as RowAction]
+      : []),
+  ]
 
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          className="tap-pad inline-flex h-8 w-8 items-center justify-center rounded-lg text-stone-400 hover:text-stone-900 hover:bg-stone-100 dark:hover:bg-white/[0.06] transition-colors outline-none aria-expanded:bg-stone-100 dark:aria-expanded:bg-white/[0.06]"
-          aria-label="Aksi"
-        >
-          <MoreVertical className="h-4 w-4" />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="min-w-[160px]">
-          <DropdownMenuItem onClick={() => setModalOpen(true)}>
-            <Wallet className="h-4 w-4" /> Kelola DP/Modal
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setEditOpen(true)}>
-            <Edit className="h-4 w-4" /> Edit
-          </DropdownMenuItem>
-          {isOwner && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" onClick={() => setDeleteOpen(true)}>
-                <Trash2 className="h-4 w-4" /> Hapus
-              </DropdownMenuItem>
-            </>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
-
+      <RowActionMenu
+        variant={variant}
+        title={p.nama}
+        subtitle={p.kode != null ? `#${p.kode}` : undefined}
+        actions={actions}
+        triggerLabel="Aksi peron"
+      />
       {modalOpen && <ModalFormDialog peronId={p.id} peronNama={p.nama} akunOptions={akunOptions} open={modalOpen} onOpenChange={setModalOpen} />}
       {editOpen && <PeronFormDialog mode="edit" peron={p} open={editOpen} onOpenChange={setEditOpen} />}
-
-      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Hapus Peron?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Data peron <strong>{p.nama}</strong> beserta seluruh riwayat modal akan dihapus permanen. Aksi ini tidak dapat dibatalkan.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              onClick={() => onDelete(p.id)}
-              disabled={deleting === p.id}
-            >
-              {deleting === p.id ? 'Menghapus...' : 'Ya, Hapus'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   )
 }
@@ -206,76 +170,35 @@ export function PeronTable({ peronList, isOwner, akunOptions = [] }: Props) {
         </table>
       </div>
 
-      {/* Mobile */}
+      {/* Mobile — aksi di kebab ⋯, kartu dipadatkan jadi 2 zona */}
       <div className="md:hidden space-y-2">
         {sorted.map((p) => (
           <div key={p.id} className="surface press-card p-4">
-            <div className="flex items-start justify-between gap-2 mb-3">
-              <div>
-                <p className="font-semibold text-stone-900 dark:text-stone-100">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-semibold text-stone-900 dark:text-stone-100">
                   {p.kode != null && <span className="text-stone-400 text-xs mr-1">#{p.kode}</span>}
                   {p.nama}
                 </p>
-                {p.kontak && <p className="text-xs text-stone-500 mt-0.5">{p.kontak}</p>}
+                {p.kontak && <p className="mt-0.5 truncate text-xs text-stone-500">{p.kontak}</p>}
               </div>
-              {p.status === 'aktif' ? (
-                <StatusPill tone="ok" className="shrink-0">Aktif</StatusPill>
-              ) : (
-                <StatusPill tone="neutral" className="shrink-0">Nonaktif</StatusPill>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 text-sm mb-3">
-              <div>
-                <p className="text-xs text-stone-400 mb-0.5">Untung/kg</p>
-                <p className="font-medium text-stone-900 num">Rp {p.keuntunganPerKg.toLocaleString('id-ID')}/kg</p>
-              </div>
-              <div>
-                <p className="text-xs text-stone-400 mb-0.5">DP Aktif</p>
-                <p className="font-semibold text-stone-900 dark:text-stone-100 num">{formatRupiah(p.dpAktif)}</p>
+              <div className="flex shrink-0 items-center gap-1">
+                {p.status === 'aktif' ? (
+                  <StatusPill tone="ok">Aktif</StatusPill>
+                ) : (
+                  <StatusPill tone="neutral">Nonaktif</StatusPill>
+                )}
+                <RowActions p={p} isOwner={isOwner} onDelete={handleDelete} deleting={deleting} akunOptions={akunOptions} variant="sheet" />
               </div>
             </div>
 
-            <div className="flex gap-2 pt-3 border-t border-stone-100">
-              <ModalFormDialog peronId={p.id} peronNama={p.nama} akunOptions={akunOptions}>
-                <Button variant="outline" size="sm" className="flex-1 gap-2 border-stone-200 text-stone-700 hover:bg-stone-50">
-                  <Wallet className="h-3.5 w-3.5" />
-                  Kelola DP
-                </Button>
-              </ModalFormDialog>
-              <PeronFormDialog mode="edit" peron={p}>
-                <Button variant="outline" size="sm" className="gap-2 border-stone-200 text-stone-700 hover:bg-stone-50">
-                  <Edit className="h-3.5 w-3.5" />
-                  Edit
-                </Button>
-              </PeronFormDialog>
-              {isOwner && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Hapus Peron?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Data <strong>{p.nama}</strong> akan dihapus permanen.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Batal</AlertDialogCancel>
-                      <AlertDialogAction
-                        variant="destructive"
-                        onClick={() => handleDelete(p.id)}
-                        disabled={deleting === p.id}
-                      >
-                        Hapus
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              )}
+            <div className="mt-3 flex items-center justify-between gap-3 text-sm">
+              <span className="text-stone-500 dark:text-zinc-400">
+                Untung/kg <span className="font-medium text-stone-900 dark:text-zinc-100 num">Rp {p.keuntunganPerKg.toLocaleString('id-ID')}</span>
+              </span>
+              <span className="text-stone-500 dark:text-zinc-400">
+                DP <span className="font-semibold text-stone-900 dark:text-stone-100 num">{formatRupiah(p.dpAktif)}</span>
+              </span>
             </div>
           </div>
         ))}

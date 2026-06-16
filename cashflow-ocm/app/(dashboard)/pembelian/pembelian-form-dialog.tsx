@@ -504,7 +504,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
                 <button
                   type="button"
                   onClick={() => { setKeteranganManual(false); setKeterangan(autoKeterangan) }}
-                  className="text-[11px] font-medium text-stone-400 hover:text-emerald-600 dark:hover:text-emerald-400"
+                  className="text-[11px] font-medium text-stone-400 hover:text-[var(--ok-fg)]"
                 >
                   Set ulang otomatis
                 </button>

@@ -21,6 +21,7 @@ import { formatRupiah, formatTanggal, formatCompact, formatRentangFilter } from 
 import { FotoBuktiGallery } from '@/components/foto-bukti-gallery'
 import { Trash2, Receipt, ImageIcon, ArrowUpDown, ArrowUp, ArrowDown, Pencil } from 'lucide-react'
 import { DateRangeFilter } from '@/components/date-range-filter'
+import { RowActionMenu, type RowAction } from '@/components/ui/row-action-menu'
 import type { BiayaOperasional, AkunKas, BiayaFoto } from '@/lib/db/schema'
 
 type BiayaRow = BiayaOperasional & { akunSumber: AkunKas | null; fotos: BiayaFoto[] }
@@ -55,6 +56,75 @@ interface Props {
 }
 
 type SortCol = 'tanggal' | 'jumlah'
+
+/* ─── Kartu mobile — Edit/Hapus terkumpul di kebab ⋯ ─── */
+function BiayaCard({
+  item,
+  isOwner,
+  akunOptions,
+  onDelete,
+  deleting,
+}: {
+  item: BiayaRow
+  isOwner: boolean
+  akunOptions: AkunOption[]
+  onDelete: (id: string) => void
+  deleting: string | null
+}) {
+  const [editOpen, setEditOpen] = useState(false)
+
+  const actions: RowAction[] = [
+    { key: 'edit', label: 'Edit', icon: Pencil, onSelect: () => setEditOpen(true) },
+    ...(isOwner
+      ? [{
+          key: 'delete',
+          label: 'Hapus',
+          icon: Trash2,
+          destructive: true,
+          separated: true,
+          onSelect: () => onDelete(item.id),
+          confirm: {
+            title: 'Hapus biaya?',
+            description: `Biaya ${kategoriDisplay(item)} pada ${formatTanggal(item.tanggal)} sebesar ${formatRupiah(item.jumlah)} akan dihapus.`,
+            confirmLabel: 'Hapus',
+            busyLabel: 'Menghapus…',
+            busy: deleting === item.id,
+          },
+        } as RowAction]
+      : []),
+  ]
+
+  return (
+    <div className="surface p-4">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <span className={kategoriTextCls}>{kategoriDisplay(item)}</span>
+          <p className="mt-1 truncate text-xs text-stone-500">
+            {formatTanggal(item.tanggal)} · {item.akunSumber?.nama ?? item.akunSumberId}
+          </p>
+        </div>
+        <RowActionMenu
+          variant="sheet"
+          title={kategoriDisplay(item)}
+          subtitle={formatTanggal(item.tanggal)}
+          actions={actions}
+          triggerLabel="Aksi biaya"
+        />
+      </div>
+      <p className="mt-2 text-lg font-bold text-stone-900 dark:text-zinc-50 num">{formatRupiah(item.jumlah)}</p>
+      {item.catatan && <p className="mt-2 text-xs text-stone-500">{item.catatan}</p>}
+      {item.fotos.length > 0 && (
+        <div className="mt-3 border-t border-stone-100 pt-3 dark:border-border">
+          <FotoBuktiGallery urls={item.fotos.map((f) => f.url)} maxThumbnails={3} />
+        </div>
+      )}
+
+      {editOpen && (
+        <BiayaFormDialog editItem={item} akunOptions={akunOptions} open={editOpen} onOpenChange={setEditOpen} />
+      )}
+    </div>
+  )
+}
 
 export function BiayaTable({ biayaList, isOwner, akunOptions }: Props) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -200,7 +270,7 @@ export function BiayaTable({ biayaList, isOwner, akunOptions }: Props) {
                       {isOwner && (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" aria-label="Hapus" className="tap-pad h-8 w-8 text-stone-400 hover:text-red-600 hover:bg-red-50">
+                            <Button variant="ghost" size="icon" aria-label="Hapus" className="tap-pad h-8 w-8 text-stone-400 hover:text-destructive hover:bg-destructive/10">
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </AlertDialogTrigger>
@@ -216,7 +286,7 @@ export function BiayaTable({ biayaList, isOwner, akunOptions }: Props) {
                             <AlertDialogFooter>
                               <AlertDialogCancel>Batal</AlertDialogCancel>
                               <AlertDialogAction
-                                className="bg-red-600 hover:bg-red-700 text-white"
+                                variant="destructive"
                                 onClick={() => handleDelete(item.id)}
                                 disabled={deletingId === item.id}
                               >
@@ -242,64 +312,17 @@ export function BiayaTable({ biayaList, isOwner, akunOptions }: Props) {
         </table>
       </div>
 
-      {/* Mobile */}
+      {/* Mobile — aksi di kebab ⋯ */}
       <div className="md:hidden space-y-2">
         {sorted.map((item) => (
-          <div key={item.id} className="surface p-4">
-            <div className="flex items-start justify-between gap-2 mb-3">
-              <div>
-                <span className={kategoriTextCls}>{kategoriDisplay(item)}</span>
-                <p className="text-xs text-stone-500 mt-1">
-                  {formatTanggal(item.tanggal)} · {item.akunSumber?.nama ?? item.akunSumberId}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <p className="text-lg font-bold text-stone-900 num">{formatRupiah(item.jumlah)}</p>
-              <div className="flex items-center gap-1">
-                <BiayaFormDialog editItem={item} akunOptions={akunOptions}>
-                  <Button variant="ghost" size="sm" className="text-stone-600 dark:text-zinc-300 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] gap-1.5">
-                    <Pencil className="h-3.5 w-3.5" />
-                    Edit
-                  </Button>
-                </BiayaFormDialog>
-                {isOwner && (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50 gap-1.5">
-                        <Trash2 className="h-3.5 w-3.5" />
-                        Hapus
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Hapus biaya?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Biaya {kategoriDisplay(item)} pada {formatTanggal(item.tanggal)} akan dihapus.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Batal</AlertDialogCancel>
-                        <AlertDialogAction
-                          className="bg-red-600 hover:bg-red-700 text-white"
-                          onClick={() => handleDelete(item.id)}
-                          disabled={deletingId === item.id}
-                        >
-                          {deletingId === item.id ? 'Menghapus...' : 'Hapus'}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                )}
-              </div>
-            </div>
-            {item.catatan && <p className="text-xs text-stone-500 mt-2">{item.catatan}</p>}
-            {item.fotos.length > 0 && (
-              <div className="mt-3 pt-3 border-t border-stone-100">
-                <FotoBuktiGallery urls={item.fotos.map((f) => f.url)} maxThumbnails={3} />
-              </div>
-            )}
-          </div>
+          <BiayaCard
+            key={item.id}
+            item={item}
+            isOwner={isOwner}
+            akunOptions={akunOptions}
+            onDelete={handleDelete}
+            deleting={deletingId}
+          />
         ))}
       </div>
     </div>

@@ -715,7 +715,7 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
                             </div>
                           ))}
 
-                          <div className="flex items-center justify-between gap-3 rounded-xl border border-red-200 dark:border-red-950/60 bg-red-50/40 dark:bg-red-950/10 px-3.5 py-2.5">
+                          <div className="flex items-center justify-between gap-3 rounded-xl border danger-zone px-3.5 py-2.5">
                             <div className="min-w-0">
                               <p className="text-sm font-medium text-crit">Hapus Transaksi</p>
                               <p className="text-[11px] text-crit opacity-75">Izin menghapus data permanen</p>
@@ -975,7 +975,7 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
                         </div>
                       ))}
 
-                      <div className="flex items-center justify-between gap-3 rounded-xl border border-red-200 dark:border-red-950/60 bg-red-50/40 dark:bg-red-950/10 px-3.5 py-2.5">
+                      <div className="flex items-center justify-between gap-3 rounded-xl border danger-zone px-3.5 py-2.5">
                         <div className="min-w-0">
                           <p className="text-sm font-medium text-crit">Hapus Transaksi</p>
                           <p className="text-[11px] text-crit opacity-75">Izin menghapus data permanen</p>
@@ -1135,7 +1135,7 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
 
               {/* Danger Zone */}
               {isOwner && (
-                <div className="rounded-xl border border-red-200 dark:border-red-950 bg-red-50/20 dark:bg-red-950/5 p-4 space-y-3">
+                <div className="rounded-xl border danger-zone p-4 space-y-3">
                   <h3 className="text-sm font-bold text-crit flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4" /> Zona Berbahaya
                   </h3>

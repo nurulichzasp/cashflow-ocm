@@ -68,7 +68,7 @@ export function ScrollShell({ children, user }: { children: React.ReactNode; use
         ref={mainRef}
         className={cn(
           'flex-1 overflow-y-auto bg-background px-4 pt-[calc(64px+env(safe-area-inset-top))] md:p-6',
-          fullscreen ? 'pb-8' : 'pb-32',
+          fullscreen ? 'pb-8' : 'pb-24',
         )}
       >
         <div className="app-container md:mx-auto md:max-w-[1320px]">{children}</div>

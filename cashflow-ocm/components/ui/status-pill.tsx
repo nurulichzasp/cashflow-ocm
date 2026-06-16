@@ -44,6 +44,50 @@ export function StatusPill({
   )
 }
 
+const DOT_FG: Record<PillTone, string> = {
+  ok: 'var(--ok-fg)',
+  warn: 'var(--warn-fg)',
+  crit: 'var(--crit-fg)',
+  neutral: 'var(--muted-foreground)',
+}
+
+/**
+ * Indikator status TENANG — dot kecil semantik + teks netral, TANPA background.
+ * Bahasa visual yang sama dengan PaymentStatusDot, tapi label & tone bebas →
+ * dipakai untuk status berulang non-pill (mis. setor PPN/PPh di laporan pajak).
+ * Sebahasa dengan dot Lunas/Belum; bukan pill solid agar tak jadi "blok warna".
+ */
+export function StatusDotLabel({
+  tone,
+  label,
+  loading,
+  className,
+}: {
+  tone: PillTone
+  label: string
+  loading?: boolean
+  className?: string
+}) {
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-1.5 text-[13px] font-medium text-foreground whitespace-nowrap',
+        className,
+      )}
+    >
+      <span
+        aria-hidden
+        className={cn(
+          'h-2 w-2 shrink-0 rounded-full',
+          loading && 'animate-spin border border-current border-t-transparent',
+        )}
+        style={loading ? undefined : { backgroundColor: DOT_FG[tone] }}
+      />
+      {label}
+    </span>
+  )
+}
+
 /**
  * Indikator ARAH kas (Masuk/Keluar) — glyph panah + label, TANPA background/border.
  * Sengaja minimalis (sebahasa dengan dot Lunas), bukan pill solid.
@@ -91,21 +135,11 @@ export function PaymentStatusDot({
 }) {
   const isLunas = status === 'lunas'
   return (
-    <span
-      className={cn(
-        'inline-flex items-center gap-1.5 text-[13px] font-medium text-foreground whitespace-nowrap',
-        className,
-      )}
-    >
-      <span
-        aria-hidden
-        className={cn(
-          'h-2 w-2 shrink-0 rounded-full',
-          loading && 'animate-spin border border-current border-t-transparent',
-        )}
-        style={loading ? undefined : { backgroundColor: isLunas ? 'var(--ok-fg)' : 'var(--warn-fg)' }}
-      />
-      {isLunas ? 'Lunas' : 'Belum'}
-    </span>
+    <StatusDotLabel
+      tone={isLunas ? 'ok' : 'warn'}
+      label={isLunas ? 'Lunas' : 'Belum'}
+      loading={loading}
+      className={className}
+    />
   )
 }

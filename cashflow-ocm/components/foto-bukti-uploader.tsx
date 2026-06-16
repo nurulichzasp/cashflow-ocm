@@ -133,7 +133,7 @@ export function FotoBuktiUploader({ urls, onUrlsChange, disabled }: Props) {
                 type="button"
                 onClick={() => removeUrl(url)}
                 aria-label="Hapus foto"
-                className="absolute -top-2 -right-2 h-7 w-7 md:h-5 md:w-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:bg-red-600 shadow-sm"
+                className="absolute -top-2 -right-2 h-7 w-7 md:h-5 md:w-5 rounded-full bg-destructive text-white flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:bg-destructive/90 shadow-sm"
                 title="Hapus foto"
               >
                 <X className="h-3.5 w-3.5 md:h-3 md:w-3" />

@@ -21,6 +21,7 @@ import { KasFormDialog } from './kas-form-dialog'
 import { formatRupiah, formatTanggal, formatCompact, formatRentangFilter } from '@/lib/format'
 import { Trash2, Wallet, ArrowUpDown, ArrowUp, ArrowDown, Pencil } from 'lucide-react'
 import { DateRangeFilter } from '@/components/date-range-filter'
+import { RowActionMenu, type RowAction } from '@/components/ui/row-action-menu'
 import type { TransaksiKas, AkunKas } from '@/lib/db/schema'
 
 type TransaksiRow = TransaksiKas & { akun: AkunKas | null }
@@ -42,6 +43,80 @@ interface Props {
 }
 
 type SortCol = 'tanggal' | 'jumlah'
+
+/* ─── Kartu mobile — aksi (Edit/Hapus) terkumpul di kebab ⋯ ─── */
+function KasCard({
+  item,
+  isOwner,
+  akunOptions,
+  onDelete,
+  deleting,
+}: {
+  item: TransaksiRow
+  isOwner: boolean
+  akunOptions: { id: string; nama: string; tipe: string }[]
+  onDelete: (id: string) => void
+  deleting: string | null
+}) {
+  const [editOpen, setEditOpen] = useState(false)
+  const masuk = item.arah === 'masuk'
+  const canEdit = !item.refTabel
+
+  const actions: RowAction[] = [
+    ...(canEdit
+      ? [{ key: 'edit', label: 'Edit', icon: Pencil, onSelect: () => setEditOpen(true) } as RowAction]
+      : []),
+    ...(isOwner
+      ? [{
+          key: 'delete',
+          label: 'Hapus',
+          icon: Trash2,
+          destructive: true,
+          separated: canEdit,
+          onSelect: () => onDelete(item.id),
+          confirm: {
+            title: 'Hapus transaksi?',
+            description: `Transaksi ${kategoriLabels[item.kategori]} pada ${formatTanggal(item.tanggal)} sebesar ${formatRupiah(item.jumlah)} akan dihapus.`,
+            confirmLabel: 'Hapus',
+            busyLabel: 'Menghapus…',
+            busy: deleting === item.id,
+          },
+        } as RowAction]
+      : []),
+  ]
+
+  return (
+    <div className="surface p-4">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="font-medium text-stone-900 dark:text-zinc-100 truncate">{kategoriLabels[item.kategori]}</p>
+          <p className="mt-0.5 truncate text-xs text-stone-500">{formatTanggal(item.tanggal)} · {item.akun?.nama ?? item.akunId}</p>
+        </div>
+        <div className="flex shrink-0 items-center gap-1">
+          <ArahIndicator arah={item.arah} />
+          {actions.length > 0 && (
+            <RowActionMenu
+              variant="sheet"
+              title={kategoriLabels[item.kategori]}
+              subtitle={formatTanggal(item.tanggal)}
+              actions={actions}
+              triggerLabel="Aksi transaksi"
+            />
+          )}
+        </div>
+      </div>
+      <p className={`mt-2 inline-flex items-center gap-1 text-base font-bold num ${masuk ? 'text-stone-900 dark:text-zinc-50' : 'text-stone-500 dark:text-zinc-400'}`}>
+        {masuk ? <ArrowUp className="h-3.5 w-3.5 shrink-0" aria-hidden /> : <ArrowDown className="h-3.5 w-3.5 shrink-0" aria-hidden />}
+        {masuk ? '+' : '-'}{formatRupiah(item.jumlah)}
+      </p>
+      {item.catatan && <p className="mt-2 text-xs text-stone-500">{item.catatan}</p>}
+
+      {canEdit && editOpen && (
+        <KasFormDialog editItem={item} akunOptions={akunOptions} open={editOpen} onOpenChange={setEditOpen} />
+      )}
+    </div>
+  )
+}
 
 export function KasTable({ transaksiList, isOwner }: Props) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -107,12 +182,12 @@ export function KasTable({ transaksiList, isOwner }: Props) {
   return (
     <div className="space-y-3">
       {/* Masuk / Keluar — IKUT filter (saldo akun = kumulatif, tetap di page). */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="surface p-3.5">
+      <div className="surface grid grid-cols-2 divide-x divide-stone-100 dark:divide-border">
+        <div className="p-3.5">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-stone-400 mb-1.5">Masuk</p>
           <p className="text-xl font-bold num tabular-nums text-stone-900 dark:text-zinc-50">{formatCompact(totalMasuk)}</p>
         </div>
-        <div className="surface p-3.5">
+        <div className="p-3.5">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-stone-400 mb-1.5">Keluar</p>
           <p className="text-xl font-bold num tabular-nums text-stone-900 dark:text-zinc-50">{formatCompact(totalKeluar)}</p>
         </div>
@@ -207,66 +282,17 @@ export function KasTable({ transaksiList, isOwner }: Props) {
         </table>
       </div>
 
-      {/* Mobile */}
+      {/* Mobile — aksi ditampung di kebab ⋯ (sama spt Pembelian) */}
       <div className="md:hidden space-y-2">
         {filtered.map((item) => (
-          <div key={item.id} className="surface p-4">
-            <div className="flex items-start justify-between gap-2 mb-2">
-              <div>
-                <p className="font-medium text-stone-900">{kategoriLabels[item.kategori]}</p>
-                <p className="text-xs text-stone-500 mt-0.5">{formatTanggal(item.tanggal)} · {item.akun?.nama ?? item.akunId}</p>
-              </div>
-              <ArahIndicator arah={item.arah} className="shrink-0" />
-            </div>
-            <p className={`text-base font-bold num inline-flex items-center gap-1 ${item.arah === 'masuk' ? 'text-stone-900 dark:text-zinc-50' : 'text-stone-500 dark:text-zinc-400'}`}>
-              {item.arah === 'masuk' ? <ArrowUp className="h-3.5 w-3.5 shrink-0" aria-hidden /> : <ArrowDown className="h-3.5 w-3.5 shrink-0" aria-hidden />}
-              {item.arah === 'masuk' ? '+' : '-'}{formatRupiah(item.jumlah)}
-            </p>
-            {item.catatan && <p className="text-xs text-stone-500 mt-2">{item.catatan}</p>}
-            {(!item.refTabel || isOwner) && (
-              <div className="flex items-center gap-1 mt-2 pt-2 border-t border-stone-100">
-                {!item.refTabel && (
-                  <KasFormDialog editItem={item} akunOptions={akunOptions}>
-                    <button
-                      type="button"
-                      className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium text-stone-600 dark:text-zinc-300 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors"
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                      Edit
-                    </button>
-                  </KasFormDialog>
-                )}
-                {isOwner && (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="sm" className="ml-auto text-destructive hover:text-destructive hover:bg-destructive/10 gap-1.5">
-                        <Trash2 className="h-3.5 w-3.5" />
-                        Hapus
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Hapus transaksi?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Transaksi {kategoriLabels[item.kategori]} pada {formatTanggal(item.tanggal)} akan dihapus.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Batal</AlertDialogCancel>
-                        <AlertDialogAction
-                          variant="destructive"
-                          onClick={() => handleDelete(item.id)}
-                          disabled={deletingId === item.id}
-                        >
-                          {deletingId === item.id ? 'Menghapus...' : 'Hapus'}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                )}
-              </div>
-            )}
-          </div>
+          <KasCard
+            key={item.id}
+            item={item}
+            isOwner={isOwner}
+            akunOptions={akunOptions}
+            onDelete={handleDelete}
+            deleting={deletingId}
+          />
         ))}
       </div>
     </div>

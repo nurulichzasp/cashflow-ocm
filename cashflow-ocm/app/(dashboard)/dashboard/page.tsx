@@ -151,7 +151,7 @@ export default async function DashboardPage() {
   const displayName = session.user.nickname || session.user.name || 'OCM'
 
   return (
-    <div className="space-y-5 pb-2 pt-1 md:pt-0">
+    <div className="space-y-4 pb-2 pt-1 md:pt-0">
       {/* A. Sapaan + tanggal WIB (app-bar logo/avatar sudah di ScrollShell) */}
       <div className="px-0.5">
         <h1 className="text-[1.35rem] font-bold leading-tight tracking-tight text-stone-900 dark:text-zinc-50">

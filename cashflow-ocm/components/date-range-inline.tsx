@@ -85,7 +85,7 @@ export function DateRangeInline({
           type="button"
           onClick={() => onChange('', '')}
           aria-label="Hapus rentang tanggal"
-          className="shrink-0 rounded-md p-1 text-stone-400 transition-colors hover:text-red-500"
+          className="shrink-0 rounded-md p-1 text-stone-400 transition-colors hover:text-foreground"
         >
           <X className="h-3.5 w-3.5" />
         </button>

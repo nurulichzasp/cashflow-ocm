@@ -449,18 +449,10 @@ export function PembelianTable({ pembelianList, canEdit, canDelete, peronOptions
           )
         })}
 
-        {/* Mobile total */}
-        <div className="rounded-xl border-2 border-stone-300 bg-stone-100 p-4">
+        {/* Mobile total — hanya nilai yg belum tampil di hero atas (Total Jual, Keuntungan) */}
+        <div className="surface p-4">
           <p className="text-xs font-semibold uppercase text-stone-500 mb-2">Total ({filtered.length} tiket)</p>
           <div className="grid grid-cols-2 gap-2 text-sm">
-            <div>
-              <p className="text-xs text-stone-400">Tonase</p>
-              <p className="font-semibold num">{totalTonase.toLocaleString('id-ID')} kg</p>
-            </div>
-            <div>
-              <p className="text-xs text-stone-400">Total Beli</p>
-              <p className="font-semibold num">{formatRupiah(totalBeli)}</p>
-            </div>
             <div>
               <p className="text-xs text-stone-400">Total Jual</p>
               <p className="font-semibold num">{formatRupiah(totalJual)}</p>

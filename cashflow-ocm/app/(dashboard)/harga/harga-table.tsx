@@ -19,6 +19,7 @@ import { deleteHargaAcuan } from './actions'
 import { formatRupiah, formatTanggal } from '@/lib/format'
 import { Trash2, DollarSign } from 'lucide-react'
 import { DateRangeFilter } from '@/components/date-range-filter'
+import { RowActionMenu } from '@/components/ui/row-action-menu'
 import type { HargaAcuan } from '@/lib/db/schema'
 
 interface Props {
@@ -166,31 +167,26 @@ export function HargaTable({ hargaList, isOwner }: Props) {
                   <p className="text-xs text-stone-500 mt-1">{formatTanggal(harga.tanggalBerlaku)}</p>
                 </div>
                 {isOwner && (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon" aria-label="Hapus" className="tap-pad h-8 w-8 text-stone-400 hover:text-destructive hover:bg-destructive/10">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Hapus Harga Acuan?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Harga {harga.produk} pada {formatTanggal(harga.tanggalBerlaku)} akan dihapus.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Batal</AlertDialogCancel>
-                        <AlertDialogAction
-                          variant="destructive"
-                          onClick={() => handleDelete(harga.id)}
-                          disabled={deletingId === harga.id}
-                        >
-                          {deletingId === harga.id ? 'Menghapus...' : 'Hapus'}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                  <RowActionMenu
+                    variant="sheet"
+                    title={harga.produk}
+                    subtitle={formatTanggal(harga.tanggalBerlaku)}
+                    triggerLabel="Aksi harga"
+                    actions={[{
+                      key: 'delete',
+                      label: 'Hapus',
+                      icon: Trash2,
+                      destructive: true,
+                      onSelect: () => handleDelete(harga.id),
+                      confirm: {
+                        title: 'Hapus Harga Acuan?',
+                        description: `Harga ${harga.produk} pada ${formatTanggal(harga.tanggalBerlaku)} akan dihapus.`,
+                        confirmLabel: 'Hapus',
+                        busyLabel: 'Menghapus…',
+                        busy: deletingId === harga.id,
+                      },
+                    }]}
+                  />
                 )}
               </div>
               <div className="grid grid-cols-2 gap-3 text-sm">

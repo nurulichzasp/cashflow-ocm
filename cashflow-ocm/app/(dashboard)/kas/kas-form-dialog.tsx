@@ -22,14 +22,18 @@ type KasKategori =
 type AkunOption = { id: string; nama: string; tipe: string }
 
 interface Props {
-  children: React.ReactNode
+  children?: React.ReactNode
   akunOptions: AkunOption[]
   editItem?: TransaksiKas
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
 
-export function KasFormDialog({ children, akunOptions, editItem }: Props) {
+export function KasFormDialog({ children, akunOptions, editItem, open: openProp, onOpenChange }: Props) {
   const isEdit = !!editItem
-  const [open, setOpen] = useState(false)
+  const [openInternal, setOpenInternal] = useState(false)
+  const open = openProp ?? openInternal
+  const setOpen = (v: boolean) => { if (onOpenChange) onOpenChange(v); else setOpenInternal(v) }
   const [loading, setLoading] = useState(false)
   const [idemKey, setIdemKey] = useState(() => crypto.randomUUID())
   const [akunId, setAkunId] = useState(editItem?.akunId ?? akunOptions?.[0]?.id ?? '')
@@ -80,7 +84,7 @@ export function KasFormDialog({ children, akunOptions, editItem }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => { setOpen(v); resetForm() }}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>{isEdit ? 'Edit Transaksi Kas' : 'Tambah Transaksi Kas'}</DialogTitle>

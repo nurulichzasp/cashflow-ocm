@@ -26,11 +26,13 @@ function activeVal(row: MergedRow, pick?: 'rekap' | 'rekap2'): SideVal | null {
   return pick === 'rekap' ? row.rekap : row.rekap2
 }
 
-type Props = { children: React.ReactNode; editItem?: Penjualan }
+type Props = { children?: React.ReactNode; editItem?: Penjualan; open?: boolean; onOpenChange?: (open: boolean) => void }
 
-export function PenjualanFormDialog({ children, editItem }: Props) {
+export function PenjualanFormDialog({ children, editItem, open: openProp, onOpenChange }: Props) {
   const isEdit = !!editItem
-  const [open, setOpen] = useState(false)
+  const [openInternal, setOpenInternal] = useState(false)
+  const open = openProp ?? openInternal
+  const setOpen = (v: boolean) => { if (onOpenChange) onOpenChange(v); else setOpenInternal(v) }
   const [loading, setLoading] = useState(false)
   const [idemKey, setIdemKey] = useState(() => crypto.randomUUID())
   const [parsing, setParsing] = useState(false)
@@ -170,7 +172,7 @@ export function PenjualanFormDialog({ children, editItem }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => { setOpen(v); resetForm() }}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+      {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{isEdit ? 'Edit Penjualan' : 'Tambah Penjualan'}</DialogTitle>

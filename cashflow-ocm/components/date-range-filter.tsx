@@ -94,7 +94,7 @@ export function DateRangeFilter({ dari, sampai, onChange }: Props) {
           <button
             type="button"
             onClick={handleClear}
-            className="inline-flex items-center gap-0.5 text-[11px] font-medium text-stone-400 hover:text-red-500 transition-colors"
+            className="inline-flex items-center gap-0.5 text-[11px] font-medium text-stone-400 hover:text-foreground transition-colors"
           >
             <X className="h-3 w-3" /> Reset
           </button>

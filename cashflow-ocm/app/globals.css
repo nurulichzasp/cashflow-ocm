@@ -582,6 +582,13 @@ html.dark [class~="hover:bg-orange-700"]:hover       { background-color: #c8654a
   .pill-ok   { background-color: var(--ok-bg);   color: var(--ok-fg); }
   .pill-warn { background-color: var(--warn-bg); color: var(--warn-fg); }
   .pill-crit { background-color: var(--crit-bg); color: var(--crit-fg); }
+
+  /* Kontainer "zona berbahaya"/destruktif (danger zone, izin hapus) — wash crit
+     lembut + hairline crit. Token-based → adaptif tema, ganti raw red-50/red-200. */
+  .danger-zone {
+    background-color: color-mix(in oklab, var(--crit-bg) 55%, transparent);
+    border-color: color-mix(in oklab, var(--crit-fg) 22%, transparent);
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
