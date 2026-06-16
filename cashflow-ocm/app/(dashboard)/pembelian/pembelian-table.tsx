@@ -392,7 +392,9 @@ export function PembelianTable({ pembelianList, canEdit, canDelete, peronOptions
       {/* Mobile cards — premium */}
       <div className="md:hidden space-y-2.5">
         {filtered.map((p) => {
-          const margin = p.totalBeli > 0 ? (p.keuntungan / p.totalBeli) * 100 : 0
+          // Margin tak bisa dihitung (totalBeli 0) → placeholder netral "—".
+          const canMargin = p.totalBeli > 0
+          const margin = canMargin ? (p.keuntungan / p.totalBeli) * 100 : 0
           return (
           <div key={p.id} className="rounded-2xl border border-black/[0.06] dark:border-white/[0.07] bg-white dark:bg-white/[0.025] p-4">
             {/* Header — satu kebab (⋯) di ujung kanan menampung semua aksi baris. */}
@@ -432,25 +434,9 @@ export function PembelianTable({ pembelianList, canEdit, canDelete, peronOptions
               <div className="text-right shrink-0">
                 <p className="text-[10px] uppercase tracking-widest text-stone-400 dark:text-zinc-500 font-medium">Margin</p>
                 {/* Margin positif = cue emerald hemat (satu nilai per kartu). */}
-                <p className={`mt-1 text-[15px] font-semibold num tabular-nums leading-none ${margin > 0 ? 'text-ok' : 'text-stone-900 dark:text-zinc-50'}`}>
-                  +{margin.toFixed(1)}%
+                <p className={`mt-1 text-[15px] font-semibold num tabular-nums leading-none ${canMargin && margin > 0 ? 'text-ok' : 'text-stone-900 dark:text-zinc-50'}`}>
+                  {canMargin ? `+${margin.toFixed(1)}%` : '—'}
                 </p>
-              </div>
-            </div>
-
-            {/* Sub-metrics */}
-            <div className="mt-3 pt-3 border-t border-black/[0.05] dark:border-white/[0.05] grid grid-cols-3 gap-3 text-[11px]">
-              <div className="min-w-0">
-                <p className="text-stone-400 dark:text-zinc-500 uppercase tracking-wider text-[10px]">Tonase</p>
-                <p className="mt-0.5 font-semibold text-stone-800 dark:text-zinc-200 num tabular-nums truncate">{p.tonase.toLocaleString('id-ID')} kg</p>
-              </div>
-              <div className="min-w-0">
-                <p className="text-stone-400 dark:text-zinc-500 uppercase tracking-wider text-[10px]">Harga</p>
-                <p className="mt-0.5 font-semibold text-stone-800 dark:text-zinc-200 num tabular-nums truncate">{p.hargaBeli.toLocaleString('id-ID')}</p>
-              </div>
-              <div className="min-w-0">
-                <p className="text-stone-400 dark:text-zinc-500 uppercase tracking-wider text-[10px]">Untung</p>
-                <p className="mt-0.5 font-semibold text-stone-800 dark:text-zinc-200 num tabular-nums truncate">{formatRupiah(p.keuntungan)}</p>
               </div>
             </div>
 
