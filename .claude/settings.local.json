@@ -18,7 +18,8 @@
       "Bash(vercel --version)",
       "Skill(yimpeccable)",
       "Bash(ipconfig getifaddr *)",
-      "mcp__45f49113-95e7-4c11-a764-40c4cf5fb869__list_deployments"
+      "mcp__45f49113-95e7-4c11-a764-40c4cf5fb869__list_deployments",
+      "mcp__45f49113-95e7-4c11-a764-40c4cf5fb869__get_deployment"
     ]
   }
 }
