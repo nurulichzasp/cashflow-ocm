@@ -369,7 +369,7 @@ function PenjualanCard({ item, isOwner, updatingId, deletingId, onToggleLunas, o
   ]
 
   return (
-    <div className="rounded-2xl border border-black/[0.06] dark:border-white/[0.07] bg-white dark:bg-white/[0.025] p-4">
+    <div className="surface p-4">
       {/* Header: invoice + status */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
