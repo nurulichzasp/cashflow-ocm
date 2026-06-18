@@ -525,6 +525,14 @@ html.dark [class~="hover:bg-orange-700"]:hover       { background-color: #c8654a
     100% { transform: scale(1);   opacity: 1; }
   }
 
+  /* ── Skala tipografi (konvensi) ──────────────────────────────────────────
+     Ukuran STANDAR → utilitas BERNAMA (punya line-height bawaan):
+       text-xs(12) · text-sm(14) · text-base(16) · text-lg(18) · text-xl(20)…
+     JANGAN tulis text-[12px]/[14px]/[16px] — pakai text-xs/sm/base.
+     Ukuran MIKRO antar-langkah (tak ada padanan bernama) boleh arbitrary:
+       text-[9px]/[10px]/[11px]/[13px]/[15px] — label padat mobile.
+     Angka HERO unik boleh arbitrary: text-[22px]/[26px]/[28px]/[34px]. ── */
+
   /* Tabular numbers — wajib aktif untuk semua angka keuangan */
   .num {
     font-variant-numeric: tabular-nums;

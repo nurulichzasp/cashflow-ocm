@@ -83,7 +83,7 @@ export default async function PeronHealthDetailPage({ params }: { params: Promis
       {/* Riwayat tindak lanjut */}
       {detail.followups.length > 0 && (
         <section className="space-y-2">
-          <p className="px-1 text-[12px] font-semibold uppercase tracking-widest text-stone-400 dark:text-zinc-500">Riwayat Tindak Lanjut</p>
+          <p className="px-1 text-xs font-semibold uppercase tracking-widest text-stone-400 dark:text-zinc-500">Riwayat Tindak Lanjut</p>
           <div className="surface divide-y divide-stone-100 dark:divide-white/[0.06]">
             {detail.followups.map((f) => (
               <div key={f.id} className="p-4">
@@ -92,9 +92,9 @@ export default async function PeronHealthDetailPage({ params }: { params: Promis
                     {f.createdAt ? formatTanggal(new Date(f.createdAt)) : ''}
                     {f.contacted ? ' · dihubungi' : ' · belum dihubungi'}
                   </span>
-                  {f.outcome && <span className="text-[12px] text-stone-400 dark:text-zinc-500">{OUTCOME_LABEL[f.outcome]}</span>}
+                  {f.outcome && <span className="text-xs text-stone-400 dark:text-zinc-500">{OUTCOME_LABEL[f.outcome]}</span>}
                 </div>
-                {f.reason && <p className="mt-0.5 text-[12px] text-stone-500 dark:text-zinc-400">{REASON_LABEL[f.reason]}</p>}
+                {f.reason && <p className="mt-0.5 text-xs text-stone-500 dark:text-zinc-400">{REASON_LABEL[f.reason]}</p>}
                 {f.note && <p className="mt-1 text-[13px] text-stone-600 dark:text-zinc-300">{f.note}</p>}
               </div>
             ))}

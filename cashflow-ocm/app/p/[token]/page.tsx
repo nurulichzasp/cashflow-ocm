@@ -99,7 +99,7 @@ export default async function PortalPeronPage({
         {/* Harga acuan hari ini */}
         {data.hargaTerkini.length > 0 && (
           <section className="mt-3 rounded-2xl bg-[#FFFFFF] p-4 ring-1 ring-zinc-100">
-            <p className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-zinc-400">Harga acuan terkini</p>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">Harga acuan terkini</p>
             <div className="flex flex-wrap gap-x-5 gap-y-1.5">
               {data.hargaTerkini.map((h) => (
                 <span key={h.produk} className="text-[13px] text-zinc-700">
@@ -120,7 +120,7 @@ export default async function PortalPeronPage({
               <div key={i} className={`flex items-center justify-between gap-3 px-4 py-3 ${i > 0 ? 'border-t border-zinc-100' : ''}`}>
                 <div className="min-w-0">
                   <p className="text-[13px] font-medium text-zinc-900">{formatTanggal(s.tanggal)}</p>
-                  <p className="text-[12px] text-zinc-500">
+                  <p className="text-xs text-zinc-500">
                     {KATEGORI_LABEL[s.kategori] ?? s.kategori} · {(s.tonase ?? 0).toLocaleString('id-ID')} kg · Rp {(s.hargaBeli ?? 0).toLocaleString('id-ID')}/kg
                   </p>
                 </div>
@@ -167,12 +167,12 @@ function Row({ label, value, last }: { label: string; value: string; last?: bool
   return (
     <div className={`flex items-center justify-between py-2 ${last ? '' : 'border-b border-zinc-100'}`}>
       <span className="text-[13px] text-zinc-500">{label}</span>
-      <span className="text-[14px] font-semibold tabular-nums text-zinc-900">{value}</span>
+      <span className="text-sm font-semibold tabular-nums text-zinc-900">{value}</span>
     </div>
   )
 }
 function SectionTitle({ children }: { children: React.ReactNode }) {
-  return <p className="mb-2 mt-5 px-1 text-[12px] font-semibold uppercase tracking-widest text-zinc-400">{children}</p>
+  return <p className="mb-2 mt-5 px-1 text-xs font-semibold uppercase tracking-widest text-zinc-400">{children}</p>
 }
 function Empty({ children }: { children: React.ReactNode }) {
   return <div className="rounded-2xl bg-[#FFFFFF] px-4 py-6 text-center text-[13px] text-zinc-400 ring-1 ring-zinc-100">{children}</div>

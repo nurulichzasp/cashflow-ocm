@@ -141,7 +141,7 @@ export function RowActionMenu({
               <SheetHeader className="gap-0.5 pb-1 text-left">
                 {title && <SheetTitle className="truncate">{title}</SheetTitle>}
                 {subtitle && (
-                  <p className="truncate text-[12px] text-stone-500 dark:text-zinc-500">{subtitle}</p>
+                  <p className="truncate text-xs text-stone-500 dark:text-zinc-500">{subtitle}</p>
                 )}
               </SheetHeader>
             )}

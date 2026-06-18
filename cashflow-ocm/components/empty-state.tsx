@@ -35,9 +35,9 @@ export function EmptyState({
           <Icon className="h-6 w-6 text-stone-400 dark:text-zinc-500" strokeWidth={1.5} />
         </div>
       </div>
-      <p className="text-[14px] font-semibold text-stone-800 dark:text-zinc-200 tracking-tight">{title}</p>
+      <p className="text-sm font-semibold text-stone-800 dark:text-zinc-200 tracking-tight">{title}</p>
       {description && (
-        <p className="mt-1 text-[12px] text-stone-500 dark:text-zinc-500 max-w-[28ch] leading-relaxed">{description}</p>
+        <p className="mt-1 text-xs text-stone-500 dark:text-zinc-500 max-w-[28ch] leading-relaxed">{description}</p>
       )}
       {action && (
         <div className="mt-5 flex justify-center w-full">{action}</div>

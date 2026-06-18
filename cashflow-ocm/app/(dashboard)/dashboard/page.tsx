@@ -243,7 +243,7 @@ function TotalKasHero({ total, delta7 }: { total: number; delta7: number }) {
       <p className="mt-2 num tabular-nums text-[2.6rem] font-bold leading-none tracking-[-0.03em]">
         {formatCompact(total)}
       </p>
-      <div className="mt-3 flex items-center gap-1.5 text-[12px]">
+      <div className="mt-3 flex items-center gap-1.5 text-xs">
         {up && (
           <>
             <span className="inline-flex items-center gap-0.5 font-semibold num tabular-nums" style={{ color: '#35C892' }}>

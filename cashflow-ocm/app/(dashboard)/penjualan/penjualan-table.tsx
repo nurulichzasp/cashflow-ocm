@@ -239,7 +239,7 @@ function PenjualanRow({ item, isOwner, updatingId, deletingId, onToggleLunas, on
           <span className="text-stone-400">—</span>
         ) : (
           <div className="leading-tight">
-            <p className="font-mono text-[12px] truncate">{invoices[0]}</p>
+            <p className="font-mono text-xs truncate">{invoices[0]}</p>
             {invoices.length > 1 && (
               <>
                 <button
@@ -373,7 +373,7 @@ function PenjualanCard({ item, isOwner, updatingId, deletingId, onToggleLunas, o
       {/* Header: invoice + status */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-[14px] text-stone-900 dark:text-zinc-100 leading-snug truncate">
+          <p className="font-semibold text-sm text-stone-900 dark:text-zinc-100 leading-snug truncate">
             {primaryInvoice}
           </p>
           <div className="mt-1 flex items-center gap-2 text-[11px] text-stone-500 dark:text-zinc-500">
@@ -407,7 +407,7 @@ function PenjualanCard({ item, isOwner, updatingId, deletingId, onToggleLunas, o
 
       {/* Expanded extra invoices */}
       {expanded && moreInvoices > 0 && (
-        <div className="mt-2 pl-0.5 text-[12px] font-mono text-stone-600 dark:text-zinc-400 space-y-0.5">
+        <div className="mt-2 pl-0.5 text-xs font-mono text-stone-600 dark:text-zinc-400 space-y-0.5">
           {invoices.slice(1).map((inv, i) => (
             <p key={i} className="truncate">{inv}</p>
           ))}
@@ -456,7 +456,7 @@ function PenjualanCard({ item, isOwner, updatingId, deletingId, onToggleLunas, o
       {catatan && expanded && (
         <div className="mt-3 pt-3 border-t border-black/[0.05] dark:border-white/[0.05]">
           <p className="text-[11px] uppercase tracking-widest text-stone-400 dark:text-zinc-500 font-medium mb-1">Catatan</p>
-          <p className="text-[12px] text-stone-600 dark:text-zinc-400 whitespace-pre-line leading-relaxed">
+          <p className="text-xs text-stone-600 dark:text-zinc-400 whitespace-pre-line leading-relaxed">
             {catatan}
           </p>
         </div>

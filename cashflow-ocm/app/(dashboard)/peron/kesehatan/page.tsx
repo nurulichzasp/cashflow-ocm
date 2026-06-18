@@ -43,7 +43,7 @@ function HealthCard({ item }: { item: Item }) {
           <p className="mt-0.5 text-[13px] text-stone-400 dark:text-zinc-500">Belum cukup riwayat</p>
         )}
         {(item.status === 'kritis' || item.status === 'perhatian') && (
-          <p className="mt-0.5 text-[12px] text-stone-400 dark:text-zinc-500">
+          <p className="mt-0.5 text-xs text-stone-400 dark:text-zinc-500">
             {item.daysSinceLast >= 1 && item.daysSinceLast < 9999 ? `${item.daysSinceLast} hari tanpa setor` : ''}
             {item.seasonVerdict === 'lari' ? ' · kemungkinan lari' : item.seasonVerdict === 'musim' ? ' · turun musiman' : ''}
           </p>
@@ -99,7 +99,7 @@ export default async function KesehatanPeronPage() {
       {/* Perlu Ditindaklanjuti */}
       {perluTindak.length > 0 ? (
         <section className="space-y-2.5">
-          <p className="px-1 text-[12px] font-semibold uppercase tracking-widest text-stone-400 dark:text-zinc-500">
+          <p className="px-1 text-xs font-semibold uppercase tracking-widest text-stone-400 dark:text-zinc-500">
             Perlu Ditindaklanjuti
           </p>
           {perluTindak.map((i) => <HealthCard key={i.peronId} item={i} />)}

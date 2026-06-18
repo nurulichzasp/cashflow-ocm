@@ -312,7 +312,7 @@ export function CommandPalette({
                             {it.title}
                           </span>
                           {it.sub && (
-                            <span className="block truncate text-[12px] tabular-nums text-stone-400 dark:text-zinc-500">{it.sub}</span>
+                            <span className="block truncate text-xs tabular-nums text-stone-400 dark:text-zinc-500">{it.sub}</span>
                           )}
                         </span>
                         {it.current && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-stone-900 dark:bg-white" />}

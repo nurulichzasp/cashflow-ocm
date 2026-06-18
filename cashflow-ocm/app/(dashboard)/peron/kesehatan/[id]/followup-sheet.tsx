@@ -95,7 +95,7 @@ export function FollowupSheet({ peronId, status }: { peronId: string; status: st
               </SelectContent>
             </Select>
             {outcome === 'hilang' && (
-              <p className="text-[12px] text-stone-400 dark:text-zinc-500">Peron akan diarsipkan & berhenti memicu alarm.</p>
+              <p className="text-xs text-stone-400 dark:text-zinc-500">Peron akan diarsipkan & berhenti memicu alarm.</p>
             )}
           </div>
 
