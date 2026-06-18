@@ -57,6 +57,7 @@ import {
   Wallet2,
   SlidersHorizontal,
   AtSign,
+  Lock,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -140,6 +141,15 @@ interface SettingsClientProps {
 export function SettingsClient({ currentUser, initialUsers, section, initialCompany, initialTax }: SettingsClientProps) {
   const router = useRouter()
   const isOwner = currentUser.role === 'owner'
+
+  // Non-owner: form owner-only tampil READ-ONLY (inert → tetap terbaca, tak bisa diubah)
+  // + pesan; tombol simpan disembunyikan. Pembatasan tulis tetap (server action tetap menolak).
+  const ownerOnlyNotice = !isOwner ? (
+    <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-[13px] text-muted-foreground">
+      <Lock className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+      <span>Hanya <strong className="font-medium text-foreground">pemilik</strong> yang dapat mengubah pengaturan ini. Data di bawah hanya untuk dilihat.</span>
+    </div>
+  ) : null
 
   // Tab state (dipakai hanya saat mode standalone tanpa `section`)
   const [activeTab, setActiveTab] = useState<SettingsSection>('company')
@@ -507,7 +517,8 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
             </CardHeader>
             )}
             <CardContent>
-              <form onSubmit={handleSaveCompany} className="space-y-4">
+              {ownerOnlyNotice}
+              <form onSubmit={handleSaveCompany} inert={!isOwner} className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-1.5">
                     <Label htmlFor="companyName">Nama Perusahaan</Label>
@@ -577,11 +588,13 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
                   </div>
                 </div>
 
+                {isOwner && (
                 <div className="pt-3">
-                  <Button type="submit" disabled={!isOwner} className="cursor-pointer cursor-pointer">
+                  <Button type="submit" className="cursor-pointer">
                     Simpan Profil Perusahaan
                   </Button>
                 </div>
+                )}
               </form>
             </CardContent>
           </Card>
@@ -1012,6 +1025,7 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
             </CardHeader>
             )}
             <CardContent>
+              {ownerOnlyNotice}
               <form
                 onSubmit={async (e) => {
                   e.preventDefault()
@@ -1043,6 +1057,7 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
                   }
                 }}
                 noValidate
+                inert={!isOwner}
                 className="space-y-4"
               >
                 <div className="grid gap-4 md:grid-cols-2">
@@ -1071,11 +1086,13 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
                     <p className="text-[11px] text-muted-foreground">Modal awal pemilik untuk laporan neraca.</p>
                   </div>
                 </div>
+                {isOwner && (
                 <div className="pt-3">
-                  <Button type="submit" disabled={!isOwner} className="cursor-pointer cursor-pointer">
+                  <Button type="submit" className="cursor-pointer">
                     Simpan Konfigurasi Pajak
                   </Button>
                 </div>
+                )}
               </form>
             </CardContent>
           </Card>
