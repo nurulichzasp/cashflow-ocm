@@ -237,7 +237,7 @@ export function PembelianTable({ pembelianList, canEdit, canDelete, peronOptions
       <div className="surface px-5 py-4 sm:px-6 sm:py-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400 dark:text-[#6B7280]">Total Beli</p>
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-stone-400">Total Beli</p>
             <p className="mt-1.5 text-[2.25rem] sm:text-[2.75rem] font-bold num tabular-nums tracking-[-0.03em] leading-none text-stone-900 dark:text-zinc-50">
               {formatCompact(totalBeli)}
             </p>

@@ -101,9 +101,8 @@
      SATU garis border saja (gaya field TGL). Adaptif tema lewat var(--brand). */
   --focus-ring: color-mix(in oklab, var(--brand) 70%, #6B7280);
 
-  /* Semantic financial tokens (mirror .text-masuk/.text-keluar/.text-warning) */
-  --masuk: #16A34A;
-  --keluar: #DC2626;
+  /* Semantic financial token — hanya --warning yang dipakai (glow/toast/dashboard).
+     Arah kas (.text-masuk/.text-keluar) kini alias --ok-fg/--crit-fg → lulus AA & adaptif tema. */
   --warning: #D97706;
 
   /* ── Token semantik fungsional — dipakai HEMAT, tiap warna punya makna. ──
@@ -566,9 +565,10 @@ html.dark [class~="hover:bg-orange-700"]:hover       { background-color: #c8654a
     .press-card:active { transform: none; box-shadow: none; }
   }
 
-  /* Semantic financial colors */
-  .text-masuk   { color: #16A34A; }
-  .text-keluar  { color: #DC2626; }
+  /* Semantic financial colors — arah kas pakai token --ok/--crit (lulus AA, adaptif tema).
+     Tetap hijau/merah, tapi versi teredam sekeluarga dgn StatusPill/dots (bukan saturasi penuh). */
+  .text-masuk   { color: var(--ok-fg); }
+  .text-keluar  { color: var(--crit-fg); }
   .text-warning { color: #D97706; }
   .bg-masuk     { background-color: #F0FDF4; }
   .bg-keluar    { background-color: #FEF2F2; }

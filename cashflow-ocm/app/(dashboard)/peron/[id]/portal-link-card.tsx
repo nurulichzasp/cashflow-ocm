@@ -77,7 +77,7 @@ export function PortalLinkCard({
         {!access || !active ? (
           <div className="space-y-2">
             {access && !active && (
-              <p className="text-xs text-[#B45309] dark:text-[#FBBF24]">Link saat ini nonaktif.</p>
+              <p className="text-xs text-warn">Link saat ini nonaktif.</p>
             )}
             <Button size="sm" onClick={generate} disabled={pending} className="gap-1.5">
               <Link2 className="h-3.5 w-3.5" /> {pending ? 'Membuat…' : access ? 'Aktifkan Link Baru' : 'Buat Link Portal'}
@@ -103,7 +103,7 @@ export function PortalLinkCard({
               <Button size="sm" variant="outline" onClick={generate} disabled={pending} className="gap-1.5">
                 <RefreshCw className="h-3.5 w-3.5" /> Ganti
               </Button>
-              <Button size="sm" variant="ghost" onClick={revoke} disabled={pending} className="gap-1.5 text-[#DC2626] dark:text-[#F87171]">
+              <Button size="sm" variant="ghost" onClick={revoke} disabled={pending} className="gap-1.5 text-crit">
                 <Power className="h-3.5 w-3.5" /> Nonaktifkan
               </Button>
             </div>

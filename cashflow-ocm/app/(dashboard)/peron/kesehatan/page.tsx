@@ -83,11 +83,11 @@ export default async function KesehatanPeronPage() {
       {/* Ringkasan badge */}
       <div className="flex gap-2.5">
         <div className="surface flex-1 px-3.5 py-3">
-          <p className="text-[22px] font-bold tabular-nums text-[#DC2626] dark:text-[#F87171]">{kritis.length}</p>
+          <p className="text-[22px] font-bold tabular-nums text-crit">{kritis.length}</p>
           <p className="text-[11px] font-medium uppercase tracking-wide text-stone-400 dark:text-zinc-500">Kritis</p>
         </div>
         <div className="surface flex-1 px-3.5 py-3">
-          <p className="text-[22px] font-bold tabular-nums text-[#B45309] dark:text-[#FBBF24]">{perhatian.length}</p>
+          <p className="text-[22px] font-bold tabular-nums text-warn">{perhatian.length}</p>
           <p className="text-[11px] font-medium uppercase tracking-wide text-stone-400 dark:text-zinc-500">Perhatian</p>
         </div>
         <div className="surface flex-1 px-3.5 py-3">
