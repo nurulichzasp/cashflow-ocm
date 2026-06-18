@@ -99,7 +99,7 @@ export function RowActionMenu({
   const stop = (e: React.MouseEvent) => e.stopPropagation()
 
   const triggerCls = cn(
-    'tap-pad inline-flex h-8 w-8 items-center justify-center rounded-md text-stone-400 hover:text-stone-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-stone-100 dark:hover:bg-white/[0.06] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50 aria-expanded:bg-stone-100 dark:aria-expanded:bg-white/[0.06] data-[popup-open]:bg-stone-100 dark:data-[popup-open]:bg-white/[0.06]',
+    'tap-pad inline-flex h-8 w-8 items-center justify-center rounded-md text-stone-400 hover:text-stone-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-stone-100 dark:hover:bg-white/[0.06] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand/50 aria-expanded:bg-stone-100 dark:aria-expanded:bg-white/[0.06] data-[popup-open]:bg-stone-100 dark:data-[popup-open]:bg-white/[0.06]',
     triggerClassName,
   )
 

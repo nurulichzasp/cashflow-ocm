@@ -157,7 +157,7 @@ html.dark {
      terang + bg tint transparan tipis agar terbaca di charcoal, tetap teredam. */
   --ok-fg: #35C892;   --ok-bg: rgba(53,200,146,0.15);
   --warn-fg: #FBBF24; --warn-bg: rgba(245,158,11,0.16);
-  --crit-fg: #E68A8A; --crit-bg: rgba(230,138,138,0.16);
+  --crit-fg: #E68A8A; --crit-bg: rgba(230,138,138,0.12); /* alpha 0.16→0.12: pill-crit dark 4.43→4.77:1 lulus AA, warna teks crit tak berubah */
   --secondary: #28282B;
   --secondary-foreground: #F3F4F6;
   --muted: #232325;
@@ -579,10 +579,6 @@ html.dark [class~="hover:bg-orange-700"]:hover       { background-color: #c8654a
      Tetap hijau/merah, tapi versi teredam sekeluarga dgn StatusPill/dots (bukan saturasi penuh). */
   .text-masuk   { color: var(--ok-fg); }
   .text-keluar  { color: var(--crit-fg); }
-  .text-warning { color: #D97706; }
-  .bg-masuk     { background-color: #F0FDF4; }
-  .bg-keluar    { background-color: #FEF2F2; }
-  .bg-warning   { background-color: #FFFBEB; }
 
   /* ── Teks & pill semantik fungsional (ok/warn/crit) — token di :root/html.dark.
      Nama class custom → tak tersentuh catch-all neutralizer. Pill lembut. ── */

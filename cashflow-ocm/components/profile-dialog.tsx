@@ -219,7 +219,7 @@ export function ProfileDialog({ user, children }: ProfileDialogProps) {
               {showPhotoOptions && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowPhotoOptions(false)} />
-                  <div className="absolute top-22 z-50 bg-white dark:bg-[#28282B] border border-stone-200 dark:border-stone-800 rounded-lg shadow-lg py-1 w-36 overflow-hidden">
+                  <div className="absolute top-22 z-50 bg-popover border border-stone-200 dark:border-stone-800 rounded-lg shadow-lg py-1 w-36 overflow-hidden">
                     {image && (
                       <button
                         type="button"
