@@ -15,7 +15,7 @@ export function WelcomeScreen() {
 
   return (
     <div
-      className="relative flex min-h-[100dvh] flex-col items-center justify-between overflow-hidden bg-[#0A0A0A] px-6 text-center"
+      className="relative flex min-h-[100dvh] flex-col items-center justify-between overflow-hidden bg-[var(--brand-screen-bg)] px-6 text-center"
       style={{
         paddingTop: 'calc(env(safe-area-inset-top) + 2.5rem)',
         paddingBottom: 'calc(env(safe-area-inset-bottom) + 2rem)',

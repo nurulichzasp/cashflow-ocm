@@ -101,6 +101,13 @@
      SATU garis border saja (gaya field TGL). Adaptif tema lewat var(--brand). */
   --focus-ring: color-mix(in oklab, var(--brand) 70%, #6B7280);
 
+  /* Brand screens (login/welcome/splash/offline) — SELALU gelap, theme-independent.
+     Token agar tak ada hex mentah; nilai sama di light & dark (layar imersif paksa-gelap).
+     CATATAN: jangan pakai .text-warn dkk di sini — token itu ikut tema html, akan gagal
+     kontras di light mode karena latar layar ini selalu #0A0A0A. */
+  --brand-screen-bg: #0A0A0A;
+  --brand-screen-warn: #FBBF24;
+
   /* Semantic financial token — hanya --warning yang dipakai (glow/toast/dashboard).
      Arah kas (.text-masuk/.text-keluar) kini alias --ok-fg/--crit-fg → lulus AA & adaptif tema. */
   --warning: #D97706;

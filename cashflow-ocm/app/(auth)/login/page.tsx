@@ -31,7 +31,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="relative min-h-[100dvh] flex items-center justify-center p-6 bg-[#0A0A0A] overflow-hidden">
+    <div className="relative min-h-[100dvh] flex items-center justify-center p-6 bg-[var(--brand-screen-bg)] overflow-hidden">
       {/* Satu sumber cahaya netral dari atas — kedalaman tanpa warna dekoratif
           (selaras palet netral; menggantikan blur indigo/emerald yang terlalu samar). */}
       <div
@@ -123,7 +123,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-11 rounded-xl font-semibold text-sm tracking-tight transition-all duration-200 flex items-center justify-center gap-2.5 bg-[var(--brand-solid)] text-white hover:brightness-110 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60 shadow-[0_8px_28px_rgba(14,122,87,0.45)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0A0A]"
+              className="w-full h-11 rounded-xl font-semibold text-sm tracking-tight transition-all duration-200 flex items-center justify-center gap-2.5 bg-[var(--brand-solid)] text-white hover:brightness-110 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60 shadow-[0_8px_28px_rgba(14,122,87,0.45)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--brand-screen-bg)]"
             >
               {loading ? (
                 <>
