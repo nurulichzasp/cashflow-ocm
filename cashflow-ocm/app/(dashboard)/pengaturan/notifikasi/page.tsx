@@ -7,7 +7,11 @@ import { requireSettingsSession } from '../_components/require-session'
 export default async function NotifikasiPage() {
   await requireSettingsSession()
 
-  const telegramConfigured = !!(process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID)
+  // Penerima diutamakan dari TELEGRAM_CHAT_IDS (multi, dipakai app); fallback TELEGRAM_CHAT_ID lama.
+  const telegramConfigured = !!(
+    process.env.TELEGRAM_BOT_TOKEN &&
+    (process.env.TELEGRAM_CHAT_IDS || process.env.TELEGRAM_CHAT_ID)
+  )
 
   const events = [
     { icon: ShoppingCart, title: 'Pembelian Baru', desc: 'Tiket sawit masuk ke grup' },
@@ -50,8 +54,8 @@ export default async function NotifikasiPage() {
         {!telegramConfigured && (
           <p className="mt-3 rounded-lg bg-[var(--warn-bg)] px-3 py-2 text-xs text-[var(--warn-fg)]">
             Atur <code className="font-mono">TELEGRAM_BOT_TOKEN</code> dan{' '}
-            <code className="font-mono">TELEGRAM_CHAT_ID</code> pada environment server untuk
-            mengaktifkan notifikasi.
+            <code className="font-mono">TELEGRAM_CHAT_IDS</code> (beberapa penerima, dipisah koma)
+            pada environment server untuk mengaktifkan notifikasi.
           </p>
         )}
       </div>

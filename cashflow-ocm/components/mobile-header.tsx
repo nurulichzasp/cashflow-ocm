@@ -37,7 +37,7 @@ export function MobileHeader({ user }: { user?: HeaderUser }) {
         <button
           onClick={handleBack}
           aria-label="Kembali"
-          className="pointer-events-auto relative z-10 grid h-9 w-9 shrink-0 place-items-center rounded-full border border-black/[0.06] bg-black/[0.04] backdrop-blur-md text-stone-700 transition-transform active:scale-95 dark:border-white/[0.10] dark:bg-white/[0.08] dark:text-zinc-100"
+          className="tap-pad pointer-events-auto relative z-10 grid h-9 w-9 shrink-0 place-items-center rounded-full border border-black/[0.06] bg-black/[0.04] backdrop-blur-md text-stone-700 transition-transform active:scale-95 dark:border-white/[0.10] dark:bg-white/[0.08] dark:text-zinc-100"
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
@@ -46,7 +46,7 @@ export function MobileHeader({ user }: { user?: HeaderUser }) {
         <Link
           href="/dashboard"
           aria-label="Beranda"
-          className="pointer-events-auto relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--brand-solid)] text-[11px] font-bold tracking-tight text-white shadow-sm transition-transform active:scale-95"
+          className="tap-pad pointer-events-auto relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--brand-solid)] text-[11px] font-bold tracking-tight text-white shadow-sm transition-transform active:scale-95"
         >
           OCM
         </Link>
@@ -59,9 +59,9 @@ export function MobileHeader({ user }: { user?: HeaderUser }) {
 
       {/* Avatar profil (kanan) — hanya di halaman normal; di full-screen kita di dalam profil/setting. */}
       {!fullscreen && (
-        <Link href="/profil" aria-label="Profil" className="pointer-events-auto relative z-10 ml-auto shrink-0">
+        <Link href="/profil" aria-label="Profil" className="tap-pad pointer-events-auto relative z-10 ml-auto shrink-0">
           {user?.image ? (
-            <img src={fotoUrl(user.image)} alt="Profil" className="h-8 w-8 rounded-full object-cover" />
+            <img src={fotoUrl(user.image)} alt="Profil" width={32} height={32} className="h-8 w-8 rounded-full object-cover" />
           ) : (
             <div className="grid h-8 w-8 place-items-center rounded-full bg-stone-200 text-[11px] font-bold text-stone-600 dark:bg-white/[0.10] dark:text-zinc-200">
               {getInitials(displayName)}

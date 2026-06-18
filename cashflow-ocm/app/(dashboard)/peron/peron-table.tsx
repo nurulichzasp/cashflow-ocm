@@ -115,10 +115,10 @@ export function PeronTable({ peronList, isOwner, akunOptions = [] }: Props) {
   return (
     <div className="space-y-3">
       {/* Desktop */}
-      <div className="hidden md:block rounded-xl border border-stone-200 bg-white shadow-sm overflow-x-auto">
+      <div className="hidden md:block surface overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-stone-50 border-b border-stone-200">
+            <tr className="bg-stone-50 dark:bg-white/[0.03] border-b border-stone-200 dark:border-border">
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Kode</th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">
                 <button onClick={() => handleSort('nama')} className={`inline-flex items-center gap-1 hover:text-stone-900 dark:hover:text-zinc-200 transition-colors ${sortBy === 'nama' ? 'text-stone-900 dark:text-zinc-100' : ''}`}>
@@ -143,9 +143,9 @@ export function PeronTable({ peronList, isOwner, akunOptions = [] }: Props) {
           <tbody className="divide-y divide-stone-100">
             {sorted.map((p) => (
               <tr key={p.id} className="bg-white hover:bg-stone-50 dark:hover:bg-white/[0.03] transition-colors group">
-                <td className="px-4 py-3 text-stone-500 num">{p.kode ?? <span className="text-stone-300">—</span>}</td>
+                <td className="px-4 py-3 text-stone-500 num">{p.kode ?? <span className="text-stone-400">—</span>}</td>
                 <td className="px-4 py-3 font-semibold text-stone-900 dark:text-stone-100">{p.nama}</td>
-                <td className="px-4 py-3 text-stone-500">{p.kontak ?? <span className="text-stone-300">—</span>}</td>
+                <td className="px-4 py-3 text-stone-500">{p.kontak ?? <span className="text-stone-400">—</span>}</td>
                 <td className="px-4 py-3 text-right text-stone-700 num">
                   Rp {p.keuntunganPerKg.toLocaleString('id-ID')}/kg
                 </td>

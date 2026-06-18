@@ -1,4 +1,5 @@
 import { WifiOff } from 'lucide-react'
+import { OfflineRetryButton } from './offline-retry'
 
 export const metadata = { title: 'Offline — CV OCM' }
 
@@ -16,12 +17,7 @@ export default function OfflinePage() {
           muncul saat kembali online.
         </p>
       </div>
-      <a
-        href="/dashboard"
-        className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--brand-solid)] px-6 text-sm font-semibold text-white shadow-[0_8px_28px_rgba(14,122,87,0.4)] transition-all hover:brightness-110 active:scale-[0.98]"
-      >
-        Coba lagi
-      </a>
+      <OfflineRetryButton />
     </main>
   )
 }

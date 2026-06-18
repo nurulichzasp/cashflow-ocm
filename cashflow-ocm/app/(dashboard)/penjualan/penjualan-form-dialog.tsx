@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { FieldError } from '@/components/ui/field-error'
 import { createPenjualan, updatePenjualan } from './actions'
 import { todayString } from '@/lib/format'
 import { FileText, Loader2, Sparkles, ChevronDown, ChevronUp, Table2 } from 'lucide-react'
@@ -45,6 +46,7 @@ export function PenjualanFormDialog({ children, editItem, open: openProp, onOpen
   const [preview, setPreview] = useState<PreviewData | null>(null)
   const [picks, setPicks] = useState<Record<number, 'rekap' | 'rekap2'>>({})
   const [previewOpen, setPreviewOpen] = useState(true)
+  const [errTanggal, setErrTanggal] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
   const unresolved = preview ? preview.rows.filter((r, i) => r.conflict && !picks[i]).length : 0
@@ -132,6 +134,11 @@ export function PenjualanFormDialog({ children, editItem, open: openProp, onOpen
       toast.error(`Masih ada ${unresolved} kategori yang belum dipilih`)
       return
     }
+    if (!tanggal) {
+      setErrTanggal('Tanggal wajib diisi')
+      return
+    }
+    setErrTanggal('')
     setLoading(true)
     try {
       const formData = new FormData(e.currentTarget)
@@ -304,7 +311,16 @@ export function PenjualanFormDialog({ children, editItem, open: openProp, onOpen
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="pj-tanggal">Tanggal</Label>
-            <Input id="pj-tanggal" type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} required />
+            <Input
+              id="pj-tanggal"
+              type="date"
+              value={tanggal}
+              onChange={(e) => { setTanggal(e.target.value); if (errTanggal) setErrTanggal('') }}
+              required
+              aria-invalid={!!errTanggal}
+              aria-describedby={errTanggal ? 'pj-tanggal-error' : undefined}
+            />
+            <FieldError id="pj-tanggal-error">{errTanggal}</FieldError>
           </div>
 
           <div className="space-y-1.5">
@@ -345,10 +361,10 @@ export function PenjualanFormDialog({ children, editItem, open: openProp, onOpen
                 <Input
                   id="pj-bersih"
                   type="number"
+                  inputMode="numeric"
                   value={totalBersih}
                   onChange={(e) => setTotalBersih(e.target.value)}
                   placeholder="0"
-                  className="glow-masuk"
                 />
                 {totalBersih && Number(totalBersih) > 0 && (
                   <p className="text-xs font-semibold text-foreground">Rp {Number(totalBersih).toLocaleString('id-ID')}</p>
@@ -359,10 +375,10 @@ export function PenjualanFormDialog({ children, editItem, open: openProp, onOpen
                 <Input
                   id="pj-dibayar"
                   type="number"
+                  inputMode="numeric"
                   value={totalNilai}
                   onChange={(e) => setTotalNilai(e.target.value)}
                   placeholder="0"
-                  className="glow-masuk"
                 />
                 {totalNilai && Number(totalNilai) > 0 && (
                   <p className="text-xs text-muted-foreground">Rp {Number(totalNilai).toLocaleString('id-ID')}</p>

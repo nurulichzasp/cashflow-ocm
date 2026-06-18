@@ -164,9 +164,10 @@ export function BiayaFormDialog({ children, akunOptions, editItem, open: openPro
                 onChange={(v) => { setJumlah(v); if (errors.jumlah) setErrors({}) }}
                 placeholder="0"
                 aria-invalid={!!errors.jumlah}
-                className={cn('glow-keluar', errors.jumlah && invalidFieldClass)}
+                aria-describedby={errors.jumlah ? 'by-jumlah-error' : undefined}
+                className={cn(errors.jumlah && invalidFieldClass)}
               />
-              <FieldError>{errors.jumlah}</FieldError>
+              <FieldError id="by-jumlah-error">{errors.jumlah}</FieldError>
             </div>
           </div>
 

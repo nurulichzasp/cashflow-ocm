@@ -289,10 +289,10 @@ export function PembelianTable({ pembelianList, canEdit, canDelete, peronOptions
       </div>
 
       {/* Desktop table */}
-      <div className="hidden md:block rounded-xl border border-stone-200 bg-white shadow-sm overflow-x-auto">
+      <div className="hidden md:block surface overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-stone-50 border-b border-stone-200">
+            <tr className="bg-stone-50 dark:bg-white/[0.03] border-b border-stone-200 dark:border-border">
               {(['tanggal', 'peron', 'tonase', 'totalBeli', 'keuntungan'] as const).map((col) => {
                 const labels: Record<string, string> = { tanggal: 'Tanggal', peron: 'Peron', tonase: 'Tonase', totalBeli: 'Total Beli', keuntungan: 'Untung' }
                 const isRight = ['tonase', 'totalBeli', 'keuntungan'].includes(col)
@@ -343,7 +343,7 @@ export function PembelianTable({ pembelianList, canEdit, canDelete, peronOptions
                         {p.fotos.length}
                       </button>
                     ) : (
-                      <span className="text-stone-300 text-xs">—</span>
+                      <span className="text-stone-400 text-xs">—</span>
                     )}
                   </td>
                   <td className="px-3 py-2.5">
@@ -374,7 +374,7 @@ export function PembelianTable({ pembelianList, canEdit, canDelete, peronOptions
           </tbody>
           {/* Baris total */}
           <tfoot>
-            <tr className="bg-stone-100 border-t-2 border-stone-300 font-semibold">
+            <tr className="bg-stone-100 dark:bg-white/[0.04] border-t-2 border-stone-300 dark:border-border font-semibold">
               <td colSpan={2} className="px-3 py-2.5 text-stone-600 text-xs uppercase">
                 Total ({filtered.length} tiket)
               </td>

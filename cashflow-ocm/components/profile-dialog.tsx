@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { FieldError } from '@/components/ui/field-error'
 import { Camera, Loader2, Eye, Info, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { updateProfile } from '@/app/(dashboard)/pengaturan/actions'
@@ -81,8 +82,17 @@ export function ProfileDialog({ user, children }: ProfileDialogProps) {
   const [image, setImage] = useState<string | null>(user.image || null)
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [errors, setErrors] = useState<{ fullName?: string; phone?: string; personalEmail?: string; address?: string }>({})
   const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
+
+  // Tutup menu foto dengan Escape (a11y) — selain klik di luar.
+  React.useEffect(() => {
+    if (!showPhotoOptions) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setShowPhotoOptions(false) }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [showPhotoOptions])
 
   // Reset local state when dialog is opened/closed to sync with user changes
   React.useEffect(() => {
@@ -94,6 +104,7 @@ export function ProfileDialog({ user, children }: ProfileDialogProps) {
       setAddress(user.address || '')
       setImage(user.image || null)
       setShowPhotoOptions(false)
+      setErrors({})
     }
   }, [user, open])
 
@@ -130,22 +141,18 @@ export function ProfileDialog({ user, children }: ProfileDialogProps) {
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
-    if (!fullName.trim()) {
-      toast.error('Nama Panjang wajib diisi')
+    // Validasi semua field sekaligus → error inline per field (bukan toast satu-satu).
+    const errs: typeof errors = {}
+    if (!fullName.trim()) errs.fullName = 'Nama panjang wajib diisi'
+    if (!phone.trim()) errs.phone = 'No WA wajib diisi'
+    if (!personalEmail.trim()) errs.personalEmail = 'Email pribadi wajib diisi'
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(personalEmail.trim())) errs.personalEmail = 'Format email tidak valid'
+    if (!address.trim()) errs.address = 'Alamat wajib diisi'
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs)
       return
     }
-    if (!phone.trim()) {
-      toast.error('No WA wajib diisi')
-      return
-    }
-    if (!personalEmail.trim()) {
-      toast.error('Email Pribadi wajib diisi')
-      return
-    }
-    if (!address.trim()) {
-      toast.error('Alamat wajib diisi')
-      return
-    }
+    setErrors({})
 
     setSaving(true)
     try {
@@ -219,10 +226,11 @@ export function ProfileDialog({ user, children }: ProfileDialogProps) {
               {showPhotoOptions && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowPhotoOptions(false)} />
-                  <div className="absolute top-22 z-50 bg-popover border border-stone-200 dark:border-stone-800 rounded-lg shadow-lg py-1 w-36 overflow-hidden">
+                  <div role="menu" aria-label="Opsi foto profil" className="absolute top-22 z-50 bg-popover border border-stone-200 dark:border-stone-800 rounded-lg shadow-lg py-1 w-36 overflow-hidden">
                     {image && (
                       <button
                         type="button"
+                        role="menuitem"
                         onClick={() => {
                           setViewPhotoOpen(true)
                           setShowPhotoOptions(false)
@@ -235,6 +243,7 @@ export function ProfileDialog({ user, children }: ProfileDialogProps) {
                     )}
                     <button
                       type="button"
+                      role="menuitem"
                       onClick={() => {
                         fileInputRef.current?.click()
                         setShowPhotoOptions(false)
@@ -268,11 +277,14 @@ export function ProfileDialog({ user, children }: ProfileDialogProps) {
                 <Input
                   id="fullName"
                   value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
+                  onChange={(e) => { setFullName(e.target.value); if (errors.fullName) setErrors((p) => ({ ...p, fullName: undefined })) }}
                   placeholder="Nama lengkap sesuai KTP"
                   disabled={saving || uploading}
                   required
+                  aria-invalid={!!errors.fullName}
+                  aria-describedby={errors.fullName ? 'fullName-error' : undefined}
                 />
+                <FieldError id="fullName-error">{errors.fullName}</FieldError>
               </div>
 
               <div className="space-y-1">
@@ -294,12 +306,17 @@ export function ProfileDialog({ user, children }: ProfileDialogProps) {
                 </Label>
                 <Input
                   id="phone"
+                  type="tel"
+                  inputMode="tel"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => { setPhone(e.target.value); if (errors.phone) setErrors((p) => ({ ...p, phone: undefined })) }}
                   placeholder="Contoh: 08123456789"
                   disabled={saving || uploading}
                   required
+                  aria-invalid={!!errors.phone}
+                  aria-describedby={errors.phone ? 'phone-error' : undefined}
                 />
+                <FieldError id="phone-error">{errors.phone}</FieldError>
               </div>
 
               <div className="space-y-1">
@@ -309,12 +326,17 @@ export function ProfileDialog({ user, children }: ProfileDialogProps) {
                 <Input
                   id="personalEmail"
                   type="email"
+                  inputMode="email"
+                  autoCapitalize="none"
                   value={personalEmail}
-                  onChange={(e) => setPersonalEmail(e.target.value)}
+                  onChange={(e) => { setPersonalEmail(e.target.value); if (errors.personalEmail) setErrors((p) => ({ ...p, personalEmail: undefined })) }}
                   placeholder="email@pribadi.com"
                   disabled={saving || uploading}
                   required
+                  aria-invalid={!!errors.personalEmail}
+                  aria-describedby={errors.personalEmail ? 'personalEmail-error' : undefined}
                 />
+                <FieldError id="personalEmail-error">{errors.personalEmail}</FieldError>
               </div>
 
               <div className="space-y-1 sm:col-span-2">
@@ -324,11 +346,14 @@ export function ProfileDialog({ user, children }: ProfileDialogProps) {
                 <Input
                   id="address"
                   value={address}
-                  onChange={(e) => setAddress(e.target.value)}
+                  onChange={(e) => { setAddress(e.target.value); if (errors.address) setErrors((p) => ({ ...p, address: undefined })) }}
                   placeholder="Alamat lengkap domisili"
                   disabled={saving || uploading}
                   required
+                  aria-invalid={!!errors.address}
+                  aria-describedby={errors.address ? 'address-error' : undefined}
                 />
+                <FieldError id="address-error">{errors.address}</FieldError>
               </div>
             </div>
 

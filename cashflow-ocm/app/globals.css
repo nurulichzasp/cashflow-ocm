@@ -249,8 +249,11 @@ html.dark {
       Roboto, Helvetica, Arial, sans-serif;
     scroll-behavior: smooth;
   }
-  /* Smooth focus rings */
+  /* Fokus keyboard — SATU garis emerald-kalem (model fokus tunggal app). Baseline
+     untuk SEMUA elemen interaktif yang tak punya style fokus sendiri; primitif
+     (button/field) menimpa dengan border/outline senada → tak ada ring ganda. */
   :focus-visible {
+    outline: 2px solid var(--focus-ring);
     outline-offset: 2px;
   }
   /* Thin elegant scrollbar */
@@ -279,13 +282,6 @@ html.dark {
   h1, h2, h3 {
     text-wrap: balance;
   }
-  /* Subtle scrollbar */
-  ::-webkit-scrollbar { width: 5px; height: 5px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: #d6d3d1; border-radius: 99px; }
-  ::-webkit-scrollbar-thumb:hover { background: #a8a29e; }
-  /* Smooth scroll */
-  html { scroll-behavior: smooth; }
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -451,6 +447,23 @@ html:not(.dark) [class~="border-l-stone-400"] { border-left-color: #E7E5E4 !impo
 /* Hover oranye → terracotta */
 html:not(.dark) [class~="hover:bg-orange-700"]:hover { background-color: #C2603F !important; }
 html.dark [class~="hover:bg-orange-700"]:hover       { background-color: #c8654a !important; }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   REDUCED MOTION — kill-switch global untuk animasi enter/exit tw-animate-css
+   (dialog/sheet/dropdown/select/popover pakai .animate-in/.animate-out). Util
+   custom app sudah dijaga sendiri; library ini tidak → matikan di sini agar
+   prefers-reduced-motion benar-benar dihormati di seluruh app. Elemen tampil
+   langsung di state akhir (visible, tanpa transform), bukan tersembunyi.
+   ───────────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .animate-in,
+  .animate-out,
+  [data-slot="dialog-content"],
+  [data-slot="sheet-content"] {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+}
 
 @layer utilities {
   /* App container: no max-width, just padding */

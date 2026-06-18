@@ -10,7 +10,7 @@ export default async function PrinterPage() {
     <div className="space-y-6 max-w-3xl">
       <SettingHeader
         title="Printer Kasir"
-        description="Pengaturan struk thermal 58mm untuk cetak tiket."
+        description="Pengaturan struk thermal (58/80mm) untuk cetak tiket."
       />
       <SettingsClient currentUser={currentUser} initialUsers={[]} section="printer" />
     </div>

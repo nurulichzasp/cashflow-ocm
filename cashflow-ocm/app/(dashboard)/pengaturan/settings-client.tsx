@@ -188,8 +188,11 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const [savingCompany, setSavingCompany] = useState(false)
+  const [savingTax, setSavingTax] = useState(false)
   async function handleSaveCompany(e: React.FormEvent) {
     e.preventDefault()
+    setSavingCompany(true)
     try {
       // Sumber kebenaran: server (sinkron lintas perangkat).
       await setAppSettings({
@@ -210,6 +213,8 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
       toast.success('Profil perusahaan berhasil disimpan')
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Gagal menyimpan. Coba lagi.')
+    } finally {
+      setSavingCompany(false)
     }
   }
 
@@ -337,6 +342,10 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
   async function handleResetPassword(e: React.FormEvent) {
     e.preventDefault()
     if (!resetUserTarget || !newPassVal.trim()) return
+    if (newPassVal.trim().length < 8) {
+      toast.error('Kata sandi minimal 8 karakter')
+      return
+    }
 
     setResettingPass(true)
     try {
@@ -579,6 +588,7 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
                       <Input
                         id="threshold"
                         type="number"
+                        inputMode="numeric"
                         value={threshold}
                         onChange={(e) => setThreshold(e.target.value)}
                         placeholder="Contoh: 50000000"
@@ -590,8 +600,8 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
 
                 {isOwner && (
                 <div className="pt-3">
-                  <Button type="submit" className="cursor-pointer">
-                    Simpan Profil Perusahaan
+                  <Button type="submit" disabled={savingCompany} className="cursor-pointer">
+                    {savingCompany ? 'Menyimpan…' : 'Simpan Profil Perusahaan'}
                   </Button>
                 </div>
                 )}
@@ -612,7 +622,7 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
               {isOwner && (
                 <Dialog open={addUserOpen} onOpenChange={setAddUserOpen}>
                   <DialogTrigger asChild>
-                    <Button size="sm" className="ml-auto cursor-pointer cursor-pointer gap-1.5">
+                    <Button size="sm" className="ml-auto cursor-pointer gap-1.5">
                       <UserPlus className="h-4 w-4" /> Tambah Pengguna
                     </Button>
                   </DialogTrigger>
@@ -890,7 +900,7 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
                                         type="password"
                                         value={newPassVal}
                                         onChange={(e) => setNewPassVal(e.target.value)}
-                                        placeholder="Min 6 karakter"
+                                        placeholder="Minimal 8 karakter"
                                         required
                                       />
                                     </div>
@@ -1038,6 +1048,7 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
                   const nMod = num(modalAwal); if (nMod === null || nMod < 0) te.modal = 'Isi angka ≥ 0'
                   setTaxErrors(te)
                   if (Object.keys(te).length > 0) return
+                  setSavingTax(true)
                   try {
                     // Sumber kebenaran: server (tarif pajak + modal awal sinkron lintas perangkat).
                     await setAppSettings({
@@ -1054,6 +1065,8 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
                     toast.success('Konfigurasi pajak berhasil disimpan')
                   } catch (err) {
                     toast.error(err instanceof Error ? err.message : 'Gagal menyimpan. Coba lagi.')
+                  } finally {
+                    setSavingTax(false)
                   }
                 }}
                 noValidate
@@ -1063,33 +1076,33 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-1.5">
                     <Label htmlFor="tarifPpn">Tarif PPN (%)</Label>
-                    <Input id="tarifPpn" type="number" step="0.1" value={tarifPpn} onChange={(e) => { setTarifPpn(e.target.value); if (taxErrors.ppn) setTaxErrors((p) => ({ ...p, ppn: undefined })) }} aria-invalid={!!taxErrors.ppn} className={taxErrors.ppn ? invalidFieldClass : undefined} />
+                    <Input id="tarifPpn" type="number" step="0.1" inputMode="decimal" value={tarifPpn} onChange={(e) => { setTarifPpn(e.target.value); if (taxErrors.ppn) setTaxErrors((p) => ({ ...p, ppn: undefined })) }} aria-invalid={!!taxErrors.ppn} className={taxErrors.ppn ? invalidFieldClass : undefined} />
                     <FieldError>{taxErrors.ppn}</FieldError>
                     <p className="text-[11px] text-muted-foreground">Saat ini 11%. Berlaku untuk setiap penjualan ke BGA.</p>
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="tarifPph">Tarif PPh Badan (%)</Label>
-                    <Input id="tarifPph" type="number" step="0.1" value={tarifPphBadan} onChange={(e) => { setTarifPphBadan(e.target.value); if (taxErrors.pph) setTaxErrors((p) => ({ ...p, pph: undefined })) }} aria-invalid={!!taxErrors.pph} className={taxErrors.pph ? invalidFieldClass : undefined} />
+                    <Input id="tarifPph" type="number" step="0.1" inputMode="decimal" value={tarifPphBadan} onChange={(e) => { setTarifPphBadan(e.target.value); if (taxErrors.pph) setTaxErrors((p) => ({ ...p, pph: undefined })) }} aria-invalid={!!taxErrors.pph} className={taxErrors.pph ? invalidFieldClass : undefined} />
                     <FieldError>{taxErrors.pph}</FieldError>
                     <p className="text-[11px] text-muted-foreground">22% dari laba kena pajak (tahunan).</p>
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="nominalPph25">PPh Pasal 25 / bulan (Rp)</Label>
-                    <Input id="nominalPph25" type="number" value={nominalPph25} onChange={(e) => { setNominalPph25(e.target.value); if (taxErrors.pph25) setTaxErrors((p) => ({ ...p, pph25: undefined })) }} aria-invalid={!!taxErrors.pph25} className={taxErrors.pph25 ? invalidFieldClass : undefined} />
+                    <Input id="nominalPph25" type="number" inputMode="numeric" value={nominalPph25} onChange={(e) => { setNominalPph25(e.target.value); if (taxErrors.pph25) setTaxErrors((p) => ({ ...p, pph25: undefined })) }} aria-invalid={!!taxErrors.pph25} className={taxErrors.pph25 ? invalidFieldClass : undefined} />
                     <FieldError>{taxErrors.pph25}</FieldError>
                     <p className="text-[11px] text-muted-foreground">Cicilan bulanan. Dibayar paling lambat tgl 15 bulan berikutnya.</p>
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="modalAwal">Modal Awal Neraca (Rp)</Label>
-                    <Input id="modalAwal" type="number" value={modalAwal} onChange={(e) => { setModalAwal(e.target.value); if (taxErrors.modal) setTaxErrors((p) => ({ ...p, modal: undefined })) }} aria-invalid={!!taxErrors.modal} className={taxErrors.modal ? invalidFieldClass : undefined} />
+                    <Input id="modalAwal" type="number" inputMode="numeric" value={modalAwal} onChange={(e) => { setModalAwal(e.target.value); if (taxErrors.modal) setTaxErrors((p) => ({ ...p, modal: undefined })) }} aria-invalid={!!taxErrors.modal} className={taxErrors.modal ? invalidFieldClass : undefined} />
                     <FieldError>{taxErrors.modal}</FieldError>
                     <p className="text-[11px] text-muted-foreground">Modal awal pemilik untuk laporan neraca.</p>
                   </div>
                 </div>
                 {isOwner && (
                 <div className="pt-3">
-                  <Button type="submit" className="cursor-pointer">
-                    Simpan Konfigurasi Pajak
+                  <Button type="submit" disabled={savingTax} className="cursor-pointer">
+                    {savingTax ? 'Menyimpan…' : 'Simpan Konfigurasi Pajak'}
                   </Button>
                 </div>
                 )}

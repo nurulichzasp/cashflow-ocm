@@ -28,7 +28,7 @@ function SheetOverlay({ className, ...props }: SheetPrimitive.Backdrop.Props) {
     <SheetPrimitive.Backdrop
       data-slot="sheet-overlay"
       className={cn(
-        "depth-backdrop fixed inset-0 z-50 bg-black/25 transition-opacity duration-200 ease-[var(--ease-out-expo)] data-ending-style:opacity-0 data-ending-style:duration-150 data-starting-style:opacity-0 supports-backdrop-filter:backdrop-blur-md",
+        "depth-backdrop fixed inset-0 z-50 bg-black/40 transition-opacity duration-200 ease-[var(--ease-out-expo)] data-ending-style:opacity-0 data-ending-style:duration-150 data-starting-style:opacity-0 supports-backdrop-filter:backdrop-blur-md",
         className
       )}
       {...props}
@@ -66,7 +66,7 @@ function SheetContent({
               <Button
                 variant="ghost"
                 className="tap-pad absolute top-3 right-3"
-                size="icon-sm"
+                size="icon"
               />
             }
           >

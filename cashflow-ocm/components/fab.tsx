@@ -50,7 +50,7 @@ export const FloatingFab = React.forwardRef<
         // interaksi
         'hover:bg-white/[0.16] md:hover:translate-y-[-1px]',
         'active:scale-95 md:active:scale-[0.97]',
-        'focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+        'outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white/70',
         className,
       )}
     >

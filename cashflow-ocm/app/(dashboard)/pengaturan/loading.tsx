@@ -19,7 +19,8 @@ export default function Loading() {
               <div className="h-4 w-32 rounded bg-stone-200/60 dark:bg-white/[0.06]" />
               <div className="h-3 w-48 rounded bg-stone-200/40 dark:bg-white/[0.04]" />
             </div>
-            <div className="h-6 w-11 rounded-full bg-stone-200/60 dark:bg-white/[0.06]" />
+            {/* Chevron (list IG-style), bukan toggle — selaras halaman index */}
+            <div className="h-4 w-4 rounded bg-stone-200/60 dark:bg-white/[0.06]" />
           </div>
         ))}
       </div>

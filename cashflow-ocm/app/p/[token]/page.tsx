@@ -22,13 +22,24 @@ const KATEGORI_LABEL: Record<string, string> = {
 }
 
 function NotFound() {
+  const wa = process.env.NEXT_PUBLIC_OCM_WHATSAPP
   return (
     <main className="flex min-h-[100dvh] flex-col items-center justify-center bg-[#F6F7F6] px-6 text-center" style={{ colorScheme: 'light' }}>
       <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#0E7A58] text-base font-bold text-white">OCM</div>
       <h1 className="mt-5 text-lg font-semibold text-zinc-900">Link tidak berlaku</h1>
       <p className="mt-1.5 max-w-[30ch] text-sm text-zinc-500">
-        Link ini sudah tidak aktif atau salah. Silakan hubungi OCM untuk link terbaru.
+        Link ini sudah tidak aktif atau salah. Hubungi OCM untuk mendapatkan link terbaru.
       </p>
+      {wa && (
+        <a
+          href={`https://wa.me/${wa}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#0E7A58] px-6 text-sm font-semibold text-white"
+        >
+          Chat WhatsApp OCM
+        </a>
+      )}
     </main>
   )
 }
@@ -88,6 +99,13 @@ export default async function PortalPeronPage({
             )
           })}
         </div>
+
+        {/* Zero-state — periode tanpa transaksi sama sekali (hindari "Rp 0" terbaca seakan data) */}
+        {data.totalKg === 0 && data.setoran.length === 0 && data.pembayaran.length === 0 && (
+          <p className="mt-3 rounded-2xl bg-[#FFFFFF] px-4 py-3 text-[13px] text-zinc-500 ring-1 ring-zinc-100">
+            Belum ada transaksi pada periode ini. Coba pilih <b className="font-semibold text-zinc-700">Semua</b> untuk melihat seluruh riwayat.
+          </p>
+        )}
 
         {/* Ringkasan periode */}
         <section className="mt-3 rounded-2xl bg-[#FFFFFF] p-4 ring-1 ring-zinc-100">

@@ -11,21 +11,27 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState({ email: '', password: '' })
   const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState('')
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    setError('')
     setLoading(true)
     try {
       const result = await signIn.email({ email: form.email, password: form.password })
       if (result?.error) {
-        toast.error(result.error.message ?? 'Email atau password salah')
+        const msg = result.error.message ?? 'Email atau password salah'
+        setError(msg)
+        toast.error(msg)
         setLoading(false)
       } else {
         router.push('/dashboard')
         router.refresh()
       }
     } catch {
-      toast.error('Terjadi kesalahan. Coba lagi.')
+      const msg = 'Terjadi kesalahan. Periksa koneksi lalu coba lagi.'
+      setError(msg)
+      toast.error(msg)
       setLoading(false)
     }
   }
@@ -79,11 +85,15 @@ export default function LoginPage() {
             <input
               id="email"
               type="email"
+              inputMode="email"
+              autoCapitalize="none"
+              spellCheck={false}
               placeholder="nama@email.com"
               value={form.email}
-              onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+              onChange={(e) => { setForm((f) => ({ ...f, email: e.target.value })); if (error) setError('') }}
               required
               autoComplete="email"
+              aria-invalid={!!error}
               className="login-input w-full h-11 rounded-xl px-4 text-sm text-zinc-100 placeholder:text-zinc-500 bg-white/[0.03] border border-white/[0.10] outline-none transition-colors duration-200 hover:border-white/[0.16] focus-visible:border-white/40 focus-visible:ring-2 focus-visible:ring-white/15"
             />
           </div>
@@ -100,11 +110,12 @@ export default function LoginPage() {
               <input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
-                placeholder="••••••••"
+                placeholder="Kata sandi"
                 value={form.password}
-                onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+                onChange={(e) => { setForm((f) => ({ ...f, password: e.target.value })); if (error) setError('') }}
                 required
                 autoComplete="current-password"
+                aria-invalid={!!error}
                 className="login-input w-full h-11 rounded-xl px-4 pr-12 text-sm text-zinc-100 placeholder:text-zinc-500 bg-white/[0.03] border border-white/[0.10] outline-none transition-colors duration-200 hover:border-white/[0.16] focus-visible:border-white/40 focus-visible:ring-2 focus-visible:ring-white/15"
               />
               <button
@@ -117,6 +128,13 @@ export default function LoginPage() {
               </button>
             </div>
           </div>
+
+          {/* Pesan error inline — persisten (toast bisa hilang di sinyal buruk) */}
+          {error && (
+            <p role="alert" aria-live="polite" className="text-xs text-red-300">
+              {error}
+            </p>
+          )}
 
           {/* Submit */}
           <div className="pt-3">
@@ -136,7 +154,7 @@ export default function LoginPage() {
         </form>
 
         <p className="text-center text-[11px] mt-8 text-zinc-400">
-          Supplier TBS &amp; BRDL
+          Supplier TBS &amp; Brondolan
         </p>
       </div>
     </div>

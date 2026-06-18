@@ -2,19 +2,7 @@
 
 import React, { useState, useMemo } from 'react'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/empty-state'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
 import { deleteBiayaOperasional } from './actions'
 import { BiayaFormDialog } from './biaya-form-dialog'
 import { formatRupiah, formatTanggal, formatCompact, formatRentangFilter } from '@/lib/format'
@@ -126,6 +114,82 @@ function BiayaCard({
   )
 }
 
+/* ─── Baris desktop — Edit/Hapus di kebab ⋯ (sama spt mobile & Pembelian) ─── */
+function BiayaDesktopRow({
+  item,
+  isOwner,
+  akunOptions,
+  onDelete,
+  deleting,
+  onToggleFoto,
+}: {
+  item: BiayaRow
+  isOwner: boolean
+  akunOptions: AkunOption[]
+  onDelete: (id: string) => void
+  deleting: string | null
+  onToggleFoto: () => void
+}) {
+  const [editOpen, setEditOpen] = useState(false)
+
+  const actions: RowAction[] = [
+    { key: 'edit', label: 'Edit', icon: Pencil, onSelect: () => setEditOpen(true) },
+    ...(isOwner
+      ? [{
+          key: 'delete',
+          label: 'Hapus',
+          icon: Trash2,
+          destructive: true,
+          separated: true,
+          onSelect: () => onDelete(item.id),
+          confirm: {
+            title: 'Hapus biaya?',
+            description: `Biaya ${kategoriDisplay(item)} pada ${formatTanggal(item.tanggal)} sebesar ${formatRupiah(item.jumlah)} akan dihapus.`,
+            confirmLabel: 'Hapus',
+            busyLabel: 'Menghapus…',
+            busy: deleting === item.id,
+          },
+        } as RowAction]
+      : []),
+  ]
+
+  return (
+    <tr className="bg-white hover:bg-stone-50 dark:hover:bg-white/[0.03] transition-colors">
+      <td className="px-4 py-3 text-stone-900 dark:text-stone-100">{formatTanggal(item.tanggal)}</td>
+      <td className="px-4 py-3">
+        <span className={kategoriTextCls}>{kategoriDisplay(item)}</span>
+      </td>
+      <td className="px-4 py-3">
+        <span className="block max-w-[140px] truncate text-sm text-stone-600 dark:text-zinc-300">
+          {item.akunSumber?.nama ?? item.akunSumberId}
+        </span>
+      </td>
+      <td className="px-4 py-3 text-right font-semibold text-stone-900 num">{formatRupiah(item.jumlah)}</td>
+      <td className="px-4 py-3 text-stone-500 max-w-[200px] truncate">{item.catatan ?? <span className="text-stone-400">—</span>}</td>
+      <td className="px-4 py-3">
+        {item.fotos.length > 0 ? (
+          <button
+            type="button"
+            onClick={onToggleFoto}
+            className="inline-flex items-center gap-1 text-xs text-stone-600 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-300 font-medium"
+          >
+            <ImageIcon className="h-3.5 w-3.5" />
+            {item.fotos.length} foto
+          </button>
+        ) : (
+          <span className="text-stone-400 text-xs">—</span>
+        )}
+      </td>
+      <td className="px-4 py-3 text-right">
+        <RowActionMenu variant="menu" actions={actions} triggerLabel="Aksi biaya" />
+        {editOpen && (
+          <BiayaFormDialog editItem={item} akunOptions={akunOptions} open={editOpen} onOpenChange={setEditOpen} />
+        )}
+      </td>
+    </tr>
+  )
+}
+
 export function BiayaTable({ biayaList, isOwner, akunOptions }: Props) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [expandedFotoId, setExpandedFotoId] = useState<string | null>(null)
@@ -234,71 +298,14 @@ export function BiayaTable({ biayaList, isOwner, akunOptions }: Props) {
           <tbody className="divide-y divide-stone-100">
             {sorted.map((item) => (
               <React.Fragment key={item.id}>
-                <tr className="bg-white hover:bg-stone-50 dark:hover:bg-white/[0.03] transition-colors">
-                  <td className="px-4 py-3 text-stone-900 dark:text-stone-100">{formatTanggal(item.tanggal)}</td>
-                  <td className="px-4 py-3">
-                    <span className={kategoriTextCls}>{kategoriDisplay(item)}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="block max-w-[140px] truncate text-sm text-stone-600 dark:text-zinc-300">
-                      {item.akunSumber?.nama ?? item.akunSumberId}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right font-semibold text-stone-900 num">{formatRupiah(item.jumlah)}</td>
-                  <td className="px-4 py-3 text-stone-500 max-w-[200px] truncate">{item.catatan ?? <span className="text-stone-400">—</span>}</td>
-                  <td className="px-4 py-3">
-                    {item.fotos.length > 0 ? (
-                      <button
-                        type="button"
-                        onClick={() => setExpandedFotoId(expandedFotoId === item.id ? null : item.id)}
-                        className="inline-flex items-center gap-1 text-xs text-stone-600 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-300 font-medium"
-                      >
-                        <ImageIcon className="h-3.5 w-3.5" />
-                        {item.fotos.length} foto
-                      </button>
-                    ) : (
-                      <span className="text-stone-300 text-xs">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="inline-flex items-center gap-0.5">
-                      <BiayaFormDialog editItem={item} akunOptions={akunOptions}>
-                        <Button variant="ghost" size="icon" aria-label="Edit" className="tap-pad h-8 w-8 text-stone-400 hover:text-stone-700 dark:hover:text-zinc-200">
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      </BiayaFormDialog>
-                      {isOwner && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" aria-label="Hapus" className="tap-pad h-8 w-8 text-stone-400 hover:text-destructive hover:bg-destructive/10">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Hapus biaya?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Biaya <strong>{kategoriDisplay(item)}</strong> tanggal{' '}
-                                <strong>{formatTanggal(item.tanggal)}</strong> sebesar{' '}
-                                <strong>{formatRupiah(item.jumlah)}</strong> akan dihapus.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Batal</AlertDialogCancel>
-                              <AlertDialogAction
-                                variant="destructive"
-                                onClick={() => handleDelete(item.id)}
-                                disabled={deletingId === item.id}
-                              >
-                                {deletingId === item.id ? 'Menghapus...' : 'Hapus'}
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
-                    </div>
-                  </td>
-                </tr>
+                <BiayaDesktopRow
+                  item={item}
+                  isOwner={isOwner}
+                  akunOptions={akunOptions}
+                  onDelete={handleDelete}
+                  deleting={deletingId}
+                  onToggleFoto={() => setExpandedFotoId(expandedFotoId === item.id ? null : item.id)}
+                />
                 {expandedFotoId === item.id && item.fotos.length > 0 && (
                   <tr className="bg-stone-50/50 dark:bg-white/[0.02]">
                     <td colSpan={7} className="px-5 py-3">

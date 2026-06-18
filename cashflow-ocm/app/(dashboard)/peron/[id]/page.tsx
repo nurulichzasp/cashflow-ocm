@@ -43,7 +43,7 @@ export default async function PeronDetailPage({ params }: { params: Promise<{ id
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 min-w-0">
             <h1 className="text-xl font-bold truncate">{data.nama}</h1>
-            <Badge variant={data.status === 'aktif' ? 'default' : 'secondary'} className="shrink-0">{data.status}</Badge>
+            <Badge variant={data.status === 'aktif' ? 'default' : 'secondary'} className="shrink-0">{data.status === 'aktif' ? 'Aktif' : 'Nonaktif'}</Badge>
           </div>
           {data.kontak && <p className="text-sm text-muted-foreground">{data.kontak}</p>}
           {data.alamat && <p className="text-sm text-muted-foreground">{data.alamat}</p>}

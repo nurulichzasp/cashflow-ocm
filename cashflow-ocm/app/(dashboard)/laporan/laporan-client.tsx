@@ -288,7 +288,7 @@ function KasTab({
           </CardContent>
         </Card>
       ) : (
-        <div className="rounded-lg border overflow-x-auto overflow-x-auto">
+        <div className="rounded-lg border overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-muted/50">
               <tr>
@@ -679,13 +679,24 @@ export function LaporanClient({
 
       <div>
         <div className="flex border-b overflow-x-auto" role="tablist" aria-label="Bagian laporan">
-          {tabs.map((t) => (
+          {tabs.map((t, i) => (
             <button
               key={t.key}
+              id={`laporan-tab-${t.key}`}
               type="button"
               role="tab"
               aria-selected={activeTab === t.key}
+              aria-controls="laporan-panel"
+              tabIndex={activeTab === t.key ? 0 : -1}
               onClick={() => setActiveTab(t.key)}
+              onKeyDown={(e) => {
+                if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return
+                e.preventDefault()
+                const dir = e.key === 'ArrowRight' ? 1 : -1
+                const next = tabs[(i + dir + tabs.length) % tabs.length]
+                setActiveTab(next.key)
+                document.getElementById(`laporan-tab-${next.key}`)?.focus()
+              }}
               className={cn(
                 'px-4 py-3 text-sm font-medium border-b-2 -mb-px whitespace-nowrap transition-colors',
                 activeTab === t.key
@@ -697,7 +708,7 @@ export function LaporanClient({
             </button>
           ))}
         </div>
-        <div className="pt-4">
+        <div className="pt-4" id="laporan-panel" role="tabpanel" aria-labelledby={`laporan-tab-${activeTab}`} tabIndex={0}>
           {activeTab === 'laba-rugi' && <LabaRugiTab data={data} dari={dari} sampai={sampai} />}
           {activeTab === 'per-peron' && <PerPeronTab data={data} dari={dari} sampai={sampai} />}
           {activeTab === 'buku-kas' && (

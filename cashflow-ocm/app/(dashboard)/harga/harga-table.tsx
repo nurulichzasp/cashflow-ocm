@@ -2,19 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/empty-state'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
 import { deleteHargaAcuan } from './actions'
 import { formatRupiah, formatTanggal } from '@/lib/format'
 import { Trash2, DollarSign } from 'lucide-react'
@@ -120,32 +108,26 @@ export function HargaTable({ hargaList, isOwner }: Props) {
                   <td className="px-4 py-3 text-stone-500 max-w-[180px] truncate">{harga.catatan ?? <span className="text-stone-400">—</span>}</td>
                   {isOwner && (
                     <td className="px-4 py-3 text-right">
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" aria-label="Hapus" className="tap-pad h-8 w-8 text-stone-400 hover:text-destructive hover:bg-destructive/10">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Hapus Harga Acuan?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Harga acuan <strong>{harga.produk}</strong> tanggal{' '}
-                              <strong>{formatTanggal(harga.tanggalBerlaku)}</strong> akan dihapus permanen.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Batal</AlertDialogCancel>
-                            <AlertDialogAction
-                              variant="destructive"
-                              onClick={() => handleDelete(harga.id)}
-                              disabled={deletingId === harga.id}
-                            >
-                              {deletingId === harga.id ? 'Menghapus...' : 'Hapus'}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                      <RowActionMenu
+                        variant="menu"
+                        title={harga.produk}
+                        subtitle={formatTanggal(harga.tanggalBerlaku)}
+                        triggerLabel="Aksi harga"
+                        actions={[{
+                          key: 'delete',
+                          label: 'Hapus',
+                          icon: Trash2,
+                          destructive: true,
+                          onSelect: () => handleDelete(harga.id),
+                          confirm: {
+                            title: 'Hapus Harga Acuan?',
+                            description: `Harga acuan ${harga.produk} tanggal ${formatTanggal(harga.tanggalBerlaku)} akan dihapus permanen.`,
+                            confirmLabel: 'Hapus',
+                            busyLabel: 'Menghapus…',
+                            busy: deletingId === harga.id,
+                          },
+                        }]}
+                      />
                     </td>
                   )}
                 </tr>

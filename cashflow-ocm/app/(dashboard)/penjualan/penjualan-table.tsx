@@ -2,24 +2,12 @@
 
 import { useState, useMemo } from 'react'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
 import { PaymentStatusDot } from '@/components/ui/status-pill'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
 import { deletePenjualan, updatePenjualanStatus } from './actions'
 import { PenjualanFormDialog } from './penjualan-form-dialog'
 import { formatTanggal, formatRupiah, todayString, formatCompact, formatRentangFilter } from '@/lib/format'
 import { shareNota } from '@/lib/share'
-import { Trash2, FileText, ArrowUpDown, ArrowUp, ArrowDown, Pencil, Share2 } from 'lucide-react'
+import { Trash2, FileText, ArrowUpDown, ArrowUp, ArrowDown, Pencil, Share2, ChevronDown, ChevronUp } from 'lucide-react'
 import { DateRangeFilter } from '@/components/date-range-filter'
 import { EmptyState } from '@/components/empty-state'
 import { RowActionMenu, type RowAction } from '@/components/ui/row-action-menu'
@@ -226,10 +214,50 @@ interface RowProps {
   onDelete: (id: string) => void
 }
 
-/* ─── Desktop row — invoice diciutkan (primary + "+N lagi") ─── */
+/** Bagikan nota penjualan via Web Share API (fallback clipboard/WA). Dipakai desktop & mobile. */
+async function sharePenjualanNota(item: Penjualan) {
+  const invoices = (item.noInvoice ?? '').split('\n').filter(Boolean)
+  const catatan = item.catatan ?? ''
+  const lines = [
+    `Penjualan ${formatTanggal(item.tanggal)}`,
+    invoices.length ? `Invoice:\n${invoices.join('\n')}` : '',
+    item.totalBersih ? `Nilai Bersih: ${formatRupiah(item.totalBersih)}` : '',
+    item.totalNilai ? `Total Dibayar: ${formatRupiah(item.totalNilai)}` : '',
+    item.tanggalBayarBga ? `Tgl Bayar: ${formatTanggal(item.tanggalBayarBga)}` : '',
+    catatan ? `\nCatatan:\n${catatan}` : '',
+  ].filter(Boolean).join('\n')
+  const res = await shareNota({ title: `Penjualan ${formatTanggal(item.tanggal)} — CV OCM`, text: lines })
+  if (res === 'copied') toast.success('Nota disalin ke clipboard')
+}
+
+/* ─── Desktop row — invoice diciutkan; aksi (Bagikan/Edit/Hapus) di kebab ⋯ ─── */
 function PenjualanRow({ item, isOwner, updatingId, deletingId, onToggleLunas, onDelete }: RowProps) {
   const [expanded, setExpanded] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
   const invoices = (item.noInvoice ?? '').split('\n').filter(Boolean)
+  const primaryInvoice = invoices[0] || 'Tanpa nomor invoice'
+
+  const actions: RowAction[] = [
+    { key: 'share', label: 'Bagikan nota', icon: Share2, onSelect: () => sharePenjualanNota(item) },
+    { key: 'edit', label: 'Edit', icon: Pencil, separated: true, onSelect: () => setEditOpen(true) },
+    ...(isOwner
+      ? [{
+          key: 'delete',
+          label: 'Hapus',
+          icon: Trash2,
+          destructive: true,
+          separated: true,
+          onSelect: () => onDelete(item.id),
+          confirm: {
+            title: 'Hapus penjualan?',
+            description: `Invoice ${primaryInvoice} akan dihapus.`,
+            confirmLabel: 'Hapus',
+            busyLabel: 'Menghapus…',
+            busy: deletingId === item.id,
+          },
+        } as RowAction]
+      : []),
+  ]
 
   return (
     <tr className="bg-white hover:bg-stone-50 dark:hover:bg-white/[0.03] transition-colors align-top">
@@ -247,7 +275,7 @@ function PenjualanRow({ item, isOwner, updatingId, deletingId, onToggleLunas, on
                   onClick={() => setExpanded(v => !v)}
                   className="mt-1 inline-flex items-center gap-0.5 rounded-full bg-black/[0.04] dark:bg-white/[0.06] px-2 py-0.5 text-[10px] font-medium text-stone-600 dark:text-zinc-300 hover:bg-black/[0.08] dark:hover:bg-white/[0.1] transition-colors"
                 >
-                  {expanded ? 'Sembunyikan' : `+${invoices.length - 1} invoice`} {expanded ? '↑' : '↓'}
+                  {expanded ? 'Sembunyikan' : `+${invoices.length - 1} invoice`} {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                 </button>
                 {expanded && (
                   <div className="mt-1 space-y-0.5 font-mono text-[11px] text-stone-500 dark:text-zinc-400">
@@ -280,40 +308,10 @@ function PenjualanRow({ item, isOwner, updatingId, deletingId, onToggleLunas, on
       </td>
       <td className="px-4 py-3 text-stone-600 whitespace-nowrap">{item.tanggalBayarBga ? formatTanggal(item.tanggalBayarBga) : <span className="text-stone-400">—</span>}</td>
       <td className="px-4 py-3 text-right whitespace-nowrap">
-        <div className="inline-flex items-center gap-0.5">
-          <PenjualanFormDialog editItem={item}>
-            <Button variant="ghost" size="icon" aria-label="Edit" className="tap-pad h-8 w-8 text-stone-400 hover:text-stone-700 dark:hover:text-zinc-200">
-              <Pencil className="h-4 w-4" />
-            </Button>
-          </PenjualanFormDialog>
-          {isOwner && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label="Hapus" className="tap-pad h-8 w-8 text-stone-400 hover:text-destructive hover:bg-destructive/10">
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Hapus penjualan?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Invoice <strong>{invoices[0] || 'tanpa nomor'}</strong> akan dihapus secara permanen.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Batal</AlertDialogCancel>
-                  <AlertDialogAction
-                    variant="destructive"
-                    onClick={() => onDelete(item.id)}
-                    disabled={deletingId === item.id}
-                  >
-                    {deletingId === item.id ? 'Menghapus...' : 'Hapus'}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
-        </div>
+        <RowActionMenu variant="menu" actions={actions} triggerLabel="Aksi penjualan" />
+        {editOpen && (
+          <PenjualanFormDialog editItem={item} open={editOpen} onOpenChange={setEditOpen} />
+        )}
       </td>
     </tr>
   )
@@ -332,22 +330,8 @@ function PenjualanCard({ item, isOwner, updatingId, deletingId, onToggleLunas, o
 
   const catatan = item.catatan ?? ''
 
-  async function handleShare() {
-    const lines = [
-      `Penjualan ${formatTanggal(item.tanggal)}`,
-      invoices.length ? `Invoice:\n${invoices.join('\n')}` : '',
-      item.totalBersih ? `Nilai Bersih: ${formatRupiah(item.totalBersih)}` : '',
-      item.totalNilai ? `Total Dibayar: ${formatRupiah(item.totalNilai)}` : '',
-      item.tanggalBayarBga ? `Tgl Bayar: ${formatTanggal(item.tanggalBayarBga)}` : '',
-      catatan ? `\nCatatan:\n${catatan}` : '',
-    ].filter(Boolean).join('\n')
-    // Web Share API → share sheet native iOS; fallback ke clipboard / WA.
-    const res = await shareNota({ title: `Penjualan ${formatTanggal(item.tanggal)} — CV OCM`, text: lines })
-    if (res === 'copied') toast.success('Nota disalin ke clipboard')
-  }
-
   const actions: RowAction[] = [
-    { key: 'share', label: 'Bagikan nota', icon: Share2, onSelect: handleShare },
+    { key: 'share', label: 'Bagikan nota', icon: Share2, onSelect: () => sharePenjualanNota(item) },
     { key: 'edit', label: 'Edit', icon: Pencil, separated: true, onSelect: () => setEditOpen(true) },
     ...(isOwner
       ? [{
@@ -384,7 +368,7 @@ function PenjualanCard({ item, isOwner, updatingId, deletingId, onToggleLunas, o
                 onClick={() => setExpanded((v) => !v)}
                 className="inline-flex items-center gap-0.5 rounded-full bg-black/[0.04] dark:bg-white/[0.06] px-2 py-0.5 text-[10px] font-medium text-stone-600 dark:text-zinc-300 hover:bg-black/[0.07] dark:hover:bg-white/[0.1] transition-colors"
               >
-                +{moreInvoices} {expanded ? '↑' : '↓'}
+                +{moreInvoices} {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
               </button>
             )}
           </div>
@@ -447,7 +431,7 @@ function PenjualanCard({ item, isOwner, updatingId, deletingId, onToggleLunas, o
             onClick={() => setExpanded((v) => !v)}
             className="inline-flex items-center gap-1 rounded-full bg-black/[0.04] dark:bg-white/[0.06] px-2 py-0.5 text-[10px] font-medium text-stone-600 dark:text-zinc-300 hover:bg-black/[0.07] dark:hover:bg-white/[0.1] transition-colors"
           >
-            <FileText className="h-2.5 w-2.5" /> Catatan {expanded ? '↑' : '↓'}
+            <FileText className="h-2.5 w-2.5" /> Catatan {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
           </button>
         )}
       </div>

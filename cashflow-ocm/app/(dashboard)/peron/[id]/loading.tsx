@@ -10,8 +10,10 @@ export default function Loading() {
         <div className="h-3 w-32 rounded bg-stone-200/40 dark:bg-white/[0.04]" />
       </div>
 
-      {/* Kartu ringkasan */}
-      <div className="grid grid-cols-2 gap-2 sm:gap-3">
+      {/* Kartu ringkasan — 4 kartu (grid-cols-2 md:grid-cols-4) selaras halaman detail */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="surface h-24" />
+        <div className="surface h-24" />
         <div className="surface h-24" />
         <div className="surface h-24" />
       </div>

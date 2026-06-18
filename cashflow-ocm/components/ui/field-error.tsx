@@ -6,10 +6,11 @@ import { AlertCircle } from 'lucide-react'
  * ternetralkan catch-all (beda dari --destructive yang sengaja diabukan).
  * role="alert" agar dibacakan screen reader saat muncul.
  */
-export function FieldError({ children }: { children?: React.ReactNode }) {
+export function FieldError({ id, children }: { id?: string; children?: React.ReactNode }) {
   if (!children) return null
   return (
     <p
+      id={id}
       role="alert"
       className="mt-1 flex items-center gap-1 text-xs text-crit"
     >

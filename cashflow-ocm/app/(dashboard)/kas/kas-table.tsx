@@ -2,20 +2,8 @@
 
 import { useState, useMemo } from 'react'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
 import { ArahIndicator } from '@/components/ui/status-pill'
 import { EmptyState } from '@/components/empty-state'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
 import { deleteTransaksiKas } from './actions'
 import { KasFormDialog } from './kas-form-dialog'
 import { formatRupiah, formatTanggal, formatCompact, formatRentangFilter } from '@/lib/format'
@@ -115,6 +103,77 @@ function KasCard({
         <KasFormDialog editItem={item} akunOptions={akunOptions} open={editOpen} onOpenChange={setEditOpen} />
       )}
     </div>
+  )
+}
+
+/* ─── Baris desktop — aksi (Edit/Hapus) di kebab ⋯ (sama spt mobile & Pembelian) ─── */
+function KasDesktopRow({
+  item,
+  isOwner,
+  akunOptions,
+  onDelete,
+  deleting,
+}: {
+  item: TransaksiRow
+  isOwner: boolean
+  akunOptions: { id: string; nama: string; tipe: string }[]
+  onDelete: (id: string) => void
+  deleting: string | null
+}) {
+  const [editOpen, setEditOpen] = useState(false)
+  const canEdit = !item.refTabel
+
+  const actions: RowAction[] = [
+    ...(canEdit
+      ? [{ key: 'edit', label: 'Edit', icon: Pencil, onSelect: () => setEditOpen(true) } as RowAction]
+      : []),
+    ...(isOwner
+      ? [{
+          key: 'delete',
+          label: 'Hapus',
+          icon: Trash2,
+          destructive: true,
+          separated: canEdit,
+          onSelect: () => onDelete(item.id),
+          confirm: {
+            title: 'Hapus transaksi?',
+            description: `Transaksi ${kategoriLabels[item.kategori]} pada ${formatTanggal(item.tanggal)} sebesar ${formatRupiah(item.jumlah)} akan dihapus.`,
+            confirmLabel: 'Hapus',
+            busyLabel: 'Menghapus…',
+            busy: deleting === item.id,
+          },
+        } as RowAction]
+      : []),
+  ]
+
+  return (
+    <tr className="bg-white hover:bg-stone-50 dark:hover:bg-white/[0.03] transition-colors">
+      <td className="px-4 py-3 text-stone-900">{formatTanggal(item.tanggal)}</td>
+      <td className="px-4 py-3">
+        <span className="inline-flex rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-700 max-w-[120px] truncate">
+          {item.akun?.nama ?? item.akunId}
+        </span>
+      </td>
+      <td className="px-4 py-3 text-stone-700">{kategoriLabels[item.kategori]}</td>
+      <td className="px-4 py-3">
+        <ArahIndicator arah={item.arah} />
+      </td>
+      <td className={`px-4 py-3 text-right font-semibold num ${item.arah === 'masuk' ? 'text-stone-900 dark:text-zinc-50' : 'text-stone-500 dark:text-zinc-400'}`}>
+        <span className="inline-flex items-center justify-end gap-1">
+          {item.arah === 'masuk' ? <ArrowUp className="h-3.5 w-3.5 shrink-0" aria-hidden /> : <ArrowDown className="h-3.5 w-3.5 shrink-0" aria-hidden />}
+          {item.arah === 'masuk' ? '+' : '-'}{formatRupiah(item.jumlah)}
+        </span>
+      </td>
+      <td className="px-4 py-3 text-stone-500 max-w-[180px] truncate">{item.catatan ?? <span className="text-stone-400">—</span>}</td>
+      <td className="px-4 py-3 text-right">
+        {actions.length > 0 && (
+          <RowActionMenu variant="menu" actions={actions} triggerLabel="Aksi transaksi" />
+        )}
+        {canEdit && editOpen && (
+          <KasFormDialog editItem={item} akunOptions={akunOptions} open={editOpen} onOpenChange={setEditOpen} />
+        )}
+      </td>
+    </tr>
   )
 }
 
@@ -219,64 +278,14 @@ export function KasTable({ transaksiList, isOwner }: Props) {
           </thead>
           <tbody className="divide-y divide-stone-100">
             {filtered.map((item) => (
-              <tr key={item.id} className="bg-white hover:bg-stone-50 dark:hover:bg-white/[0.03] transition-colors">
-                <td className="px-4 py-3 text-stone-900">{formatTanggal(item.tanggal)}</td>
-                <td className="px-4 py-3">
-                  <span className="inline-flex rounded-full bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-700 max-w-[120px] truncate">
-                    {item.akun?.nama ?? item.akunId}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-stone-700">{kategoriLabels[item.kategori]}</td>
-                <td className="px-4 py-3">
-                  <ArahIndicator arah={item.arah} />
-                </td>
-                <td className={`px-4 py-3 text-right font-semibold num ${item.arah === 'masuk' ? 'text-stone-900 dark:text-zinc-50' : 'text-stone-500 dark:text-zinc-400'}`}>
-                  <span className="inline-flex items-center justify-end gap-1">
-                    {item.arah === 'masuk' ? <ArrowUp className="h-3.5 w-3.5 shrink-0" aria-hidden /> : <ArrowDown className="h-3.5 w-3.5 shrink-0" aria-hidden />}
-                    {item.arah === 'masuk' ? '+' : '-'}{formatRupiah(item.jumlah)}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-stone-500 max-w-[180px] truncate">{item.catatan ?? <span className="text-stone-400">—</span>}</td>
-                <td className="px-4 py-3 text-right">
-                  <div className="inline-flex items-center gap-0.5">
-                    {!item.refTabel && (
-                      <KasFormDialog editItem={item} akunOptions={akunOptions}>
-                        <Button variant="ghost" size="icon" aria-label="Edit" className="tap-pad h-8 w-8 text-stone-400 hover:text-stone-700 dark:hover:text-zinc-200">
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      </KasFormDialog>
-                    )}
-                    {isOwner && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" aria-label="Hapus" className="tap-pad h-8 w-8 text-stone-400 hover:text-destructive hover:bg-destructive/10">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Hapus transaksi?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Transaksi <strong>{formatTanggal(item.tanggal)}</strong> sebesar{' '}
-                              <strong>{formatRupiah(item.jumlah)}</strong> akan dihapus.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Batal</AlertDialogCancel>
-                            <AlertDialogAction
-                              variant="destructive"
-                              onClick={() => handleDelete(item.id)}
-                              disabled={deletingId === item.id}
-                            >
-                              {deletingId === item.id ? 'Menghapus...' : 'Hapus'}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    )}
-                  </div>
-                </td>
-              </tr>
+              <KasDesktopRow
+                key={item.id}
+                item={item}
+                isOwner={isOwner}
+                akunOptions={akunOptions}
+                onDelete={handleDelete}
+                deleting={deletingId}
+              />
             ))}
           </tbody>
         </table>

@@ -51,7 +51,7 @@ export function ThermalPrinterSettings() {
                 className={`text-left rounded-lg border p-3 transition-colors ${
                   paperWidth === pw.value
                     ? 'border-stone-400 dark:border-white/[0.15] bg-stone-50 dark:bg-white/[0.04]'
-                    : 'border-stone-200 hover:border-stone-300 hover:bg-stone-50'
+                    : 'border-stone-200 dark:border-white/[0.10] hover:border-stone-300 hover:bg-stone-50 dark:hover:bg-white/[0.04]'
                 }`}
               >
                 <div className="font-semibold text-sm">{pw.label}</div>
@@ -61,8 +61,8 @@ export function ThermalPrinterSettings() {
           </div>
         </div>
 
-        <div className="rounded-lg bg-stone-50 border border-stone-200 p-3 text-xs text-stone-600 space-y-1">
-          <p className="font-semibold text-stone-700">Cara menghubungkan printer thermal:</p>
+        <div className="rounded-lg bg-muted/50 border border-border p-3 text-xs text-muted-foreground space-y-1">
+          <p className="font-semibold text-foreground">Cara menghubungkan printer thermal:</p>
           <ol className="list-decimal list-inside space-y-1">
             <li>Hubungkan printer ke komputer/HP via USB atau Bluetooth</li>
             <li>Pastikan driver printer sudah terinstal di perangkat</li>
