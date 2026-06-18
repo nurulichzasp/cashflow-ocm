@@ -199,6 +199,7 @@ export async function addModalPeron(formData: FormData) {
         kategori: data.jenis === 'tambah' ? 'modal_peron' : 'kembali_modal',
         refTabel: 'modal_peron',
         refId: inserted[0].id,
+        idempotencyKey: `modal_peron:${inserted[0].id}`,
         catatan: `${data.jenis === 'tambah' ? 'DP/Modal ke' : 'Kembali modal dari'} peron ${peronNama}`,
         createdBy: session.user.id,
       })

@@ -170,6 +170,10 @@ export async function createPembelian(data: {
         kategori: 'bayar_peron',
         refTabel: 'pembelian',
         refId: id,
+        // Defense-in-depth: kunci unik 1 entri kas otomatis per induk (uniqueIndex
+        // transaksi_kas.idempotency_key). create=refId baru, edit=hapus-lalu-buat → tak
+        // pernah tolak insert sah; hanya backstop bila ada double-insert (bug).
+        idempotencyKey: `pembelian:${id}`,
         catatan: `Bayar peron ${peronData.nama}${tids ? ` TID ${tids}` : ''}`,
         createdBy: session.user.id,
       })
@@ -291,6 +295,10 @@ export async function updatePembelian(id: string, data: {
         kategori: 'bayar_peron',
         refTabel: 'pembelian',
         refId: id,
+        // Defense-in-depth: kunci unik 1 entri kas otomatis per induk (uniqueIndex
+        // transaksi_kas.idempotency_key). create=refId baru, edit=hapus-lalu-buat → tak
+        // pernah tolak insert sah; hanya backstop bila ada double-insert (bug).
+        idempotencyKey: `pembelian:${id}`,
         catatan: `Bayar peron ${peronData.nama}${tids ? ` TID ${tids}` : ''}`,
         createdBy: session.user.id,
       })

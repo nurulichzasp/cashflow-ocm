@@ -102,6 +102,7 @@ export async function createPenjualan(formData: FormData) {
           kategori: 'penerimaan_bga',
           refTabel: 'penjualan',
           refId: penjualanId,
+          idempotencyKey: `penjualan:${penjualanId}`,
           catatan: `Penerimaan BGA${data.noInvoice ? ` inv ${data.noInvoice}` : ''}`,
           createdBy: session.user.id,
         })
@@ -172,6 +173,7 @@ export async function updatePenjualanStatus(id: string, statusBayar: 'belum' | '
           kategori: 'penerimaan_bga',
           refTabel: 'penjualan',
           refId: id,
+          idempotencyKey: `penjualan:${id}`,
           catatan: `Penerimaan BGA${existing.noInvoice ? ` inv ${existing.noInvoice}` : ''}`,
           createdBy: session.user.id,
         })
@@ -239,6 +241,7 @@ export async function updatePenjualan(id: string, formData: FormData) {
           kategori: 'penerimaan_bga',
           refTabel: 'penjualan',
           refId: id,
+          idempotencyKey: `penjualan:${id}`,
           catatan: `Penerimaan BGA${data.noInvoice ? ` inv ${data.noInvoice}` : ''}`,
           createdBy: session.user.id,
         })

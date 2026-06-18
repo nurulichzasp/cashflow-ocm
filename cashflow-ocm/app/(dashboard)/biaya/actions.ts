@@ -109,6 +109,7 @@ export async function createBiayaOperasional(formData: FormData) {
       kategori: 'biaya_operasional',
       refTabel: 'biaya_operasional',
       refId: ins[0].id,
+      idempotencyKey: `biaya_operasional:${ins[0].id}`,
       catatan: `Biaya ${labelKategori(data.kategori, kategoriLain)}${data.catatan ? `: ${data.catatan}` : ''}`,
       createdBy: session.user.id,
     })
@@ -196,6 +197,7 @@ export async function updateBiayaOperasional(id: string, formData: FormData) {
       kategori: 'biaya_operasional',
       refTabel: 'biaya_operasional',
       refId: id,
+      idempotencyKey: `biaya_operasional:${id}`,
       catatan: `Biaya ${labelKategori(data.kategori, kategoriLain)}${data.catatan ? `: ${data.catatan}` : ''}`,
       createdBy: session.user.id,
     })
