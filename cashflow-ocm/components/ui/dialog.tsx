@@ -7,6 +7,11 @@ import { X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
+// ⚠️ UTANG TEKNIS (dua library primitif): ini satu-satunya overlay @radix-ui
+// yang tersisa (+ ui/select.tsx). Sisanya — Sheet/AlertDialog/Dropdown/Button —
+// sudah @base-ui. Motion SUDAH diseragamkan lintas-library: token --ease-out-expo,
+// durasi 200ms buka / 150ms tutup, nol overshoot. Penyatuan library ditunda
+// (lihat audit-visual Fase 1, Q1) agar tak ada migrasi diam-diam.
 const Dialog = DialogPrimitive.Root
 const DialogTrigger = DialogPrimitive.Trigger
 const DialogPortal = DialogPrimitive.Portal
@@ -19,7 +24,7 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "depth-backdrop fixed inset-0 z-50 bg-black/25 backdrop-blur-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=open]:duration-300 data-[state=closed]:duration-200",
+      "depth-backdrop fixed inset-0 z-50 bg-black/25 backdrop-blur-md ease-[var(--ease-out-expo)] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=open]:duration-200 data-[state=closed]:duration-150",
       className
     )}
     {...props}
@@ -38,7 +43,7 @@ const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "glass-panel fixed left-1/2 top-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-3xl border-0 p-6 text-sm outline-none max-h-[90dvh] overflow-y-auto data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95 data-[state=open]:duration-300 data-[state=open]:ease-[cubic-bezier(0.34,1.56,0.64,1)] sm:max-w-lg",
+        "glass-panel fixed left-1/2 top-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-3xl border-0 p-6 text-sm outline-none max-h-[90dvh] overflow-y-auto ease-[var(--ease-out-expo)] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95 data-[state=open]:duration-200 data-[state=closed]:duration-150 sm:max-w-lg",
         className
       )}
       {...props}
