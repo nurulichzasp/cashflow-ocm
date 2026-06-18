@@ -557,7 +557,10 @@ html.dark [class~="hover:bg-orange-700"]:hover       { background-color: #c8654a
     .sl-fade, .sl-dot { animation: none; opacity: 1; }
   }
 
-  /* ── Press card: mobile-only tap feedback ── */
+  /* ── Press card: umpan-balik tekan (mobile). Pakai HANYA di kartu yang badannya
+     BUKA DETAIL (navigasi/modal) — JANGAN di kartu hero/stat/display agar tak jadi
+     afordans palsu (rule #4 audit visual). Saat ini sengaja belum dipakai; siap saat
+     ada kartu tappable. ── */
   @media (hover: none) {
     .press-card {
       transition: transform 150ms ease, box-shadow 150ms ease;

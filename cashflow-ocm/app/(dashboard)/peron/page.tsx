@@ -27,7 +27,7 @@ export default async function PeronPage() {
 
       <div className="space-y-2.5">
         {/* Hero: Total DP Beredar — angka utama */}
-        <div className="surface press-card p-4">
+        <div className="surface p-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500 mb-1.5">Total DP Beredar</p>
           <p className="text-2xl font-bold text-primary num tabular-nums">{formatCompact(totalDp)}</p>
           <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Modal yang sedang di peron</p>

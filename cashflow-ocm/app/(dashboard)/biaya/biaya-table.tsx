@@ -188,7 +188,7 @@ export function BiayaTable({ biayaList, isOwner, akunOptions }: Props) {
     <div className="space-y-3">
       {/* Hero Total Pengeluaran — IKUT filter (pola Pembelian). */}
       <div className="space-y-2.5">
-        <div className="surface press-card p-4">
+        <div className="surface p-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">Total Pengeluaran</p>
           <p className="text-2xl font-bold text-stone-900 dark:text-zinc-50 num tabular-nums">{formatCompact(totalBiaya)}</p>
           <p className="text-xs text-stone-400 mt-1">

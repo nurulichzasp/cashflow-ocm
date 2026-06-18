@@ -117,7 +117,7 @@ function AccountCard({ akun, single }: { akun: AkunCard; single: boolean }) {
   const Icon = akun.tipe === 'bank' ? Landmark : Wallet
   return (
     <article
-      className={`surface press-card flex shrink-0 snap-start flex-col justify-between p-3.5 ${
+      className={`surface flex shrink-0 snap-start flex-col justify-between p-3.5 ${
         single ? 'w-full' : 'w-[78%] sm:w-[248px]'
       }`}
       style={{ minHeight: 92 }}

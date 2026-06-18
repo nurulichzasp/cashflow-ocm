@@ -173,7 +173,7 @@ export function PeronTable({ peronList, isOwner, akunOptions = [] }: Props) {
       {/* Mobile — aksi di kebab ⋯, kartu dipadatkan jadi 2 zona */}
       <div className="md:hidden space-y-2">
         {sorted.map((p) => (
-          <div key={p.id} className="surface press-card p-4">
+          <div key={p.id} className="surface p-4">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold text-stone-900 dark:text-stone-100">
