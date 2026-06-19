@@ -14,7 +14,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { DateRangeInline } from '@/components/date-range-inline'
 import { createPembelian, updatePembelian, getHargaAcuanListForProduk, type KategoriPembelian, type DetailInput } from './actions'
 import { effectiveKelebihanPeron, effectiveKeuntunganPerKg } from '@/lib/harga'
-import { formatRupiah, formatRentangKotak, buildKeteranganReplas, todayString } from '@/lib/format'
+import { formatRupiah, formatRentangKotak, buildKeteranganReplas, isAutoKeteranganReplas, todayString } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { Plus, Trash2, CalendarDays, AlertTriangle } from 'lucide-react'
 
@@ -84,9 +84,13 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
       setStatusBayar(initialData.statusBayarPeron)
       setSumberBayarId(initialData.sumberBayarId ?? '')
       setCatatan(initialData.catatan ?? '')
-      setKeterangan(initialData.keterangan ?? '')
-      // Tiket lama: pertahankan keterangan tersimpan (anggap manual) agar tak ditimpa auto.
-      setKeteranganManual(!!initialData.keterangan)
+      // Keterangan auto "Total N Replas" di-derive ULANG dari detail (jangan dianggap
+      // manual / jangan tampilkan nilai basi spt "Total 0 Replas"). Hanya teks manual
+      // sejati yang dipertahankan & ditandai manual.
+      const storedKet = initialData.keterangan ?? ''
+      const manualKet = !!storedKet && !isAutoKeteranganReplas(storedKet)
+      setKeterangan(manualKet ? storedKet : '')
+      setKeteranganManual(manualKet)
       setFotos(initialData.fotoUrls ?? [])
       setDetails(
         initialData.details.length > 0

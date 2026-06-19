@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Printer } from 'lucide-react'
 import { toast } from 'sonner'
-import { formatRupiah, formatTanggal, buildKeteranganReplas } from '@/lib/format'
+import { formatRupiah, formatTanggal, notaKeteranganReplas } from '@/lib/format'
 import { fotoUrl } from '@/lib/foto-url'
 import type { Pembelian, Peron, AkunKas, PembelianFoto, PembelianDetail } from '@/lib/db/schema'
 
@@ -78,9 +78,10 @@ function buildNotaHTML(p: PembelianRow, nomorUrut: number): string {
   const waktu = formatWaktu(p.createdAt)
   const sumberLabel = sumberBayarLabel(p.sumberBayar)
   const noInvoice = generateNoPembelian(p.tanggal, p.peron?.kode, nomorUrut)
-  // Keterangan "Total N Replas (rentang)" — pakai yg tersimpan (hormati edit manual),
-  // fallback ke helper bersama (format identik dgn form).
-  const keteranganReplas = p.keterangan?.trim() || buildKeteranganReplas(details, p.tanggal)
+  // Keterangan "Total N Replas (rentang)" — SATU sumber, di-derive saat render dari
+  // field replas (identik form & SEMUA mode nota). Teks manual dihormati. Lihat
+  // notaKeteranganReplas di lib/format.
+  const keteranganReplas = notaKeteranganReplas(p.keterangan, details, p.tanggal)
 
   const detailRows = details.map((d) => `
     <tr>
@@ -213,7 +214,7 @@ function buildThermalHTML(p: PembelianRow, paperWidthMm: number, nomorUrut: numb
   const waktu = formatWaktu(p.createdAt)
   const sumberLabel = sumberBayarLabel(p.sumberBayar)
   const noInvoice = generateNoPembelian(p.tanggal, p.peron?.kode, nomorUrut)
-  const keteranganReplas = p.keterangan?.trim() || buildKeteranganReplas(details, p.tanggal)
+  const keteranganReplas = notaKeteranganReplas(p.keterangan, details, p.tanggal)
   const charWidth = paperWidthMm === 80 ? 42 : 32
   const divider = '-'.repeat(charWidth)
   const doubleDivider = '='.repeat(charWidth)
@@ -360,7 +361,7 @@ function buildThermalLines(p: PembelianRow, nomorUrut: number): ThermalLine[] {
   const waktu = formatWaktu(p.createdAt)
   const sumberLabel = sumberBayarLabel(p.sumberBayar)
   const noInvoice = generateNoPembelian(p.tanggal, p.peron?.kode, nomorUrut)
-  const keteranganReplas = p.keterangan?.trim() || buildKeteranganReplas(details, p.tanggal)
+  const keteranganReplas = notaKeteranganReplas(p.keterangan, details, p.tanggal)
 
   const lines: ThermalLine[] = [
     { kind: 'text', text: 'CV OCM', align: 'c', bold: true, scale: 1.55 },
@@ -673,7 +674,7 @@ function buildThermerURL(p: PembelianRow, nomorUrut: number): string {
   const waktu = formatWaktu(p.createdAt)
   const sumberLabel = p.sumberBayar ? (p.sumberBayar.tipe === 'bank' ? 'Transfer' : 'Tunai') : null
   const noInvoice = generateNoPembelian(p.tanggal, p.peron?.kode, nomorUrut)
-  const keteranganReplas = p.keterangan?.trim() || buildKeteranganReplas(details, p.tanggal)
+  const keteranganReplas = notaKeteranganReplas(p.keterangan, details, p.tanggal)
 
   const entries: ThermerEntry[] = [
     // Header IDENTIK dengan nota visual (buildThermalLines): CV OCM / Supplier TBS

@@ -151,10 +151,14 @@ type ReplasDetail = {
 }
 
 /**
- * SATU SUMBER keterangan tiket: "Total {N} Replas ({rentang})".
- * Dipakai PERSIS sama oleh form pembelian (live) & nota cetak (3 mode). Menerima
- * detail bentuk string (form) maupun number (DB). Semua baris replas tonase 0 →
- * string kosong (sama dgn perilaku form). `fallbackTanggal` = tanggal header tiket.
+ * SATU SUMBER baris replas: "Total {N} Replas ({rentang})".
+ * Dipakai PERSIS sama oleh form pembelian (live) & nota cetak (via {@link notaKeteranganReplas}).
+ * Menerima detail bentuk string (form) maupun number (DB). `fallbackTanggal` = tanggal header.
+ *
+ * TANPA data replas → string kosong (baris disembunyikan), KONSISTEN di mana pun:
+ *   - tak ada baris tonase > 0, ATAU
+ *   - total replas < 1 (tak ada jumlah replas terisi) — dulu menghasilkan "Total 0 Replas"
+ *     yang ikut tersimpan & bikin nota thermal "kadang muncul kadang tidak".
  */
 export function buildKeteranganReplas(details: ReplasDetail[], fallbackTanggal: string): string {
   const num = (v: number | string | null | undefined) => (typeof v === 'number' ? v : parseFloat(String(v ?? '')) || 0)
@@ -162,10 +166,35 @@ export function buildKeteranganReplas(details: ReplasDetail[], fallbackTanggal: 
   const rows = details.filter((d) => num(d.tonase) > 0)
   if (rows.length === 0) return ''
   const totalReplas = rows.reduce((s, d) => s + int(d.jumlahReplas), 0)
+  if (totalReplas < 1) return ''
   const froms = rows.map((d) => d.tanggalReplas || fallbackTanggal).filter(Boolean) as string[]
   const tos = rows.map((d) => d.tanggalReplasSampai || d.tanggalReplas || fallbackTanggal).filter(Boolean) as string[]
   if (froms.length === 0) return ''
   const min = froms.reduce((a, b) => (a < b ? a : b))
   const max = tos.reduce((a, b) => (a > b ? a : b))
   return `Total ${totalReplas} Replas (${formatRentangReplas(min, max)})`
+}
+
+/** Apakah teks ini berpola auto "Total N Replas (...)" (bukan keterangan manual)? */
+export function isAutoKeteranganReplas(s: string | null | undefined): boolean {
+  return /^Total\s+\d+\s+Replas\b/.test((s ?? '').trim())
+}
+
+/**
+ * Keterangan tiket FINAL untuk SEMUA nota (visual A5 + thermal preview + Thermer + gambar).
+ * SATU sumber, dihitung saat render dari field replas — TIDAK bergantung pada nilai
+ * `keterangan` tersimpan yang bisa null/basi:
+ *   - Teks MANUAL (bukan pola auto) → dihormati apa adanya.
+ *   - Selain itu (null / "Total N Replas" tersimpan) → di-derive ULANG via
+ *     {@link buildKeteranganReplas} dari detail saat ini. Tanpa data replas → '' (baris
+ *     disembunyikan seragam di kedua jalur cetak).
+ */
+export function notaKeteranganReplas(
+  stored: string | null | undefined,
+  details: ReplasDetail[],
+  fallbackTanggal: string,
+): string {
+  const manual = (stored ?? '').trim()
+  if (manual && !isAutoKeteranganReplas(manual)) return manual
+  return buildKeteranganReplas(details, fallbackTanggal)
 }

@@ -38,7 +38,8 @@ const peronData = [
   { kode: null, nama: 'Sikun',   keuntunganPerKg: 0,   dpModal: 0             },
   { kode: 3,    nama: 'Hanafi',  keuntunganPerKg: 50,  dpModal: 0             },
   { kode: 11,   nama: 'Ibnu',    keuntunganPerKg: 80,  dpModal: 0             },
-  { kode: 7,    nama: 'Umum',    keuntunganPerKg: 70,  dpModal: 0             },
+  { kode: 7,    nama: 'Umum',    keuntunganPerKg: 90,  dpModal: 0             }, // kelebihan 30/kg (120−90), seragam semua produk
+
   { kode: 0,    nama: 'Pribadi', keuntunganPerKg: 50,  dpModal: 0             },
 ]
 

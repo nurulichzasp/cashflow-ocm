@@ -175,7 +175,8 @@ scripts/ (migrasi idempotent + seed + util):
   add-app-settings-table, add-replas-fields (keduanya di vercel-build),
   add-idempotency-columns, add-peron-access-table, add-peron-health-tables,
   migrate-to-detail, seed, seed-peron, check-db, reset-password,
-  verify-password, gen-pwa-icons.cjs
+  verify-password, gen-pwa-icons.cjs,
+  set-umum-kelebihan-30 (migrasi DATA sekali-jalan, idempotent; SET peron "Umum" untung/kg=90; TIDAK di vercel-build)
 proxy.ts (auth gate)  ·  vercel.json  ·  next.config.ts
 public/ icon-{192,512,maskable}.png, sw.js
 ```
@@ -184,7 +185,7 @@ public/ icon-{192,512,maskable}.png, sw.js
 
 ## 5. Konvensi & Pola
 
-**Nilai & format** (`lib/format.ts`): `formatRupiah` (presisi penuh, tabel/form), `formatCompact`/`formatCompactValue` ("Rp 1,23 M / 296,8 jt / 45 rb", utk hero/KPI), `formatNumber`, `formatTanggal`/`formatTanggalLengkap`/`formatTanggalPendek`, `formatRentangKotak`/`formatRentangReplas` (rentang replas), `buildKeteranganReplas` ("Total N Replas (rentang)" — SATU sumber form & nota). **WIB**: `jakartaDateString(offsetDays)`/`todayString()` pakai `Asia/Jakarta` (konsisten server UTC ↔ client). Angka uang wajib `.num`/`tabular-nums`.
+**Nilai & format** (`lib/format.ts`): `formatRupiah` (presisi penuh, tabel/form), `formatCompact`/`formatCompactValue` ("Rp 1,23 M / 296,8 jt / 45 rb", utk hero/KPI), `formatNumber`, `formatTanggal`/`formatTanggalLengkap`/`formatTanggalPendek`, `formatRentangKotak`/`formatRentangReplas` (rentang replas), `buildKeteranganReplas` ("Total N Replas (rentang)" — SATU sumber; **TANPA data replas / total replas <1 → "" (baris hilang), bukan lagi "Total 0 Replas"**), `notaKeteranganReplas` (wrapper nota: di-derive saat render dari field replas + hormati teks manual; **SATU sumber identik di SEMUA mode nota — A5, thermal preview, Thermer, gambar share**; ganti pola lama `keterangan?.trim() || …` yg bikin thermal "kadang muncul kadang tidak"), `isAutoKeteranganReplas` (deteksi pola auto vs manual). **WIB**: `jakartaDateString(offsetDays)`/`todayString()` pakai `Asia/Jakarta` (konsisten server UTC ↔ client). Angka uang wajib `.num`/`tabular-nums`.
 
 **Warna** (`app/globals.css` `:root`/`html.dark`, Tailwind v4 `@theme`):
 - Monokrom netral. Light `--background #FAFAF9` / `--foreground #1C1917` / `--card #FFFFFF` / `--border #E7E5E4`. Dark `#191919` / `#F3F4F6` / `#28282B` / `rgba(255,255,255,.07)`.
@@ -224,6 +225,8 @@ public/ icon-{192,512,maskable}.png, sw.js
 11. **WIB**: selalu `jakartaDateString()`/`todayString()` utk tanggal (server Vercel = UTC).
 12. ⚠️ **`scripts/setup-company-accounts.ts` TIDAK ADA** di repo (tak pernah landing). `updateUserEmail` **sudah landing** (`pengaturan/actions.ts`, commit `589ebac`).
 13. **Idempotency**: form transaksi kirim `idempotencyKey` (uniqueIndex) — aman dari dobel-submit.
+14. **Model harga (`lib/harga.ts`) — SATU sumber**: `SELISIH_JUAL_BGA=120` (tetap). **Kelebihan peron = 120 − `peron.keuntunganPerKg`** (bonus/kg di atas acuan yg dibayar ke peron). Clamp HANYA di `effectiveKelebihanPeron`: **non-TBS (brondolan) di-cap `CAP_KEUNTUNGAN_PERON=50`** → untung CV ter-floor ≥70; **TBS bebas** (tak di-cap). Untung CV/kg = 120 − kelebihan efektif. Per-peron, fully data-driven (form pembelian & peron baca `keuntunganPerKg` live; historis simpan `totalBeli/keuntungan` sendiri → tak ditulis ulang saat nilai peron berubah).
+15. **Peron "Umum" = kelebihan 30/kg flat (override per-KATEGORI… sebenarnya per-PERON)** ✅ (19 Jun 2026). **"Umum" BUKAN kolom kategori — ia SATU peron biasa** (`nama='Umum'`, kode 7) di tabel `peron`. Aturannya dinyatakan via `keuntunganPerKg=90` → kelebihan = 120−90 = **30/kg**, untung CV ter-floor **≥90**. Karena 30 ≤ cap brondolan 50, kelebihan **seragam 30 untuk TBS DAN semua brondolan** (cap tak pernah mengikat; TBS-bebas tak relevan krn raw sudah 30). **Bedakan jelas**: ini khusus peron Umum — peron **non-Umum** TIDAK berubah (brondolan tetap cap ≤50, TBS tetap bebas). Tak ada angka 30 hardcoded (di-derive 120−90). Diterapkan ke prod via `scripts/set-umum-kelebihan-30.ts` + seed (`seed-peron.ts` Umum=90). Sebelumnya Umum=70 (kelebihan 50).
 
 ---
-*Snapshot dibuat: 13 Juni 2026.*
+*Snapshot dibuat: 13 Juni 2026. Diperbarui 19 Juni 2026: peron "Umum" kelebihan 50→30 (untung CV ≥90, semua produk; via `keuntunganPerKg` 70→90) + nota keterangan replas thermal disatukan (`notaKeteranganReplas`, derive saat render, "Total 0 Replas" tak muncul).*

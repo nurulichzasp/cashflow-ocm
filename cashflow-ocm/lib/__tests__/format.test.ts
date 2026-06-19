@@ -4,6 +4,8 @@ import {
   formatRentangKotak,
   formatRentangReplas,
   buildKeteranganReplas,
+  isAutoKeteranganReplas,
+  notaKeteranganReplas,
   jakartaDateString,
 } from '../format'
 
@@ -69,6 +71,51 @@ describe('buildKeteranganReplas', () => {
       '2026-06-10',
     )
     expect(out).toBe('Total 4 Replas (10 Juni)')
+  })
+  it('1 replas → singular benar', () => {
+    expect(buildKeteranganReplas([{ tonase: 500, jumlahReplas: 1, tanggalReplas: '2026-06-07' }], '2026-06-07'))
+      .toBe('Total 1 Replas (7 Juni)')
+  })
+  it('ada tonase tapi TANPA data replas → kosong (tak ada "Total 0 Replas")', () => {
+    // non-TBS / brondolan: tonase terisi, jumlahReplas kosong/null/0.
+    expect(buildKeteranganReplas([{ tonase: 1200 }], '2026-06-04')).toBe('')
+    expect(buildKeteranganReplas([{ tonase: 1200, jumlahReplas: 0 }], '2026-06-04')).toBe('')
+    expect(buildKeteranganReplas([{ tonase: '1200', jumlahReplas: '' }], '2026-06-04')).toBe('')
+  })
+})
+
+describe('isAutoKeteranganReplas', () => {
+  it('mengenali pola auto "Total N Replas"', () => {
+    expect(isAutoKeteranganReplas('Total 3 Replas (4–6 Juni)')).toBe(true)
+    expect(isAutoKeteranganReplas('Total 0 Replas (4 Juni)')).toBe(true)
+    expect(isAutoKeteranganReplas('Total 1 Replas (7 Juni)')).toBe(true)
+  })
+  it('teks manual / kosong → bukan pola auto', () => {
+    expect(isAutoKeteranganReplas('Bonus lebaran')).toBe(false)
+    expect(isAutoKeteranganReplas('Total bayar tunai')).toBe(false)
+    expect(isAutoKeteranganReplas('')).toBe(false)
+    expect(isAutoKeteranganReplas(null)).toBe(false)
+    expect(isAutoKeteranganReplas(undefined)).toBe(false)
+  })
+})
+
+describe('notaKeteranganReplas (satu sumber nota visual & thermal)', () => {
+  const detailsTBS = [{ tonase: 1000, jumlahReplas: 3, tanggalReplas: '2026-06-04', tanggalReplasSampai: '2026-06-06' }]
+  const detailsTanpaReplas = [{ tonase: 1200 }]
+
+  it('derive dari field replas saat tersimpan null', () => {
+    expect(notaKeteranganReplas(null, detailsTBS, '2026-06-04')).toBe('Total 3 Replas (4–6 Juni)')
+  })
+  it('abaikan nilai auto tersimpan yang basi → derive ulang dari detail', () => {
+    expect(notaKeteranganReplas('Total 9 Replas (1 Jan)', detailsTBS, '2026-06-04')).toBe('Total 3 Replas (4–6 Juni)')
+  })
+  it('tanpa data replas → kosong walau tersimpan "Total 0 Replas" (baris hilang seragam)', () => {
+    expect(notaKeteranganReplas('Total 0 Replas (4 Juni)', detailsTanpaReplas, '2026-06-04')).toBe('')
+    expect(notaKeteranganReplas(null, detailsTanpaReplas, '2026-06-04')).toBe('')
+  })
+  it('hormati keterangan manual', () => {
+    expect(notaKeteranganReplas('Bonus lebaran', detailsTanpaReplas, '2026-06-04')).toBe('Bonus lebaran')
+    expect(notaKeteranganReplas('  Titip salam  ', detailsTBS, '2026-06-04')).toBe('Titip salam')
   })
 })
 
