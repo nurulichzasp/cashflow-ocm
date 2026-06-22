@@ -358,7 +358,7 @@ function buildThermalHTML(p: PembelianRow, paperWidthMm: number, nomorUrut: numb
 
 type ThermalLine =
   | { kind: 'text'; text: string; align: 'l' | 'c' | 'r'; bold?: boolean; scale?: number }
-  | { kind: 'pair'; left: string; right: string; bold?: boolean; scale?: number }
+  | { kind: 'pair'; left: string; right: string; bold?: boolean; scale?: number; leftScale?: number }
   | { kind: 'rule'; style: 'dash' | 'solid' }
 
 function buildThermalLines(p: PembelianRow, nomorUrut: number): ThermalLine[] {
@@ -388,7 +388,8 @@ function buildThermalLines(p: PembelianRow, nomorUrut: number): ThermalLine[] {
       return [
         ...(i > 0 ? [{ kind: 'rule', style: 'dash' } as ThermalLine] : []),
         { kind: 'text', text: `${d.tonase.toLocaleString('id-ID')} kg x Rp ${d.hargaLapangan.toLocaleString('id-ID')}`, align: 'l' },
-        { kind: 'pair', left: tgl, right: formatRupiah(d.subtotalBeli) },
+        // Tanggal (kiri) lebih kecil dari nominal (kanan) — jangan disamakan.
+        { kind: 'pair', left: tgl, right: formatRupiah(d.subtotalBeli), leftScale: 0.8 },
         ...(nopolSupir ? [{ kind: 'text', text: nopolSupir, align: 'l', scale: 0.8 } as ThermalLine] : []),
       ]
     }),
@@ -457,7 +458,7 @@ async function renderThermalNotaBlob(p: PembelianRow, nomorUrut: number): Promis
 
   type Prim =
     | { t: 'text'; text: string; align: 'l' | 'c' | 'r'; px: number; bold: boolean; y: number }
-    | { t: 'pair'; left: string; right: string; px: number; bold: boolean; y: number }
+    | { t: 'pair'; left: string; right: string; px: number; leftPx: number; bold: boolean; y: number }
     | { t: 'rule'; style: 'dash' | 'solid'; y: number }
   const prims: Prim[] = []
   let y = topPad
@@ -480,7 +481,8 @@ async function renderThermalNotaBlob(p: PembelianRow, nomorUrut: number): Promis
     }
     // pair
     const px = font(line.scale ?? 1, line.bold)
-    prims.push({ t: 'pair', left: line.left, right: line.right, px, bold: !!line.bold, y })
+    const leftPx = line.leftScale ? Math.round(BASE * line.leftScale) : px
+    prims.push({ t: 'pair', left: line.left, right: line.right, px, leftPx, bold: !!line.bold, y })
     y += lh(px)
   }
   const H = y + botPad
@@ -512,9 +514,12 @@ async function renderThermalNotaBlob(p: PembelianRow, nomorUrut: number): Promis
       const x = pr.align === 'c' ? W / 2 : pr.align === 'r' ? W - padX : padX
       ctx.fillText(pr.text, x, pr.y)
     } else {
+      // pair: sisi kiri (mis. tanggal) bisa lebih kecil dari sisi kanan (nominal).
       ctx.textAlign = 'left'
+      font(pr.leftPx / BASE, pr.bold)
       ctx.fillText(pr.left, padX, pr.y)
       ctx.textAlign = 'right'
+      font(pr.px / BASE, pr.bold)
       ctx.fillText(pr.right, W - padX, pr.y)
     }
   }
@@ -676,14 +681,6 @@ function txt(content: string, bold: 0 | 1 = 0, align: 0 | 1 | 2 = 0, format: 0 |
   return { type: 0, content: content.replace(/[–—]/g, '-'), bold, align, format }
 }
 
-/** Satu baris teks monospace: `left` + spasi + `right`, di-pad ke `width` kolom
- *  (nominal rata kanan). `left` kosong → murni rata kanan; tak muat → "left right". */
-function padLR(left: string, right: string, width: number): string {
-  const l = left || ''
-  const gap = width - l.length - right.length
-  return gap > 0 ? l + ' '.repeat(gap) + right : (l ? `${l} ${right}` : right)
-}
-
 function buildThermerURL(p: PembelianRow, nomorUrut: number): string {
   const details = getDetails(p)
   const paperWidthMm = getThermalWidth()
@@ -715,10 +712,14 @@ function buildThermerURL(p: PembelianRow, nomorUrut: number): string {
     ...details.flatMap((d): ThermerEntry[] => {
       const nopolSupir = [d.nopol, d.supir].filter(Boolean).join(' / ')
       const tgl = d.tanggalReplas ? formatRentangKotak(d.tanggalReplas, d.tanggalReplasSampai) : ''
-      // Tanggal (kiri) SEBARIS dengan subtotal (kanan) → tiap baris = 2 baris, bukan 3.
+      // Subtotal rata-KANAN via align Thermer (2), BUKAN padding spasi: Thermer
+      // menggabung spasi ganda jadi satu → nominal malah nempel kiri (jelek).
+      // Tanggal jadi baris kecil tersendiri (format 4) — Thermer cuma punya 1
+      // align + 1 ukuran per entri, jadi tak bisa sebaris beda-ukuran dgn nominal.
       return [
         txt(`${d.tonase.toLocaleString('id-ID')} kg x Rp ${d.hargaLapangan.toLocaleString('id-ID')}`),
-        txt(padLR(tgl, formatRupiah(d.subtotalBeli), paperWidthMm === 80 ? 42 : 32)),
+        ...(tgl ? [txt(tgl, 0, 0, 4)] : []),
+        txt(formatRupiah(d.subtotalBeli), 0, 2),
         ...(nopolSupir ? [txt(nopolSupir, 0, 0, 4)] : []),
         txt(div, 0, 1),
       ]

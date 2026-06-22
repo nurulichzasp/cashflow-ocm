@@ -6,7 +6,7 @@
  * halaman /offline. No-op di localhost agar dev (HMR) tak terganggu.
  * Bump VERSION untuk paksa cache baru di rilis berikutnya.
  */
-const VERSION = 'v4'
+const VERSION = 'v5'
 const CACHE = `ocm-${VERSION}`
 const PRECACHE = ['/offline', '/icon-192.png', '/icon-512.png', '/icon.svg']
 
