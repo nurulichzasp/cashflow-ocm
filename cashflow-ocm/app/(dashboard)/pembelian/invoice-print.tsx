@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Printer } from 'lucide-react'
 import { toast } from 'sonner'
-import { formatRupiah, formatTanggal, formatRentangKotak, notaKeteranganReplas } from '@/lib/format'
+import { formatRupiah, formatTanggal, notaReplasBaris, notaKeteranganReplas } from '@/lib/format'
 import { fotoUrl } from '@/lib/foto-url'
 import type { Pembelian, Peron, AkunKas, PembelianFoto, PembelianDetail } from '@/lib/db/schema'
 
@@ -86,15 +86,18 @@ function buildNotaHTML(p: PembelianRow, nomorUrut: number): string {
   // notaKeteranganReplas di lib/format.
   const keteranganReplas = notaKeteranganReplas(p.keterangan, details, p.tanggal)
 
-  const detailRows = details.map((d) => `
+  const detailRows = details.map((d) => {
+    const meta = notaReplasBaris(d.jumlahReplas, d.tanggalReplas, d.tanggalReplasSampai)
+    return `
     <tr>
       <td class="r">${d.tonase.toLocaleString('id-ID')} kg</td>
       <td class="r">Rp ${d.hargaLapangan.toLocaleString('id-ID')}</td>
       <td class="r b">${formatRupiah(d.subtotalBeli)}</td>
     </tr>
-    ${d.tanggalReplas ? `<tr class="sub"><td colspan="3" class="sub-td">${esc(formatRentangKotak(d.tanggalReplas, d.tanggalReplasSampai))}</td></tr>` : ''}
+    ${meta ? `<tr class="sub"><td colspan="3" class="sub-td">${esc(meta)}</td></tr>` : ''}
     ${d.nopol || d.supir ? `<tr class="sub"><td colspan="3" class="sub-td">${[d.nopol, d.supir].filter(Boolean).map(esc).join(' · ')}</td></tr>` : ''}
-  `).join('')
+  `
+  }).join('')
 
   return `<!DOCTYPE html>
 <html lang="id">
@@ -321,10 +324,10 @@ function buildThermalHTML(p: PembelianRow, paperWidthMm: number, nomorUrut: numb
   <div class="items">
     ${details.map((d) => {
       const nopolSupir = [d.nopol, d.supir].filter(Boolean).map(esc).join(' / ')
-      const tgl = d.tanggalReplas ? esc(formatRentangKotak(d.tanggalReplas, d.tanggalReplasSampai)) : ''
+      const meta = esc(notaReplasBaris(d.jumlahReplas, d.tanggalReplas, d.tanggalReplasSampai))
       return `<div class="item">
         <div class="row"><span class="l">${d.tonase.toLocaleString('id-ID')} kg x Rp ${d.hargaLapangan.toLocaleString('id-ID')}</span></div>
-        <div class="row"><span class="l small">${tgl}</span><span class="r">${formatRupiah(d.subtotalBeli)}</span></div>
+        <div class="row"><span class="l small">${meta}</span><span class="r">${formatRupiah(d.subtotalBeli)}</span></div>
         ${nopolSupir ? `<div class="item-sub">${nopolSupir}</div>` : ''}
       </div>`
     }).join('<div class="divider"></div>')}
@@ -384,12 +387,12 @@ function buildThermalLines(p: PembelianRow, nomorUrut: number): ThermalLine[] {
     { kind: 'text', text: 'RINCIAN TONASE', align: 'l', scale: 0.8 },
     ...details.flatMap((d, i): ThermalLine[] => {
       const nopolSupir = [d.nopol, d.supir].filter(Boolean).join(' / ')
-      const tgl = d.tanggalReplas ? formatRentangKotak(d.tanggalReplas, d.tanggalReplasSampai) : ''
+      const meta = notaReplasBaris(d.jumlahReplas, d.tanggalReplas, d.tanggalReplasSampai)
       return [
         ...(i > 0 ? [{ kind: 'rule', style: 'dash' } as ThermalLine] : []),
         { kind: 'text', text: `${d.tonase.toLocaleString('id-ID')} kg x Rp ${d.hargaLapangan.toLocaleString('id-ID')}`, align: 'l' },
-        // Tanggal (kiri) lebih kecil dari nominal (kanan) — jangan disamakan.
-        { kind: 'pair', left: tgl, right: formatRupiah(d.subtotalBeli), leftScale: 0.8 },
+        // Meta (kiri: "N | tanggal") lebih kecil dari nominal (kanan).
+        { kind: 'pair', left: meta, right: formatRupiah(d.subtotalBeli), leftScale: 0.8 },
         ...(nopolSupir ? [{ kind: 'text', text: nopolSupir, align: 'l', scale: 0.8 } as ThermalLine] : []),
       ]
     }),
@@ -711,14 +714,14 @@ function buildThermerURL(p: PembelianRow, nomorUrut: number): string {
     txt('RINCIAN TONASE', 0, 0, 4),
     ...details.flatMap((d): ThermerEntry[] => {
       const nopolSupir = [d.nopol, d.supir].filter(Boolean).join(' / ')
-      const tgl = d.tanggalReplas ? formatRentangKotak(d.tanggalReplas, d.tanggalReplasSampai) : ''
+      const meta = notaReplasBaris(d.jumlahReplas, d.tanggalReplas, d.tanggalReplasSampai)
       // Subtotal rata-KANAN via align Thermer (2), BUKAN padding spasi: Thermer
       // menggabung spasi ganda jadi satu → nominal malah nempel kiri (jelek).
-      // Tanggal jadi baris kecil tersendiri (format 4) — Thermer cuma punya 1
-      // align + 1 ukuran per entri, jadi tak bisa sebaris beda-ukuran dgn nominal.
+      // Meta "N | tanggal" jadi baris kecil tersendiri (format 4) — Thermer
+      // cuma punya 1 align + 1 ukuran per entri, jadi tak bisa sebaris dgn nominal.
       return [
         txt(`${d.tonase.toLocaleString('id-ID')} kg x Rp ${d.hargaLapangan.toLocaleString('id-ID')}`),
-        ...(tgl ? [txt(tgl, 0, 0, 4)] : []),
+        ...(meta ? [txt(meta, 0, 0, 4)] : []),
         txt(formatRupiah(d.subtotalBeli), 0, 2),
         ...(nopolSupir ? [txt(nopolSupir, 0, 0, 4)] : []),
         txt(div, 0, 1),

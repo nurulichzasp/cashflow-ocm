@@ -3,6 +3,7 @@ import {
   formatCompact,
   formatRentangKotak,
   formatRentangReplas,
+  notaReplasBaris,
   buildKeteranganReplas,
   isAutoKeteranganReplas,
   notaKeteranganReplas,
@@ -40,6 +41,25 @@ describe('formatRentangKotak (bulan pendek)', () => {
   })
   it('input tak valid → string kosong', () => {
     expect(formatRentangKotak('bukan-tanggal')).toBe('')
+  })
+})
+
+describe('notaReplasBaris (meta per-baris nota)', () => {
+  it('jumlah + tanggal → "N | tanggal" (angka saja, pemisah ASCII)', () => {
+    expect(notaReplasBaris(5, '2026-06-13', '2026-06-15')).toBe('5 | 13–15 Jun')
+    expect(notaReplasBaris(3, '2026-06-16')).toBe('3 | 16 Jun')
+  })
+  it('jumlah saja (tanpa tanggal) → "N"', () => {
+    expect(notaReplasBaris(2, null)).toBe('2')
+    expect(notaReplasBaris('4')).toBe('4')
+  })
+  it('tanpa jumlah (<1) tapi ada tanggal → tanggal saja', () => {
+    expect(notaReplasBaris(0, '2026-06-16')).toBe('16 Jun')
+    expect(notaReplasBaris(null, '2026-06-16')).toBe('16 Jun')
+  })
+  it('keduanya kosong → string kosong (baris disembunyikan)', () => {
+    expect(notaReplasBaris(null, null)).toBe('')
+    expect(notaReplasBaris(0)).toBe('')
   })
 })
 

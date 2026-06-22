@@ -100,6 +100,29 @@ export function formatRentangKotak(dari: string, sampai?: string | null): string
 }
 
 /**
+ * Meta per-baris RINCIAN TONASE di nota: "{N} | {tanggal}" — menjawab "tonase
+ * baris ini dari berapa replas" secara minimalis (angka saja; makna 'replas'
+ * diberi oleh ringkasan "Total N Replas" di bawah). SATU sumber utk keempat
+ * builder nota (A5 / thermal preview / gambar / Thermer) supaya identik.
+ *   N>=1 & ada tanggal → "3 | 13–15 Jun"
+ *   N>=1 tanpa tanggal → "3"
+ *   N<1 & ada tanggal  → "13–15 Jun"
+ *   keduanya kosong    → ""
+ * Pemisah '|' sengaja ASCII (titik-tengah '·' dsb non-ASCII → Thermer membuang
+ * baris). En-dash di rentang tanggal di-fold ke hyphen oleh txt() khusus Thermer.
+ */
+export function notaReplasBaris(
+  jumlahReplas: number | string | null | undefined,
+  tanggalReplas?: string | null,
+  tanggalReplasSampai?: string | null,
+): string {
+  const n = typeof jumlahReplas === 'number' ? Math.trunc(jumlahReplas) : parseInt(String(jumlahReplas ?? ''), 10) || 0
+  const tgl = tanggalReplas ? formatRentangKotak(tanggalReplas, tanggalReplasSampai) : ''
+  const kiri = n >= 1 ? String(n) : ''
+  return kiri && tgl ? `${kiri} | ${tgl}` : kiri || tgl
+}
+
+/**
  * Label rentang filter untuk subteks hero (ikut DateRangeFilter, bisa 1 sisi):
  *   dari & sampai → "1–10 Jun" (pakai formatRentangKotak)
  *   dari saja     → "sejak 1 Jun"
