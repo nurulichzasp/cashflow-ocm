@@ -92,7 +92,7 @@ function buildNotaHTML(p: PembelianRow, nomorUrut: number): string {
       <td class="r">Rp ${d.hargaLapangan.toLocaleString('id-ID')}</td>
       <td class="r b">${formatRupiah(d.subtotalBeli)}</td>
     </tr>
-    ${d.tanggalReplas ? `<tr class="sub"><td colspan="3" class="sub-td">Replas ${esc(formatRentangKotak(d.tanggalReplas, d.tanggalReplasSampai))}</td></tr>` : ''}
+    ${d.tanggalReplas ? `<tr class="sub"><td colspan="3" class="sub-td">${esc(formatRentangKotak(d.tanggalReplas, d.tanggalReplasSampai))}</td></tr>` : ''}
     ${d.nopol || d.supir ? `<tr class="sub"><td colspan="3" class="sub-td">${[d.nopol, d.supir].filter(Boolean).map(esc).join(' · ')}</td></tr>` : ''}
   `).join('')
 
@@ -324,7 +324,7 @@ function buildThermalHTML(p: PembelianRow, paperWidthMm: number, nomorUrut: numb
       return `<div class="item">
         <div class="row"><span class="l">${d.tonase.toLocaleString('id-ID')} kg x Rp ${d.hargaLapangan.toLocaleString('id-ID')}</span></div>
         <div class="row"><span class="l small">= subtotal</span><span class="r">${formatRupiah(d.subtotalBeli)}</span></div>
-        ${d.tanggalReplas ? `<div class="item-sub">Replas ${esc(formatRentangKotak(d.tanggalReplas, d.tanggalReplasSampai))}</div>` : ''}
+        ${d.tanggalReplas ? `<div class="item-sub">${esc(formatRentangKotak(d.tanggalReplas, d.tanggalReplasSampai))}</div>` : ''}
         ${nopolSupir ? `<div class="item-sub">${nopolSupir}</div>` : ''}
       </div>`
     }).join('<div class="divider"></div>')}
@@ -388,7 +388,7 @@ function buildThermalLines(p: PembelianRow, nomorUrut: number): ThermalLine[] {
         ...(i > 0 ? [{ kind: 'rule', style: 'dash' } as ThermalLine] : []),
         { kind: 'text', text: `${d.tonase.toLocaleString('id-ID')} kg x Rp ${d.hargaLapangan.toLocaleString('id-ID')}`, align: 'l' },
         { kind: 'pair', left: '= subtotal', right: formatRupiah(d.subtotalBeli) },
-        ...(d.tanggalReplas ? [{ kind: 'text', text: `Replas ${formatRentangKotak(d.tanggalReplas, d.tanggalReplasSampai)}`, align: 'l', scale: 0.8 } as ThermalLine] : []),
+        ...(d.tanggalReplas ? [{ kind: 'text', text: formatRentangKotak(d.tanggalReplas, d.tanggalReplasSampai), align: 'l', scale: 0.8 } as ThermalLine] : []),
         ...(nopolSupir ? [{ kind: 'text', text: nopolSupir, align: 'l', scale: 0.8 } as ThermalLine] : []),
       ]
     }),
@@ -705,7 +705,7 @@ function buildThermerURL(p: PembelianRow, nomorUrut: number): string {
       return [
         txt(`${d.tonase.toLocaleString('id-ID')} kg x Rp ${d.hargaLapangan.toLocaleString('id-ID')}`),
         txt(`= ${formatRupiah(d.subtotalBeli)}`, 0, 2),
-        ...(d.tanggalReplas ? [txt(`Replas ${formatRentangKotak(d.tanggalReplas, d.tanggalReplasSampai)}`, 0, 0, 4)] : []),
+        ...(d.tanggalReplas ? [txt(formatRentangKotak(d.tanggalReplas, d.tanggalReplasSampai), 0, 0, 4)] : []),
         ...(nopolSupir ? [txt(nopolSupir, 0, 0, 4)] : []),
         txt(div, 0, 1),
       ]
