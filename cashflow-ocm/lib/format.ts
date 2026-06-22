@@ -151,28 +151,27 @@ type ReplasDetail = {
 }
 
 /**
- * SATU SUMBER baris replas: "Total {N} Replas ({rentang})".
+ * SATU SUMBER baris ringkasan replas: "Total {N} Replas" (TANPA rentang tanggal).
  * Dipakai PERSIS sama oleh form pembelian (live) & nota cetak (via {@link notaKeteranganReplas}).
- * Menerima detail bentuk string (form) maupun number (DB). `fallbackTanggal` = tanggal header.
+ * Menerima detail bentuk string (form) maupun number (DB).
+ *
+ * Rentang tanggal TIDAK lagi diringkas di sini: dulu "Total N Replas (rentang)" bikin string
+ * panjang & mentok di kertas thermal sempit (58mm) saat multi-baris. Tanggal kini tampil
+ * PENDEK per baris RINCIAN TONASE di nota (lihat invoice-print), jadi ringkasan tetap pendek.
+ * `_fallbackTanggal` dipertahankan di signature demi kompatibilitas pemanggil (tak dipakai lagi).
  *
  * TANPA data replas → string kosong (baris disembunyikan), KONSISTEN di mana pun:
  *   - tak ada baris tonase > 0, ATAU
- *   - total replas < 1 (tak ada jumlah replas terisi) — dulu menghasilkan "Total 0 Replas"
- *     yang ikut tersimpan & bikin nota thermal "kadang muncul kadang tidak".
+ *   - total replas < 1 (tak ada jumlah replas terisi) — jangan sampai "Total 0 Replas".
  */
-export function buildKeteranganReplas(details: ReplasDetail[], fallbackTanggal: string): string {
+export function buildKeteranganReplas(details: ReplasDetail[], _fallbackTanggal?: string): string {
   const num = (v: number | string | null | undefined) => (typeof v === 'number' ? v : parseFloat(String(v ?? '')) || 0)
   const int = (v: number | string | null | undefined) => (typeof v === 'number' ? Math.trunc(v) : parseInt(String(v ?? ''), 10) || 0)
   const rows = details.filter((d) => num(d.tonase) > 0)
   if (rows.length === 0) return ''
   const totalReplas = rows.reduce((s, d) => s + int(d.jumlahReplas), 0)
   if (totalReplas < 1) return ''
-  const froms = rows.map((d) => d.tanggalReplas || fallbackTanggal).filter(Boolean) as string[]
-  const tos = rows.map((d) => d.tanggalReplasSampai || d.tanggalReplas || fallbackTanggal).filter(Boolean) as string[]
-  if (froms.length === 0) return ''
-  const min = froms.reduce((a, b) => (a < b ? a : b))
-  const max = tos.reduce((a, b) => (a > b ? a : b))
-  return `Total ${totalReplas} Replas (${formatRentangReplas(min, max)})`
+  return `Total ${totalReplas} Replas`
 }
 
 /** Apakah teks ini berpola auto "Total N Replas (...)" (bukan keterangan manual)? */

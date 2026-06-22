@@ -52,7 +52,7 @@ describe('formatRentangReplas (bulan panjang)', () => {
 })
 
 describe('buildKeteranganReplas', () => {
-  it('menjumlah replas & merentang tanggal', () => {
+  it('menjumlah replas lintas baris (ringkasan tanpa rentang — tanggal kini per baris RINCIAN)', () => {
     const out = buildKeteranganReplas(
       [
         { tonase: 1000, jumlahReplas: 2, tanggalReplas: '2026-06-04', tanggalReplasSampai: '2026-06-05' },
@@ -60,7 +60,7 @@ describe('buildKeteranganReplas', () => {
       ],
       '2026-06-04',
     )
-    expect(out).toBe('Total 3 Replas (4–6 Juni)')
+    expect(out).toBe('Total 3 Replas')
   })
   it('baris tonase 0 diabaikan; semua 0 → kosong', () => {
     expect(buildKeteranganReplas([{ tonase: 0, jumlahReplas: 5 }], '2026-06-04')).toBe('')
@@ -70,11 +70,11 @@ describe('buildKeteranganReplas', () => {
       [{ tonase: '1000', jumlahReplas: '4', tanggalReplas: '2026-06-10' }],
       '2026-06-10',
     )
-    expect(out).toBe('Total 4 Replas (10 Juni)')
+    expect(out).toBe('Total 4 Replas')
   })
   it('1 replas → singular benar', () => {
     expect(buildKeteranganReplas([{ tonase: 500, jumlahReplas: 1, tanggalReplas: '2026-06-07' }], '2026-06-07'))
-      .toBe('Total 1 Replas (7 Juni)')
+      .toBe('Total 1 Replas')
   })
   it('ada tonase tapi TANPA data replas → kosong (tak ada "Total 0 Replas")', () => {
     // non-TBS / brondolan: tonase terisi, jumlahReplas kosong/null/0.
@@ -104,10 +104,10 @@ describe('notaKeteranganReplas (satu sumber nota visual & thermal)', () => {
   const detailsTanpaReplas = [{ tonase: 1200 }]
 
   it('derive dari field replas saat tersimpan null', () => {
-    expect(notaKeteranganReplas(null, detailsTBS, '2026-06-04')).toBe('Total 3 Replas (4–6 Juni)')
+    expect(notaKeteranganReplas(null, detailsTBS, '2026-06-04')).toBe('Total 3 Replas')
   })
   it('abaikan nilai auto tersimpan yang basi → derive ulang dari detail', () => {
-    expect(notaKeteranganReplas('Total 9 Replas (1 Jan)', detailsTBS, '2026-06-04')).toBe('Total 3 Replas (4–6 Juni)')
+    expect(notaKeteranganReplas('Total 9 Replas (1 Jan)', detailsTBS, '2026-06-04')).toBe('Total 3 Replas')
   })
   it('tanpa data replas → kosong walau tersimpan "Total 0 Replas" (baris hilang seragam)', () => {
     expect(notaKeteranganReplas('Total 0 Replas (4 Juni)', detailsTanpaReplas, '2026-06-04')).toBe('')
@@ -116,6 +116,38 @@ describe('notaKeteranganReplas (satu sumber nota visual & thermal)', () => {
   it('hormati keterangan manual', () => {
     expect(notaKeteranganReplas('Bonus lebaran', detailsTanpaReplas, '2026-06-04')).toBe('Bonus lebaran')
     expect(notaKeteranganReplas('  Titip salam  ', detailsTBS, '2026-06-04')).toBe('Titip salam')
+  })
+
+  // Regresi bug nota Thermer (multi-baris "RINCIAN TONASE"): keterangan harus
+  // teragregasi lintas SEMUA pembelian_detail, bukan baris pertama saja. Fungsi ini
+  // dipakai identik oleh keempat mode nota (A5 / thermal preview / Thermer / gambar),
+  // jadi jaminan di sini berlaku untuk semua mode.
+  describe('multi-baris (>1 pembelian_detail)', () => {
+    const multiReplas = [
+      { tonase: 1000, jumlahReplas: 2, tanggalReplas: '2026-06-04', tanggalReplasSampai: '2026-06-05' },
+      { tonase: 800, jumlahReplas: 1, tanggalReplas: '2026-06-06' },
+    ]
+    const multiSebagian = [
+      { tonase: 1000, jumlahReplas: 4, tanggalReplas: '2026-06-04' },
+      { tonase: 800 }, // baris ke-2 tanpa replas
+    ]
+    const multiTanpaReplas = [{ tonase: 1000 }, { tonase: 800 }]
+
+    it('data replas teragregasi lintas semua baris → muncul', () => {
+      expect(notaKeteranganReplas(null, multiReplas, '2026-06-04')).toBe('Total 3 Replas')
+    })
+    it('replas hanya di sebagian baris → tetap teragregasi (tak bergantung baris pertama)', () => {
+      expect(notaKeteranganReplas(null, multiSebagian, '2026-06-04')).toBe('Total 4 Replas')
+    })
+    it('stored auto basi diabaikan → derive ulang dari semua baris', () => {
+      expect(notaKeteranganReplas('Total 99 Replas (1 Jan)', multiReplas, '2026-06-04')).toBe('Total 3 Replas')
+    })
+    it('multi-baris TANPA replas & tanpa catatan → kosong (tak ada baris kosong / "Total 0 Replas")', () => {
+      expect(notaKeteranganReplas(null, multiTanpaReplas, '2026-06-04')).toBe('')
+    })
+    it('keterangan manual tetap dihormati di multi-baris', () => {
+      expect(notaKeteranganReplas('Titip 2 karung', multiReplas, '2026-06-04')).toBe('Titip 2 karung')
+    })
   })
 })
 
