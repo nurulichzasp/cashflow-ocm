@@ -9,6 +9,7 @@ import { auth } from '@/lib/auth'
 import { z } from 'zod'
 import { rebuildPeronHealth } from '@/lib/peron-health/rebuild'
 import { logActivity } from '@/lib/audit'
+import { requirePermission } from '@/lib/permissions'
 
 async function requireSession() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -71,7 +72,8 @@ export async function getPeronHealthDetail(peronId: string) {
 
 /** Trigger manual rebuild dari tombol "Perbarui". */
 export async function refreshPeronHealth() {
-  await requireSession()
+  const session = await requireSession()
+  requirePermission(session.user.role as any, 'canEdit')
   const res = await rebuildPeronHealth()
   revalidatePath('/peron/kesehatan')
   return res
@@ -88,6 +90,7 @@ const followupSchema = z.object({
 
 export async function createFollowup(input: z.infer<typeof followupSchema>) {
   const session = await requireSession()
+  requirePermission(session.user.role as any, 'canEdit')
   const data = followupSchema.parse(input)
   await db.insert(peronFollowup).values({
     peronId: data.peronId,
@@ -115,6 +118,7 @@ export async function createFollowup(input: z.infer<typeof followupSchema>) {
 
 export async function archivePeron(peronId: string) {
   const session = await requireSession()
+  requirePermission(session.user.role as any, 'canEdit')
   await db.update(peronHealth).set({ isArchived: true }).where(eq(peronHealth.peronId, peronId))
   await logActivity({
     userId: session.user.id,

@@ -1,13 +1,18 @@
 import { NextResponse } from 'next/server'
 import { notifyNewPembelian, notifyNewPenjualan } from '@/lib/notification'
 import { auth } from '@/lib/auth'
+import { hasPermission } from '@/lib/permissions'
 import { headers } from 'next/headers'
 
 export async function POST(request: Request) {
-  // Simple session authentication check to prevent unauthorized spam
+  // Auth: harus login DAN punya hak membuat transaksi. Tanpa cek role, user
+  // read-only (viewer/akuntan) bisa men-spam Telegram dengan payload arbitrer.
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  if (!hasPermission(session.user.role, 'canCreate')) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   try {

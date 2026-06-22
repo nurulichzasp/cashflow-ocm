@@ -4,7 +4,7 @@ import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { eq, sum } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { peron, modalPeron, transaksiKas, akunKas } from '@/lib/db/schema'
+import { peron, modalPeron, transaksiKas, akunKas, pembelian } from '@/lib/db/schema'
 import { and } from 'drizzle-orm'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
@@ -31,14 +31,14 @@ const peronSchema = z.object({
   kontak: z.string().optional(),
   alamat: z.string().optional(),
   status: z.enum(['aktif', 'nonaktif']).default('aktif'),
-  keuntunganPerKg: z.coerce.number().min(0, 'Keuntungan harus ≥ 0'),
+  keuntunganPerKg: z.coerce.number().int().min(0, 'Keuntungan harus ≥ 0'),
 })
 
 const modalSchema = z.object({
   peronId: z.string().min(1),
   tanggal: z.string().min(1, 'Tanggal wajib diisi'),
   jenis: z.enum(['tambah', 'kurang', 'kembali']),
-  jumlah: z.coerce.number().positive('Jumlah harus positif'),
+  jumlah: z.coerce.number().int().positive('Jumlah harus positif'),
   akunSumberId: z.string().optional(),
   catatan: z.string().optional(),
 })
@@ -117,6 +117,18 @@ export async function deletePeron(id: string) {
   const session = await requireOwner()
 
   const existing = await db.query.peron.findFirst({ where: (t, { eq }) => eq(t.id, id) })
+
+  // W9: jangan hapus peron yang masih punya riwayat keuangan — FK cascade OFF di
+  // Turso/libSQL, jadi menghapusnya akan menyisakan pembelian/modal + kas YATIM.
+  const adaPembelian = await db.select({ id: pembelian.id }).from(pembelian).where(eq(pembelian.peronId, id)).limit(1)
+  if (adaPembelian.length > 0) {
+    throw new Error('Peron ini masih punya riwayat pembelian — tidak bisa dihapus (akan menyisakan data keuangan yatim). Nonaktifkan saja.')
+  }
+  const adaModal = await db.select({ id: modalPeron.id }).from(modalPeron).where(eq(modalPeron.peronId, id)).limit(1)
+  if (adaModal.length > 0) {
+    throw new Error('Peron ini masih punya catatan modal/DP — tidak bisa dihapus. Nonaktifkan saja.')
+  }
+
   await db.delete(peron).where(eq(peron.id, id))
 
   await logActivity({

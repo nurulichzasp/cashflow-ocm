@@ -38,7 +38,8 @@ const penjualanSchema = z.object({
 function parseRpInput(v: FormDataEntryValue | null): number | undefined {
   if (!v) return undefined
   const n = Number(String(v).replace(/\./g, '').replace(',', '.'))
-  return isNaN(n) || n === 0 ? undefined : n
+  // W10: rupiah = bilangan bulat. Bulatkan agar tak ada pecahan masuk kolom integer.
+  return isNaN(n) || n === 0 ? undefined : Math.round(n)
 }
 
 // Cari akun Rek BRI CV OCM (akun utama penerimaan BGA)

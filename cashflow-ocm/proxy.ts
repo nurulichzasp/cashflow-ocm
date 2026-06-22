@@ -27,7 +27,15 @@ export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   // '/' = welcome/splash, harus EXACT-match (jangan masuk publicPaths startsWith
   // — '/' akan cocok dengan SEMUA path & membuka seluruh gate).
-  const isPublic = pathname === '/' || publicPaths.some((p) => pathname.startsWith(p))
+  // Pencocokan SADAR-SEGMEN (bukan prefix string mentah): '/login' tidak boleh
+  // membuka '/loginhelp', '/api/cron' tidak boleh membuka '/api/cronjobs'. Entri
+  // ber-trailing-slash (mis. '/p/') diperlakukan sebagai prefix segmen apa adanya.
+  const isPublic =
+    pathname === '/' ||
+    publicPaths.some((p) => {
+      const base = p.endsWith('/') ? p.slice(0, -1) : p
+      return pathname === base || pathname.startsWith(base + '/')
+    })
 
   const sessionToken =
     request.cookies.get('better-auth.session_token')?.value ??

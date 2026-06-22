@@ -15,6 +15,14 @@ async function requireSession() {
   return session
 }
 
+// Link portal = akses data peron ke pihak LUAR (tanpa login). Buat/rotate/cabut
+// hanya boleh owner — bukan sekadar user login mana pun (R2).
+async function requireOwner() {
+  const session = await requireSession()
+  if (session.user.role !== 'owner') throw new Error('Hanya owner yang dapat mengelola link portal peron')
+  return session
+}
+
 function portalBase(): string {
   return process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') ?? 'https://omandacerli.com'
 }
@@ -41,7 +49,7 @@ export async function getPeronAccess(peronId: string): Promise<PeronAccessInfo> 
 
 /** Buat / rotate token portal → kembalikan URL siap-bagi. */
 export async function generatePeronToken(peronId: string): Promise<{ url: string }> {
-  const session = await requireSession()
+  const session = await requireOwner()
   const token = randomBytes(32).toString('hex') // 64 hex char, tak bisa ditebak
   await db
     .insert(peronAccess)
@@ -63,7 +71,7 @@ export async function generatePeronToken(peronId: string): Promise<{ url: string
 
 /** Nonaktifkan link portal (langsung memutus akses). */
 export async function revokePeronToken(peronId: string): Promise<void> {
-  const session = await requireSession()
+  const session = await requireOwner()
   await db.update(peronAccess).set({ isActive: false }).where(eq(peronAccess.peronId, peronId))
   await logActivity({
     userId: session.user.id,

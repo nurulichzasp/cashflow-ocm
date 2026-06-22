@@ -9,6 +9,8 @@ import { auth } from '@/lib/auth'
 import { z } from 'zod'
 import { requirePermission } from '@/lib/permissions'
 import { logActivity, describeActivity } from '@/lib/audit'
+import { SELISIH_JUAL_BGA } from '@/lib/harga'
+import { todayString } from '@/lib/format'
 
 async function requireSession() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -25,8 +27,8 @@ async function requireOwner() {
 const hargaSchema = z.object({
   tanggalBerlaku: z.string().min(1, 'Tanggal wajib diisi'),
   produk: z.enum(['TBS', 'BRDL KTWM', 'BRDL TRYM', 'BRDL LMDM']),
-  hargaLapangan: z.coerce.number().positive('Harga lapangan harus positif'),
-  selisihJualBga: z.coerce.number().min(0).default(120),
+  hargaLapangan: z.coerce.number().int().positive('Harga lapangan harus positif'),
+  selisihJualBga: z.coerce.number().int().min(0).default(SELISIH_JUAL_BGA),
   catatan: z.string().optional(),
 })
 
@@ -37,7 +39,7 @@ export async function createHargaAcuan(formData: FormData) {
     tanggalBerlaku: formData.get('tanggalBerlaku'),
     produk: formData.get('produk'),
     hargaLapangan: formData.get('hargaLapangan'),
-    selisihJualBga: 120,
+    selisihJualBga: SELISIH_JUAL_BGA,
     catatan: formData.get('catatan') || undefined,
   })
 
@@ -78,7 +80,7 @@ export async function createHargaAcuanBatch(input: {
     tanggalBerlaku: data.tanggalBerlaku,
     produk: r.produk,
     hargaLapangan: r.hargaLapangan,
-    selisihJualBga: 120,
+    selisihJualBga: SELISIH_JUAL_BGA,
   }))
 
   await db.transaction(async (tx) => {
@@ -105,7 +107,7 @@ export async function getHargaAktifSemua(tanggal?: string): Promise<{
   brdlTrym: number | null
 }> {
   await requireSession()
-  const targetDate = tanggal || new Date().toISOString().slice(0, 10)
+  const targetDate = tanggal || todayString()
   const pick = async (produk: 'TBS' | 'BRDL KTWM' | 'BRDL TRYM') => {
     const rows = await db
       .select({ hargaLapangan: hargaAcuan.hargaLapangan })

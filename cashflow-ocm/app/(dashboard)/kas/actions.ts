@@ -26,7 +26,7 @@ const kasSchema = z.object({
   tanggal: z.string().min(1, 'Tanggal wajib diisi'),
   akunId: z.string().min(1, 'Akun wajib dipilih'),
   arah: z.enum(['masuk', 'keluar']),
-  jumlah: z.coerce.number().positive('Jumlah harus positif'),
+  jumlah: z.coerce.number().int().positive('Jumlah harus positif'),
   kategori: z.enum([
     'penerimaan_bga',
     'tarik_bri',
@@ -38,8 +38,9 @@ const kasSchema = z.object({
     'lainnya',
   ]),
   catatan: z.string().optional(),
-  refTabel: z.string().optional(),
-  refId: z.string().optional(),
+  // R1: refTabel/refId SENGAJA tidak diterima dari input manual. Entri kas
+  // otomatis (punya refTabel) hanya dibuat oleh action induk pembelian/penjualan/
+  // biaya/modal di dalam transaksinya — bukan lewat form kas manual ini.
 })
 
 export async function createTransaksiKas(formData: FormData) {
@@ -53,8 +54,6 @@ export async function createTransaksiKas(formData: FormData) {
     jumlah: formData.get('jumlah'),
     kategori: formData.get('kategori'),
     catatan: formData.get('catatan') || undefined,
-    refTabel: formData.get('refTabel') || undefined,
-    refId: formData.get('refId') || undefined,
   })
 
   // Anti-dobel: tolak transaksi kas manual identik dari user yang sama dalam ~60 detik.

@@ -11,6 +11,7 @@ import { notifyNewPembelian } from '@/lib/notification'
 import { requirePermission } from '@/lib/permissions'
 import { logActivity, describeActivity } from '@/lib/audit'
 import { effectiveKeuntunganPerKg, isKategoriTBS } from '@/lib/harga'
+import { todayString } from '@/lib/format'
 
 async function requireSession() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -98,6 +99,12 @@ export async function createPembelian(data: {
   requirePermission(session.user.role as any, 'canCreate')
   const parsed = pembelianSchema.parse(data)
 
+  // W1: 'lunas' tanpa sumber bayar = kas keluar tak tercatat → kas overstated. Tolak
+  // (selaras paksaan akun pada modal/DP peron).
+  if (parsed.statusBayarPeron === 'lunas' && !parsed.sumberBayarId) {
+    throw new Error('Pembelian berstatus LUNAS wajib punya sumber bayar (akun kas) agar saldo kas ikut tercatat.')
+  }
+
   const peronData = await db.query.peron.findFirst({ where: (t, { eq }) => eq(t.id, parsed.peronId) })
   if (!peronData) throw new Error('Peron tidak ditemukan')
 
@@ -132,6 +139,7 @@ export async function createPembelian(data: {
       totalBeli,
       totalJual,
       keuntungan: totalKeuntungan,
+      keuntunganPerKg: peronData.keuntunganPerKg, // W2: snapshot tarif saat transaksi
       statusBayarPeron: parsed.statusBayarPeron,
       sumberBayarId: parsed.sumberBayarId,
       catatan: parsed.catatan,
@@ -243,10 +251,23 @@ export async function updatePembelian(id: string, data: {
   requirePermission(session.user.role as any, 'canEdit')
   const parsed = pembelianSchema.parse(data)
 
+  // W1: 'lunas' tanpa sumber bayar = kas keluar tak tercatat → kas overstated. Tolak.
+  if (parsed.statusBayarPeron === 'lunas' && !parsed.sumberBayarId) {
+    throw new Error('Pembelian berstatus LUNAS wajib punya sumber bayar (akun kas) agar saldo kas ikut tercatat.')
+  }
+
   const peronData = await db.query.peron.findFirst({ where: (t, { eq }) => eq(t.id, parsed.peronId) })
   if (!peronData) throw new Error('Peron tidak ditemukan')
 
-  const { computed, totalTonase, totalBeli, totalJual, totalKeuntungan, hargaBeliRata, hargaJualRata } = computeTotals(parsed.details, peronData.keuntunganPerKg, isKategoriTBS(parsed.kategori))
+  // W2: bekukan tarif untung/kg historis. Pakai snapshot tersimpan kecuali peron
+  // diganti (lalu adopsi tarif peron baru). Baris lama (null) → fallback live.
+  const existingPembelian = await db.query.pembelian.findFirst({ where: (t, { eq }) => eq(t.id, id) })
+  const peronBerubah = !existingPembelian || existingPembelian.peronId !== parsed.peronId
+  const keuntunganSnapshot = (!peronBerubah && existingPembelian?.keuntunganPerKg != null)
+    ? existingPembelian.keuntunganPerKg
+    : peronData.keuntunganPerKg
+
+  const { computed, totalTonase, totalBeli, totalJual, totalKeuntungan, hargaBeliRata, hargaJualRata } = computeTotals(parsed.details, keuntunganSnapshot, isKategoriTBS(parsed.kategori))
 
   // Update + ganti detail + sinkron mutasi kas, atomic dalam satu transaksi.
   await db.transaction(async (tx) => {
@@ -260,6 +281,7 @@ export async function updatePembelian(id: string, data: {
       totalBeli,
       totalJual,
       keuntungan: totalKeuntungan,
+      keuntunganPerKg: keuntunganSnapshot, // W2: freeze tarif untung historis
       statusBayarPeron: parsed.statusBayarPeron,
       sumberBayarId: parsed.sumberBayarId,
       catatan: parsed.catatan,
@@ -348,6 +370,9 @@ export async function deletePembelian(id: string) {
   // saldo kas tidak cocok dengan data pembelian.
   await db.transaction(async (tx) => {
     await tx.delete(transaksiKas).where(and(eq(transaksiKas.refTabel, 'pembelian'), eq(transaksiKas.refId, id)))
+    // W9: hapus anak EKSPLISIT (jangan andalkan FK cascade — foreign_keys OFF di Turso/libSQL)
+    await tx.delete(pembelianFoto).where(eq(pembelianFoto.pembelianId, id))
+    await tx.delete(pembelianDetail).where(eq(pembelianDetail.pembelianId, id))
     await tx.delete(pembelian).where(eq(pembelian.id, id))
   })
 
@@ -403,7 +428,7 @@ export async function getKeuntunganPerKg(peronId: string): Promise<number> {
 
 export async function getLatestHargaAcuan(produk: 'TBS' | 'BRDL KTWM' | 'BRDL TRYM' | 'BRDL LMDM', tanggal?: string) {
   await requireSession()
-  const targetDate = tanggal || new Date().toISOString().slice(0, 10)
+  const targetDate = tanggal || todayString()
   // LMDM selalu mirror TRYM — lookup LMDM dialihkan ke TRYM agar tak pernah blank.
   const lookupProduk = produk === 'BRDL LMDM' ? 'BRDL TRYM' : produk
   const result = await db.query.hargaAcuan.findFirst({

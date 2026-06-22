@@ -28,7 +28,7 @@ const biayaSchema = z.object({
   tanggal: z.string().min(1, 'Tanggal wajib diisi'),
   kategori: z.enum(['gaji', 'solar', 'transport', 'lainnya']),
   kategoriLain: z.string().optional(),
-  jumlah: z.coerce.number().positive('Jumlah harus positif'),
+  jumlah: z.coerce.number().int().positive('Jumlah harus positif'),
   akunSumberId: z.string().min(1, 'Akun sumber wajib dipilih'),
   catatan: z.string().optional(),
 }).refine((d) => d.kategori !== 'lainnya' || !!d.kategoriLain?.trim(), {
@@ -234,6 +234,8 @@ export async function deleteBiayaOperasional(id: string) {
 
   await db.transaction(async (tx) => {
     await tx.delete(transaksiKas).where(and(eq(transaksiKas.refTabel, 'biaya_operasional'), eq(transaksiKas.refId, id)))
+    // W9: hapus foto EKSPLISIT (FK cascade OFF di Turso/libSQL → cegah orphan)
+    await tx.delete(biayaFoto).where(eq(biayaFoto.biayaId, id))
     await tx.delete(biayaOperasional).where(eq(biayaOperasional.id, id))
   })
 

@@ -120,6 +120,9 @@ export const pembelian = sqliteTable('pembelian', {
   totalJual: integer('total_jual').notNull().default(0),
   totalBeli: integer('total_beli').notNull().default(0),
   keuntungan: integer('keuntungan').notNull().default(0),
+  // Snapshot tarif untung/kg peron SAAT transaksi → freeze histori untung tiket.
+  // null = baris lama (fallback ke peron.keuntunganPerKg live saat edit).
+  keuntunganPerKg: integer('keuntungan_per_kg'),
   statusBayarPeron: text('status_bayar_peron', { enum: ['belum', 'lunas'] }).notNull().default('belum'),
   tanggalBayar: text('tanggal_bayar'),
   sumberBayarId: text('sumber_bayar_id').references(() => akunKas.id),

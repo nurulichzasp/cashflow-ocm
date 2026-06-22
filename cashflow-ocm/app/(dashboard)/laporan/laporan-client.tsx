@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useTransition } from 'react'
 import { getLaporanData, getPajakData, getLabaRugiTahunan, getNeracaData } from './actions'
-import { formatRupiah, formatNumber, formatTanggal } from '@/lib/format'
+import { formatRupiah, formatNumber, formatTanggal, todayString } from '@/lib/format'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ArahIndicator, StatusDotLabel } from '@/components/ui/status-pill'
@@ -396,7 +396,7 @@ function PajakTab({ tahun, onTahunChange }: { tahun: string; onTahunChange: (t: 
                       className="tap-pad inline-flex cursor-pointer transition-opacity hover:opacity-70"
                       onClick={async () => {
                         const next = d.status === 'sudah' ? 'belum' : 'sudah'
-                        const tgl = next === 'sudah' ? new Date().toISOString().slice(0, 10) : undefined
+                        const tgl = next === 'sudah' ? todayString() : undefined
                         await updatePpnStatus(bulan, next, tgl)
                         const fresh = await getPajakData(tahun)
                         setData(fresh)
@@ -435,7 +435,7 @@ function PajakTab({ tahun, onTahunChange }: { tahun: string; onTahunChange: (t: 
                       className="tap-pad inline-flex cursor-pointer transition-opacity hover:opacity-70"
                       onClick={async () => {
                         const next = d.status === 'sudah' ? 'belum' : 'sudah'
-                        const tgl = next === 'sudah' ? new Date().toISOString().slice(0, 10) : undefined
+                        const tgl = next === 'sudah' ? todayString() : undefined
                         await updatePphStatus(bulan, next, tgl)
                         const fresh = await getPajakData(tahun)
                         setData(fresh)

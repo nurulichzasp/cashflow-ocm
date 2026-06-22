@@ -25,6 +25,15 @@ const trustedOrigins = Array.from(
   ),
 )
 
+// FAIL-CLOSED: tanpa secret, better-auth diam-diam memakai secret default PUBLIK
+// (cookie sesi bisa dipalsukan siapa pun). Untuk app keuangan, lebih baik gagal
+// build/boot di produksi daripada jalan dengan sesi yang bisa dipalsu.
+if (process.env.NODE_ENV === 'production' && !process.env.BETTER_AUTH_SECRET) {
+  throw new Error(
+    'BETTER_AUTH_SECRET wajib diset di produksi (tanpa ini sesi rentan dipalsu). Set env di Vercel.',
+  )
+}
+
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: 'sqlite',

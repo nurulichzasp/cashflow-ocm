@@ -61,7 +61,7 @@ function NavTab({
         strokeWidth={active ? 1.9 : 1.6}
       />
       {dot && (
-        <span className="absolute right-[9px] top-[9px] z-10 h-2 w-2 rounded-full bg-red-500 ring-2 ring-black/40" />
+        <span className="absolute right-[9px] top-[9px] z-10 h-2 w-2 rounded-full bg-[var(--crit-fg)] ring-2 ring-black/40" />
       )}
     </motion.div>
   )
