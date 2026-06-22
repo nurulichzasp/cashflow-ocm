@@ -12,6 +12,8 @@
 
 > **Kabar baik untuk integritas uang:** seluruh jalur normal kas (create / edit / hapus / ganti akun / toggle status bayar) **konsisten dan atomik** — pola `delete-then-reinsert by (refTabel,refId)` dalam satu transaksi, plus rumus saldo tunggal di `lib/saldo.ts`. **Tidak ditemukan drift kas diam-diam pada pemakaian normal.** Temuan 🔴 yang ada bersifat *hardening* / pinggiran, bukan kebocoran uang aktif.
 
+> **UPDATE 22 Jun 2026 — SEMUA TEMUAN SUDAH DIFIX & DEPLOYED** (commit `5358e5a` → omandacerli.com), KECUALI **R4 yang ternyata FALSE ALARM**: verifikasi `PRAGMA table_info` pada DB LIVE menunjukkan kolom uang sudah `integer` (lihat §P2-3). Tabel di bawah = kondisi SAAT audit (HEAD 6edec31), disimpan apa adanya sebagai rekaman.
+
 ### 🔴 Terbukti masalah (urut prioritas P0 → P3)
 
 | # | P | Temuan | Lokasi | Severitas praktis |
@@ -19,7 +21,7 @@
 | R1 | P0 | `createTransaksiKas` menerima `refTabel`/`refId` dari FormData tanpa guard → bisa bikin entri kas "auto-palsu" yang nyangkut (tak bisa diedit/hapus via UI) | `kas/actions.ts:41-42, 56-57` | **Rendah** — form normal tak pernah kirim `refTabel`; hanya lewat panggilan server-action langsung |
 | R2 | P1 | Mutasi kesehatan/portal peron hanya `requireSession()` (tanpa cek role): **viewer pun bisa** menerbitkan/cabut link portal publik & mengarsip alarm peron | `portal-actions.ts:43-44, 65-66`; `health-actions.ts:73, 90, 116-118` | **Menengah** — bisa lewat tombol UI yang ada; `generatePeronToken` = eksposur data ke luar |
 | R3 | P2 | Tanggal setor/bayar pajak pakai UTC `new Date().toISOString()` (bukan WIB) → meleset 1 hari bila ditandai dini hari | `laporan/laporan-client.tsx:399, 438` | **Rendah** — client-side (TZ browser umumnya WIB), hanya jam 00:00–06:59 WIB |
-| R4 | P2 | Drift tipe kolom uang: DB dibuat `real` (migration 0000), `schema.ts` kini `integer`, tak pernah ada migrasi konversi | `drizzle/0000_woozy_pride.sql:22,34,45,72,74,75,99,100,133` vs `lib/db/schema.ts` | **Rendah** — SQLite dinamis + `Math.round` di app; bahaya utama = snapshot drizzle salah |
+| ~~R4~~ | P2 | ✅ **FALSE ALARM (diverifikasi 22 Jun).** DB live: kolom uang SUDAH `integer` (cocok `schema.ts`). Simpulan "real" diambil dari `0000_woozy_pride.sql` yang BASI — DB dibangun via `db:push`, bukan migration itu. TAK perlu rebuild tabel; tak ada tindakan DB. | DB live `integer` ✓ | — |
 
 ### ⚠️ Perlu konfirmasi / kelemahan laten (urut P0 → P3)
 
@@ -176,10 +178,10 @@
 - **Bukti:** Keempat relasi anak punya `onDelete:'cascade'`: `pembelian_detail:139`, `penjualan_detail:173`, `pembelian_foto:198`, `biaya_foto:206`. Hapus induk atomik + buang kas turunan dulu. `peron_*` cascade dari `peron`.
 - **⚠️ Catatan W9 (FK enforcement):** cascade hanya jalan bila `PRAGMA foreign_keys=ON` per koneksi — belum dipastikan di `lib/db`. Bila OFF, kolom non-cascade (`transaksi_kas.akunId`, `biaya.akunSumberId`, `pembelian.sumberBayarId/peronId`) tak memblok hapus induk → referensi menggantung (hanya bahaya saat hapus peron/akun). **⚠️ Catatan W12:** hapus pembelian tak rebuild `peron_snapshot/health` → data kesehatan basi sementara. **Rekomendasi:** pastikan `foreign_keys=ON` / guard "tolak hapus peron-akun yang masih direferensikan"; panggil rebuild kesehatan setelah `deletePembelian` bila perlu instan.
 
-### 🔴 3. Konsistensi tipe — drift integer vs real  → **[R4]** + ⚠️ Zod tanpa `.int()` **[W10]**
-- **Bukti:** `drizzle/0000_woozy_pride.sql` membuat kolom uang sebagai **`real`** (`:22 jumlah, :34/:72 harga_lapangan, :45 jumlah, :74 harga_beli, :75/:100 subtotal, :99 harga_jual, :133 jumlah`), sedangkan `lib/db/schema.ts` kini mendeklarasikannya **`integer`**. **Tidak ada** migrasi/`ALTER` konversi real→integer (`vercel-build` hanya 3 script additif; `_journal.json` cuma 0000+0001). `0000` juga sudah usang vs skema sekarang → bukti DB dievolusi by-hand.
-- **Temuan:** Affinity DB live kemungkinan masih `REAL` sementara kode menganggap `integer`. Dampak fungsional **rendah** (SQLite dinamis + `Math.round` sebelum tulis), tapi setiap regen drizzle dari snapshot lama akan keliru. Tambahan: validasi uang `z.coerce.number().positive()` **tanpa `.int()`** (`kas:29`, `biaya:31`, `peron:41`, `penjualan:33-34`, `pembelian:49`, `harga:28`) → pecahan rupiah bisa lolos.
-- **Rekomendasi:** Verifikasi affinity via `PRAGMA table_info(...)` (read-only) di DB live. Bila REAL: prioritaskan **re-baseline snapshot drizzle agar cocok DB** (jangan rebuild tabel — berisiko, dampak fungsional rendah). Tambah `.int()` pada field uang Zod (validasi saja, tak sentuh data).
+### ✅ 3. Konsistensi tipe — [R4] FALSE ALARM (diverifikasi) + [W10] `.int()` (DIFIX)
+- **✅ UPDATE 22 Jun (pasca-verifikasi `PRAGMA table_info` DB LIVE):** SEMUA kolom uang sudah **`integer`** — `pembelian` (harga_jual/harga_beli/total_jual/total_beli/keuntungan/keuntungan_per_kg), `pembelian_detail` (harga_lapangan/subtotal_beli/subtotal_jual/keuntungan), `penjualan` (total_nilai/total_bersih), `biaya_operasional.jumlah`, `transaksi_kas.jumlah`, `modal_peron.jumlah`, `harga_acuan` (harga_lapangan/selisih_jual_bga), `akun_kas.saldo_awal`; `tonase`/`qty_kg` benar `real`. **Tidak ada drift di DB** — `schema.ts` SUDAH cocok. R4 false alarm: DB dibangun via `db:push` (bukan `0000_woozy_pride.sql` yang basi). **TAK ada & TAK perlu rebuild tabel keuangan.**
+- **Klaim asli (kini terbantah):** `0000_woozy_pride.sql` menulis kolom uang `real`, tapi file itu **BASI** dan bukan cermin DB live (drizzle `_journal` inkonsisten: 2 entri vs 4 file SQL → workflow nyata = hand-script `add-*.ts` + `db:push`, bukan `drizzle-kit migrate`). Lihat `drizzle/README.md` (ditambah utk cegah alarm palsu berulang).
+- **W10 (DIFIX & DEPLOYED):** validasi uang kini `.int()`/`Math.round` (`kas/biaya/peron/penjualan/harga`), cegah pecahan rupiah.
 
 ### 🔴 4. Tanggal / WIB  → **[R3]** + ⚠️ lookup UTC **[W11]**
 - **Bukti (🔴 R3):** `laporan/laporan-client.tsx:399` & `:438` — `const tgl = next==='sudah' ? new Date().toISOString().slice(0,10) : undefined` → disimpan sebagai `tanggalSetor`/`tanggalBayar` (`pengaturan/actions.ts:276,291`). `toISOString()` = UTC. Menandai PPN/PPh "Sudah" jam 00:00–06:59 WIB menyimpan tanggal kemarin. (Client-side → TZ browser, umumnya WIB, jadi frekuensi rendah.)
