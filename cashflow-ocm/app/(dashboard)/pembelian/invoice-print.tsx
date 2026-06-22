@@ -321,10 +321,10 @@ function buildThermalHTML(p: PembelianRow, paperWidthMm: number, nomorUrut: numb
   <div class="items">
     ${details.map((d) => {
       const nopolSupir = [d.nopol, d.supir].filter(Boolean).map(esc).join(' / ')
+      const tgl = d.tanggalReplas ? esc(formatRentangKotak(d.tanggalReplas, d.tanggalReplasSampai)) : ''
       return `<div class="item">
         <div class="row"><span class="l">${d.tonase.toLocaleString('id-ID')} kg x Rp ${d.hargaLapangan.toLocaleString('id-ID')}</span></div>
-        <div class="row"><span class="l small">= subtotal</span><span class="r">${formatRupiah(d.subtotalBeli)}</span></div>
-        ${d.tanggalReplas ? `<div class="item-sub">${esc(formatRentangKotak(d.tanggalReplas, d.tanggalReplasSampai))}</div>` : ''}
+        <div class="row"><span class="l small">${tgl}</span><span class="r">${formatRupiah(d.subtotalBeli)}</span></div>
         ${nopolSupir ? `<div class="item-sub">${nopolSupir}</div>` : ''}
       </div>`
     }).join('<div class="divider"></div>')}
@@ -384,11 +384,11 @@ function buildThermalLines(p: PembelianRow, nomorUrut: number): ThermalLine[] {
     { kind: 'text', text: 'RINCIAN TONASE', align: 'l', scale: 0.8 },
     ...details.flatMap((d, i): ThermalLine[] => {
       const nopolSupir = [d.nopol, d.supir].filter(Boolean).join(' / ')
+      const tgl = d.tanggalReplas ? formatRentangKotak(d.tanggalReplas, d.tanggalReplasSampai) : ''
       return [
         ...(i > 0 ? [{ kind: 'rule', style: 'dash' } as ThermalLine] : []),
         { kind: 'text', text: `${d.tonase.toLocaleString('id-ID')} kg x Rp ${d.hargaLapangan.toLocaleString('id-ID')}`, align: 'l' },
-        { kind: 'pair', left: '= subtotal', right: formatRupiah(d.subtotalBeli) },
-        ...(d.tanggalReplas ? [{ kind: 'text', text: formatRentangKotak(d.tanggalReplas, d.tanggalReplasSampai), align: 'l', scale: 0.8 } as ThermalLine] : []),
+        { kind: 'pair', left: tgl, right: formatRupiah(d.subtotalBeli) },
         ...(nopolSupir ? [{ kind: 'text', text: nopolSupir, align: 'l', scale: 0.8 } as ThermalLine] : []),
       ]
     }),
@@ -668,8 +668,20 @@ type ThermerEntry =
   | { type: 2; value: string; height: number; align: 0 | 1 | 2 }
   | { type: 3; value: string; size: number; align: 0 | 1 | 2 }
 
+// Thermer (printer thermal eksternal) men-DROP seluruh baris yang mengandung
+// karakter NON-ASCII (mis. en-dash "–"/U+2013 dari rentang tanggal "13–15 Jun"
+// → baris tanggalnya hilang sama sekali). Lipat en/em-dash → hyphen ASCII agar
+// tiap baris (termasuk rentang tanggal) PASTI tampil.
 function txt(content: string, bold: 0 | 1 = 0, align: 0 | 1 | 2 = 0, format: 0 | 1 | 2 | 3 | 4 = 0): ThermerEntry {
-  return { type: 0, content, bold, align, format }
+  return { type: 0, content: content.replace(/[–—]/g, '-'), bold, align, format }
+}
+
+/** Satu baris teks monospace: `left` + spasi + `right`, di-pad ke `width` kolom
+ *  (nominal rata kanan). `left` kosong → murni rata kanan; tak muat → "left right". */
+function padLR(left: string, right: string, width: number): string {
+  const l = left || ''
+  const gap = width - l.length - right.length
+  return gap > 0 ? l + ' '.repeat(gap) + right : (l ? `${l} ${right}` : right)
 }
 
 function buildThermerURL(p: PembelianRow, nomorUrut: number): string {
@@ -702,10 +714,11 @@ function buildThermerURL(p: PembelianRow, nomorUrut: number): string {
     txt('RINCIAN TONASE', 0, 0, 4),
     ...details.flatMap((d): ThermerEntry[] => {
       const nopolSupir = [d.nopol, d.supir].filter(Boolean).join(' / ')
+      const tgl = d.tanggalReplas ? formatRentangKotak(d.tanggalReplas, d.tanggalReplasSampai) : ''
+      // Tanggal (kiri) SEBARIS dengan subtotal (kanan) → tiap baris = 2 baris, bukan 3.
       return [
         txt(`${d.tonase.toLocaleString('id-ID')} kg x Rp ${d.hargaLapangan.toLocaleString('id-ID')}`),
-        txt(`= ${formatRupiah(d.subtotalBeli)}`, 0, 2),
-        ...(d.tanggalReplas ? [txt(formatRentangKotak(d.tanggalReplas, d.tanggalReplasSampai), 0, 0, 4)] : []),
+        txt(padLR(tgl, formatRupiah(d.subtotalBeli), paperWidthMm === 80 ? 42 : 32)),
         ...(nopolSupir ? [txt(nopolSupir, 0, 0, 4)] : []),
         txt(div, 0, 1),
       ]
