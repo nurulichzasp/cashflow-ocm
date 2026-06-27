@@ -1,10 +1,18 @@
 # 📸 Snapshot Teknis — Cashflow OCM
 
 > **Sumber kebenaran kode. Diverifikasi langsung dari source (bukan ingatan/README/snapshot lama).**
-> HEAD kode: `3319ecd` · Branch `main` = `origin/main` (0 ahead / 0 behind) · **fully deployed** ke produksi (Vercel `cashflow-ocm-d61i` → omandacerli.com).
+> HEAD kode: `e73983c` · Branch `main` = `origin/main` (0 ahead / 0 behind) · **fully deployed** ke produksi (Vercel `cashflow-ocm-d61i` → dpl_5t6mnjN READY → omandacerli.com HTTP 200).
 > Status pohon kerja saat snapshot dibuat: **bersih** (tak ada perubahan kode belum-commit). Snapshot ini menggantikan snapshot 13 Jun pagi (HEAD `d439cfd`).
+> **Catatan refresh 27 Jun 2026:** body di bawah disusun di HEAD `3319ecd`; bagian **RBAC server actions** (peron portal/health) & changelog di-koreksi ke HEAD `e73983c`. Detail per-modul lain (mis. saga nota Thermer) tak diubah di sini — repo = sumber kebenaran.
 
 ---
+
+## Perubahan sejak snapshot ini dibuat (`3319ecd` → `e73983c`, per 27 Jun 2026)
+
+Semua sudah **deployed** ke omandacerli.com. Tiga gelombang:
+- **Nota Thermer/replas v3–v6** (`6d2db21`…`5cfdae9`): akar masalah = PWA cache (SW bump v1→v6) + overflow rentang + **en-dash non-ASCII** (Thermer drop baris ber-"–"). Fix: lipat dash→ASCII, tanggal replas per-baris, subtotal rata-kanan via align Thermer (=2), tanggal baris kecil (format=4), jumlah replas per-baris "N | tanggal". Aturan: konten Thermer WAJIB ASCII.
+- **Audit menyeluruh 2026-06-22** (`5358e5a`, +false-alarm R4 `07ecb95`): R1 (kas tak terima refTabel/refId dari form), **R2** (portal generate/revoke → owner-only; archive/refresh/createFollowup health → gated), R3+W11 (tanggal pajak/harga acuan WIB), W1 (lunas wajib sumberBayar), W2 (snapshot keuntungan_per_kg), W4 (layout owner-guard /pengaturan), W5 (BETTER_AUTH_SECRET fail-closed), W6 (/api/notify canCreate), W7 (proxy per-segmen), W9 (hapus anak eksplisit + guard deletePeron), W10 (.int uang). R4 = false alarm (DB live sudah integer).
+- **Hardening R2 lanjutan** (`e73983c`, 27 Jun): UI sembunyikan tombol mutasi peron utk peran tak berizin (PortalLinkCard owner-only `canManage`; FollowupSheet canCreate; ArchiveButton canEdit) + `createFollowup` canEdit→**canCreate**. Lihat bagian RBAC server actions (peron/portal-actions & health-actions) di bawah.
 
 ## Perubahan sejak 13 Juni 2026 (HEAD `d439cfd` → `0fe0f0d`)
 
@@ -135,8 +143,8 @@ Pola umum: **read** = `requireSession()`; **create/edit** = `requirePermission(r
 - **harga**: `createHargaAcuan`(canCreate), `deleteHargaAcuan`(**owner-only**), `getHargaList`, `getHargaAktif`.
 - **laporan**: `getLaporanData`, `getPajakData`, `getLabaRugiTahunan`, `getNeracaData` (semua `canViewFinance`).
 - **peron**: `createPeron`(canCreate), `updatePeron`(canEdit), `deletePeron`(**owner-only**), `addModalPeron`(canCreate), `deleteModalPeron`(**owner-only**), `getPeronList`, `getPeronById`.
-- **peron/health-actions**: `getPeronHealthList`, `getPeronHealthDetail`, `refreshPeronHealth`, `createFollowup`, `archivePeron` (sesi).
-- **peron/portal-actions**: `getPeronAccess`, `generatePeronToken`, `revokePeronToken` (sesi).
+- **peron/health-actions**: `getPeronHealthList`/`getPeronHealthDetail` (read=sesi); `refreshPeronHealth`(canEdit), `archivePeron`(canEdit), `createFollowup`(**canCreate** — operasional, kasir boleh; viewer/akuntan tidak). *(R2: dulu semua "sesi"; di-gate `5358e5a`, createFollowup→canCreate `e73983c`.)*
+- **peron/portal-actions**: `getPeronAccess` (read=sesi); `generatePeronToken`/`revokePeronToken` (**owner-only**, publikasi data peron ke publik). *(R2: dulu "sesi"; owner-only sejak `5358e5a`.)* UI: tombol Buat/Ganti/Nonaktifkan link cuma untuk owner (`PortalLinkCard canManage`); FollowupSheet/ArchiveButton kesehatan disembunyikan utk peran tak berizin (`e73983c`).
 - **pengaturan**: `updateProfile`(sesi); `addUser`/`deleteUser`/`updateUserRole`/`updateUserEmail`/`resetUserPassword`/`updateUserPermissions`/`updatePpnStatus`/`updatePphStatus`/`setAppSetting`/`setAppSettings` (**owner-only**); `getPpnList`/`getPphList`(canViewFinance); `getAppSetting`/`getAppSettings`(sesi).
 
 ### RBAC (`lib/permissions.ts`)
