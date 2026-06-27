@@ -90,7 +90,10 @@ const followupSchema = z.object({
 
 export async function createFollowup(input: z.infer<typeof followupSchema>) {
   const session = await requireSession()
-  requirePermission(session.user.role as any, 'canEdit')
+  // Tindak lanjut = catatan operasional (mirip log telepon) → kasir/admin/owner
+  // boleh; viewer/akuntan tidak (R2). Lebih longgar dari archive (canEdit) yang
+  // bersifat kurasi/manajemen.
+  requirePermission(session.user.role as any, 'canCreate')
   const data = followupSchema.parse(input)
   await db.insert(peronFollowup).values({
     peronId: data.peronId,

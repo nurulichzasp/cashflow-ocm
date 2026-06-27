@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { headers } from 'next/headers'
 import { redirect, notFound } from 'next/navigation'
 import { auth } from '@/lib/auth'
+import { hasPermission } from '@/lib/permissions'
 import { ChevronLeft, AlertTriangle } from 'lucide-react'
 import { getPeronHealthDetail } from '../../health-actions'
 import { STATUS_META, pct, deltaPct } from '@/lib/peron-health/status-meta'
@@ -24,6 +25,11 @@ export default async function PeronHealthDetailPage({ params }: { params: Promis
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session) redirect('/login')
   const { id } = await params
+
+  // Gating UI (server tetap penjaga utama via requirePermission). Tindak lanjut =
+  // operasional (canCreate); arsip = kurasi/manajemen (canEdit) (R2).
+  const canFollowup = hasPermission(session.user.role, 'canCreate')
+  const canArchive = hasPermission(session.user.role, 'canEdit')
 
   const detail = await getPeronHealthDetail(id)
   if (!detail) notFound()
@@ -103,10 +109,12 @@ export default async function PeronHealthDetailPage({ params }: { params: Promis
       )}
 
       {/* Aksi */}
-      <div className="space-y-1.5">
-        <FollowupSheet peronId={id} status={status} />
-        <ArchiveButton peronId={id} />
-      </div>
+      {(canFollowup || canArchive) && (
+        <div className="space-y-1.5">
+          {canFollowup && <FollowupSheet peronId={id} status={status} />}
+          {canArchive && <ArchiveButton peronId={id} />}
+        </div>
+      )}
     </div>
   )
 }

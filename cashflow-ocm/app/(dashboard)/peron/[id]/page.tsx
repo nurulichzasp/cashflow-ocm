@@ -101,7 +101,7 @@ export default async function PeronDetailPage({ params }: { params: Promise<{ id
       </div>
 
       {/* Link portal peron (transparansi) */}
-      <PortalLinkCard peronId={data.id} peronNama={data.nama} initial={access} />
+      <PortalLinkCard peronId={data.id} peronNama={data.nama} initial={access} canManage={isOwner} />
 
       {/* Riwayat modal */}
       <ModalHistoryTable modal={data.modal} isOwner={isOwner} />

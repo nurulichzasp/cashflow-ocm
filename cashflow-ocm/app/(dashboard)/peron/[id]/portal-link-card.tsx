@@ -11,10 +11,14 @@ export function PortalLinkCard({
   peronId,
   peronNama,
   initial,
+  canManage,
 }: {
   peronId: string
   peronNama: string
   initial: PeronAccessInfo
+  // Buat/rotate/cabut link portal = mempublikasikan data peron ke publik →
+  // owner-only (R2). Server tetap menolak via requireOwner(); ini hanya UI.
+  canManage: boolean
 }) {
   const [access, setAccess] = useState<PeronAccessInfo>(initial)
   const [pending, start] = useTransition()
@@ -79,9 +83,13 @@ export function PortalLinkCard({
             {access && !active && (
               <p className="text-xs text-warn">Link saat ini nonaktif.</p>
             )}
-            <Button size="sm" onClick={generate} disabled={pending} className="gap-1.5">
-              <Link2 className="h-3.5 w-3.5" /> {pending ? 'Membuat…' : access ? 'Aktifkan Link Baru' : 'Buat Link Portal'}
-            </Button>
+            {canManage ? (
+              <Button size="sm" onClick={generate} disabled={pending} className="gap-1.5">
+                <Link2 className="h-3.5 w-3.5" /> {pending ? 'Membuat…' : access ? 'Aktifkan Link Baru' : 'Buat Link Portal'}
+              </Button>
+            ) : (
+              <p className="text-xs text-muted-foreground">Belum ada link portal aktif. Hanya owner yang dapat membuatnya.</p>
+            )}
           </div>
         ) : (
           <div className="space-y-2.5">
@@ -100,12 +108,16 @@ export function PortalLinkCard({
               >
                 <MessageCircle className="h-4 w-4" /> Kirim via WhatsApp
               </a>
-              <Button size="sm" variant="outline" onClick={generate} disabled={pending} className="gap-1.5">
-                <RefreshCw className="h-3.5 w-3.5" /> Ganti
-              </Button>
-              <Button size="sm" variant="ghost" onClick={revoke} disabled={pending} className="gap-1.5 text-crit">
-                <Power className="h-3.5 w-3.5" /> Nonaktifkan
-              </Button>
+              {canManage && (
+                <>
+                  <Button size="sm" variant="outline" onClick={generate} disabled={pending} className="gap-1.5">
+                    <RefreshCw className="h-3.5 w-3.5" /> Ganti
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={revoke} disabled={pending} className="gap-1.5 text-crit">
+                    <Power className="h-3.5 w-3.5" /> Nonaktifkan
+                  </Button>
+                </>
+              )}
             </div>
             <p className="text-[11px] text-muted-foreground">
               {access.lastViewedAt
