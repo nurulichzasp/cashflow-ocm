@@ -353,6 +353,24 @@ export const peronFollowup = sqliteTable('peron_followup', {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
 })
 
+// Log ancaman/retensi peron — konteks yang TIDAK tersimpan di keuntunganPerKg:
+// tawaran kompetitor, kapan, produk apa, keputusan. Memori pertahanan senyap.
+export const peronAncaman = sqliteTable('peron_ancaman', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  peronId: text('peron_id').notNull().references(() => peron.id, { onDelete: 'cascade' }),
+  tanggal: text('tanggal').notNull(), // "YYYY-MM-DD" WIB — tanggal penilaian
+  produk: text('produk').notNull(), // produk yang terancam (relevan utk cap brondolan)
+  hargaAcuanSaat: integer('harga_acuan_saat').notNull(), // snapshot acuan saat menilai
+  hargaKompetitor: integer('harga_kompetitor').notNull(), // tawaran kompetitor ke peron
+  keuntunganSebelum: integer('keuntungan_sebelum').notNull(), // K sebelum tindakan
+  keuntunganSesudah: integer('keuntungan_sesudah'), // K sesudah (null bila tak diterapkan)
+  volumeAcuan: real('volume_acuan'), // kg/periode utk cost/benefit (boleh manual)
+  tindakan: text('tindakan', { enum: ['dipantau', 'dipertahankan', 'dibiarkan'] }).notNull(),
+  catatan: text('catatan'),
+  createdBy: text('created_by').references(() => user.id),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+})
+
 export const akunKasRelations = relations(akunKas, ({ many }) => ({
   transaksi: many(transaksiKas),
   pembelian: many(pembelian),
@@ -365,6 +383,12 @@ export const peronRelations = relations(peron, ({ many, one }) => ({
   snapshots: many(peronSnapshot),
   health: one(peronHealth, { fields: [peron.id], references: [peronHealth.peronId] }),
   followups: many(peronFollowup),
+  ancaman: many(peronAncaman),
+}))
+
+export const peronAncamanRelations = relations(peronAncaman, ({ one }) => ({
+  peron: one(peron, { fields: [peronAncaman.peronId], references: [peron.id] }),
+  createdByUser: one(user, { fields: [peronAncaman.createdBy], references: [user.id] }),
 }))
 
 export const peronSnapshotRelations = relations(peronSnapshot, ({ one }) => ({
@@ -445,6 +469,7 @@ export type BiayaOperasional = typeof biayaOperasional.$inferSelect
 export type TransaksiKas = typeof transaksiKas.$inferSelect
 export type ActivityLog = typeof activityLog.$inferSelect
 export type AppSetting = typeof appSettings.$inferSelect
+export type PeronAncaman = typeof peronAncaman.$inferSelect
 export type PembelianFoto = typeof pembelianFoto.$inferSelect
 export type BiayaFoto = typeof biayaFoto.$inferSelect
 export type PpnBulanan = typeof ppnBulanan.$inferSelect

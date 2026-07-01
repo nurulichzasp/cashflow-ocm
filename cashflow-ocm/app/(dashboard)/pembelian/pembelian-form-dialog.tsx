@@ -494,7 +494,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
                 </div>
                 <div>
                   <p className="text-xs text-stone-400 mb-0.5">Keuntungan CV OCM</p>
-                  <p className="font-bold text-ok num">{formatRupiah(totalKeuntungan)}</p>
+                  <p className="font-bold text-stone-900 num">{formatRupiah(totalKeuntungan)}</p>
                 </div>
               </div>
             )}

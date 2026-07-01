@@ -50,7 +50,7 @@ function RowActions({ p, isOwner, onDelete, deleting, akunOptions = [], variant 
         triggerLabel="Aksi peron"
       />
       {modalOpen && <ModalFormDialog peronId={p.id} peronNama={p.nama} akunOptions={akunOptions} open={modalOpen} onOpenChange={setModalOpen} />}
-      {editOpen && <PeronFormDialog mode="edit" peron={p} open={editOpen} onOpenChange={setEditOpen} />}
+      {editOpen && <PeronFormDialog mode="edit" peron={p} open={editOpen} onOpenChange={setEditOpen} isOwner={isOwner} />}
     </>
   )
 }

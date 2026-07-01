@@ -91,13 +91,24 @@ export async function updatePeron(id: string, formData: FormData) {
     keuntunganPerKg: formData.get('keuntunganPerKg'),
   })
 
+  // Untung CV/kg = keputusan harga berdampak uang langsung → OWNER-ONLY (selaras
+  // dgn kalkulator retensi applyRetentionMargin). Admin (canEdit) boleh ubah field
+  // lain tapi TIDAK margin: kunci setengah kalau di sini longgar. Non-owner →
+  // pertahankan nilai lama, abaikan input form.
+  const isOwner = session.user.role === 'owner'
+  let keuntunganPerKg = data.keuntunganPerKg
+  if (!isOwner) {
+    const existing = await db.query.peron.findFirst({ where: (t, { eq }) => eq(t.id, id), columns: { keuntunganPerKg: true } })
+    keuntunganPerKg = existing?.keuntunganPerKg ?? data.keuntunganPerKg
+  }
+
   await db.update(peron).set({
     kode: data.kode ?? null,
     nama: data.nama,
     kontak: data.kontak,
     alamat: data.alamat,
     status: data.status,
-    keuntunganPerKg: data.keuntunganPerKg,
+    keuntunganPerKg,
   }).where(eq(peron.id, id))
 
   await logActivity({
@@ -106,7 +117,7 @@ export async function updatePeron(id: string, formData: FormData) {
     entityType: 'peron',
     entityId: id,
     description: describeActivity('update', 'peron', data.nama),
-    newValues: { nama: data.nama, kode: data.kode, status: data.status, keuntunganPerKg: data.keuntunganPerKg },
+    newValues: { nama: data.nama, kode: data.kode, status: data.status, keuntunganPerKg },
   })
 
   revalidatePath('/peron')

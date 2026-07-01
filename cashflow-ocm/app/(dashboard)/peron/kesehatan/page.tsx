@@ -6,8 +6,11 @@ import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { ChevronRight, HeartPulse } from 'lucide-react'
 import { getPeronHealthList } from '../health-actions'
+import { getRetentionCockpit } from '../retensi-actions'
+import { hasPermission } from '@/lib/permissions'
 import { STATUS_META, pct, deltaPct } from '@/lib/peron-health/status-meta'
 import { RefreshButton } from './refresh-button'
+import { RetensiSection } from './retensi-section'
 
 function relativeTime(ts: Date | null): string {
   if (!ts) return 'belum pernah'
@@ -58,7 +61,15 @@ export default async function KesehatanPeronPage() {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session) redirect('/login')
 
-  const list = await getPeronHealthList()
+  // Cockpit retensi = data margin/finansial → hanya canViewFinance (kasir tak lihat).
+  const canViewFinance = hasPermission(session.user.role, 'canViewFinance')
+  const canApply = session.user.role === 'owner'
+  const canCreate = hasPermission(session.user.role, 'canCreate')
+
+  const [list, cockpit] = await Promise.all([
+    getPeronHealthList(),
+    canViewFinance ? getRetentionCockpit() : Promise.resolve(null),
+  ])
   const kritis = list.filter((i) => i.status === 'kritis')
   const perhatian = list.filter((i) => i.status === 'perhatian')
   const sehat = list.filter((i) => i.status === 'normal')
@@ -95,6 +106,9 @@ export default async function KesehatanPeronPage() {
           <p className="text-[11px] font-medium uppercase tracking-wide text-stone-400 dark:text-zinc-500">Sehat</p>
         </div>
       </div>
+
+      {/* Cockpit Retensi — union health perhatian/kritis ∪ ancaman terbuka */}
+      {cockpit && <RetensiSection cockpit={cockpit} canApply={canApply} canCreate={canCreate} />}
 
       {/* Perlu Ditindaklanjuti */}
       {perluTindak.length > 0 ? (

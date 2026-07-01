@@ -21,9 +21,10 @@ interface Props {
   children?: React.ReactNode
   open?: boolean
   onOpenChange?: (open: boolean) => void
+  isOwner?: boolean
 }
 
-export function PeronFormDialog({ mode, peron, children, open: openProp, onOpenChange }: Props) {
+export function PeronFormDialog({ mode, peron, children, open: openProp, onOpenChange, isOwner = false }: Props) {
   const [openInternal, setOpenInternal] = useState(false)
   const open = openProp ?? openInternal
   const setOpen = (v: boolean) => { onOpenChange ? onOpenChange(v) : setOpenInternal(v) }
@@ -98,7 +99,13 @@ export function PeronFormDialog({ mode, peron, children, open: openProp, onOpenC
             </div>
             <div className="space-y-1.5">
               <Label>Keuntungan/kg (Rp)</Label>
-              <NumberInput value={keuntunganPerKg} onChange={setKeuntunganPerKg} placeholder="50" />
+              {mode === 'edit' && !isOwner ? (
+                <div className="flex h-10 items-center rounded-lg border border-stone-200 bg-stone-50 px-3 text-sm text-stone-500 dark:border-border dark:bg-white/[0.03] dark:text-stone-400">
+                  Rp {keuntunganPerKg.toLocaleString('id-ID')} <span className="ml-1 text-xs text-stone-400">· hanya owner</span>
+                </div>
+              ) : (
+                <NumberInput value={keuntunganPerKg} onChange={setKeuntunganPerKg} placeholder="50" />
+              )}
             </div>
           </div>
 

@@ -7,11 +7,14 @@ import { auth } from '@/lib/auth'
 import { hasPermission } from '@/lib/permissions'
 import { ChevronLeft, AlertTriangle } from 'lucide-react'
 import { getPeronHealthDetail } from '../../health-actions'
+import { getKalkulatorContext, getAncamanHistory } from '../../retensi-actions'
 import { STATUS_META, pct, deltaPct } from '@/lib/peron-health/status-meta'
 import { formatTanggal } from '@/lib/format'
+import { Calculator } from 'lucide-react'
 import { ShareChart } from './share-chart'
 import { FollowupSheet } from './followup-sheet'
 import { ArchiveButton } from './archive-button'
+import { KalkulatorSheet } from '../kalkulator-sheet'
 
 const REASON_LABEL: Record<string, string> = {
   harga_kalah: 'Harga kalah', pindah_cv: 'Pindah CV', masalah_operasional: 'Masalah operasional',
@@ -19,6 +22,9 @@ const REASON_LABEL: Record<string, string> = {
 }
 const OUTCOME_LABEL: Record<string, string> = {
   kembali_normal: 'Kembali normal', masih_pantau: 'Masih pantau', hilang: 'Hilang',
+}
+const TINDAKAN_LABEL: Record<string, string> = {
+  dipantau: 'Dipantau', dipertahankan: 'Dipertahankan', dibiarkan: 'Dibiarkan',
 }
 
 export default async function PeronHealthDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -30,8 +36,14 @@ export default async function PeronHealthDetailPage({ params }: { params: Promis
   // operasional (canCreate); arsip = kurasi/manajemen (canEdit) (R2).
   const canFollowup = hasPermission(session.user.role, 'canCreate')
   const canArchive = hasPermission(session.user.role, 'canEdit')
+  const canViewFinance = hasPermission(session.user.role, 'canViewFinance')
+  const canApply = session.user.role === 'owner'
 
-  const detail = await getPeronHealthDetail(id)
+  const [detail, kalkulatorCtx, ancamanHistory] = await Promise.all([
+    getPeronHealthDetail(id),
+    canViewFinance ? getKalkulatorContext(id) : Promise.resolve(null),
+    canViewFinance ? getAncamanHistory(id) : Promise.resolve([]),
+  ])
   if (!detail) notFound()
 
   const h = detail.health
@@ -84,6 +96,49 @@ export default async function PeronHealthDetailPage({ params }: { params: Promis
           <Row label="Jeda setor biasa" value={h.typicalGap > 0 ? `${h.typicalGap.toFixed(0)} hari` : '—'} />
           <Row label="Terakhir setor" value={h.lastSetorDate ? `${formatTanggal(h.lastSetorDate)} · ${h.daysSinceLast} hr lalu` : '—'} />
         </div>
+      )}
+
+      {/* Retensi & Pertahanan Harga */}
+      {canViewFinance && kalkulatorCtx && (
+        <section className="space-y-2.5">
+          <p className="px-1 text-xs font-semibold uppercase tracking-widest text-stone-400 dark:text-zinc-500">Retensi &amp; Pertahanan Harga</p>
+
+          <div className="surface flex items-center justify-between gap-3 p-4">
+            <div className="min-w-0">
+              <p className="text-[13px] text-stone-500 dark:text-zinc-400">
+                Untung CV <span className="font-semibold text-stone-900 dark:text-zinc-100 tabular-nums">Rp {kalkulatorCtx.peron.keuntunganPerKg.toLocaleString('id-ID')}/kg</span>
+                {kalkulatorCtx.volume != null && <> · <span className="tabular-nums">{Math.round(kalkulatorCtx.volume).toLocaleString('id-ID')} kg</span></>}
+              </p>
+              <p className="mt-0.5 text-xs text-stone-400 dark:text-zinc-500">Ambang loyalitas Rp {kalkulatorCtx.settings.ambang}/kg</p>
+            </div>
+            <KalkulatorSheet context={kalkulatorCtx} canApply={canApply} canCreate={canFollowup}>
+              <button className="tactile inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg bg-[var(--brand-solid)] px-3.5 text-[13px] font-semibold text-white hover:brightness-110 active:scale-[0.98]">
+                <Calculator className="h-4 w-4" /> Hitung pertahanan
+              </button>
+            </KalkulatorSheet>
+          </div>
+
+          {ancamanHistory.length > 0 && (
+            <div className="surface divide-y divide-stone-100 dark:divide-white/[0.06]">
+              {ancamanHistory.map((a) => (
+                <div key={a.id} className="p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[13px] font-medium text-stone-700 dark:text-zinc-300">
+                      {formatTanggal(a.tanggal)} · {a.produk}
+                    </span>
+                    <span className="text-xs font-semibold text-stone-500 dark:text-zinc-400">{TINDAKAN_LABEL[a.tindakan] ?? a.tindakan}</span>
+                  </div>
+                  <p className="mt-0.5 text-xs text-stone-500 dark:text-zinc-400 tabular-nums">
+                    Kompetitor Rp {a.hargaKompetitor.toLocaleString('id-ID')} · acuan Rp {a.hargaAcuanSaat.toLocaleString('id-ID')} · untung CV {a.keuntunganSebelum}
+                    {a.keuntunganSesudah != null && a.keuntunganSesudah !== a.keuntunganSebelum && <> → {a.keuntunganSesudah}</>}
+                  </p>
+                  {a.catatan && <p className="mt-1 text-[13px] text-stone-600 dark:text-zinc-300">{a.catatan}</p>}
+                  {a.oleh && <p className="mt-1 text-[11px] text-stone-400 dark:text-zinc-500">oleh {a.oleh}</p>}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       )}
 
       {/* Riwayat tindak lanjut */}

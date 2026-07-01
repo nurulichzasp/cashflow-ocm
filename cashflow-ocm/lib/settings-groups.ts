@@ -2,6 +2,7 @@ import {
   Building2,
   Wallet2,
   TrendingUp,
+  ShieldAlert,
   Users,
   SunMoon,
   Bell,
@@ -35,6 +36,9 @@ export function getSettingsGroups(isOwner: boolean): SettingsGroup[] {
         { href: '/pengaturan/perusahaan', icon: Building2, title: 'Profil Perusahaan', desc: 'Nama, alamat, NPWP & ambang transaksi besar' },
         { href: '/pengaturan/pajak', icon: Wallet2, title: 'Pajak & Neraca', desc: 'Tarif PPN, PPh badan & modal awal' },
         { href: '/pengaturan/harga', icon: TrendingUp, title: 'Harga & Margin', desc: 'Selisih jual BGA terbaru per produk' },
+        ...(isOwner
+          ? [{ href: '/pengaturan/retensi', icon: ShieldAlert, title: 'Retensi & Pertahanan', desc: 'Ambang loyalitas & floor margin peron' }]
+          : []),
       ],
     },
     ...(isOwner
