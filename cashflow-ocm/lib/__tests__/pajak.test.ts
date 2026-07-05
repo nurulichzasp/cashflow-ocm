@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { hitungPpn, hitungPphBadan, TARIF_PPN, TARIF_PPH_BADAN } from '../pajak'
+import { hitungPpn, hitungPphBadan, parseTarifPersen, TARIF_PPN, TARIF_PPH_BADAN } from '../pajak'
 
 describe('hitungPpn', () => {
   it('PPN 11% dibulatkan ke rupiah', () => {
@@ -34,5 +34,30 @@ describe('hitungPphBadan', () => {
   })
   it('tarif default = 22%', () => {
     expect(TARIF_PPH_BADAN).toBe(0.22)
+  })
+})
+
+describe('parseTarifPersen', () => {
+  it('persen valid tersimpan → pecahan', () => {
+    expect(parseTarifPersen('11', TARIF_PPN)).toBe(0.11)
+    expect(parseTarifPersen('22', TARIF_PPH_BADAN)).toBe(0.22)
+    expect(parseTarifPersen('12.5', TARIF_PPN)).toBe(0.125)
+  })
+  it('kosong / null / undefined → fallback', () => {
+    expect(parseTarifPersen('', TARIF_PPN)).toBe(TARIF_PPN)
+    expect(parseTarifPersen(null, TARIF_PPN)).toBe(TARIF_PPN)
+    expect(parseTarifPersen(undefined, TARIF_PPH_BADAN)).toBe(TARIF_PPH_BADAN)
+  })
+  it('bukan angka → fallback', () => {
+    expect(parseTarifPersen('abc', TARIF_PPN)).toBe(TARIF_PPN)
+  })
+  it('di luar rentang wajar (≤0 atau ≥100%) → fallback', () => {
+    expect(parseTarifPersen('0', TARIF_PPN)).toBe(TARIF_PPN)
+    expect(parseTarifPersen('-5', TARIF_PPN)).toBe(TARIF_PPN)
+    expect(parseTarifPersen('100', TARIF_PPN)).toBe(TARIF_PPN)
+    expect(parseTarifPersen('150', TARIF_PPN)).toBe(TARIF_PPN)
+  })
+  it('menyerap spasi di sekitar angka', () => {
+    expect(parseTarifPersen('  11  ', TARIF_PPN)).toBe(0.11)
   })
 })

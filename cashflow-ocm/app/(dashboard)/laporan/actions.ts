@@ -10,7 +10,7 @@ import {
 } from '@/lib/db/schema'
 import { eq, sum, and, gte, lte, lt, asc, like } from 'drizzle-orm'
 import { requirePermission } from '@/lib/permissions'
-import { hitungPpn, hitungPphBadan, DEFAULT_PPH25_NOMINAL } from '@/lib/pajak'
+import { hitungPpn, hitungPphBadan, DEFAULT_PPH25_NOMINAL, TARIF_PPN, TARIF_PPH_BADAN, parseTarifPersen } from '@/lib/pajak'
 
 async function requireSession() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -228,7 +228,7 @@ export async function getPembelianBulanan(bulan: string) {
 export async function getPajakData(tahun: string) {
   await requireFinanceAccess()
 
-  const [ppnRows, pphRows, penjualanRows] = await Promise.all([
+  const [ppnRows, pphRows, penjualanRows, tarifPpnRow] = await Promise.all([
     db.select().from(ppnBulanan).where(like(ppnBulanan.bulan, `${tahun}-%`)).orderBy(asc(ppnBulanan.bulan)),
     db.select().from(pphBulanan).where(like(pphBulanan.bulan, `${tahun}-%`)).orderBy(asc(pphBulanan.bulan)),
     db.query.penjualan.findMany({
@@ -238,7 +238,11 @@ export async function getPajakData(tahun: string) {
         eq(t.statusBayar, 'lunas'),
       ),
     }),
+    db.select({ value: appSettings.value }).from(appSettings).where(eq(appSettings.key, 'tax_tarif_ppn')),
   ])
+
+  // Tarif PPN dari pengaturan (persen tersimpan mis. "11"); kosong/tak valid → default 11%.
+  const tarifPpn = parseTarifPersen(tarifPpnRow[0]?.value, TARIF_PPN)
 
   const ppnPerBulan: Record<string, { totalPenjualan: number; ppn: number; status: 'belum' | 'sudah'; tanggalSetor: string | null }> = {}
   for (let m = 1; m <= 12; m++) {
@@ -248,7 +252,7 @@ export async function getPajakData(tahun: string) {
     const ppnRecord = ppnRows.find(r => r.bulan === bulan)
     ppnPerBulan[bulan] = {
       totalPenjualan,
-      ppn: hitungPpn(totalPenjualan),
+      ppn: hitungPpn(totalPenjualan, tarifPpn),
       status: ppnRecord?.statusSetor ?? 'belum',
       tanggalSetor: ppnRecord?.tanggalSetor ?? null,
     }
@@ -274,7 +278,7 @@ export async function getLabaRugiTahunan(tahun: string) {
   const dari = `${tahun}-01-01`
   const sampai = `${tahun}-12-31`
 
-  const [penjualanTotal, pembelianTotal, biayaTotal, pphRows] = await Promise.all([
+  const [penjualanTotal, pembelianTotal, biayaTotal, pphRows, tarifPphRow] = await Promise.all([
     // Basis AKRUAL: semua penjualan & semua pembelian dalam tahun berjalan,
     // simetris (tidak menyaring 'lunas') agar laba & estimasi PPh tidak bias.
     db.select({ total: sum(penjualan.totalBersih) })
@@ -287,7 +291,11 @@ export async function getLabaRugiTahunan(tahun: string) {
       .from(biayaOperasional)
       .where(and(gte(biayaOperasional.tanggal, dari), lte(biayaOperasional.tanggal, sampai))),
     db.select().from(pphBulanan).where(like(pphBulanan.bulan, `${tahun}-%`)),
+    db.select({ value: appSettings.value }).from(appSettings).where(eq(appSettings.key, 'tax_tarif_pph_badan')),
   ])
+
+  // Tarif PPh Badan dari pengaturan (persen tersimpan mis. "22"); kosong/tak valid → default 22%.
+  const tarifPphBadan = parseTarifPersen(tarifPphRow[0]?.value, TARIF_PPH_BADAN)
 
   const totalPenjualan = Number(penjualanTotal[0]?.total ?? 0)
   const totalPembelian = Number(pembelianTotal[0]?.total ?? 0)
@@ -295,7 +303,7 @@ export async function getLabaRugiTahunan(tahun: string) {
   const labaKotor = totalPenjualan - totalPembelian
   const labaOperasional = labaKotor - totalBiaya
   // Rugi → PPh Badan 0 (tidak boleh negatif; kerugian dikompensasi, bukan jadi "pajak negatif").
-  const pphBadan = hitungPphBadan(labaOperasional)
+  const pphBadan = hitungPphBadan(labaOperasional, tarifPphBadan)
   const labaBersih = labaOperasional - pphBadan
   const totalPph25Dibayar = pphRows.filter(r => r.statusBayar === 'sudah').reduce((s, r) => s + r.nominal, 0)
   const pphKurangBayar = pphBadan - totalPph25Dibayar
