@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { headers } from 'next/headers'
 import { eq, sum, and, gte } from 'drizzle-orm'
 import { hasPermission } from '@/lib/permissions'
+import { todayString } from '@/lib/format'
 import {
   transaksiKas,
   pembelian,
@@ -80,8 +81,10 @@ export async function GET() {
 
     const estimasiLaba = Number(pembelianKeuntungan?.[0]?.total ?? 0)
 
-    // Get today stats
-    const today = new Date().toISOString().slice(0, 10)
+    // Get today stats — tanggal WIB (Asia/Jakarta), bukan UTC server. Kolom
+    // `tanggal` disimpan sebagai tanggal WIB, jadi UTC bikin KPI "hari ini"
+    // meleset ~00:00–07:00 WIB (server masih "kemarin").
+    const today = todayString()
     const [pembeliRows, penjualRows, biayaRows] = await Promise.all([
       db.select({ total: sum(transaksiKas.jumlah) })
         .from(transaksiKas)
