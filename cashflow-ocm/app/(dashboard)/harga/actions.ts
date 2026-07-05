@@ -44,6 +44,18 @@ export async function createHargaAcuan(formData: FormData) {
   })
 
   await db.insert(hargaAcuan).values(data)
+
+  // Jejak audit: harga acuan menggerakkan pricing pembelian/penjualan — konsisten
+  // dengan createHargaAcuanBatch & deleteHargaAcuan yang juga mencatat.
+  await logActivity({
+    userId: session.user.id,
+    action: 'create',
+    entityType: 'harga_acuan',
+    entityId: data.tanggalBerlaku,
+    description: describeActivity('create', 'harga_acuan', `${data.produk} • Rp${data.hargaLapangan} (${data.tanggalBerlaku})`),
+    newValues: { produk: data.produk, hargaLapangan: data.hargaLapangan, tanggalBerlaku: data.tanggalBerlaku, selisihJualBga: data.selisihJualBga },
+  })
+
   revalidatePath('/harga')
   return { success: true }
 }
