@@ -74,6 +74,7 @@ import { ThermalPrinterSettings } from './thermal-printer-settings'
 import { ThemeSelector } from '@/components/theme-selector'
 import { Switch } from '@/components/ui/switch'
 import { FieldError, invalidFieldClass } from '@/components/ui/field-error'
+import { DEFAULT_PPH25_NOMINAL } from '@/lib/pajak'
 
 type SettingsSection = 'company' | 'users' | 'pajak' | 'printer' | 'theme' | 'backup'
 
@@ -166,7 +167,7 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
   // Tax config state — nilai awal dari server (anti-flash); fallback default.
   const [tarifPpn, setTarifPpn] = useState(initialTax?.tarifPpn ?? '11')
   const [tarifPphBadan, setTarifPphBadan] = useState(initialTax?.tarifPphBadan ?? '22')
-  const [nominalPph25, setNominalPph25] = useState(initialTax?.nominalPph25 ?? '698917')
+  const [nominalPph25, setNominalPph25] = useState(initialTax?.nominalPph25 ?? String(DEFAULT_PPH25_NOMINAL))
   const [modalAwal, setModalAwal] = useState(initialTax?.modalAwal ?? '0')
 
   useEffect(() => {

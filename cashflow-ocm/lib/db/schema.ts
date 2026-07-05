@@ -254,6 +254,8 @@ export const ppnBulanan = sqliteTable('ppn_bulanan', {
 export const pphBulanan = sqliteTable('pph_bulanan', {
   id: text('id').primaryKey().default(sql`(lower(hex(randomblob(8))))`),
   bulan: text('bulan').notNull(), // format YYYY-MM
+  // Nilai = DEFAULT_PPH25_NOMINAL di lib/pajak.ts (sumber tunggal). Literal di sini
+  // karena default kolom drizzle tak bisa refer konstanta TS — samakan bila berubah.
   nominal: integer('nominal').notNull().default(698917),
   statusBayar: text('status_bayar', { enum: ['belum', 'sudah'] }).notNull().default('belum'),
   tanggalBayar: text('tanggal_bayar'),
