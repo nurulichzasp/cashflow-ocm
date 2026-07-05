@@ -22,6 +22,15 @@ async function requireOwner() {
   return session
 }
 
+// Kategori yang WAJAR untuk entri kas MANUAL. Kategori lain — penerimaan_bga,
+// bayar_peron, modal_peron, kembali_modal, biaya_operasional — HANYA dibuat
+// otomatis oleh modul induk (penjualan/pembelian/biaya/modal) dengan refTabel;
+// membuatnya manual = dobel-hitung/rekonsiliasi bocor. Dipakai sebagai gerbang
+// server-side (bukan cuma UI).
+// TIDAK di-export: file 'use server' hanya boleh meng-export async function
+// (form kas memegang salinan daftar ini sendiri).
+const KATEGORI_KAS_MANUAL = ['tarik_bri', 'penyesuaian', 'lainnya'] as const
+
 const kasSchema = z.object({
   tanggal: z.string().min(1, 'Tanggal wajib diisi'),
   akunId: z.string().min(1, 'Akun wajib dipilih'),
@@ -43,11 +52,18 @@ const kasSchema = z.object({
   // biaya/modal di dalam transaksinya — bukan lewat form kas manual ini.
 })
 
+// Entri BARU dibatasi ke kategori manual saja (validasi server-side, defense-in-depth
+// — UI bukan satu-satunya gerbang). Update tetap pakai kasSchema penuh agar entri
+// LAMA berkategori apa pun tetap bisa diedit (lihat guard di updateTransaksiKas).
+const kasCreateSchema = kasSchema.extend({
+  kategori: z.enum(KATEGORI_KAS_MANUAL),
+})
+
 export async function createTransaksiKas(formData: FormData) {
   const session = await requireSession()
   requirePermission(session.user.role as any, 'canCreate')
 
-  const data = kasSchema.parse({
+  const data = kasCreateSchema.parse({
     tanggal: formData.get('tanggal'),
     akunId: formData.get('akunId'),
     arah: formData.get('arah'),
@@ -111,6 +127,13 @@ export async function updateTransaksiKas(id: string, formData: FormData) {
     kategori: formData.get('kategori'),
     catatan: formData.get('catatan') || undefined,
   })
+
+  // Boleh mempertahankan kategori LAMA (entri lawas mungkin sudah berlabel apa
+  // pun), tapi TIDAK boleh MENGUBAH ke kategori otomatis — itu ranah sistem.
+  const manual = (KATEGORI_KAS_MANUAL as readonly string[]).includes(data.kategori)
+  if (!manual && data.kategori !== existing.kategori) {
+    throw new Error('Kategori itu hanya untuk transaksi otomatis (dari penjualan/pembelian/biaya/modal). Pilih kategori manual.')
+  }
 
   await db.update(transaksiKas).set({
     tanggal: data.tanggal,

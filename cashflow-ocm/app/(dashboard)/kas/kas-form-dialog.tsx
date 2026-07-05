@@ -19,6 +19,21 @@ type KasKategori =
   | 'penerimaan_bga' | 'tarik_bri' | 'bayar_peron' | 'modal_peron'
   | 'kembali_modal' | 'biaya_operasional' | 'penyesuaian' | 'lainnya'
 
+const KATEGORI_KAS_LABELS: Record<KasKategori, string> = {
+  penerimaan_bga: 'Penerimaan Penjualan',
+  tarik_bri: 'Tarik / Transfer',
+  bayar_peron: 'Bayar Peron',
+  modal_peron: 'Modal Peron',
+  kembali_modal: 'Kembali Modal',
+  biaya_operasional: 'Biaya Operasional',
+  penyesuaian: 'Penyesuaian',
+  lainnya: 'Lainnya',
+}
+
+// Hanya kategori manual yang ditawarkan untuk entri BARU (selaras validasi
+// server di actions.ts). Kategori lain hanya dibuat otomatis oleh modul induk.
+const KATEGORI_KAS_MANUAL: KasKategori[] = ['tarik_bri', 'penyesuaian', 'lainnya']
+
 type AkunOption = { id: string; nama: string; tipe: string }
 
 interface Props {
@@ -38,14 +53,21 @@ export function KasFormDialog({ children, akunOptions, editItem, open: openProp,
   const [idemKey, setIdemKey] = useState(() => crypto.randomUUID())
   const [akunId, setAkunId] = useState(editItem?.akunId ?? akunOptions?.[0]?.id ?? '')
   const [arah, setArah] = useState<'masuk' | 'keluar'>(editItem?.arah ?? 'masuk')
-  const [kategori, setKategori] = useState<KasKategori>(editItem?.kategori ?? 'penerimaan_bga')
+  const [kategori, setKategori] = useState<KasKategori>(editItem?.kategori ?? 'tarik_bri')
   const [jumlah, setJumlah] = useState(editItem?.jumlah ?? 0)
+
+  // Entri baru → hanya kategori manual. Edit entri lama berkategori otomatis →
+  // tetap tampilkan kategori itu agar Select tak blank (tak ditawarkan untuk baru).
+  const kategoriOpts: KasKategori[] =
+    isEdit && editItem && !KATEGORI_KAS_MANUAL.includes(editItem.kategori)
+      ? [...KATEGORI_KAS_MANUAL, editItem.kategori]
+      : KATEGORI_KAS_MANUAL
   const [errors, setErrors] = useState<{ jumlah?: string }>({})
 
   function resetForm() {
     setAkunId(editItem?.akunId ?? akunOptions?.[0]?.id ?? '')
     setArah(editItem?.arah ?? 'masuk')
-    setKategori(editItem?.kategori ?? 'penerimaan_bga')
+    setKategori(editItem?.kategori ?? 'tarik_bri')
     setJumlah(editItem?.jumlah ?? 0)
     setErrors({})
   }
@@ -125,14 +147,9 @@ export function KasFormDialog({ children, akunOptions, editItem, open: openProp,
               <Select value={kategori} onValueChange={(v) => setKategori(v as KasKategori)}>
                 <SelectTrigger id="kas-kategori"><SelectValue placeholder="Pilih kategori" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="penerimaan_bga">Penerimaan Penjualan</SelectItem>
-                  <SelectItem value="tarik_bri">Tarik / Transfer</SelectItem>
-                  <SelectItem value="bayar_peron">Bayar Peron</SelectItem>
-                  <SelectItem value="modal_peron">Modal Peron</SelectItem>
-                  <SelectItem value="kembali_modal">Kembali Modal</SelectItem>
-                  <SelectItem value="biaya_operasional">Biaya Operasional</SelectItem>
-                  <SelectItem value="penyesuaian">Penyesuaian</SelectItem>
-                  <SelectItem value="lainnya">Lainnya</SelectItem>
+                  {kategoriOpts.map((k) => (
+                    <SelectItem key={k} value={k}>{KATEGORI_KAS_LABELS[k]}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
