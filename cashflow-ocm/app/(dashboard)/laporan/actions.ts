@@ -154,6 +154,77 @@ export async function getLaporanData(dari: string, sampai: string) {
   }
 }
 
+// Laporan pembelian bulanan: rekap tonase & nilai pembelian per peron dan per
+// kategori untuk SATU bulan. Fokus operasional (berapa kg tiap peron sebulan),
+// terpisah dari laba-rugi. `bulan` = 'YYYY-MM'.
+export async function getPembelianBulanan(bulan: string) {
+  await requireFinanceAccess()
+
+  // Rentang teks '-01'..'-31' meliputi semua hari bulan (perbandingan leksikografis ISO;
+  // '2026-06-31' > tanggal apa pun di Juni meski bukan tanggal valid).
+  const dari = `${bulan}-01`
+  const sampai = `${bulan}-31`
+
+  const [pembelianList, allPeron] = await Promise.all([
+    db.query.pembelian.findMany({
+      where: (p, { and, gte, lte }) => and(gte(p.tanggal, dari), lte(p.tanggal, sampai)),
+    }),
+    db.select().from(peron).orderBy(asc(peron.nama)),
+  ])
+
+  const peronMap: Record<string, {
+    id: string; nama: string; tonase: number; totalBeli: number
+    keuntungan: number; jumlahTiket: number; targetPerKg: number
+  }> = {}
+  for (const p of allPeron) {
+    peronMap[p.id] = {
+      id: p.id, nama: p.nama, tonase: 0, totalBeli: 0,
+      keuntungan: 0, jumlahTiket: 0, targetPerKg: p.keuntunganPerKg,
+    }
+  }
+
+  const kategoriMap: Record<string, {
+    kategori: string; tonase: number; totalBeli: number; keuntungan: number; jumlahTiket: number
+  }> = {}
+
+  for (const pb of pembelianList) {
+    const pr = peronMap[pb.peronId]
+    if (pr) {
+      pr.tonase += pb.tonase
+      pr.totalBeli += pb.totalBeli
+      pr.keuntungan += pb.keuntungan
+      pr.jumlahTiket++
+    }
+    if (!kategoriMap[pb.kategori]) {
+      kategoriMap[pb.kategori] = { kategori: pb.kategori, tonase: 0, totalBeli: 0, keuntungan: 0, jumlahTiket: 0 }
+    }
+    const kt = kategoriMap[pb.kategori]
+    kt.tonase += pb.tonase
+    kt.totalBeli += pb.totalBeli
+    kt.keuntungan += pb.keuntungan
+    kt.jumlahTiket++
+  }
+
+  const perPeron = Object.values(peronMap)
+    .filter((p) => p.jumlahTiket > 0)
+    .map((p) => ({ ...p, realizedPerKg: p.tonase > 0 ? Math.round(p.keuntungan / p.tonase) : 0 }))
+    .sort((a, b) => b.tonase - a.tonase)
+
+  const perKategori = Object.values(kategoriMap).sort((a, b) => b.tonase - a.tonase)
+
+  return {
+    bulan,
+    perPeron,
+    perKategori,
+    total: {
+      tonase: pembelianList.reduce((s, p) => s + p.tonase, 0),
+      totalBeli: pembelianList.reduce((s, p) => s + p.totalBeli, 0),
+      keuntungan: pembelianList.reduce((s, p) => s + p.keuntungan, 0),
+      jumlahTiket: pembelianList.length,
+    },
+  }
+}
+
 export async function getPajakData(tahun: string) {
   await requireFinanceAccess()
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useTransition } from 'react'
-import { getLaporanData, getPajakData, getLabaRugiTahunan, getNeracaData } from './actions'
+import { getLaporanData, getPembelianBulanan, getPajakData, getLabaRugiTahunan, getNeracaData } from './actions'
 import { formatRupiah, formatNumber, formatTanggal, todayString } from '@/lib/format'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils'
 import type { TransaksiKas, AkunKas } from '@/lib/db/schema'
 
 type LaporanData = Awaited<ReturnType<typeof getLaporanData>>
-type TabKey = 'laba-rugi' | 'per-peron' | 'buku-kas' | 'mutasi-bank' | 'pajak' | 'tahunan' | 'neraca'
+type TabKey = 'laba-rugi' | 'per-peron' | 'pembelian-bulanan' | 'buku-kas' | 'mutasi-bank' | 'pajak' | 'tahunan' | 'neraca'
 type KasRow = TransaksiKas & { akun: AkunKas | null }
 
 const kategoriLabels: Record<TransaksiKas['kategori'], string> = {
@@ -334,6 +334,191 @@ const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'S
 type PajakData = Awaited<ReturnType<typeof getPajakData>>
 type LabaRugiTahunanData = Awaited<ReturnType<typeof getLabaRugiTahunan>>
 type NeracaDataType = Awaited<ReturnType<typeof getNeracaData>>
+type PembelianBulananData = Awaited<ReturnType<typeof getPembelianBulanan>>
+
+/**
+ * Tab Pembelian Bulanan — rekap operasional satu bulan: total tonase & nilai
+ * pembelian, dipecah per peron dan per kategori. Fetch mandiri saat bulan ganti
+ * (pola sama seperti PajakTab). Pemilih bulan pakai <input type="month"> native.
+ */
+function PembelianBulananTab({ bulan, onBulanChange }: { bulan: string; onBulanChange: (b: string) => void }) {
+  const [data, setData] = useState<PembelianBulananData | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(false)
+
+  function load() {
+    setLoading(true)
+    setError(false)
+    getPembelianBulanan(bulan)
+      .then(setData)
+      .catch(() => setError(true))
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bulan])
+
+  const [th, tm] = bulan.split('-')
+  const labelBulan = `${MONTHS_SHORT[parseInt(tm, 10) - 1] ?? tm} ${th}`
+
+  const bulanPicker = (
+    <input
+      type="month"
+      value={bulan}
+      max={todayString().slice(0, 7)}
+      onChange={(e) => e.target.value && onBulanChange(e.target.value)}
+      aria-label="Pilih bulan"
+      className="h-9 rounded-md border bg-background px-3 text-sm tabular-nums"
+    />
+  )
+
+  if (error) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">{bulanPicker}</div>
+        <RetryState onRetry={load} />
+      </div>
+    )
+  }
+
+  if (loading || !data) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">{bulanPicker}</div>
+        <TableSkeleton rows={6} />
+      </div>
+    )
+  }
+
+  const kosong = data.total.jumlahTiket === 0
+
+  const exportRows = data.perPeron.map((p) => ({
+    Peron: p.nama,
+    'Jumlah Tiket': p.jumlahTiket,
+    'Tonase (kg)': p.tonase,
+    'Total Beli (Rp)': p.totalBeli,
+    'Keuntungan (Rp)': p.keuntungan,
+    'Realisasi/kg (Rp)': p.realizedPerKg,
+    'Target/kg (Rp)': p.targetPerKg,
+  }))
+
+  const ringkas = [
+    { label: 'Total Tonase', value: `${formatNumber(Math.round(data.total.tonase))} kg` },
+    { label: 'Total Beli', value: formatRupiah(data.total.totalBeli) },
+    { label: 'Estimasi Untung', value: formatRupiah(data.total.keuntungan) },
+    { label: 'Jumlah Tiket', value: formatNumber(data.total.jumlahTiket) },
+  ]
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          {bulanPicker}
+          <span className="text-sm text-muted-foreground">Pembelian {labelBulan}</span>
+        </div>
+        {!kosong && (
+          <ExportButtons
+            onCSV={() => exportCSV(exportRows, `pembelian-${bulan}.csv`)}
+            onXLSX={() => exportXLSX(exportRows, `pembelian-${bulan}.xlsx`)}
+          />
+        )}
+      </div>
+
+      {kosong ? (
+        <Card>
+          <CardContent className="py-10 text-center text-muted-foreground text-sm">
+            Tidak ada pembelian pada {labelBulan}.
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+            {ringkas.map((r) => (
+              <Card key={r.label}>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-xs uppercase tracking-wide text-muted-foreground">{r.label}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-lg font-semibold tabular-nums text-stone-900 dark:text-zinc-50">{r.value}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <div>
+            <h3 className="text-sm font-medium mb-3">Per Peron</h3>
+            <div className="rounded-lg border overflow-x-auto">
+              <table className="w-full text-sm min-w-[720px]">
+                <thead className="bg-muted/50">
+                  <tr>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">Peron</th>
+                    <th className="text-right px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">Tiket</th>
+                    <th className="text-right px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">Tonase (kg)</th>
+                    <th className="text-right px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">Total Beli</th>
+                    <th className="text-right px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">Keuntungan</th>
+                    <th className="text-right px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">Realisasi/kg</th>
+                    <th className="text-right px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">Target/kg</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.perPeron.map((p, i) => (
+                    <tr key={p.id} className={i % 2 === 0 ? 'bg-background' : 'bg-muted/20'}>
+                      <td className="px-4 py-3 font-medium">{p.nama}</td>
+                      <td className="px-4 py-3 text-right tabular-nums">{p.jumlahTiket}</td>
+                      <td className="px-4 py-3 text-right tabular-nums text-foreground">{formatNumber(p.tonase)}</td>
+                      <td className="px-4 py-3 text-right tabular-nums">{formatRupiah(p.totalBeli)}</td>
+                      <td className="px-4 py-3 text-right tabular-nums text-foreground">{formatRupiah(p.keuntungan)}</td>
+                      <td className={cn('px-4 py-3 text-right tabular-nums', p.tonase === 0 ? 'text-muted-foreground' : p.realizedPerKg >= p.targetPerKg ? 'text-ok' : 'text-warn')}>{p.tonase === 0 ? '—' : formatRupiah(p.realizedPerKg)}</td>
+                      <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{formatRupiah(p.targetPerKg)}</td>
+                    </tr>
+                  ))}
+                  <tr className="border-t-2 border-t-border bg-muted/30 font-semibold">
+                    <td className="px-4 py-3">Total</td>
+                    <td className="px-4 py-3 text-right tabular-nums">{data.total.jumlahTiket}</td>
+                    <td className="px-4 py-3 text-right tabular-nums">{formatNumber(Math.round(data.total.tonase))}</td>
+                    <td className="px-4 py-3 text-right tabular-nums">{formatRupiah(data.total.totalBeli)}</td>
+                    <td className="px-4 py-3 text-right tabular-nums">{formatRupiah(data.total.keuntungan)}</td>
+                    <td className="px-4 py-3" colSpan={2} />
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-medium mb-3">Per Kategori</h3>
+            <div className="rounded-lg border overflow-x-auto">
+              <table className="w-full text-sm min-w-[560px]">
+                <thead className="bg-muted/50">
+                  <tr>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">Kategori</th>
+                    <th className="text-right px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">Tiket</th>
+                    <th className="text-right px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">Tonase (kg)</th>
+                    <th className="text-right px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">Total Beli</th>
+                    <th className="text-right px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">Keuntungan</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.perKategori.map((k, i) => (
+                    <tr key={k.kategori} className={i % 2 === 0 ? 'bg-background' : 'bg-muted/20'}>
+                      <td className="px-4 py-3 font-medium">{k.kategori}</td>
+                      <td className="px-4 py-3 text-right tabular-nums">{k.jumlahTiket}</td>
+                      <td className="px-4 py-3 text-right tabular-nums text-foreground">{formatNumber(k.tonase)}</td>
+                      <td className="px-4 py-3 text-right tabular-nums">{formatRupiah(k.totalBeli)}</td>
+                      <td className="px-4 py-3 text-right tabular-nums text-foreground">{formatRupiah(k.keuntungan)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
 
 function PajakTab({ tahun, onTahunChange }: { tahun: string; onTahunChange: (t: string) => void }) {
   const [data, setData] = useState<PajakData | null>(null)
@@ -611,9 +796,19 @@ export function LaporanClient({
 
   const [taxTahun, setTaxTahun] = useState(String(new Date().getFullYear()))
 
+  // Default tab pembelian bulanan ke BULAN LALU (yang sudah lewat & lengkap),
+  // sesuai kebiasaan menutup buku begitu bulan berganti. Basis tanggal = WIB
+  // (todayString) agar tak meleset di batas bulan/tengah malam.
+  const [bulan, setBulan] = useState(() => {
+    const [y, m] = todayString().split('-').map(Number)
+    const prev = new Date(y, m - 2, 1) // m 1-based; m-2 = indeks bulan sebelumnya
+    return `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}`
+  })
+
   const tabs: { key: TabKey; label: string }[] = [
     { key: 'laba-rugi', label: 'Laba Rugi' },
     { key: 'per-peron', label: 'Per Peron' },
+    { key: 'pembelian-bulanan', label: 'Pembelian Bulanan' },
     { key: 'buku-kas', label: 'Buku Kas' },
     { key: 'mutasi-bank', label: 'Mutasi Bank' },
     { key: 'pajak', label: 'Pajak' },
@@ -711,6 +906,7 @@ export function LaporanClient({
         <div className="pt-4" id="laporan-panel" role="tabpanel" aria-labelledby={`laporan-tab-${activeTab}`} tabIndex={0}>
           {activeTab === 'laba-rugi' && <LabaRugiTab data={data} dari={dari} sampai={sampai} />}
           {activeTab === 'per-peron' && <PerPeronTab data={data} dari={dari} sampai={sampai} />}
+          {activeTab === 'pembelian-bulanan' && <PembelianBulananTab bulan={bulan} onBulanChange={setBulan} />}
           {activeTab === 'buku-kas' && (
             <KasTab
               title="Buku Kas (Tunai)"
