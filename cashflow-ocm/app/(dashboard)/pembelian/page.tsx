@@ -1,7 +1,7 @@
 import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
 import { getPermissions } from '@/lib/permissions'
-import { getPembelianList, getAkunKasList } from './actions'
+import { getPembelianList, getPembelianStats, getAkunKasList } from './actions'
 import { getPeronList } from '../peron/actions'
 import { PembelianTable } from './pembelian-table'
 import { PembelianFormDialog } from './pembelian-form-dialog'
@@ -10,9 +10,10 @@ import { FloatingFab } from '@/components/fab'
 export const dynamic = 'force-dynamic'
 
 export default async function PembelianPage() {
-  const [session, pembelianList, peronList, akunList] = await Promise.all([
+  const [session, pembelianList, stats, peronList, akunList] = await Promise.all([
     auth.api.getSession({ headers: await headers() }),
     getPembelianList(),
+    getPembelianStats(),
     getPeronList(),
     getAkunKasList(),
   ])
@@ -41,6 +42,7 @@ export default async function PembelianPage() {
 
       <PembelianTable
         pembelianList={pembelianList}
+        stats={stats}
         canEdit={canEdit}
         canDelete={canDelete}
         peronOptions={peronOptions}

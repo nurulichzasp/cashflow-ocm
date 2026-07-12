@@ -1,9 +1,11 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect, useTransition } from 'react'
 import { toast } from 'sonner'
 import { EmptyState } from '@/components/empty-state'
-import { deleteBiayaOperasional } from './actions'
+import { LoadMoreBar } from '@/components/load-more-bar'
+import { LIST_PAGE_SIZE } from '@/lib/pagination'
+import { deleteBiayaOperasional, getBiayaList } from './actions'
 import { BiayaFormDialog } from './biaya-form-dialog'
 import { formatRupiah, formatTanggal, formatCompact, formatRentangFilter } from '@/lib/format'
 import { FotoBuktiGallery } from '@/components/foto-bukti-gallery'
@@ -39,6 +41,7 @@ type AkunOption = { id: string; nama: string; tipe: string }
 
 interface Props {
   biayaList: BiayaRow[]
+  stats: { totalCount: number; totalBiaya: number }
   isOwner: boolean
   akunOptions: AkunOption[]
 }
@@ -190,7 +193,7 @@ function BiayaDesktopRow({
   )
 }
 
-export function BiayaTable({ biayaList, isOwner, akunOptions }: Props) {
+export function BiayaTable({ biayaList, stats, isOwner, akunOptions }: Props) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [expandedFotoId, setExpandedFotoId] = useState<string | null>(null)
   const [sortBy, setSortBy] = useState<SortCol>('tanggal')
@@ -198,13 +201,62 @@ export function BiayaTable({ biayaList, isOwner, akunOptions }: Props) {
   const [dari, setDari] = useState('')
   const [sampai, setSampai] = useState('')
 
+  // Paginasi window (pola Kas): biayaList = LIST_PAGE_SIZE baris terbaru dari
+  // server. extraRows = halaman lanjutan ("Muat lebih banyak"); rangeRows =
+  // SEMUA baris rentang saat filter tanggal aktif (di-fetch server, agar
+  // ringkasan rentang tetap persis benar). Prop biayaList berubah setelah
+  // revalidate (tambah/edit/hapus) → efek di bawah menyegarkan data klien.
+  const [extraRows, setExtraRows] = useState<BiayaRow[]>([])
+  const [rangeRows, setRangeRows] = useState<BiayaRow[] | null>(null)
+  const [isPending, startTransition] = useTransition()
+  const isFiltered = !!dari || !!sampai
+
+  useEffect(() => {
+    if (dari || sampai) {
+      startTransition(async () => {
+        setRangeRows(await getBiayaList({ dari: dari || undefined, sampai: sampai || undefined }) as BiayaRow[])
+      })
+    } else {
+      setRangeRows(null)
+    }
+    // biayaList sengaja jadi dependency: revalidate server (habis mutasi)
+    // memicu refetch rentang/halaman-ekstra supaya data klien ikut segar.
+  }, [dari, sampai, biayaList])
+
+  useEffect(() => {
+    // Habis mutasi (prop window berubah), halaman-ekstra yang sudah dimuat
+    // di-refetch supaya baris terhapus/teredit tidak basi.
+    setExtraRows((prev) => {
+      if (prev.length > 0) {
+        getBiayaList({ offset: LIST_PAGE_SIZE, limit: prev.length })
+          .then((rows) => setExtraRows(rows as BiayaRow[]))
+          .catch(() => {})
+      }
+      return prev
+    })
+  }, [biayaList])
+
+  function loadMore() {
+    startTransition(async () => {
+      const next = await getBiayaList({ offset: LIST_PAGE_SIZE + extraRows.length, limit: LIST_PAGE_SIZE }) as BiayaRow[]
+      setExtraRows((prev) => [...prev, ...next])
+    })
+  }
+
   function handleSort(col: SortCol) {
     if (sortBy === col) setSortDir((d) => d === 'asc' ? 'desc' : 'asc')
     else { setSortBy(col); setSortDir('desc') }
   }
 
+  const baseRows = useMemo(() => {
+    if (rangeRows) return rangeRows
+    if (extraRows.length === 0) return biayaList
+    const seen = new Set(biayaList.map((b) => b.id))
+    return [...biayaList, ...extraRows.filter((b) => !seen.has(b.id))]
+  }, [rangeRows, biayaList, extraRows])
+
   const sorted = useMemo(() => {
-    let list = [...biayaList]
+    let list = [...baseRows]
     if (dari) list = list.filter(b => b.tanggal >= dari)
     if (sampai) list = list.filter(b => b.tanggal <= sampai)
     list.sort((a, b) => {
@@ -212,7 +264,7 @@ export function BiayaTable({ biayaList, isOwner, akunOptions }: Props) {
       return sortDir === 'asc' ? cmp : -cmp
     })
     return list
-  }, [biayaList, sortBy, sortDir, dari, sampai])
+  }, [baseRows, sortBy, sortDir, dari, sampai])
 
   async function handleDelete(id: string) {
     setDeletingId(id)
@@ -226,7 +278,9 @@ export function BiayaTable({ biayaList, isOwner, akunOptions }: Props) {
     }
   }
 
-  if (biayaList.length === 0) {
+  // Empty-state dari agregat SQL, bukan panjang window (pola Kas) — window
+  // yang terpaginasi bukan bukti data benar-benar kosong.
+  if (stats.totalCount === 0) {
     return (
       <EmptyState
         icon={Receipt}
@@ -236,9 +290,14 @@ export function BiayaTable({ biayaList, isOwner, akunOptions }: Props) {
     )
   }
 
-  const isFiltered = !!dari || !!sampai
   const rangeLabel = formatRentangFilter(dari, sampai)
-  const totalBiaya = sorted.reduce((s, b) => s + b.jumlah, 0)
+  // Tanpa filter = agregat SQL all-time (benar walau list terpaginasi);
+  // dengan filter = jumlah atas SEMUA baris rentang (rangeRows dari server).
+  const totalBiaya = isFiltered
+    ? sorted.reduce((s, b) => s + b.jumlah, 0)
+    : stats.totalBiaya
+  // Rincian per kategori dari baris yang dimuat klien (window + halaman ekstra;
+  // saat filter = seluruh rentang). Tanpa filter, chips bisa < totalBiaya all-time.
   const perKategori = (() => {
     const map = new Map<string, number>()
     for (const b of sorted) {
@@ -256,7 +315,8 @@ export function BiayaTable({ biayaList, isOwner, akunOptions }: Props) {
           <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">Total Pengeluaran</p>
           <p className="text-2xl font-bold text-stone-900 dark:text-zinc-50 num tabular-nums">{formatCompact(totalBiaya)}</p>
           <p className="text-xs text-stone-400 mt-1">
-            {isFiltered ? `${sorted.length} entri · ${rangeLabel}` : `${sorted.length} entri tercatat`}
+            {/* Tanpa filter: hitung dari agregat SQL, bukan panjang window. */}
+            {isFiltered ? `${sorted.length} entri · ${rangeLabel}` : `${stats.totalCount} entri tercatat`}
           </p>
         </div>
         {perKategori.length > 0 && (
@@ -332,6 +392,15 @@ export function BiayaTable({ biayaList, isOwner, akunOptions }: Props) {
           />
         ))}
       </div>
+
+      <LoadMoreBar
+        shown={sorted.length}
+        total={isFiltered ? sorted.length : stats.totalCount}
+        hasMore={!isFiltered && baseRows.length < stats.totalCount}
+        loading={isPending}
+        onLoadMore={loadMore}
+        unit="biaya"
+      />
     </div>
   )
 }

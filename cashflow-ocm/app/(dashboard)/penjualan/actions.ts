@@ -2,11 +2,12 @@
 
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
-import { eq, desc } from 'drizzle-orm'
+import { eq, desc, gte, lte, sum, count, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { penjualan, transaksiKas, akunKas } from '@/lib/db/schema'
 import { and } from 'drizzle-orm'
+import { LIST_PAGE_SIZE } from '@/lib/pagination'
 import { z } from 'zod'
 import { notifyNewPenjualan } from '@/lib/notification'
 import { requirePermission } from '@/lib/permissions'
@@ -30,8 +31,10 @@ const penjualanSchema = z.object({
   noInvoice: z.string().optional(),
   statusBayar: z.enum(['belum', 'lunas']).default('belum'),
   tanggalBayarBga: z.string().optional(),
-  totalBersih: z.coerce.number().positive('Total bersih harus positif').optional(),
-  totalNilai: z.coerce.number().positive('Total nilai harus positif').optional(),
+  // .int(): rupiah = bilangan bulat — jalur form sudah Math.round (parseRpInput),
+  // ini menutup jalur programatik yang mengirim pecahan langsung.
+  totalBersih: z.coerce.number().int('Rupiah harus bilangan bulat').positive('Total bersih harus positif').optional(),
+  totalNilai: z.coerce.number().int('Rupiah harus bilangan bulat').positive('Total nilai harus positif').optional(),
   catatan: z.string().optional(),
 })
 
@@ -293,10 +296,46 @@ export async function deletePenjualan(id: string) {
   return { success: true }
 }
 
-export async function getPenjualanList() {
+// Paginasi window (pola Kas): tanpa filter → hanya LIST_PAGE_SIZE baris terbaru
+// (offset utk "Muat lebih banyak"); dengan filter tanggal → SEMUA baris rentang
+// itu (bounded), supaya ringkasan/agregat klien atas rentang tetap persis benar.
+export async function getPenjualanList(opts?: {
+  dari?: string
+  sampai?: string
+  offset?: number
+  limit?: number
+}) {
   await requireSession()
-  return db
+  const { dari, sampai, offset, limit } = opts ?? {}
+  const ranged = Boolean(dari || sampai)
+  const conds = [
+    ...(dari ? [gte(penjualan.tanggal, dari)] : []),
+    ...(sampai ? [lte(penjualan.tanggal, sampai)] : []),
+  ]
+  const base = db
     .select()
     .from(penjualan)
+    .where(ranged ? and(...conds) : undefined)
     .orderBy(desc(penjualan.tanggal), desc(penjualan.createdAt))
+  if (ranged) return base
+  return base.limit(limit ?? LIST_PAGE_SIZE).offset(offset ?? 0)
+}
+
+// Agregat all-time via SQL (bukan dari window baris yang dimuat klien).
+// totalPpn mereplikasi persis logika hero tabel: per baris, selisih
+// (totalNilai − totalBersih) HANYA bila nilai > bersih (null dianggap 0).
+export async function getPenjualanStats() {
+  await requireSession()
+  const [row] = await db
+    .select({
+      totalCount: count(),
+      totalPenjualan: sum(penjualan.totalBersih),
+      totalPpn: sql<string | null>`sum(case when coalesce(${penjualan.totalNilai}, 0) > coalesce(${penjualan.totalBersih}, 0) then coalesce(${penjualan.totalNilai}, 0) - coalesce(${penjualan.totalBersih}, 0) else 0 end)`,
+    })
+    .from(penjualan)
+  return {
+    totalCount: row?.totalCount ?? 0,
+    totalPenjualan: Number(row?.totalPenjualan ?? 0),
+    totalPpn: Number(row?.totalPpn ?? 0),
+  }
 }

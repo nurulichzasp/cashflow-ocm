@@ -1,9 +1,11 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useTransition } from 'react'
 import { toast } from 'sonner'
 import { PaymentStatusDot } from '@/components/ui/status-pill'
-import { deletePenjualan, updatePenjualanStatus } from './actions'
+import { LoadMoreBar } from '@/components/load-more-bar'
+import { LIST_PAGE_SIZE } from '@/lib/pagination'
+import { deletePenjualan, updatePenjualanStatus, getPenjualanList } from './actions'
 import { PenjualanFormDialog } from './penjualan-form-dialog'
 import { formatTanggal, formatRupiah, todayString, formatCompact, formatRentangFilter } from '@/lib/format'
 import { shareNota } from '@/lib/share'
@@ -15,6 +17,7 @@ import type { Penjualan } from '@/lib/db/schema'
 
 interface Props {
   penjualanList: Penjualan[]
+  stats: { totalCount: number; totalPenjualan: number; totalPpn: number }
   isOwner: boolean
   /** Margin (estimasi laba) = Σ markup peron all-time (lintas modul, bukan per-rentang). */
   estimasiLaba: number
@@ -49,7 +52,7 @@ function SortIcon({ active, dir }: { active: boolean; dir: 'asc' | 'desc' }) {
   return dir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
 }
 
-export function PenjualanTable({ penjualanList, isOwner, estimasiLaba }: Props) {
+export function PenjualanTable({ penjualanList, stats, isOwner, estimasiLaba }: Props) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [dari, setDari] = useState('')
@@ -57,13 +60,62 @@ export function PenjualanTable({ penjualanList, isOwner, estimasiLaba }: Props) 
   const [sortBy, setSortBy] = useState<SortCol>('tanggal')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
 
+  // Paginasi window (pola Kas): penjualanList = LIST_PAGE_SIZE baris terbaru dari
+  // server. extraRows = halaman lanjutan ("Muat lebih banyak"); rangeRows = SEMUA
+  // baris rentang saat filter tanggal aktif (di-fetch server, agar ringkasan
+  // rentang tetap persis benar). Prop penjualanList berubah setelah revalidate
+  // (tambah/edit/hapus) → efek di bawah menyegarkan data klien agar tak basi.
+  const [extraRows, setExtraRows] = useState<Penjualan[]>([])
+  const [rangeRows, setRangeRows] = useState<Penjualan[] | null>(null)
+  const [isPending, startTransition] = useTransition()
+  const isFiltered = !!dari || !!sampai
+
+  useEffect(() => {
+    if (dari || sampai) {
+      startTransition(async () => {
+        setRangeRows(await getPenjualanList({ dari: dari || undefined, sampai: sampai || undefined }))
+      })
+    } else {
+      setRangeRows(null)
+    }
+    // penjualanList sengaja jadi dependency: revalidate server (habis mutasi)
+    // memicu refetch rentang/halaman-ekstra supaya data klien ikut segar.
+  }, [dari, sampai, penjualanList])
+
+  useEffect(() => {
+    // Habis mutasi (prop window berubah), halaman-ekstra yang sudah dimuat
+    // di-refetch supaya baris terhapus/teredit tidak basi.
+    setExtraRows((prev) => {
+      if (prev.length > 0) {
+        getPenjualanList({ offset: LIST_PAGE_SIZE, limit: prev.length })
+          .then((rows) => setExtraRows(rows))
+          .catch(() => {})
+      }
+      return prev
+    })
+  }, [penjualanList])
+
+  function loadMore() {
+    startTransition(async () => {
+      const next = await getPenjualanList({ offset: LIST_PAGE_SIZE + extraRows.length, limit: LIST_PAGE_SIZE })
+      setExtraRows((prev) => [...prev, ...next])
+    })
+  }
+
   function handleSort(col: SortCol) {
     if (sortBy === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
     else { setSortBy(col); setSortDir('desc') }
   }
 
+  const baseRows = useMemo(() => {
+    if (rangeRows) return rangeRows
+    if (extraRows.length === 0) return penjualanList
+    const seen = new Set(penjualanList.map((p) => p.id))
+    return [...penjualanList, ...extraRows.filter((p) => !seen.has(p.id))]
+  }, [rangeRows, penjualanList, extraRows])
+
   const filtered = useMemo(() => {
-    let list = [...penjualanList]
+    let list = [...baseRows]
     if (dari) list = list.filter(p => p.tanggal >= dari)
     if (sampai) list = list.filter(p => p.tanggal <= sampai)
 
@@ -75,7 +127,7 @@ export function PenjualanTable({ penjualanList, isOwner, estimasiLaba }: Props) 
       return sortDir === 'asc' ? va - vb : vb - va
     })
     return list
-  }, [penjualanList, dari, sampai, sortBy, sortDir])
+  }, [baseRows, dari, sampai, sortBy, sortDir])
 
   async function handleToggleLunas(id: string) {
     setUpdatingId(id)
@@ -101,7 +153,7 @@ export function PenjualanTable({ penjualanList, isOwner, estimasiLaba }: Props) 
     }
   }
 
-  if (penjualanList.length === 0) {
+  if (stats.totalCount === 0) {
     return (
       <EmptyState
         icon={FileText}
@@ -111,14 +163,21 @@ export function PenjualanTable({ penjualanList, isOwner, estimasiLaba }: Props) 
     )
   }
 
-  const isFiltered = !!dari || !!sampai
   const rangeLabel = formatRentangFilter(dari, sampai)
-  const totalPenjualan = filtered.reduce((s, p) => s + (p.totalBersih ?? 0), 0)
-  const totalPpn = filtered.reduce((s, p) => {
-    const bersih = p.totalBersih ?? 0
-    const nilai = p.totalNilai ?? 0
-    return s + (nilai > bersih ? nilai - bersih : 0)
-  }, 0)
+  // Tanpa filter = agregat SQL all-time (benar walau list terpaginasi);
+  // dengan filter = jumlah atas SEMUA baris rentang (rangeRows dari server).
+  const totalPenjualan = isFiltered
+    ? filtered.reduce((s, p) => s + (p.totalBersih ?? 0), 0)
+    : stats.totalPenjualan
+  const totalPpn = isFiltered
+    ? filtered.reduce((s, p) => {
+        const bersih = p.totalBersih ?? 0
+        const nilai = p.totalNilai ?? 0
+        return s + (nilai > bersih ? nilai - bersih : 0)
+      }, 0)
+    : stats.totalPpn
+  const jumlahTransaksi = isFiltered ? filtered.length : stats.totalCount
+  const hasMore = !isFiltered && baseRows.length < stats.totalCount
 
   return (
     <div className="space-y-3">
@@ -138,7 +197,7 @@ export function PenjualanTable({ penjualanList, isOwner, estimasiLaba }: Props) 
           <div className="flex items-center gap-5 sm:gap-6 shrink-0">
             <div className="text-right">
               <p className="text-[10px] uppercase tracking-wider text-stone-400 dark:text-zinc-500 font-medium">Transaksi</p>
-              <p className="mt-1 text-sm font-semibold num tabular-nums text-stone-700 dark:text-zinc-300">{filtered.length.toLocaleString('id-ID')}</p>
+              <p className="mt-1 text-sm font-semibold num tabular-nums text-stone-700 dark:text-zinc-300">{jumlahTransaksi.toLocaleString('id-ID')}</p>
             </div>
             <div className="text-right">
               <p className="text-[10px] uppercase tracking-wider text-stone-400 dark:text-zinc-500 font-medium">PPN</p>
@@ -201,6 +260,15 @@ export function PenjualanTable({ penjualanList, isOwner, estimasiLaba }: Props) 
           />
         ))}
       </div>
+
+      <LoadMoreBar
+        shown={filtered.length}
+        total={isFiltered ? filtered.length : stats.totalCount}
+        hasMore={hasMore}
+        loading={isPending}
+        onLoadMore={loadMore}
+        unit="transaksi"
+      />
     </div>
   )
 }

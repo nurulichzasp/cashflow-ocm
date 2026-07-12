@@ -2,10 +2,11 @@
 
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
-import { eq, desc } from 'drizzle-orm'
+import { eq, desc, sum, count } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { transaksiKas, akunKas } from '@/lib/db/schema'
+import { LIST_PAGE_SIZE } from '@/lib/pagination'
 import { z } from 'zod'
 import { requirePermission } from '@/lib/permissions'
 import { logActivity, describeActivity } from '@/lib/audit'
@@ -191,11 +192,59 @@ export async function getAkunKasList() {
   return db.select().from(akunKas).orderBy(akunKas.urutan)
 }
 
-export async function getKasTransactions() {
+// Paginasi window: tanpa filter → hanya LIST_PAGE_SIZE baris terbaru (offset utk
+// "Muat lebih banyak"); dengan filter tanggal → SEMUA baris rentang itu (bounded),
+// supaya ringkasan/agregat klien atas rentang tetap persis benar.
+export async function getKasTransactions(opts?: {
+  dari?: string
+  sampai?: string
+  offset?: number
+  limit?: number
+}) {
   await requireSession()
+  const { dari, sampai, offset, limit } = opts ?? {}
+  const ranged = Boolean(dari || sampai)
   const rows = await db.query.transaksiKas.findMany({
+    where: ranged
+      ? (t, { and, gte, lte }) =>
+          and(
+            ...(dari ? [gte(t.tanggal, dari)] : []),
+            ...(sampai ? [lte(t.tanggal, sampai)] : []),
+          )
+      : undefined,
     orderBy: (t, { desc }) => [desc(t.tanggal), desc(t.createdAt)],
+    limit: ranged ? undefined : (limit ?? LIST_PAGE_SIZE),
+    offset: ranged ? undefined : (offset ?? 0),
     with: { akun: true },
   })
   return rows
+}
+
+// Agregat all-time via SQL (bukan dari baris yang dimuat klien) — satu query
+// GROUP BY (akunId, arah) sekaligus memberi total masuk/keluar, jumlah baris,
+// dan net mutasi per akun untuk kartu Saldo Rekening.
+export async function getKasStats() {
+  await requireSession()
+  const grouped = await db
+    .select({
+      akunId: transaksiKas.akunId,
+      arah: transaksiKas.arah,
+      total: sum(transaksiKas.jumlah),
+      n: count(),
+    })
+    .from(transaksiKas)
+    .groupBy(transaksiKas.akunId, transaksiKas.arah)
+
+  let totalMasuk = 0
+  let totalKeluar = 0
+  let totalCount = 0
+  const netPerAkun: Record<string, number> = {}
+  for (const g of grouped) {
+    const jumlah = Number(g.total ?? 0)
+    totalCount += g.n
+    if (g.arah === 'masuk') totalMasuk += jumlah
+    else totalKeluar += jumlah
+    netPerAkun[g.akunId] = (netPerAkun[g.akunId] ?? 0) + (g.arah === 'masuk' ? jumlah : -jumlah)
+  }
+  return { totalMasuk, totalKeluar, totalCount, netPerAkun }
 }

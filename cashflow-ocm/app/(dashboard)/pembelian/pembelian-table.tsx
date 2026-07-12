@@ -1,12 +1,14 @@
 'use client'
 
-import React, { useState, useMemo, useCallback } from 'react'
+import React, { useState, useMemo, useCallback, useEffect, useTransition } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { PaymentStatusDot } from '@/components/ui/status-pill'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { formatTanggal, formatRupiah, formatCompact, formatRentangFilter } from '@/lib/format'
-import { deletePembelian } from './actions'
+import { deletePembelian, getPembelianList } from './actions'
+import { LoadMoreBar } from '@/components/load-more-bar'
+import { LIST_PAGE_SIZE } from '@/lib/pagination'
 import { PembelianFormDialog } from './pembelian-form-dialog'
 import { PrintRekapButton, usePrintNota, useShareNota, generateNoPembelian, type PrintMode } from './invoice-print'
 import { RowActionMenu, type RowAction } from '@/components/ui/row-action-menu'
@@ -20,6 +22,7 @@ type PembelianRow = Pembelian & { peron: Peron | null; sumberBayar: AkunKas | nu
 
 interface Props {
   pembelianList: PembelianRow[]
+  stats: { totalCount: number; totalTonase: number; totalBeli: number; totalJual: number; totalUntung: number; jumlahBelum: number }
   canEdit: boolean
   canDelete: boolean
   peronOptions: Array<{ id: string; nama: string; keuntunganPerKg: number }>
@@ -127,7 +130,7 @@ function PembelianRowActions({
   )
 }
 
-export function PembelianTable({ pembelianList, canEdit, canDelete, peronOptions, akunOptions }: Props) {
+export function PembelianTable({ pembelianList, stats, canEdit, canDelete, peronOptions, akunOptions }: Props) {
   const [editTarget, setEditTarget] = useState<PembelianRow | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [filterDari, setFilterDari] = useState('')
@@ -136,6 +139,51 @@ export function PembelianTable({ pembelianList, canEdit, canDelete, peronOptions
   const [expandedFotoId, setExpandedFotoId] = useState<string | null>(null)
   const [sortBy, setSortBy] = useState<'tanggal' | 'peron' | 'tonase' | 'totalBeli' | 'keuntungan'>('tanggal')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+
+  // Paginasi window: pembelianList = LIST_PAGE_SIZE tiket terbaru dari server.
+  // extraRows = halaman lanjutan ("Muat lebih banyak"); rangeRows = SEMUA baris
+  // yang cocok saat filter tanggal/peron aktif (di-fetch server, agar ringkasan
+  // & PrintRekap atas hasil filter tetap persis benar). Prop pembelianList
+  // berubah setelah revalidate (tambah/edit/hapus) → efek menyegarkan data klien.
+  const [extraRows, setExtraRows] = useState<PembelianRow[]>([])
+  const [rangeRows, setRangeRows] = useState<PembelianRow[] | null>(null)
+  const [isPending, startTransition] = useTransition()
+
+  useEffect(() => {
+    if (filterDari || filterSampai || filterPeronId !== 'all') {
+      startTransition(async () => {
+        setRangeRows(await getPembelianList({
+          dari: filterDari || undefined,
+          sampai: filterSampai || undefined,
+          peronId: filterPeronId !== 'all' ? filterPeronId : undefined,
+        }) as PembelianRow[])
+      })
+    } else {
+      setRangeRows(null)
+    }
+    // pembelianList sengaja jadi dependency: revalidate server (habis mutasi)
+    // memicu refetch hasil filter supaya data klien ikut segar.
+  }, [filterDari, filterSampai, filterPeronId, pembelianList])
+
+  useEffect(() => {
+    // Habis mutasi (prop window berubah), halaman-ekstra yang sudah dimuat
+    // di-refetch supaya baris terhapus/teredit tidak basi.
+    setExtraRows((prev) => {
+      if (prev.length > 0) {
+        getPembelianList({ offset: LIST_PAGE_SIZE, limit: prev.length })
+          .then((rows) => setExtraRows(rows as PembelianRow[]))
+          .catch(() => {})
+      }
+      return prev
+    })
+  }, [pembelianList])
+
+  function loadMore() {
+    startTransition(async () => {
+      const next = await getPembelianList({ offset: LIST_PAGE_SIZE + extraRows.length, limit: LIST_PAGE_SIZE }) as PembelianRow[]
+      setExtraRows((prev) => [...prev, ...next])
+    })
+  }
 
   const handleSort = useCallback((col: typeof sortBy) => {
     if (sortBy === col) setSortDir((d) => d === 'asc' ? 'desc' : 'asc')
@@ -154,8 +202,17 @@ export function PembelianTable({ pembelianList, canEdit, canDelete, peronOptions
     }
   }
 
+  // baseRows: hasil filter server (rangeRows) bila filter aktif; selain itu
+  // window awal + halaman ekstra (dedup by id — revalidate bisa menggeser offset).
+  const baseRows = useMemo(() => {
+    if (rangeRows) return rangeRows
+    if (extraRows.length === 0) return pembelianList
+    const seen = new Set(pembelianList.map((p) => p.id))
+    return [...pembelianList, ...extraRows.filter((p) => !seen.has(p.id))]
+  }, [rangeRows, pembelianList, extraRows])
+
   const filtered = useMemo(() => {
-    const list = pembelianList.filter((p) => {
+    const list = baseRows.filter((p) => {
       if (filterDari && p.tanggal < filterDari) return false
       if (filterSampai && p.tanggal > filterSampai) return false
       if (filterPeronId !== 'all' && p.peronId !== filterPeronId) return false
@@ -170,12 +227,16 @@ export function PembelianTable({ pembelianList, canEdit, canDelete, peronOptions
       else if (sortBy === 'keuntungan') cmp = a.keuntungan - b.keuntungan
       return sortDir === 'asc' ? cmp : -cmp
     })
-  }, [pembelianList, filterDari, filterSampai, filterPeronId, sortBy, sortDir])
+  }, [baseRows, filterDari, filterSampai, filterPeronId, sortBy, sortDir])
 
+  // Nomor urut nota = urutan tiket per (peron, bulan), tanggal naik — dihitung
+  // dari baris yang DIMUAT (baseRows). Dengan window, nomor hanya pasti benar
+  // bila semua tiket (peron, bulan) itu ikut termuat; window berisi tiket
+  // TERBARU sehingga bulan berjalan praktis selalu lengkap.
   const nomorUrutMap = useMemo(() => {
     const map = new Map<string, number>()
     const groups: Record<string, PembelianRow[]> = {}
-    for (const p of pembelianList) {
+    for (const p of baseRows) {
       const bulan = p.tanggal.slice(0, 7)
       const key = `${p.peronId}|${bulan}`
       if (!groups[key]) groups[key] = []
@@ -186,17 +247,21 @@ export function PembelianTable({ pembelianList, canEdit, canDelete, peronOptions
       rows.forEach((p, i) => map.set(p.id, i + 1))
     }
     return map
-  }, [pembelianList])
+  }, [baseRows])
 
-  const totalTonase = filtered.reduce((s, p) => s + p.tonase, 0)
-  const totalBeli = filtered.reduce((s, p) => s + p.totalBeli, 0)
-  const totalJual = filtered.reduce((s, p) => s + p.totalJual, 0)
-  const totalUntung = filtered.reduce((s, p) => s + p.keuntungan, 0)
-  const jumlahBelum = filtered.filter((p) => p.statusBayarPeron === 'belum').length
   const isFiltered = !!filterDari || !!filterSampai || filterPeronId !== 'all'
+  // Tanpa filter = agregat SQL all-time (benar walau list terpaginasi);
+  // dengan filter = jumlah atas SEMUA baris hasil filter (rangeRows dari server).
+  const totalTonase = isFiltered ? filtered.reduce((s, p) => s + p.tonase, 0) : stats.totalTonase
+  const totalBeli = isFiltered ? filtered.reduce((s, p) => s + p.totalBeli, 0) : stats.totalBeli
+  const totalJual = isFiltered ? filtered.reduce((s, p) => s + p.totalJual, 0) : stats.totalJual
+  const totalUntung = isFiltered ? filtered.reduce((s, p) => s + p.keuntungan, 0) : stats.totalUntung
+  const jumlahBelum = isFiltered ? filtered.filter((p) => p.statusBayarPeron === 'belum').length : stats.jumlahBelum
+  const jumlahTiket = isFiltered ? filtered.length : stats.totalCount
+  const hasMore = !isFiltered && baseRows.length < stats.totalCount
   const rangeLabel = formatRentangFilter(filterDari, filterSampai)
 
-  if (pembelianList.length === 0) {
+  if (stats.totalCount === 0) {
     return (
       <EmptyState
         icon={ShoppingCart}
@@ -250,7 +315,7 @@ export function PembelianTable({ pembelianList, canEdit, canDelete, peronOptions
           <div className="flex items-center gap-5 sm:gap-6 shrink-0">
             <div className="text-right">
               <p className="text-[10px] uppercase tracking-wider text-stone-400 dark:text-zinc-500 font-medium">Tiket</p>
-              <p className="mt-1 text-sm font-semibold num tabular-nums text-stone-700 dark:text-zinc-300">{filtered.length.toLocaleString('id-ID')}</p>
+              <p className="mt-1 text-sm font-semibold num tabular-nums text-stone-700 dark:text-zinc-300">{jumlahTiket.toLocaleString('id-ID')}</p>
             </div>
             <div className="text-right">
               <p className="text-[10px] uppercase tracking-wider text-stone-400 dark:text-zinc-500 font-medium">Tonase</p>
@@ -376,7 +441,7 @@ export function PembelianTable({ pembelianList, canEdit, canDelete, peronOptions
           <tfoot>
             <tr className="bg-stone-100 dark:bg-white/[0.04] border-t-2 border-stone-300 dark:border-border font-semibold">
               <td colSpan={2} className="px-3 py-2.5 text-stone-600 text-xs uppercase">
-                Total ({filtered.length} tiket)
+                Total ({jumlahTiket.toLocaleString('id-ID')} tiket)
               </td>
               <td className="px-3 py-2.5 text-right num text-stone-800">
                 {totalTonase.toLocaleString('id-ID')} kg
@@ -451,7 +516,7 @@ export function PembelianTable({ pembelianList, canEdit, canDelete, peronOptions
 
         {/* Mobile total — hanya nilai yg belum tampil di hero atas (Total Jual, Keuntungan) */}
         <div className="surface p-4">
-          <p className="text-xs font-semibold uppercase text-stone-500 mb-2">Total ({filtered.length} tiket)</p>
+          <p className="text-xs font-semibold uppercase text-stone-500 mb-2">Total ({jumlahTiket.toLocaleString('id-ID')} tiket)</p>
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div>
               <p className="text-xs text-stone-400">Total Jual</p>
@@ -464,6 +529,15 @@ export function PembelianTable({ pembelianList, canEdit, canDelete, peronOptions
           </div>
         </div>
       </div>
+
+      <LoadMoreBar
+        shown={filtered.length}
+        total={isFiltered ? filtered.length : stats.totalCount}
+        hasMore={hasMore}
+        loading={isPending}
+        onLoadMore={loadMore}
+        unit="tiket"
+      />
     </div>
   )
 }

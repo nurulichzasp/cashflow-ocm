@@ -1,10 +1,12 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useTransition } from 'react'
 import { toast } from 'sonner'
 import { ArahIndicator } from '@/components/ui/status-pill'
 import { EmptyState } from '@/components/empty-state'
-import { deleteTransaksiKas } from './actions'
+import { LoadMoreBar } from '@/components/load-more-bar'
+import { LIST_PAGE_SIZE } from '@/lib/pagination'
+import { deleteTransaksiKas, getKasTransactions } from './actions'
 import { KasFormDialog } from './kas-form-dialog'
 import { formatRupiah, formatTanggal, formatCompact, formatRentangFilter } from '@/lib/format'
 import { Trash2, Wallet, ArrowUpDown, ArrowUp, ArrowDown, Pencil } from 'lucide-react'
@@ -27,6 +29,7 @@ const kategoriLabels: Record<TransaksiKas['kategori'], string> = {
 
 interface Props {
   transaksiList: TransaksiRow[]
+  stats: { totalMasuk: number; totalKeluar: number; totalCount: number; netPerAkun: Record<string, number> }
   isOwner: boolean
 }
 
@@ -177,31 +180,80 @@ function KasDesktopRow({
   )
 }
 
-export function KasTable({ transaksiList, isOwner }: Props) {
+export function KasTable({ transaksiList, stats, isOwner }: Props) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [dari, setDari] = useState('')
   const [sampai, setSampai] = useState('')
   const [sortBy, setSortBy] = useState<SortCol>('tanggal')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
 
+  // Paginasi window: transaksiList = LIST_PAGE_SIZE baris terbaru dari server.
+  // extraRows = halaman lanjutan ("Muat lebih banyak"); rangeRows = SEMUA baris
+  // rentang saat filter tanggal aktif (di-fetch server, agar ringkasan rentang
+  // tetap persis benar). Prop transaksiList berubah setelah revalidate (tambah/
+  // edit/hapus) → efek di bawah menyegarkan data klien agar tak basi.
+  const [extraRows, setExtraRows] = useState<TransaksiRow[]>([])
+  const [rangeRows, setRangeRows] = useState<TransaksiRow[] | null>(null)
+  const [isPending, startTransition] = useTransition()
+  const isFiltered = !!dari || !!sampai
+
+  useEffect(() => {
+    if (dari || sampai) {
+      startTransition(async () => {
+        setRangeRows(await getKasTransactions({ dari: dari || undefined, sampai: sampai || undefined }) as TransaksiRow[])
+      })
+    } else {
+      setRangeRows(null)
+    }
+    // transaksiList sengaja jadi dependency: revalidate server (habis mutasi)
+    // memicu refetch rentang/halaman-ekstra supaya data klien ikut segar.
+  }, [dari, sampai, transaksiList])
+
+  useEffect(() => {
+    // Habis mutasi (prop window berubah), halaman-ekstra yang sudah dimuat
+    // di-refetch supaya baris terhapus/teredit tidak basi.
+    setExtraRows((prev) => {
+      if (prev.length > 0) {
+        getKasTransactions({ offset: LIST_PAGE_SIZE, limit: prev.length })
+          .then((rows) => setExtraRows(rows as TransaksiRow[]))
+          .catch(() => {})
+      }
+      return prev
+    })
+  }, [transaksiList])
+
+  function loadMore() {
+    startTransition(async () => {
+      const next = await getKasTransactions({ offset: LIST_PAGE_SIZE + extraRows.length, limit: LIST_PAGE_SIZE }) as TransaksiRow[]
+      setExtraRows((prev) => [...prev, ...next])
+    })
+  }
+
   function handleSort(col: SortCol) {
     if (sortBy === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
     else { setSortBy(col); setSortDir('desc') }
   }
 
+  const baseRows = useMemo(() => {
+    if (rangeRows) return rangeRows
+    if (extraRows.length === 0) return transaksiList
+    const seen = new Set(transaksiList.map((t) => t.id))
+    return [...transaksiList, ...extraRows.filter((t) => !seen.has(t.id))]
+  }, [rangeRows, transaksiList, extraRows])
+
   // Opsi akun diturunkan dari baris yang ada (untuk dialog edit) — dedup by id.
   const akunOptions = useMemo(() => {
     const map = new Map<string, { id: string; nama: string; tipe: string }>()
-    for (const t of transaksiList) {
+    for (const t of baseRows) {
       if (t.akun && !map.has(t.akun.id)) {
         map.set(t.akun.id, { id: t.akun.id, nama: t.akun.nama, tipe: t.akun.tipe })
       }
     }
     return Array.from(map.values())
-  }, [transaksiList])
+  }, [baseRows])
 
   const filtered = useMemo(() => {
-    let list = [...transaksiList]
+    let list = [...baseRows]
     if (dari) list = list.filter(t => t.tanggal >= dari)
     if (sampai) list = list.filter(t => t.tanggal <= sampai)
     list.sort((a, b) => {
@@ -209,7 +261,7 @@ export function KasTable({ transaksiList, isOwner }: Props) {
       return sortDir === 'asc' ? a.jumlah - b.jumlah : b.jumlah - a.jumlah
     })
     return list
-  }, [transaksiList, dari, sampai, sortBy, sortDir])
+  }, [baseRows, dari, sampai, sortBy, sortDir])
 
   async function handleDelete(id: string) {
     setDeletingId(id)
@@ -223,7 +275,7 @@ export function KasTable({ transaksiList, isOwner }: Props) {
     }
   }
 
-  if (transaksiList.length === 0) {
+  if (stats.totalCount === 0) {
     return (
       <EmptyState
         icon={Wallet}
@@ -233,10 +285,16 @@ export function KasTable({ transaksiList, isOwner }: Props) {
     )
   }
 
-  const isFiltered = !!dari || !!sampai
   const rangeLabel = formatRentangFilter(dari, sampai)
-  const totalMasuk = filtered.filter((t) => t.arah === 'masuk').reduce((s, t) => s + t.jumlah, 0)
-  const totalKeluar = filtered.filter((t) => t.arah === 'keluar').reduce((s, t) => s + t.jumlah, 0)
+  // Tanpa filter = agregat SQL all-time (benar walau list terpaginasi);
+  // dengan filter = jumlah atas SEMUA baris rentang (rangeRows dari server).
+  const totalMasuk = isFiltered
+    ? filtered.filter((t) => t.arah === 'masuk').reduce((s, t) => s + t.jumlah, 0)
+    : stats.totalMasuk
+  const totalKeluar = isFiltered
+    ? filtered.filter((t) => t.arah === 'keluar').reduce((s, t) => s + t.jumlah, 0)
+    : stats.totalKeluar
+  const hasMore = !isFiltered && baseRows.length < stats.totalCount
 
   return (
     <div className="space-y-3">
@@ -304,6 +362,15 @@ export function KasTable({ transaksiList, isOwner }: Props) {
           />
         ))}
       </div>
+
+      <LoadMoreBar
+        shown={filtered.length}
+        total={isFiltered ? filtered.length : stats.totalCount}
+        hasMore={hasMore}
+        loading={isPending}
+        onLoadMore={loadMore}
+        unit="transaksi"
+      />
     </div>
   )
 }

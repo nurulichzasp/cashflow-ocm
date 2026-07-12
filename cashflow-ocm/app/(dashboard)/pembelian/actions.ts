@@ -2,7 +2,7 @@
 
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
-import { eq, and, sum } from 'drizzle-orm'
+import { eq, and, sum, count } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { pembelian, pembelianDetail, transaksiKas, akunKas, peron, hargaAcuan, pembelianFoto } from '@/lib/db/schema'
@@ -12,6 +12,7 @@ import { requirePermission } from '@/lib/permissions'
 import { logActivity, describeActivity } from '@/lib/audit'
 import { effectiveKeuntunganPerKg, isKategoriTBS } from '@/lib/harga'
 import { todayString } from '@/lib/format'
+import { LIST_PAGE_SIZE } from '@/lib/pagination'
 
 async function requireSession() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -399,12 +400,67 @@ export async function deletePembelian(id: string) {
   return { success: true }
 }
 
-export async function getPembelianList() {
+// Paginasi window (pola Kas): tanpa filter → hanya LIST_PAGE_SIZE tiket terbaru
+// (offset utk "Muat lebih banyak"); dengan filter tanggal/peron → SEMUA baris yang
+// cocok (bounded), agar ringkasan & PrintRekap atas hasil filter tetap persis benar.
+export async function getPembelianList(opts?: {
+  dari?: string
+  sampai?: string
+  peronId?: string
+  offset?: number
+  limit?: number
+}) {
   await requireSession()
+  const { dari, sampai, peronId, offset, limit } = opts ?? {}
+  const adaFilter = Boolean(dari || sampai || peronId)
   return db.query.pembelian.findMany({
+    where: adaFilter
+      ? (p, { and, gte, lte, eq }) =>
+          and(
+            ...(dari ? [gte(p.tanggal, dari)] : []),
+            ...(sampai ? [lte(p.tanggal, sampai)] : []),
+            ...(peronId ? [eq(p.peronId, peronId)] : []),
+          )
+      : undefined,
     orderBy: (p, { desc }) => [desc(p.tanggal), desc(p.createdAt)],
+    limit: adaFilter ? undefined : (limit ?? LIST_PAGE_SIZE),
+    offset: adaFilter ? undefined : (offset ?? 0),
     with: { peron: true, sumberBayar: true, fotos: true, details: { orderBy: (d, { asc }) => [asc(d.urutan)] } },
   })
+}
+
+// Agregat all-time via SQL (bukan dari window baris yang dimuat klien) — satu
+// query GROUP BY statusBayarPeron sekaligus memberi total + jumlah tiket belum
+// dibayar untuk kartu ringkasan saat tanpa filter.
+export async function getPembelianStats() {
+  await requireSession()
+  const grouped = await db
+    .select({
+      status: pembelian.statusBayarPeron,
+      n: count(),
+      tonase: sum(pembelian.tonase),
+      beli: sum(pembelian.totalBeli),
+      jual: sum(pembelian.totalJual),
+      untung: sum(pembelian.keuntungan),
+    })
+    .from(pembelian)
+    .groupBy(pembelian.statusBayarPeron)
+
+  let totalCount = 0
+  let totalTonase = 0
+  let totalBeli = 0
+  let totalJual = 0
+  let totalUntung = 0
+  let jumlahBelum = 0
+  for (const g of grouped) {
+    totalCount += g.n
+    totalTonase += Number(g.tonase ?? 0) // kolom real → Number()
+    totalBeli += Number(g.beli ?? 0)
+    totalJual += Number(g.jual ?? 0)
+    totalUntung += Number(g.untung ?? 0)
+    if (g.status === 'belum') jumlahBelum = g.n
+  }
+  return { totalCount, totalTonase, totalBeli, totalJual, totalUntung, jumlahBelum }
 }
 
 export async function getAkunKasList() {

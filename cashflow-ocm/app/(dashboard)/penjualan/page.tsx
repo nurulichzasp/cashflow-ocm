@@ -1,6 +1,6 @@
 import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
-import { getPenjualanList } from './actions'
+import { getPenjualanList, getPenjualanStats } from './actions'
 import { getEstimasiLaba } from '../pembelian/actions'
 import { PenjualanTable } from './penjualan-table'
 import { PenjualanFormDialog } from './penjualan-form-dialog'
@@ -9,9 +9,10 @@ import { FloatingFab } from '@/components/fab'
 export const dynamic = 'force-dynamic'
 
 export default async function PenjualanPage() {
-  const [session, penjualanList, estimasiLaba] = await Promise.all([
+  const [session, penjualanList, stats, estimasiLaba] = await Promise.all([
     auth.api.getSession({ headers: await headers() }),
     getPenjualanList(),
+    getPenjualanStats(),
     getEstimasiLaba(),
   ])
 
@@ -21,7 +22,7 @@ export default async function PenjualanPage() {
   return (
     <div className="space-y-5">
       <PenjualanFormDialog><FloatingFab /></PenjualanFormDialog>
-      <PenjualanTable penjualanList={penjualanList} isOwner={isOwner} estimasiLaba={estimasiLaba} />
+      <PenjualanTable penjualanList={penjualanList} stats={stats} isOwner={isOwner} estimasiLaba={estimasiLaba} />
     </div>
   )
 }

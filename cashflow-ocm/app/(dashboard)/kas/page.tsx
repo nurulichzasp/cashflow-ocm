@@ -1,25 +1,26 @@
 import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
-import { getKasTransactions, getAkunKasList } from './actions'
+import { getKasTransactions, getKasStats, getAkunKasList } from './actions'
 import { KasTable } from './kas-table'
 import { KasFormDialog } from './kas-form-dialog'
 import { FloatingFab } from '@/components/fab'
 import { formatRupiah, formatCompact } from '@/lib/format'
-import { saldoPerAkun } from '@/lib/saldo'
 
 export const dynamic = 'force-dynamic'
 
 export default async function KasPage() {
-  const [session, transaksiList, akunList] = await Promise.all([
+  const [session, transaksiList, stats, akunList] = await Promise.all([
     auth.api.getSession({ headers: await headers() }),
     getKasTransactions(),
+    getKasStats(),
     getAkunKasList(),
   ])
 
   const isOwner = session?.user.role === 'owner'
 
-  // Saldo per akun = saldoAwal + Σ(masuk) − Σ(keluar). Rumus dari lib/saldo.ts (teruji unit).
-  const akunSaldo = saldoPerAkun(akunList, transaksiList)
+  // Saldo per akun = saldoAwal + net mutasi (rumus lib/saldo.ts) — net kini dari
+  // agregat SQL all-time (getKasStats), BUKAN dari window baris yang dimuat.
+  const akunSaldo = akunList.map((a) => ({ ...a, saldo: a.saldoAwal + (stats.netPerAkun[a.id] ?? 0) }))
 
   const totalSaldo = akunSaldo.reduce((s, a) => s + a.saldo, 0)
 
@@ -79,7 +80,7 @@ export default async function KasPage() {
       </div>
 
       {/* Masuk / Keluar (ikut filter) pindah ke dalam KasTable. */}
-      <KasTable transaksiList={transaksiList} isOwner={isOwner} />
+      <KasTable transaksiList={transaksiList} stats={stats} isOwner={isOwner} />
     </div>
   )
 }

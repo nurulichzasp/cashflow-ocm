@@ -2,11 +2,12 @@
 
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
-import { eq, desc } from 'drizzle-orm'
+import { eq, desc, sum, count } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { biayaOperasional, transaksiKas, biayaFoto } from '@/lib/db/schema'
 import { and } from 'drizzle-orm'
+import { LIST_PAGE_SIZE } from '@/lib/pagination'
 import { z } from 'zod'
 import { notifyNewBiaya } from '@/lib/notification'
 import { requirePermission } from '@/lib/permissions'
@@ -256,10 +257,40 @@ export async function deleteBiayaOperasional(id: string) {
   return { success: true }
 }
 
-export async function getBiayaList() {
+// Paginasi window (pola kas): tanpa filter → hanya LIST_PAGE_SIZE baris terbaru
+// (offset utk "Muat lebih banyak"); dengan filter tanggal → SEMUA baris rentang
+// itu (bounded), supaya ringkasan/agregat klien atas rentang tetap persis benar.
+export async function getBiayaList(opts?: {
+  dari?: string
+  sampai?: string
+  offset?: number
+  limit?: number
+}) {
   await requireSession()
+  const { dari, sampai, offset, limit } = opts ?? {}
+  const ranged = Boolean(dari || sampai)
   return db.query.biayaOperasional.findMany({
+    where: ranged
+      ? (b, { and, gte, lte }) =>
+          and(
+            ...(dari ? [gte(b.tanggal, dari)] : []),
+            ...(sampai ? [lte(b.tanggal, sampai)] : []),
+          )
+      : undefined,
     orderBy: (b, { desc }) => [desc(b.tanggal), desc(b.createdAt)],
+    limit: ranged ? undefined : (limit ?? LIST_PAGE_SIZE),
+    offset: ranged ? undefined : (offset ?? 0),
     with: { akunSumber: true, fotos: true },
   })
+}
+
+// Agregat all-time via SQL (bukan dari baris yang dimuat klien) — total entri &
+// total pengeluaran, dipakai hero + empty-state + LoadMoreBar saat tanpa filter.
+export async function getBiayaStats() {
+  await requireSession()
+  const [row] = await db
+    .select({ totalCount: count(), total: sum(biayaOperasional.jumlah) })
+    .from(biayaOperasional)
+  // sum() drizzle mengembalikan string|null → normalkan ke number.
+  return { totalCount: row?.totalCount ?? 0, totalBiaya: Number(row?.total ?? 0) }
 }

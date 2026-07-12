@@ -1,6 +1,6 @@
 import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
-import { getBiayaList } from './actions'
+import { getBiayaList, getBiayaStats } from './actions'
 import { BiayaTable } from './biaya-table'
 import { BiayaFormDialog } from './biaya-form-dialog'
 import { FloatingFab } from '@/components/fab'
@@ -10,9 +10,10 @@ import { akunKas } from '@/lib/db/schema'
 export const dynamic = 'force-dynamic'
 
 export default async function BiayaPage() {
-  const [session, biayaList, akunList] = await Promise.all([
+  const [session, biayaList, stats, akunList] = await Promise.all([
     auth.api.getSession({ headers: await headers() }),
     getBiayaList(),
+    getBiayaStats(),
     db.select().from(akunKas).orderBy(akunKas.urutan),
   ])
 
@@ -23,7 +24,7 @@ export default async function BiayaPage() {
   return (
     <div className="space-y-5">
       <BiayaFormDialog akunOptions={akunOptions}><FloatingFab /></BiayaFormDialog>
-      <BiayaTable biayaList={biayaList} isOwner={isOwner} akunOptions={akunOptions} />
+      <BiayaTable biayaList={biayaList} stats={stats} isOwner={isOwner} akunOptions={akunOptions} />
     </div>
   )
 }
