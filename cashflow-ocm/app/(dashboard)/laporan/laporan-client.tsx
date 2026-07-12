@@ -167,7 +167,7 @@ function PerPeronTab({ data, dari, sampai }: { data: LaporanData; dari: string; 
     'Tonase (kg)': p.tonase,
     'Total Beli (Rp)': p.totalBeli,
     'Keuntungan (Rp)': p.keuntungan,
-    'Realisasi/kg (Rp)': p.realizedPerKg,
+    'Realisasi/kg (Rp)': p.tonase === 0 ? null : p.realizedPerKg, // null = sel kosong, selaras "—" di UI
     'Target/kg (Rp)': p.targetPerKg,
     'DP Aktif (Rp)': p.dpAktif,
   }))
@@ -332,6 +332,12 @@ function KasTab({
 const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des']
 
 type PajakData = Awaited<ReturnType<typeof getPajakData>>
+
+// Tarif pecahan (0.11) → label persen ("11%"); label pajak ikut tarif tersimpan
+// di pengaturan, bukan hardcode.
+function formatPersenTarif(t: number): string {
+  return `${(t * 100).toLocaleString('id-ID', { maximumFractionDigits: 2 })}%`
+}
 type LabaRugiTahunanData = Awaited<ReturnType<typeof getLabaRugiTahunan>>
 type NeracaDataType = Awaited<ReturnType<typeof getNeracaData>>
 type PembelianBulananData = Awaited<ReturnType<typeof getPembelianBulanan>>
@@ -400,7 +406,7 @@ function PembelianBulananTab({ bulan, onBulanChange }: { bulan: string; onBulanC
     'Tonase (kg)': p.tonase,
     'Total Beli (Rp)': p.totalBeli,
     'Keuntungan (Rp)': p.keuntungan,
-    'Realisasi/kg (Rp)': p.realizedPerKg,
+    'Realisasi/kg (Rp)': p.tonase === 0 ? null : p.realizedPerKg, // null = sel kosong, selaras "—" di UI
     'Target/kg (Rp)': p.targetPerKg,
   }))
 
@@ -557,7 +563,7 @@ function PajakTab({ tahun, onTahunChange }: { tahun: string; onTahunChange: (t: 
       </div>
 
       <div>
-        <h3 className="text-sm font-semibold mb-3">PPN Bulanan (11%)</h3>
+        <h3 className="text-sm font-semibold mb-3">PPN Bulanan ({formatPersenTarif(data.tarifPpn)})</h3>
         <div className="rounded-lg border overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-muted/50">
@@ -667,7 +673,7 @@ function LabaRugiTahunanTab({ tahun, onTahunChange }: { tahun: string; onTahunCh
     { label: 'Laba Kotor', value: data.labaKotor, cls: 'font-semibold', sep: true },
     { label: 'Biaya Operasional', value: data.totalBiaya, cls: 'text-muted-foreground' },
     { label: 'Laba Operasional (sebelum pajak)', value: data.labaOperasional, cls: 'font-semibold', sep: true },
-    { label: 'PPh Badan (22%)', value: data.pphBadan, cls: 'text-muted-foreground' },
+    { label: `PPh Badan (${formatPersenTarif(data.tarifPphBadan)})`, value: data.pphBadan, cls: 'text-muted-foreground' },
     { label: 'Laba Bersih Setelah Pajak', value: data.labaBersih, cls: 'font-bold text-lg', sep: true, valueCls: data.labaBersih > 0 ? 'text-ok' : data.labaBersih < 0 ? 'text-crit' : '' },
     { label: 'Total PPh Pasal 25 Dibayar', value: data.totalPph25Dibayar, cls: 'text-muted-foreground' },
     { label: data.pphKurangBayar >= 0 ? 'PPh Kurang Bayar' : 'PPh Lebih Bayar', value: Math.abs(data.pphKurangBayar), cls: 'font-semibold text-foreground' },

@@ -71,18 +71,21 @@ export async function getLaporanData(dari: string, sampai: string) {
     db.select().from(peron).orderBy(asc(peron.nama)),
   ])
 
-  // Saldo awal per akun (sebelum periode)
-  const saldoAwalRows = await Promise.all(
-    allAkun.map(async (a) => {
-      const rows = await db.select({ arah: transaksiKas.arah, total: sum(transaksiKas.jumlah) })
-        .from(transaksiKas)
-        .where(and(eq(transaksiKas.akunId, a.id), lt(transaksiKas.tanggal, dari)))
-        .groupBy(transaksiKas.arah)
-      const masuk = Number(rows.find((r) => r.arah === 'masuk')?.total ?? 0)
-      const keluar = Number(rows.find((r) => r.arah === 'keluar')?.total ?? 0)
-      return { id: a.id, nama: a.nama, tipe: a.tipe, saldoAwal: a.saldoAwal + masuk - keluar }
-    })
-  )
+  // Saldo awal per akun (sebelum periode) — 1 query GROUP BY (akun, arah),
+  // bukan 1 query per akun (N+1).
+  const saldoAwalAgg = await db
+    .select({ akunId: transaksiKas.akunId, arah: transaksiKas.arah, total: sum(transaksiKas.jumlah) })
+    .from(transaksiKas)
+    .where(lt(transaksiKas.tanggal, dari))
+    .groupBy(transaksiKas.akunId, transaksiKas.arah)
+  const netAwal: Record<string, number> = {}
+  for (const r of saldoAwalAgg) {
+    const val = Number(r.total ?? 0)
+    netAwal[r.akunId] = (netAwal[r.akunId] ?? 0) + (r.arah === 'masuk' ? val : -val)
+  }
+  const saldoAwalRows = allAkun.map((a) => ({
+    id: a.id, nama: a.nama, tipe: a.tipe, saldoAwal: a.saldoAwal + (netAwal[a.id] ?? 0),
+  }))
 
   const dpMap: Record<string, number> = {}
   for (const row of dpRows) {
@@ -269,7 +272,9 @@ export async function getPajakData(tahun: string) {
     }
   }
 
-  return { ppnPerBulan, pphPerBulan }
+  // tarifPpn ikut dikembalikan supaya label UI ("PPN Bulanan (…%)") mengikuti
+  // tarif tersimpan, bukan hardcode 11%.
+  return { ppnPerBulan, pphPerBulan, tarifPpn }
 }
 
 export async function getLabaRugiTahunan(tahun: string) {
@@ -311,6 +316,8 @@ export async function getLabaRugiTahunan(tahun: string) {
   return {
     totalPenjualan, totalPembelian, labaKotor, totalBiaya,
     labaOperasional, pphBadan, labaBersih, totalPph25Dibayar, pphKurangBayar,
+    // utk label UI dinamis ("PPh Badan (…%)"), selaras tarif tersimpan
+    tarifPphBadan,
   }
 }
 
