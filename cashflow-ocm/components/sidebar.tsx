@@ -3,48 +3,28 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { isRouteActive } from '@/lib/nav-routes'
+import { APP_ROUTES, isRouteActive, visibleRoutes, parsePerms } from '@/lib/nav-routes'
 import { signOut } from '@/lib/auth-client'
 import { useRouter } from 'next/navigation'
-import {
-  LayoutDashboard,
-  ShoppingCart,
-  TrendingUp,
-  Users,
-  HeartPulse,
-  Wallet,
-  Receipt,
-  DollarSign,
-  BarChart3,
-  Settings,
-  LogOut,
-  Menu,
-  X,
-  PanelLeftClose,
-} from 'lucide-react'
+import { LogOut, Menu, X, PanelLeftClose } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
 import { fotoUrl } from '@/lib/foto-url'
 
-const navItems = [
-  { href: '/dashboard',   label: 'Dashboard',    icon: LayoutDashboard },
-  { href: '/pembelian',   label: 'Pembelian',    icon: ShoppingCart },
-  { href: '/penjualan',   label: 'Penjualan',    icon: TrendingUp },
-  { href: '/peron',       label: 'Peron',        icon: Users },
-  { href: '/peron/kesehatan', label: 'Kesehatan Peron', icon: HeartPulse },
-  { href: '/kas',         label: 'Buku Kas',     icon: Wallet },
-  { href: '/biaya',       label: 'Biaya',        icon: Receipt },
-  { href: '/harga',       label: 'Harga Acuan',  icon: DollarSign },
-  { href: '/laporan',     label: 'Laporan',      icon: BarChart3 },
-  { href: '/pengaturan',  label: 'Pengaturan',   icon: Settings },
-]
+// Nav sidebar KONSUMSI APP_ROUTES (lib/nav-routes.ts = satu sumber label/ikon/
+// permission — dulu array hardcode duplikat, risiko desync dgn command palette).
+// SIDEBAR_ORDER hanya urusan presentasi: urutan visual lama dipertahankan.
+const SIDEBAR_ORDER = ['/dashboard', '/pembelian', '/penjualan', '/peron', '/kas', '/biaya', '/harga', '/laporan', '/pengaturan']
+const navItems = SIDEBAR_ORDER
+  .map((p) => APP_ROUTES.find((r) => r.path === p))
+  .filter((r): r is NonNullable<typeof r> => r != null)
+  .map((r) => ({ href: r.path, label: r.label, icon: r.icon }))
 
 const navPaths = navItems.map((n) => n.href)
 
 /**
  * Aktif bila href adalah entri longest-match untuk pathname — entri yang lebih
- * spesifik menang (mis. di /peron/kesehatan, "Kesehatan Peron" aktif, "Peron"
- * tidak). Logika terpusat di lib/nav-routes.ts.
+ * spesifik menang bila ada path bersarang. Logika terpusat di lib/nav-routes.ts.
  */
 function isNavActive(pathname: string, href: string): boolean {
   return isRouteActive(pathname, href, navPaths)
@@ -98,22 +78,9 @@ export function Sidebar({ user, isOwner, onToggle }: { user?: any; isOwner?: boo
     router.refresh()
   }
 
-  let perms = { pembelian: true, penjualan: true, kas: true, biaya: true }
-  if (user?.permissions) {
-    try {
-      perms = JSON.parse(user.permissions)
-    } catch {}
-  }
-
-  const visibleNavItems = navItems.filter((item) => {
-    if (isOwner) return true
-    if (item.href === '/pengaturan') return false
-    if (item.href === '/pembelian' && perms.pembelian === false) return false
-    if (item.href === '/penjualan' && perms.penjualan === false) return false
-    if (item.href === '/kas' && perms.kas === false) return false
-    if (item.href === '/biaya' && perms.biaya === false) return false
-    return true
-  })
+  // Filter role/permission terpusat di lib/nav-routes.ts (sama dgn command palette).
+  const allowedPaths = new Set(visibleRoutes(isOwner, parsePerms(user?.permissions)).map((r) => r.path))
+  const visibleNavItems = navItems.filter((item) => allowedPaths.has(item.href))
 
   return (
     <aside className="flex h-full w-60 flex-col bg-[#1E1E1E] border-r border-white/[0.06]">
@@ -198,22 +165,9 @@ export function MobileSidebar({ user, isOwner }: { user?: any; isOwner?: boolean
     router.refresh()
   }
 
-  let perms = { pembelian: true, penjualan: true, kas: true, biaya: true }
-  if (user?.permissions) {
-    try {
-      perms = JSON.parse(user.permissions)
-    } catch {}
-  }
-
-  const visibleNavItems = navItems.filter((item) => {
-    if (isOwner) return true
-    if (item.href === '/pengaturan') return false
-    if (item.href === '/pembelian' && perms.pembelian === false) return false
-    if (item.href === '/penjualan' && perms.penjualan === false) return false
-    if (item.href === '/kas' && perms.kas === false) return false
-    if (item.href === '/biaya' && perms.biaya === false) return false
-    return true
-  })
+  // Filter role/permission terpusat di lib/nav-routes.ts (sama dgn command palette).
+  const allowedPaths = new Set(visibleRoutes(isOwner, parsePerms(user?.permissions)).map((r) => r.path))
+  const visibleNavItems = navItems.filter((item) => allowedPaths.has(item.href))
 
   return (
     <>

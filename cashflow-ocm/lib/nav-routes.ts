@@ -8,7 +8,6 @@ import {
   DollarSign,
   BarChart3,
   Settings,
-  HeartPulse,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -41,7 +40,6 @@ export const APP_ROUTES: AppRoute[] = [
 
   // — Master Data —
   { label: 'Peron', path: '/peron', group: 'Master Data', icon: Users },
-  { label: 'Kesehatan Peron', path: '/peron/kesehatan', group: 'Master Data', icon: HeartPulse },
   { label: 'Harga Acuan', path: '/harga', group: 'Master Data', icon: DollarSign },
 
   // — Lainnya —
@@ -54,8 +52,8 @@ const ALL_ROUTE_PATHS = APP_ROUTES.map((r) => r.path)
 /**
  * Longest-match: dari daftar path kandidat, kembalikan path terpanjang yang
  * cocok sebagai segmen-prefix dari `pathname`. Entri yang lebih spesifik
- * menang, sehingga `/peron` TIDAK ikut menang untuk `/peron/kesehatan`
- * (gotcha yang sama dengan publicPaths `startsWith` di proxy.ts).
+ * menang bila ada path bersarang di daftar kandidat (gotcha yang sama dengan
+ * publicPaths `startsWith` di proxy.ts).
  */
 export function matchRoutePath(pathname: string, candidatePaths: string[] = ALL_ROUTE_PATHS): string | null {
   let best: string | null = null
