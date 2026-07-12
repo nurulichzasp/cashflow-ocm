@@ -305,7 +305,7 @@ function PeronHealthRow({ kritis, perhatian }: { kritis: number; perhatian: numb
   const aman = total === 0
 
   return (
-    <Link href="/peron/kesehatan" className="surface row-press flex items-center gap-3 p-4">
+    <Link href="/peron?view=kesehatan" className="surface row-press flex items-center gap-3 p-4">
       <span
         className="grid h-9 w-9 shrink-0 place-items-center rounded-xl"
         style={

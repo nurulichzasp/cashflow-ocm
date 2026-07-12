@@ -74,7 +74,7 @@ export async function setRetensiSettings(input: { ambang: number; minMarginTbs: 
   }
   // (setAppSettings pola app tak me-log activity; entityType audit tak mencakup settings)
   revalidatePath('/pengaturan/retensi')
-  revalidatePath('/peron/kesehatan')
+  revalidatePath('/peron')
   return { success: true }
 }
 
@@ -283,10 +283,14 @@ const applySchema = z.object({ peronId: z.string().min(1), keuntunganSesudah: z.
 export async function applyRetentionMargin(input: { peronId: string; keuntunganSesudah: number }) {
   const session = await requireOwner()
   const data = applySchema.parse(input)
-  const existing = await db.query.peron.findFirst({ where: (t, { eq }) => eq(t.id, data.peronId) })
-  if (!existing) throw new Error('Peron tidak ditemukan')
-
-  await db.update(peron).set({ keuntunganPerKg: data.keuntunganSesudah }).where(eq(peron.id, data.peronId))
+  // Baca-lalu-tulis dalam SATU transaksi supaya oldValues di audit log tak
+  // pernah basi bila ada dua penulisan margin nyaris bersamaan.
+  const existing = await db.transaction(async (tx) => {
+    const row = await tx.query.peron.findFirst({ where: (t, { eq }) => eq(t.id, data.peronId) })
+    if (!row) throw new Error('Peron tidak ditemukan')
+    await tx.update(peron).set({ keuntunganPerKg: data.keuntunganSesudah }).where(eq(peron.id, data.peronId))
+    return row
+  })
 
   await logActivity({
     userId: session.user.id,
@@ -299,8 +303,7 @@ export async function applyRetentionMargin(input: { peronId: string; keuntunganS
   }).catch(() => {})
 
   revalidatePath('/peron')
-  revalidatePath('/peron/kesehatan')
-  revalidatePath(`/peron/kesehatan/${data.peronId}`)
+  revalidatePath(`/peron/${data.peronId}`)
   return { success: true }
 }
 
@@ -348,8 +351,8 @@ export async function catatAncaman(input: AncamanInput) {
     entityId: data.peronId,
     description: `Catat ancaman peron (${data.tindakan}, kompetitor Rp${data.hargaKompetitor})`,
   }).catch(() => {})
-  revalidatePath('/peron/kesehatan')
-  revalidatePath(`/peron/kesehatan/${data.peronId}`)
+  revalidatePath('/peron')
+  revalidatePath(`/peron/${data.peronId}`)
   return { success: true }
 }
 
@@ -362,12 +365,14 @@ export async function terapkanDanCatat(input: AncamanInput) {
   const data = ancamanSchema.parse({ ...input, tindakan: 'dipertahankan' })
   if (data.keuntunganSesudah == null) throw new Error('Untung CV baru wajib diisi untuk mempertahankan')
 
-  const existing = await db.query.peron.findFirst({ where: (t, { eq }) => eq(t.id, data.peronId) })
-  if (!existing) throw new Error('Peron tidak ditemukan')
-
-  await db.transaction(async (tx) => {
+  // Baca existing DI DALAM transaksi (bukan sebelum) → oldValues audit log
+  // selalu nilai yang benar-benar tertimpa.
+  const existing = await db.transaction(async (tx) => {
+    const row = await tx.query.peron.findFirst({ where: (t, { eq }) => eq(t.id, data.peronId) })
+    if (!row) throw new Error('Peron tidak ditemukan')
     await tx.update(peron).set({ keuntunganPerKg: data.keuntunganSesudah! }).where(eq(peron.id, data.peronId))
     await tx.insert(peronAncaman).values(ancamanValues(session.user.id, data))
+    return row
   })
 
   await logActivity({
@@ -381,7 +386,6 @@ export async function terapkanDanCatat(input: AncamanInput) {
   }).catch(() => {})
 
   revalidatePath('/peron')
-  revalidatePath('/peron/kesehatan')
-  revalidatePath(`/peron/kesehatan/${data.peronId}`)
+  revalidatePath(`/peron/${data.peronId}`)
   return { success: true }
 }

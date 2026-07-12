@@ -75,7 +75,7 @@ export async function refreshPeronHealth() {
   const session = await requireSession()
   requirePermission(session.user.role as any, 'canEdit')
   const res = await rebuildPeronHealth()
-  revalidatePath('/peron/kesehatan')
+  revalidatePath('/peron')
   return res
 }
 
@@ -115,8 +115,8 @@ export async function createFollowup(input: z.infer<typeof followupSchema>) {
   if (data.outcome === 'hilang') {
     await db.update(peronHealth).set({ isArchived: true }).where(eq(peronHealth.peronId, data.peronId))
   }
-  revalidatePath('/peron/kesehatan')
-  revalidatePath(`/peron/kesehatan/${data.peronId}`)
+  revalidatePath('/peron')
+  revalidatePath(`/peron/${data.peronId}`)
 }
 
 export async function archivePeron(peronId: string) {
@@ -130,5 +130,5 @@ export async function archivePeron(peronId: string) {
     entityId: peronId,
     description: 'Arsipkan peron dari pemantauan kesehatan',
   }).catch(() => {})
-  revalidatePath('/peron/kesehatan')
+  revalidatePath('/peron')
 }

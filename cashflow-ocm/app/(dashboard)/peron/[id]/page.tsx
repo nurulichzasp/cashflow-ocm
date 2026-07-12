@@ -1,16 +1,20 @@
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
+import { hasPermission } from '@/lib/permissions'
 import { getPeronById } from '../actions'
 import { getPeronAccess } from '../portal-actions'
 import { PortalLinkCard } from './portal-link-card'
 import { PeronFormDialog } from '../peron-form-dialog'
 import { ModalFormDialog } from '../modal-form-dialog'
 import { ModalHistoryTable } from './modal-history-table'
+import { KesehatanTab } from './kesehatan-tab'
+import { RetensiTab } from './retensi-tab'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { formatRupiah, formatTanggal } from '@/lib/format'
+import { SegmentedNav, type SegmentedNavItem } from '@/components/ui/segmented-nav'
+import { formatRupiah } from '@/lib/format'
 import { Edit, Plus, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { db } from '@/lib/db'
@@ -18,19 +22,52 @@ import { akunKas } from '@/lib/db/schema'
 
 export const dynamic = 'force-dynamic'
 
-export default async function PeronDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  const [session, data, akunList, access] = await Promise.all([
+type Tab = 'ringkasan' | 'kesehatan' | 'retensi'
+
+/**
+ * Detail peron bertab (?tab=) — Ringkasan (info + portal + riwayat modal),
+ * Kesehatan (eks /peron/kesehatan/[id]), dan Retensi (kalkulator + ancaman).
+ * Data tiap tab di-fetch on demand di server.
+ */
+export default async function PeronDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ tab?: string }>
+}) {
+  const [{ id }, { tab: rawTab }, session] = await Promise.all([
+    params,
+    searchParams,
     auth.api.getSession({ headers: await headers() }),
+  ])
+  if (!session) redirect('/login')
+
+  const isOwner = session.user.role === 'owner'
+  // Gating tak berubah: followup = operasional (canCreate); arsip/refresh =
+  // kurasi (canEdit); retensi = finansial (canViewFinance); apply margin = owner.
+  const canFollowup = hasPermission(session.user.role, 'canCreate')
+  const canArchive = hasPermission(session.user.role, 'canEdit')
+  const canViewFinance = hasPermission(session.user.role, 'canViewFinance')
+
+  const tab: Tab =
+    rawTab === 'kesehatan' ? 'kesehatan' : rawTab === 'retensi' && canViewFinance ? 'retensi' : 'ringkasan'
+
+  // Data dasar peron dibutuhkan semua tab (header); akses portal hanya tab Ringkasan.
+  const [data, akunList, access] = await Promise.all([
     getPeronById(id),
     db.select().from(akunKas).orderBy(akunKas.urutan),
-    getPeronAccess(id),
+    tab === 'ringkasan' ? getPeronAccess(id) : Promise.resolve(null),
   ])
   const akunOptions = akunList.map(a => ({ id: a.id, nama: a.nama, tipe: a.tipe }))
 
   if (!data) notFound()
 
-  const isOwner = session?.user.role === 'owner'
+  const tabs: SegmentedNavItem[] = [
+    { key: 'ringkasan', label: 'Ringkasan', href: `/peron/${id}` },
+    { key: 'kesehatan', label: 'Kesehatan', href: `/peron/${id}?tab=kesehatan` },
+    ...(canViewFinance ? [{ key: 'retensi', label: 'Retensi', href: `/peron/${id}?tab=retensi` }] : []),
+  ]
 
   return (
     <div className="space-y-5">
@@ -64,47 +101,57 @@ export default async function PeronDetailPage({ params }: { params: Promise<{ id
         </div>
       </div>
 
-      {/* Info kartu */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card>
-          <CardHeader className="pb-1 pt-4 px-4">
-            <CardTitle className="text-xs text-muted-foreground uppercase tracking-wide">DP/Modal Aktif</CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-4">
-            <p className="text-xl font-bold text-stone-900 dark:text-zinc-50">{formatRupiah(data.dpAktif)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-1 pt-4 px-4">
-            <CardTitle className="text-xs text-muted-foreground uppercase tracking-wide">Keuntungan/kg</CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-4">
-            <p className="text-xl font-bold">Rp {data.keuntunganPerKg.toLocaleString('id-ID')}/kg</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-1 pt-4 px-4">
-            <CardTitle className="text-xs text-muted-foreground uppercase tracking-wide">Kode</CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-4">
-            <p className="text-xl font-bold">{data.kode ?? '—'}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-1 pt-4 px-4">
-            <CardTitle className="text-xs text-muted-foreground uppercase tracking-wide">Total Mutasi</CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-4">
-            <p className="text-xl font-bold">{data.modal.length} entri</p>
-          </CardContent>
-        </Card>
-      </div>
+      <SegmentedNav items={tabs} activeKey={tab} ariaLabel={`Bagian detail ${data.nama}`} />
 
-      {/* Link portal peron (transparansi) */}
-      <PortalLinkCard peronId={data.id} peronNama={data.nama} initial={access} canManage={isOwner} />
+      {tab === 'ringkasan' && (
+        <>
+          {/* Info kartu */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Card>
+              <CardHeader className="pb-1 pt-4 px-4">
+                <CardTitle className="text-xs text-muted-foreground uppercase tracking-wide">DP/Modal Aktif</CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                <p className="text-xl font-bold text-stone-900 dark:text-zinc-50">{formatRupiah(data.dpAktif)}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-1 pt-4 px-4">
+                <CardTitle className="text-xs text-muted-foreground uppercase tracking-wide">Keuntungan/kg</CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                <p className="text-xl font-bold">Rp {data.keuntunganPerKg.toLocaleString('id-ID')}/kg</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-1 pt-4 px-4">
+                <CardTitle className="text-xs text-muted-foreground uppercase tracking-wide">Kode</CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                <p className="text-xl font-bold">{data.kode ?? '—'}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-1 pt-4 px-4">
+                <CardTitle className="text-xs text-muted-foreground uppercase tracking-wide">Total Mutasi</CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                <p className="text-xl font-bold">{data.modal.length} entri</p>
+              </CardContent>
+            </Card>
+          </div>
 
-      {/* Riwayat modal */}
-      <ModalHistoryTable modal={data.modal} isOwner={isOwner} />
+          {/* Link portal peron (transparansi) */}
+          <PortalLinkCard peronId={data.id} peronNama={data.nama} initial={access} canManage={isOwner} />
+
+          {/* Riwayat modal */}
+          <ModalHistoryTable modal={data.modal} isOwner={isOwner} />
+        </>
+      )}
+
+      {tab === 'kesehatan' && <KesehatanTab peronId={id} canFollowup={canFollowup} canArchive={canArchive} />}
+
+      {tab === 'retensi' && <RetensiTab peronId={id} canApply={isOwner} canCreate={canFollowup} />}
     </div>
   )
 }

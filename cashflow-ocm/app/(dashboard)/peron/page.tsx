@@ -1,46 +1,49 @@
 import { headers } from 'next/headers'
+import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
-import { getPeronList } from './actions'
-import { PeronTable } from './peron-table'
-import { PeronFormDialog } from './peron-form-dialog'
-import { FloatingFab } from '@/components/fab'
-import { formatCompact } from '@/lib/format'
-import { db } from '@/lib/db'
-import { akunKas } from '@/lib/db/schema'
+import { hasPermission } from '@/lib/permissions'
+import { SegmentedNav, type SegmentedNavItem } from '@/components/ui/segmented-nav'
+import { DaftarView } from './daftar-view'
+import { KesehatanView } from './kesehatan-view'
+import { RetensiView } from './retensi-view'
 
 export const dynamic = 'force-dynamic'
 
-export default async function PeronPage() {
-  const [session, peronList, akunList] = await Promise.all([
-    auth.api.getSession({ headers: await headers() }),
-    getPeronList(),
-    db.select().from(akunKas).orderBy(akunKas.urutan),
-  ])
+type View = 'daftar' | 'kesehatan' | 'retensi'
 
-  const isOwner = session?.user.role === 'owner'
-  const totalAktif = peronList.filter((p) => p.status === 'aktif').length
-  const totalDp = peronList.reduce((sum, p) => sum + p.dpAktif, 0)
+/**
+ * Hub Peron — satu halaman bertab (?view=) yang menyatukan Daftar,
+ * Kesehatan (eks /peron/kesehatan), dan Retensi. Segmen dipilih via
+ * searchParam agar tiap segmen server-rendered & di-fetch on demand.
+ */
+export default async function PeronPage({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
+  const [{ view: rawView }, session] = await Promise.all([
+    searchParams,
+    auth.api.getSession({ headers: await headers() }),
+  ])
+  if (!session) redirect('/login')
+
+  const isOwner = session.user.role === 'owner'
+  // Retensi = data margin/finansial → hanya canViewFinance (kasir tak lihat).
+  const canViewFinance = hasPermission(session.user.role, 'canViewFinance')
+  const canCreate = hasPermission(session.user.role, 'canCreate')
+
+  const view: View =
+    rawView === 'kesehatan' ? 'kesehatan' : rawView === 'retensi' && canViewFinance ? 'retensi' : 'daftar'
+
+  const segments: SegmentedNavItem[] = [
+    { key: 'daftar', label: 'Daftar', href: '/peron' },
+    { key: 'kesehatan', label: 'Kesehatan', href: '/peron?view=kesehatan' },
+    ...(canViewFinance ? [{ key: 'retensi', label: 'Retensi', href: '/peron?view=retensi' }] : []),
+  ]
 
   return (
     <div className="space-y-5">
-      <PeronFormDialog mode="create"><FloatingFab /></PeronFormDialog>
+      <SegmentedNav items={segments} activeKey={view} ariaLabel="Bagian Peron" />
 
-      <div className="space-y-2.5">
-        {/* Hero: Total DP Beredar — angka utama */}
-        <div className="surface p-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 dark:text-stone-500 mb-1.5">Total DP Beredar</p>
-          <p className="text-2xl font-bold text-primary num tabular-nums">{formatCompact(totalDp)}</p>
-          <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">Modal yang sedang di peron</p>
-        </div>
-        {/* Ringkasan jumlah peron — teks ringkas, bukan card */}
-        <div className="flex items-center gap-2 px-1 text-[13px] text-stone-500 dark:text-stone-400">
-          <span><span className="font-semibold text-stone-900 dark:text-zinc-100 num">{peronList.length}</span> peron</span>
-          <span className="text-stone-300 dark:text-stone-600">·</span>
-          <span><span className="font-semibold text-stone-900 dark:text-zinc-100 num">{totalAktif}</span> aktif</span>
-        </div>
-      </div>
-
-      <PeronTable peronList={peronList} isOwner={isOwner} akunOptions={akunList.map(a => ({ id: a.id, nama: a.nama, tipe: a.tipe }))} />
+      {view === 'daftar' && <DaftarView isOwner={isOwner} />}
+      {view === 'kesehatan' && <KesehatanView />}
+      {view === 'retensi' && <RetensiView canApply={isOwner} canCreate={canCreate} />}
     </div>
   )
 }

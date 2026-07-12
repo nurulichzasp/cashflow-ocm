@@ -15,7 +15,7 @@ export function ArchiveButton({ peronId }: { peronId: string }) {
         try {
           await archivePeron(peronId)
           toast.success('Peron diarsipkan dari pemantauan')
-          router.push('/peron/kesehatan')
+          router.push('/peron?view=kesehatan')
         } catch {
           toast.error('Gagal mengarsipkan')
         }
