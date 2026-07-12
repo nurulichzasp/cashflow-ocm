@@ -1,6 +1,6 @@
 import 'dotenv/config'
 import { drizzle } from 'drizzle-orm/libsql'
-import * as schema from '../lib/db/schema'
+import * as schema from '../../lib/db/schema'
 import { eq } from 'drizzle-orm'
 
 const db = drizzle({ connection: { url: process.env.TURSO_CONNECTION_URL!, authToken: process.env.TURSO_AUTH_TOKEN }, schema })

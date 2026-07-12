@@ -17,7 +17,7 @@
 import 'dotenv/config'
 import { drizzle } from 'drizzle-orm/libsql'
 import { eq } from 'drizzle-orm'
-import * as schema from '../lib/db/schema'
+import * as schema from '../../lib/db/schema'
 
 const UMUM_KEUNTUNGAN_PER_KG = 90 // → kelebihan 30 (120 − 90)
 
