@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo, useEffect, useTransition } from 'react'
+import React, { useState, useMemo, useEffect, useEffectEvent, useTransition } from 'react'
 import { toast } from 'sonner'
 import { EmptyState } from '@/components/empty-state'
 import { LoadMoreBar } from '@/components/load-more-bar'
@@ -207,34 +207,44 @@ export function BiayaTable({ biayaList, stats, isOwner, akunOptions }: Props) {
   // ringkasan rentang tetap persis benar). Prop biayaList berubah setelah
   // revalidate (tambah/edit/hapus) → efek di bawah menyegarkan data klien.
   const [extraRows, setExtraRows] = useState<BiayaRow[]>([])
+  const getExtraRowsCount = useEffectEvent(() => extraRows.length)
   const [rangeRows, setRangeRows] = useState<BiayaRow[] | null>(null)
   const [isPending, startTransition] = useTransition()
   const isFiltered = !!dari || !!sampai
 
   useEffect(() => {
-    if (dari || sampai) {
-      startTransition(async () => {
-        setRangeRows(await getBiayaList({ dari: dari || undefined, sampai: sampai || undefined }) as BiayaRow[])
-      })
-    } else {
-      setRangeRows(null)
-    }
+    if (!dari && !sampai) return
+    let cancelled = false
+    startTransition(async () => {
+      try {
+        const rows = await getBiayaList({ dari: dari || undefined, sampai: sampai || undefined }) as BiayaRow[]
+        if (!cancelled) setRangeRows(rows)
+      } catch (error) {
+        if (!cancelled) toast.error(error instanceof Error ? error.message : 'Gagal memuat filter biaya')
+      }
+    })
     // biayaList sengaja jadi dependency: revalidate server (habis mutasi)
     // memicu refetch rentang/halaman-ekstra supaya data klien ikut segar.
+    return () => { cancelled = true }
   }, [dari, sampai, biayaList])
 
   useEffect(() => {
     // Habis mutasi (prop window berubah), halaman-ekstra yang sudah dimuat
     // di-refetch supaya baris terhapus/teredit tidak basi.
-    setExtraRows((prev) => {
-      if (prev.length > 0) {
-        getBiayaList({ offset: LIST_PAGE_SIZE, limit: prev.length })
-          .then((rows) => setExtraRows(rows as BiayaRow[]))
-          .catch(() => {})
-      }
-      return prev
-    })
+    const count = getExtraRowsCount()
+    if (count === 0) return
+    let cancelled = false
+    getBiayaList({ offset: LIST_PAGE_SIZE, limit: count })
+      .then((rows) => { if (!cancelled) setExtraRows(rows as BiayaRow[]) })
+      .catch((error) => { if (!cancelled) toast.error(error instanceof Error ? error.message : 'Gagal menyegarkan daftar biaya') })
+    return () => { cancelled = true }
   }, [biayaList])
+
+  function handleDateFilter(d: string, s: string) {
+    setRangeRows(null)
+    setDari(d)
+    setSampai(s)
+  }
 
   function loadMore() {
     startTransition(async () => {
@@ -249,11 +259,11 @@ export function BiayaTable({ biayaList, stats, isOwner, akunOptions }: Props) {
   }
 
   const baseRows = useMemo(() => {
-    if (rangeRows) return rangeRows
+    if (isFiltered && rangeRows) return rangeRows
     if (extraRows.length === 0) return biayaList
     const seen = new Set(biayaList.map((b) => b.id))
     return [...biayaList, ...extraRows.filter((b) => !seen.has(b.id))]
-  }, [rangeRows, biayaList, extraRows])
+  }, [isFiltered, rangeRows, biayaList, extraRows])
 
   const sorted = useMemo(() => {
     let list = [...baseRows]
@@ -331,7 +341,7 @@ export function BiayaTable({ biayaList, stats, isOwner, akunOptions }: Props) {
       </div>
 
       {/* Filter tanggal/bulan */}
-      <DateRangeFilter dari={dari} sampai={sampai} onChange={(d, s) => { setDari(d); setSampai(s) }} />
+      <DateRangeFilter dari={dari} sampai={sampai} onChange={handleDateFilter} />
 
       {/* Desktop */}
       <div className="hidden md:block surface overflow-x-auto">
