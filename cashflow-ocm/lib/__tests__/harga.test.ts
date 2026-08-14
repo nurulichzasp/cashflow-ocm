@@ -4,6 +4,9 @@ import {
   SELISIH_JUAL_BGA,
   effectiveKelebihanPeron,
   effectiveKeuntunganPerKg,
+  effectiveKelebihanPeronBerlaku,
+  effectiveKeuntunganPerKgBerlaku,
+  keuntunganPerKgBerlaku,
   isKategoriTBS,
   isProdukTBS,
 } from '../harga'
@@ -26,6 +29,45 @@ describe('cap kelebihan peron (non-TBS)', () => {
   })
   it('default peron untungCV 50 → kelebihan 70 → di-cap 50', () => {
     expect(effectiveKelebihanPeron(50, false)).toBe(50)
+  })
+})
+
+describe('rombak tarif peron mulai 15 Agustus 2026', () => {
+  it('tidak mengubah tarif sebelum tanggal berlaku', () => {
+    expect(keuntunganPerKgBerlaku('Husein', '2026-08-14', 40)).toBe(40)
+    expect(effectiveKelebihanPeronBerlaku(30, false, '2026-08-14')).toBe(50)
+  })
+
+  it.each(['Husein', 'Wiranto', 'Jono', 'Neko', 'Roni'])(
+    '%s mendapat kelebihan 90',
+    (nama) => {
+      const untung = keuntunganPerKgBerlaku(nama, '2026-08-15', 99)
+      expect(untung).toBe(30)
+      expect(effectiveKelebihanPeronBerlaku(untung, true, '2026-08-15')).toBe(90)
+      expect(effectiveKelebihanPeronBerlaku(untung, false, '2026-08-15')).toBe(90)
+    },
+  )
+
+  it.each(['Budi', 'Ciput', 'Iwan', 'Nolin', 'Pribadi', 'Umum'])(
+    '%s mendapat kelebihan 70',
+    (nama) => {
+      const untung = keuntunganPerKgBerlaku(nama, '2026-08-15', 99)
+      expect(untung).toBe(50)
+      expect(effectiveKelebihanPeronBerlaku(untung, true, '2026-08-15')).toBe(70)
+      expect(effectiveKelebihanPeronBerlaku(untung, false, '2026-08-15')).toBe(70)
+    },
+  )
+
+  it('Ibnu tetap memakai tarif tersimpan', () => {
+    expect(keuntunganPerKgBerlaku('Ibnu', '2026-08-15', 80)).toBe(80)
+    expect(keuntunganPerKgBerlaku(' ibnu ', '2026-09-01', 65)).toBe(65)
+  })
+
+  it('BRDL memakai kelebihan dan untung efektif yang sama dengan TBS', () => {
+    expect(effectiveKelebihanPeronBerlaku(30, false, '2026-08-15')).toBe(90)
+    expect(effectiveKeuntunganPerKgBerlaku(30, false, '2026-08-15')).toBe(30)
+    expect(effectiveKelebihanPeronBerlaku(30, true, '2026-08-15')).toBe(90)
+    expect(effectiveKeuntunganPerKgBerlaku(30, true, '2026-08-15')).toBe(30)
   })
 })
 

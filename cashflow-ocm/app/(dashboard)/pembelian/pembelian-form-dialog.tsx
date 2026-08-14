@@ -13,7 +13,7 @@ import { FotoBuktiUploader } from '@/components/foto-bukti-uploader'
 import { Textarea } from '@/components/ui/textarea'
 import { DateRangeInline } from '@/components/date-range-inline'
 import { createPembelian, updatePembelian, getHargaAcuanListForProduk, type KategoriPembelian, type DetailInput } from './actions'
-import { effectiveKelebihanPeron, effectiveKeuntunganPerKg } from '@/lib/harga'
+import { effectiveKelebihanPeronBerlaku, effectiveKeuntunganPerKgBerlaku, keuntunganPerKgBerlaku } from '@/lib/harga'
 import { formatRupiah, formatRentangKotak, buildKeteranganReplas, isAutoKeteranganReplas, todayString } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { Plus, Trash2, CalendarDays, AlertTriangle } from 'lucide-react'
@@ -110,7 +110,11 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
   }, [initialData, open])
 
   const selectedPeron = peronOptions.find((p) => p.id === peronId)
-  const keuntunganPerKg = selectedPeron?.keuntunganPerKg ?? 0
+  const keuntunganPerKg = keuntunganPerKgBerlaku(
+    selectedPeron?.nama ?? '',
+    tanggal,
+    selectedPeron?.keuntunganPerKg ?? 0,
+  )
 
   const [acuanList, setAcuanList] = useState<AcuanRow[]>([])
   const [hargaLoading, setHargaLoading] = useState(false)
@@ -132,11 +136,16 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
     }
     return best
   }
-  // Harga beli auto = acuan + kelebihan peron EFEKTIF (non-TBS di-cap). null bila tak ada acuan.
+  // Harga beli auto = acuan + kelebihan peron yang berlaku pada tanggal transaksi.
   function autoHargaForDate(date: string): number | null {
     const a = lookupAcuan(date)
     if (!a) return null
-    return a.hargaLapangan + effectiveKelebihanPeron(keuntunganPerKg, isTBS, a.selisihJualBga)
+    return a.hargaLapangan + effectiveKelebihanPeronBerlaku(
+      keuntunganPerKg,
+      isTBS,
+      tanggal,
+      a.selisihJualBga,
+    )
   }
   // Rentang baris melewati >1 harga acuan? (ada tanggalBerlaku di dalam (dari, sampai])
   function warnRange(d: DetailRow): boolean {
@@ -218,7 +227,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
     tonase: parseFloat(d.tonase) || 0,
     hargaLapangan: parseFloat(d.hargaLapangan) || 0,
   }))
-  const untungEfektif = effectiveKeuntunganPerKg(keuntunganPerKg, isTBS)
+  const untungEfektif = effectiveKeuntunganPerKgBerlaku(keuntunganPerKg, isTBS, tanggal)
   const totalTonase = parsedDetails.reduce((s, d) => s + d.tonase, 0)
   const totalBeli = parsedDetails.reduce((s, d) => s + d.tonase * d.hargaLapangan, 0)
   const totalJual = parsedDetails.reduce((s, d) => s + d.tonase * (d.hargaLapangan + untungEfektif), 0)
@@ -357,7 +366,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
               <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-1.5">Harga Otomatis ({derivedProduk})</p>
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-600 dark:text-stone-300">
                 <span>Acuan: <strong className="num">Rp {headerAcuan.hargaLapangan.toLocaleString('id-ID')}</strong>/kg</span>
-                <span>Kelebihan: <strong className="num">Rp {effectiveKelebihanPeron(keuntunganPerKg, isTBS, headerAcuan.selisihJualBga).toLocaleString('id-ID')}</strong></span>
+                <span>Kelebihan: <strong className="num">Rp {effectiveKelebihanPeronBerlaku(keuntunganPerKg, isTBS, tanggal, headerAcuan.selisihJualBga).toLocaleString('id-ID')}</strong></span>
               </div>
             </div>
           )}
