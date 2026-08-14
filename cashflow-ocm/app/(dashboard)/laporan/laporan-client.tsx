@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useTransition } from 'react'
+import { useState, useEffect, useMemo, useTransition } from 'react'
 import { getLaporanData, getPembelianBulanan, getPajakData, getLabaRugiTahunan, getNeracaData } from './actions'
 import { formatRupiah, formatNumber, formatTanggal, todayString } from '@/lib/format'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -227,22 +227,27 @@ function PerPeronTab({ data, dari, sampai }: { data: LaporanData; dari: string; 
 }
 
 function KasTab({
-  title, transaksi, saldoAwal, dari, sampai, csvFilename, xlsxFilename,
+  title, transaksi, saldoAwal, csvFilename, xlsxFilename,
 }: {
   title: string
   transaksi: KasRow[]
   saldoAwal: number
-  dari: string
-  sampai: string
   csvFilename: string
   xlsxFilename: string
 }) {
-  let running = saldoAwal
-  const rowsWithBalance = transaksi.map((t) => {
-    running += t.arah === 'masuk' ? t.jumlah : -t.jumlah
-    return { ...t, saldo: running }
-  })
-  const saldoAkhir = running
+  const { rowsWithBalance, saldoAkhir } = useMemo(
+    () => transaksi.reduce<{
+      rowsWithBalance: Array<KasRow & { saldo: number }>
+      saldoAkhir: number
+    }>((state, transaksiKas) => {
+      const saldo = state.saldoAkhir + (transaksiKas.arah === 'masuk' ? transaksiKas.jumlah : -transaksiKas.jumlah)
+      return {
+        rowsWithBalance: [...state.rowsWithBalance, { ...transaksiKas, saldo }],
+        saldoAkhir: saldo,
+      }
+    }, { rowsWithBalance: [], saldoAkhir: saldoAwal }),
+    [transaksi, saldoAwal],
+  )
 
   const exportRows = rowsWithBalance.map((t) => ({
     Tanggal: t.tanggal,
@@ -918,7 +923,6 @@ export function LaporanClient({
               title="Buku Kas (Tunai)"
               transaksi={data.kasTransaksi}
               saldoAwal={data.saldoAwalKas}
-              dari={dari} sampai={sampai}
               csvFilename={`buku-kas-${dari}-${sampai}.csv`}
               xlsxFilename={`buku-kas-${dari}-${sampai}.xlsx`}
             />
@@ -928,7 +932,6 @@ export function LaporanClient({
               title="Mutasi Bank"
               transaksi={data.briTransaksi}
               saldoAwal={data.saldoAwalBri}
-              dari={dari} sampai={sampai}
               csvFilename={`mutasi-bank-${dari}-${sampai}.csv`}
               xlsxFilename={`mutasi-bank-${dari}-${sampai}.xlsx`}
             />

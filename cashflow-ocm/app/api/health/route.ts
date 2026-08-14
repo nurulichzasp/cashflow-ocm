@@ -4,19 +4,36 @@ import { headers } from 'next/headers'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
-  // KEAMANAN: endpoint diagnostik ini membocorkan skema DB, jumlah user,
-  // dan potongan URL Turso. Batasi hanya untuk owner yang terautentikasi.
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session || session.user.role !== 'owner') {
-    return Response.json({ error: 'Tidak terautentikasi atau bukan owner' }, { status: 401 })
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'Kesalahan tidak diketahui'
+}
+
+export async function GET(request: Request) {
+  const showDetails = new URL(request.url).searchParams.get('details') === '1'
+
+  // Liveness generik boleh publik untuk pemantauan Vercel. Informasi skema dan
+  // jumlah user tetap membutuhkan sesi owner lewat ?details=1.
+  if (showDetails) {
+    const session = await auth.api.getSession({ headers: await headers() })
+    if (!session || session.user.role !== 'owner') {
+      return Response.json({ error: 'Tidak terautentikasi atau bukan owner' }, { status: 401 })
+    }
   }
 
+  const databaseUrl = process.env.TURSO_CONNECTION_URL
+  if (!databaseUrl) {
+    return Response.json({ status: 'error' }, { status: 503 })
+  }
+
+  const client = createClient({
+    url: databaseUrl,
+    authToken: process.env.TURSO_AUTH_TOKEN,
+  })
+
   try {
-    const client = createClient({
-      url: process.env.TURSO_CONNECTION_URL ?? 'NOT SET',
-      authToken: process.env.TURSO_AUTH_TOKEN,
-    })
+    // Query ringan memastikan fungsi hidup sekaligus database dapat dijangkau.
+    await client.execute('SELECT 1')
+    if (!showDetails) return Response.json({ status: 'ok' })
 
     // Cek tabel yang ada
     const tables = await client.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
@@ -31,12 +48,18 @@ export async function GET() {
 
     return Response.json({
       status: 'ok',
-      turso_url: process.env.TURSO_CONNECTION_URL?.replace(/\/\/.*@/, '//***@').slice(0, 60),
       tables: tableNames,
       user_count: userCount,
     })
-  } catch (e: any) {
-    return Response.json({ status: 'error', message: e.message }, { status: 500 })
+  } catch (error: unknown) {
+    return Response.json(
+      showDetails
+        ? { status: 'error', message: errorMessage(error) }
+        : { status: 'error' },
+      { status: 503 },
+    )
+  } finally {
+    client.close()
   }
 }
 
@@ -98,8 +121,8 @@ export async function POST(request: Request) {
         description: 'RESET TOTAL: menghapus seluruh data transaksi (pembelian, penjualan, biaya, kas)',
       })
       return Response.json({ success: true, message: 'Seluruh data transaksi berhasil dibersihkan' })
-    } catch (e: any) {
-      return Response.json({ error: e.message }, { status: 500 })
+    } catch (error: unknown) {
+      return Response.json({ error: errorMessage(error) }, { status: 500 })
     }
   }
 
