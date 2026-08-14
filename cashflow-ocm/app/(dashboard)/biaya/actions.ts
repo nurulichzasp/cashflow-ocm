@@ -2,7 +2,7 @@
 
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
-import { eq, desc, sum, count } from 'drizzle-orm'
+import { eq, sum, count } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { biayaOperasional, transaksiKas, biayaFoto } from '@/lib/db/schema'
@@ -49,7 +49,7 @@ function labelKategori(kategori: string, kategoriLain?: string | null): string {
 
 export async function createBiayaOperasional(formData: FormData) {
   const session = await requireSession()
-  requirePermission(session.user.role as any, 'canCreate')
+  requirePermission(session.user.role, 'canCreate')
 
   const data = biayaSchema.parse({
     tanggal: formData.get('tanggal'),
@@ -151,7 +151,7 @@ export async function createBiayaOperasional(formData: FormData) {
 
 export async function updateBiayaOperasional(id: string, formData: FormData) {
   const session = await requireSession()
-  requirePermission(session.user.role as any, 'canEdit')
+  requirePermission(session.user.role, 'canEdit')
 
   const data = biayaSchema.parse({
     tanggal: formData.get('tanggal'),

@@ -47,7 +47,7 @@ const modalSchema = z.object({
 
 export async function createPeron(formData: FormData) {
   const session = await requireSession()
-  requirePermission(session.user.role as any, 'canCreate')
+  requirePermission(session.user.role, 'canCreate')
   const data = peronSchema.parse({
     kode: formData.get('kode') || undefined,
     nama: formData.get('nama'),
@@ -81,7 +81,7 @@ export async function createPeron(formData: FormData) {
 
 export async function updatePeron(id: string, formData: FormData) {
   const session = await requireSession()
-  requirePermission(session.user.role as any, 'canEdit')
+  requirePermission(session.user.role, 'canEdit')
   const data = peronSchema.parse({
     kode: formData.get('kode') || undefined,
     nama: formData.get('nama'),
@@ -159,7 +159,7 @@ export async function deletePeron(id: string) {
 
 export async function addModalPeron(formData: FormData) {
   const session = await requireSession()
-  requirePermission(session.user.role as any, 'canCreate')
+  requirePermission(session.user.role, 'canCreate')
   const data = modalSchema.parse({
     peronId: formData.get('peronId'),
     tanggal: formData.get('tanggal'),

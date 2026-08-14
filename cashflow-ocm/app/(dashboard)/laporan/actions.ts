@@ -23,7 +23,7 @@ async function requireSession() {
 // neraca, pajak, dan buku kas.
 async function requireFinanceAccess() {
   const session = await requireSession()
-  requirePermission(session.user.role as any, 'canViewFinance')
+  requirePermission(session.user.role, 'canViewFinance')
   return session
 }
 

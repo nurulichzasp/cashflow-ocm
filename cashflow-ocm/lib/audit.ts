@@ -11,8 +11,8 @@ export interface AuditLogData {
   entityType: EntityType
   entityId?: string
   description: string
-  oldValues?: Record<string, any>
-  newValues?: Record<string, any>
+  oldValues?: Record<string, unknown>
+  newValues?: Record<string, unknown>
   ipAddress?: string
   userAgent?: string
 }
@@ -60,7 +60,7 @@ export async function getActivityLog(limit = 100, offset = 0) {
 /**
  * Format old/new values for display
  */
-export function formatActivityValues(json: string | null): Record<string, any> {
+export function formatActivityValues(json: string | null): Record<string, unknown> {
   if (!json) return {}
   try {
     return JSON.parse(json)

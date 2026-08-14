@@ -3,6 +3,21 @@ export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
+import * as XLSX from 'xlsx'
+
+type BgaMoneyValues = {
+  total: number
+  dpp: number
+  ppn: number
+  pph: number
+  dibayar: number
+}
+
+type BgaPreviewRow = BgaMoneyValues & {
+  noInv: string
+  ket: string
+  area: string
+}
 
 export async function POST(req: NextRequest) {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -26,8 +41,6 @@ export async function POST(req: NextRequest) {
 
     if (isExcel) {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const XLSX = require('xlsx')
         const wb = XLSX.read(buffer, { type: 'buffer' })
 
         // BGA: baca KEDUA rekap (REKAP = 1 harga, REKAP 2 HARGA = 2 harga) lalu
@@ -45,9 +58,18 @@ export async function POST(req: NextRequest) {
         if (primary) {
           const aRows = rkA?.previewRows ?? []
           const bRows = rkB?.previewRows ?? []
-          const pick = (x: any) => x ? { total: x.total, dpp: x.dpp, ppn: x.ppn, pph: x.pph, dibayar: x.dibayar } : null
+          const pick = (x: BgaPreviewRow | null) => x
+            ? { total: x.total, dpp: x.dpp, ppn: x.ppn, pph: x.pph, dibayar: x.dibayar }
+            : null
           const n = Math.max(aRows.length, bRows.length)
-          const mergedRows: any[] = []
+          const mergedRows: Array<{
+            noInv: string
+            ket: string
+            area: string
+            rekap: BgaMoneyValues | null
+            rekap2: BgaMoneyValues | null
+            conflict: boolean
+          }> = []
           for (let i = 0; i < n; i++) {
             const a = aRows[i] ?? null
             const b = bRows[i] ?? null
@@ -99,7 +121,7 @@ export async function POST(req: NextRequest) {
 function parseBgaRekap(rows: (string | number)[][]): {
   tanggal: string; noInvoice: string; noBast: string; periode: string
   totalTonase: string; totalBersih: string; totalNilai: string; catatan: string
-  previewRows: any[]; totalRow: any;
+  previewRows: BgaPreviewRow[]; totalRow: BgaMoneyValues;
 } | null {
   if (!rows || rows.length < 5) return null
 
@@ -128,7 +150,7 @@ function parseBgaRekap(rows: (string | number)[][]): {
   const detailLines: string[] = []
   let periode = ''
   let totTotal = 0, totDpp = 0, totPpn = 0, totPph = 0, totDibayar = 0
-  const previewRows: { noInv: string; ket: string; area: string; total: number; dpp: number; ppn: number; pph: number; dibayar: number }[] = []
+  const previewRows: BgaPreviewRow[] = []
 
   for (const row of rows.slice(dataStart)) {
     const col0 = String(row[0] ?? '').trim()

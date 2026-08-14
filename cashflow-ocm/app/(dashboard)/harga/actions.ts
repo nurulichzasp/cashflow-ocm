@@ -34,7 +34,7 @@ const hargaSchema = z.object({
 
 export async function createHargaAcuan(formData: FormData) {
   const session = await requireSession()
-  requirePermission(session.user.role as any, 'canCreate')
+  requirePermission(session.user.role, 'canCreate')
   const data = hargaSchema.parse({
     tanggalBerlaku: formData.get('tanggalBerlaku'),
     produk: formData.get('produk'),
@@ -79,7 +79,7 @@ export async function createHargaAcuanBatch(input: {
   brdlTrym: number
 }) {
   const session = await requireSession()
-  requirePermission(session.user.role as any, 'canCreate')
+  requirePermission(session.user.role, 'canCreate')
   const data = hargaBatchSchema.parse(input)
 
   const rows = [

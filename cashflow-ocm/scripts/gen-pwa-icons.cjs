@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- Skrip ini sengaja CommonJS (.cjs). */
+
 /* Generate ikon PWA dari desain monogram OCM (kotak Hijau Sawit + teks putih).
  * Jalankan: NODE_PATH=$PWD/node_modules node scripts/gen-pwa-icons.cjs
  *  - public/icon-192.png, public/icon-512.png : rounded (purpose "any")

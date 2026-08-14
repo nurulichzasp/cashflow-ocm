@@ -7,7 +7,6 @@ import { DesktopSidebar } from '@/components/desktop-sidebar'
 import { BottomNav } from '@/components/bottom-nav'
 import { ScrollShell } from '@/components/scroll-shell'
 import { SwipeNavigator } from '@/components/swipe-navigator'
-import { parsePerms } from '@/lib/nav-routes'
 
 export default async function DashboardLayout({
   children,
@@ -21,8 +20,6 @@ export default async function DashboardLayout({
   }
 
   const isOwner = session.user.role === 'owner'
-  const perms = parsePerms((session.user as any).permissions)
-
   return (
     <div className="flex h-[100dvh] overflow-hidden">
       {/* Sidebar — desktop only, collapsible */}
