@@ -175,17 +175,20 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
     // server-side → tanpa flash). MASA TRANSISI: hanya untuk field yang server-nya
     // MASIH kosong (belum pernah disimpan ke server), pakai nilai lama dari
     // localStorage agar tak hilang. Sekali user menyimpan, semua pindah ke server.
-    const ls = (k: string) => localStorage.getItem(k)
-    if (!initialCompany?.name) { const v = ls('company_name'); if (v) setCompanyName(v) }
-    if (!initialCompany?.address) { const v = ls('company_address'); if (v) setAddress(v) }
-    if (!initialCompany?.phone) { const v = ls('company_phone'); if (v) setPhone(v) }
-    if (!initialCompany?.email) { const v = ls('company_email'); if (v) setEmail(v) }
-    if (!initialCompany?.npwp) { const v = ls('company_npwp'); if (v) setNpwp(v) }
-    if (!initialCompany?.threshold) { const v = ls('company_large_transaction_threshold'); if (v) setThreshold(v) }
-    if (!initialTax?.tarifPpn) { const v = ls('tax_tarif_ppn'); if (v) setTarifPpn(v) }
-    if (!initialTax?.tarifPphBadan) { const v = ls('tax_tarif_pph_badan'); if (v) setTarifPphBadan(v) }
-    if (!initialTax?.nominalPph25) { const v = ls('tax_nominal_pph25'); if (v) setNominalPph25(v) }
-    if (!initialTax?.modalAwal) { const v = ls('neraca_modal_awal'); if (v) setModalAwal(v) }
+    const frame = requestAnimationFrame(() => {
+      const ls = (k: string) => localStorage.getItem(k)
+      if (!initialCompany?.name) { const v = ls('company_name'); if (v) setCompanyName(v) }
+      if (!initialCompany?.address) { const v = ls('company_address'); if (v) setAddress(v) }
+      if (!initialCompany?.phone) { const v = ls('company_phone'); if (v) setPhone(v) }
+      if (!initialCompany?.email) { const v = ls('company_email'); if (v) setEmail(v) }
+      if (!initialCompany?.npwp) { const v = ls('company_npwp'); if (v) setNpwp(v) }
+      if (!initialCompany?.threshold) { const v = ls('company_large_transaction_threshold'); if (v) setThreshold(v) }
+      if (!initialTax?.tarifPpn) { const v = ls('tax_tarif_ppn'); if (v) setTarifPpn(v) }
+      if (!initialTax?.tarifPphBadan) { const v = ls('tax_tarif_pph_badan'); if (v) setTarifPphBadan(v) }
+      if (!initialTax?.nominalPph25) { const v = ls('tax_nominal_pph25'); if (v) setNominalPph25(v) }
+      if (!initialTax?.modalAwal) { const v = ls('neraca_modal_awal'); if (v) setModalAwal(v) }
+    })
+    return () => cancelAnimationFrame(frame)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -238,22 +241,22 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
   const [accessBiaya, setAccessBiaya] = useState(true)
   const [accessDelete, setAccessDelete] = useState(false)
 
-  // Auto check/uncheck permissions depending on role selection
-  useEffect(() => {
-    if (newUserRole === 'owner') {
+  function handleNewUserRoleChange(role: string) {
+    setNewUserRole(role)
+    if (role === 'owner') {
       setAccessPembelian(true)
       setAccessPenjualan(true)
       setAccessKas(true)
       setAccessBiaya(true)
       setAccessDelete(true)
-    } else if (newUserRole === 'admin') {
+    } else if (role === 'admin') {
       setAccessPembelian(true)
       setAccessPenjualan(true)
       setAccessKas(true)
       setAccessBiaya(true)
       setAccessDelete(false)
     }
-  }, [newUserRole])
+  }
 
   async function handleAddUser(e: React.FormEvent) {
     e.preventDefault()
@@ -293,7 +296,7 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
       setNewUserName('')
       setNewUserEmail('')
       setNewUserPassword('')
-      setNewUserRole('admin')
+      handleNewUserRoleChange('admin')
       setCustomRoleVal('')
       setAccessPembelian(true)
       setAccessPenjualan(true)
@@ -687,7 +690,7 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
                         <Label htmlFor="newUserRole">Peran Sistem</Label>
                         <Select
                           value={newUserRole}
-                          onValueChange={(val: string) => setNewUserRole(val)}
+                          onValueChange={handleNewUserRoleChange}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Pilih Peran" />

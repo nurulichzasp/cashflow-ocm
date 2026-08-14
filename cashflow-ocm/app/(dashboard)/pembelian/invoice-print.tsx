@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Printer } from 'lucide-react'
 import { toast } from 'sonner'
 import { formatRupiah, formatTanggal, notaReplasBaris, notaKeteranganReplas } from '@/lib/format'
 import { fotoUrl } from '@/lib/foto-url'
+import { useHydrated } from '@/hooks/use-hydrated'
 import type { Pembelian, Peron, AkunKas, PembelianFoto, PembelianDetail } from '@/lib/db/schema'
 
 type PembelianRow = Pembelian & { peron: Peron | null; sumberBayar: AkunKas | null; fotos: PembelianFoto[]; details: PembelianDetail[] }
@@ -752,13 +753,13 @@ export type PrintMode = 'lengkap' | 'thermal' | 'thermer'
 
 /** Cetak nota 3 mode (A5 / thermal preview / Thermer langsung) + ingat mode terakhir antar sesi. */
 export function usePrintNota(pembelian: PembelianRow, nomorUrut: number) {
-  const [lastMode, setLastMode] = useState<PrintMode | null>(null)
-
-  // Mode terakhir diingat antar sesi.
-  useEffect(() => {
+  const hydrated = useHydrated()
+  const [storedLastMode, setLastMode] = useState<PrintMode | null>(() => {
+    if (typeof window === 'undefined') return null
     const m = localStorage.getItem('last_print_mode')
-    if (m === 'lengkap' || m === 'thermal' || m === 'thermer') setLastMode(m)
-  }, [])
+    return m === 'lengkap' || m === 'thermal' || m === 'thermer' ? m : null
+  })
+  const lastMode = hydrated ? storedLastMode : null
 
   function remember(mode: PrintMode) {
     localStorage.setItem('last_print_mode', mode)

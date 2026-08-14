@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Printer, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { useHydrated } from '@/hooks/use-hydrated'
 
 const PAPER_WIDTHS = [
   { value: '58', label: '58 mm', desc: 'Printer kecil standar (paling umum)' },
@@ -12,13 +13,13 @@ const PAPER_WIDTHS = [
 ]
 
 export function ThermalPrinterSettings() {
-  const [paperWidth, setPaperWidth] = useState<'58' | '80'>('58')
+  const hydrated = useHydrated()
+  const [paperWidth, setPaperWidth] = useState<'58' | '80'>(() => {
+    if (typeof window === 'undefined') return '58'
+    return localStorage.getItem('thermal_paper_width') === '80' ? '80' : '58'
+  })
   const [saved, setSaved] = useState(false)
-
-  useEffect(() => {
-    const stored = localStorage.getItem('thermal_paper_width')
-    if (stored === '80') setPaperWidth('80')
-  }, [])
+  const visiblePaperWidth = hydrated ? paperWidth : '58'
 
   function handleSave() {
     localStorage.setItem('thermal_paper_width', paperWidth)
@@ -49,7 +50,7 @@ export function ThermalPrinterSettings() {
                 type="button"
                 onClick={() => setPaperWidth(pw.value as '58' | '80')}
                 className={`text-left rounded-lg border p-3 transition-colors ${
-                  paperWidth === pw.value
+                  visiblePaperWidth === pw.value
                     ? 'border-stone-400 dark:border-white/[0.15] bg-stone-50 dark:bg-white/[0.04]'
                     : 'border-stone-200 dark:border-white/[0.10] hover:border-stone-300 hover:bg-stone-50 dark:hover:bg-white/[0.04]'
                 }`}

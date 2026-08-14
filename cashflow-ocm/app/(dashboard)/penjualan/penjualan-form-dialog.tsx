@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -27,6 +27,35 @@ function activeVal(row: MergedRow, pick?: 'rekap' | 'rekap2'): SideVal | null {
   return pick === 'rekap' ? row.rekap : row.rekap2
 }
 
+function calculatePreviewValues(preview: PreviewData, picks: Record<number, 'rekap' | 'rekap2'>) {
+  let totalBersih = 0, totalNilai = 0, totalDpp = 0, totalPpn = 0, totalPph = 0
+  const detail: string[] = []
+  preview.rows.forEach((row, index) => {
+    const value = activeVal(row, picks[index])
+    if (!value) return
+    totalBersih += value.total
+    totalNilai += value.dibayar
+    totalDpp += value.dpp
+    totalPpn += value.ppn
+    totalPph += value.pph
+    if (value.dibayar > 0) detail.push(`${row.ket} (${row.area}): Rp ${rp(value.dibayar)}`)
+  })
+
+  const lines: string[] = []
+  if (preview.periode) lines.push(preview.periode)
+  lines.push(...detail)
+  if (totalNilai > 0 || totalBersih > 0) {
+    lines.push(`Total: ${rp(totalBersih)} | DPP: ${rp(totalDpp)} | PPN: ${rp(totalPpn)} | PPH: ${rp(totalPph)}`)
+    lines.push(`Total Dibayar: Rp ${rp(totalNilai)}`)
+  }
+
+  return {
+    totalBersih: totalBersih ? String(Math.round(totalBersih)) : '',
+    totalNilai: totalNilai ? String(Math.round(totalNilai)) : '',
+    catatan: lines.join('\n'),
+  }
+}
+
 type Props = { children?: React.ReactNode; editItem?: Penjualan; open?: boolean; onOpenChange?: (open: boolean) => void }
 
 export function PenjualanFormDialog({ children, editItem, open: openProp, onOpenChange }: Props) {
@@ -51,28 +80,19 @@ export function PenjualanFormDialog({ children, editItem, open: openProp, onOpen
 
   const unresolved = preview ? preview.rows.filter((r, i) => r.conflict && !picks[i]).length : 0
 
-  // Hitung ulang total + catatan tiap kali rekap/pilihan berubah (hanya saat ada preview upload)
-  useEffect(() => {
+  function applyPreviewValues(nextPreview: PreviewData, nextPicks: Record<number, 'rekap' | 'rekap2'>) {
+    const values = calculatePreviewValues(nextPreview, nextPicks)
+    setTotalBersih(values.totalBersih)
+    setTotalNilai(values.totalNilai)
+    setCatatan(values.catatan)
+  }
+
+  function handlePick(index: number, side: 'rekap' | 'rekap2') {
     if (!preview) return
-    let tB = 0, tN = 0, tDpp = 0, tPpn = 0, tPph = 0
-    const detail: string[] = []
-    preview.rows.forEach((r, i) => {
-      const v = activeVal(r, picks[i])
-      if (!v) return
-      tB += v.total; tN += v.dibayar; tDpp += v.dpp; tPpn += v.ppn; tPph += v.pph
-      if (v.dibayar > 0) detail.push(`${r.ket} (${r.area}): Rp ${rp(v.dibayar)}`)
-    })
-    setTotalBersih(tB ? String(Math.round(tB)) : '')
-    setTotalNilai(tN ? String(Math.round(tN)) : '')
-    const lines: string[] = []
-    if (preview.periode) lines.push(preview.periode)
-    lines.push(...detail)
-    if (tN > 0 || tB > 0) {
-      lines.push(`Total: ${rp(tB)} | DPP: ${rp(tDpp)} | PPN: ${rp(tPpn)} | PPH: ${rp(tPph)}`)
-      lines.push(`Total Dibayar: Rp ${rp(tN)}`)
-    }
-    setCatatan(lines.join('\n'))
-  }, [preview, picks])
+    const nextPicks = { ...picks, [index]: side }
+    setPicks(nextPicks)
+    applyPreviewValues(preview, nextPicks)
+  }
 
   async function handlePdfUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -88,8 +108,10 @@ export function PenjualanFormDialog({ children, editItem, open: openProp, onOpen
       if (data.info === 'excel-bga-rekap' && Array.isArray(data.mergedRows)) {
         if (data.tanggal) setTanggal(data.tanggal)
         if (data.noInvoice) setNoInvoice(data.noInvoice)
-        setPreview({ sheetNames: data.sheetNames ?? [], rows: data.mergedRows, periode: data.periode ?? '' })
+        const nextPreview: PreviewData = { sheetNames: data.sheetNames ?? [], rows: data.mergedRows, periode: data.periode ?? '' }
+        setPreview(nextPreview)
         setPicks({})
+        applyPreviewValues(nextPreview, {})
         setPreviewOpen(true)
         const conflicts = (data.mergedRows as MergedRow[]).filter(r => r.conflict).length
         if (conflicts > 0) toast.warning(`${conflicts} kategori beda antara REKAP & REKAP 2 HARGA — pilih yang benar`)
@@ -278,7 +300,7 @@ export function PenjualanFormDialog({ children, editItem, open: openProp, onOpen
                               <button
                                 type="button"
                                 key={side}
-                                onClick={() => setPicks(p => ({ ...p, [i]: side }))}
+                                onClick={() => handlePick(i, side)}
                                 className={`text-left rounded-md border px-2 py-1.5 transition-colors ${sel ? 'border-foreground bg-foreground/[0.06]' : 'border-border hover:bg-muted/50'}`}
                               >
                                 <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
