@@ -22,6 +22,43 @@ export const SELISIH_JUAL_BGA = 120
 /** Batas maksimal "kelebihan peron" (bonus di atas acuan) untuk produk NON-TBS. */
 export const CAP_KEUNTUNGAN_PERON = 50
 
+/** Rombakan tarif peron mulai 15 Agustus 2026 (berdasarkan tanggal transaksi). */
+export const TANGGAL_TARIF_PERON_BARU = '2026-08-15'
+
+const KELEBIHAN_90 = new Set(['husein', 'wiranto', 'jono', 'neko', 'roni'])
+const KELEBIHAN_70 = new Set(['budi', 'ciput', 'iwan', 'nolin', 'pribadi', 'umum'])
+
+function normalizeNamaPeron(nama: string): string {
+  return nama.trim().toLocaleLowerCase('id-ID')
+}
+
+/**
+ * Menghasilkan untung CV/kg yang berlaku untuk sebuah transaksi.
+ *
+ * Mulai 2026-08-15:
+ * - Husein, Wiranto, Jono, Neko, Roni: kelebihan 90 → untung CV 30.
+ * - Budi, Ciput, Iwan, Nolin, Pribadi, Umum: kelebihan 70 → untung CV 50.
+ * - Ibnu dan nama lain tetap memakai tarif yang tersimpan di data peron.
+ */
+export function keuntunganPerKgBerlaku(
+  namaPeron: string,
+  tanggal: string,
+  keuntunganPerKgTersimpan: number,
+  selisihJualBga: number = SELISIH_JUAL_BGA,
+): number {
+  if (tanggal < TANGGAL_TARIF_PERON_BARU) return keuntunganPerKgTersimpan
+
+  const nama = normalizeNamaPeron(namaPeron)
+  if (KELEBIHAN_90.has(nama)) return selisihJualBga - 90
+  if (KELEBIHAN_70.has(nama)) return selisihJualBga - 70
+  return keuntunganPerKgTersimpan
+}
+
+/** Mulai tanggal tarif baru, kelebihan BRDL sama dengan TBS (tanpa cap Rp50). */
+export function brdlMengikutiKelebihanTbs(tanggal: string): boolean {
+  return tanggal >= TANGGAL_TARIF_PERON_BARU
+}
+
 /** Kategori pembelian yang tergolong TBS (bukan brondolan). */
 export function isKategoriTBS(kategori: string): boolean {
   return kategori === 'OCM R1' || kategori === 'OCM R2' || kategori === 'OCMP SAGU'
@@ -56,4 +93,32 @@ export function effectiveKeuntunganPerKg(
   selisihJualBga: number = SELISIH_JUAL_BGA,
 ): number {
   return selisihJualBga - effectiveKelebihanPeron(keuntunganPerKg, isTBS, selisihJualBga)
+}
+
+/** Versi bertanggal untuk transaksi pembelian; aturan lama tetap berlaku sebelum 15 Agustus. */
+export function effectiveKelebihanPeronBerlaku(
+  keuntunganPerKg: number,
+  isTBS: boolean,
+  tanggal: string,
+  selisihJualBga: number = SELISIH_JUAL_BGA,
+): number {
+  const raw = selisihJualBga - keuntunganPerKg
+  return isTBS || brdlMengikutiKelebihanTbs(tanggal)
+    ? raw
+    : Math.min(raw, CAP_KEUNTUNGAN_PERON)
+}
+
+/** Untung CV/kg efektif untuk transaksi pada tanggal tertentu. */
+export function effectiveKeuntunganPerKgBerlaku(
+  keuntunganPerKg: number,
+  isTBS: boolean,
+  tanggal: string,
+  selisihJualBga: number = SELISIH_JUAL_BGA,
+): number {
+  return selisihJualBga - effectiveKelebihanPeronBerlaku(
+    keuntunganPerKg,
+    isTBS,
+    tanggal,
+    selisihJualBga,
+  )
 }

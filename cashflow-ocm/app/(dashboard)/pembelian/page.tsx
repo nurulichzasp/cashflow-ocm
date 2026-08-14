@@ -24,11 +24,15 @@ export default async function PembelianPage() {
   const canEdit = perms.canEdit
   const canDelete = session?.user.role === 'owner'
 
-  const peronOptions = peronList.map((p) => ({
-    id: p.id,
-    nama: p.nama,
-    keuntunganPerKg: p.keuntunganPerKg,
-  }))
+  // Peron nonaktif tetap ada di riwayat dan halaman Peron, tetapi tidak boleh
+  // dipilih untuk transaksi pembelian baru.
+  const peronOptions = peronList
+    .filter((p) => p.status === 'aktif')
+    .map((p) => ({
+      id: p.id,
+      nama: p.nama,
+      keuntunganPerKg: p.keuntunganPerKg,
+    }))
 
   const akunOptions = akunList.map((a) => ({
     id: a.id,

@@ -10,7 +10,7 @@ import { z } from 'zod'
 import { notifyNewPembelian } from '@/lib/notification'
 import { requirePermission } from '@/lib/permissions'
 import { logActivity, describeActivity } from '@/lib/audit'
-import { effectiveKeuntunganPerKg, isKategoriTBS } from '@/lib/harga'
+import { effectiveKeuntunganPerKgBerlaku, isKategoriTBS, keuntunganPerKgBerlaku } from '@/lib/harga'
 import { todayString } from '@/lib/format'
 import { LIST_PAGE_SIZE } from '@/lib/pagination'
 
@@ -57,10 +57,10 @@ const pembelianSchema = z.object({
   idempotencyKey: z.string().optional(),
 })
 
-function computeTotals(details: DetailInput[], keuntunganPerKg: number, isTBS: boolean) {
-  // Untung CV efektif: untuk non-TBS, kelebihan peron di-cap (CAP_KEUNTUNGAN_PERON)
-  // sehingga untung CV ter-floor & Harga Jual BGA tetap acuan + selisih. TBS apa adanya.
-  const untungEfektif = effectiveKeuntunganPerKg(keuntunganPerKg, isTBS)
+function computeTotals(details: DetailInput[], keuntunganPerKg: number, isTBS: boolean, tanggal: string) {
+  // Sebelum 15 Agustus 2026, BRDL masih memakai cap lama. Mulai tanggal tersebut,
+  // kelebihan BRDL sama dengan TBS dan tarif ditentukan oleh kelompok peron.
+  const untungEfektif = effectiveKeuntunganPerKgBerlaku(keuntunganPerKg, isTBS, tanggal)
   let totalTonase = 0, totalBeli = 0, totalJual = 0, totalKeuntungan = 0
   const computed = details.map((d, i) => {
     const hargaJual = d.hargaLapangan + untungEfektif
@@ -109,7 +109,12 @@ export async function createPembelian(data: {
   const peronData = await db.query.peron.findFirst({ where: (t, { eq }) => eq(t.id, parsed.peronId) })
   if (!peronData) throw new Error('Peron tidak ditemukan')
 
-  const { computed, totalTonase, totalBeli, totalJual, totalKeuntungan, hargaBeliRata, hargaJualRata } = computeTotals(parsed.details, peronData.keuntunganPerKg, isKategoriTBS(parsed.kategori))
+  const keuntunganTransaksi = keuntunganPerKgBerlaku(
+    peronData.nama,
+    parsed.tanggal,
+    peronData.keuntunganPerKg,
+  )
+  const { computed, totalTonase, totalBeli, totalJual, totalKeuntungan, hargaBeliRata, hargaJualRata } = computeTotals(parsed.details, keuntunganTransaksi, isKategoriTBS(parsed.kategori), parsed.tanggal)
 
   // Anti-dobel: tolak pembelian identik dari user yang sama dalam ~60 detik terakhir
   // (retry saat sinyal lapangan jelek / double-submit). Match sangat spesifik
@@ -140,7 +145,7 @@ export async function createPembelian(data: {
       totalBeli,
       totalJual,
       keuntungan: totalKeuntungan,
-      keuntunganPerKg: peronData.keuntunganPerKg, // W2: snapshot tarif saat transaksi
+      keuntunganPerKg: keuntunganTransaksi, // W2: snapshot tarif yang berlaku saat transaksi
       statusBayarPeron: parsed.statusBayarPeron,
       sumberBayarId: parsed.sumberBayarId,
       catatan: parsed.catatan,
@@ -264,11 +269,12 @@ export async function updatePembelian(id: string, data: {
   // diganti (lalu adopsi tarif peron baru). Baris lama (null) → fallback live.
   const existingPembelian = await db.query.pembelian.findFirst({ where: (t, { eq }) => eq(t.id, id) })
   const peronBerubah = !existingPembelian || existingPembelian.peronId !== parsed.peronId
-  const keuntunganSnapshot = (!peronBerubah && existingPembelian?.keuntunganPerKg != null)
+  const tanggalBerubah = !existingPembelian || existingPembelian.tanggal !== parsed.tanggal
+  const keuntunganSnapshot = (!peronBerubah && !tanggalBerubah && existingPembelian?.keuntunganPerKg != null)
     ? existingPembelian.keuntunganPerKg
-    : peronData.keuntunganPerKg
+    : keuntunganPerKgBerlaku(peronData.nama, parsed.tanggal, peronData.keuntunganPerKg)
 
-  const { computed, totalTonase, totalBeli, totalJual, totalKeuntungan, hargaBeliRata, hargaJualRata } = computeTotals(parsed.details, keuntunganSnapshot, isKategoriTBS(parsed.kategori))
+  const { computed, totalTonase, totalBeli, totalJual, totalKeuntungan, hargaBeliRata, hargaJualRata } = computeTotals(parsed.details, keuntunganSnapshot, isKategoriTBS(parsed.kategori), parsed.tanggal)
 
   // Update + ganti detail + sinkron mutasi kas, atomic dalam satu transaksi.
   await db.transaction(async (tx) => {
