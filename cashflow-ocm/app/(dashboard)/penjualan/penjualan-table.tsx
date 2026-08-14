@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect, useTransition } from 'react'
+import { useState, useMemo, useEffect, useEffectEvent, useTransition } from 'react'
 import { toast } from 'sonner'
 import { PaymentStatusDot } from '@/components/ui/status-pill'
 import { LoadMoreBar } from '@/components/load-more-bar'
@@ -66,34 +66,44 @@ export function PenjualanTable({ penjualanList, stats, isOwner, estimasiLaba }: 
   // rentang tetap persis benar). Prop penjualanList berubah setelah revalidate
   // (tambah/edit/hapus) → efek di bawah menyegarkan data klien agar tak basi.
   const [extraRows, setExtraRows] = useState<Penjualan[]>([])
+  const getExtraRowsCount = useEffectEvent(() => extraRows.length)
   const [rangeRows, setRangeRows] = useState<Penjualan[] | null>(null)
   const [isPending, startTransition] = useTransition()
   const isFiltered = !!dari || !!sampai
 
   useEffect(() => {
-    if (dari || sampai) {
-      startTransition(async () => {
-        setRangeRows(await getPenjualanList({ dari: dari || undefined, sampai: sampai || undefined }))
-      })
-    } else {
-      setRangeRows(null)
-    }
+    if (!dari && !sampai) return
+    let cancelled = false
+    startTransition(async () => {
+      try {
+        const rows = await getPenjualanList({ dari: dari || undefined, sampai: sampai || undefined })
+        if (!cancelled) setRangeRows(rows)
+      } catch (error) {
+        if (!cancelled) toast.error(error instanceof Error ? error.message : 'Gagal memuat filter penjualan')
+      }
+    })
     // penjualanList sengaja jadi dependency: revalidate server (habis mutasi)
     // memicu refetch rentang/halaman-ekstra supaya data klien ikut segar.
+    return () => { cancelled = true }
   }, [dari, sampai, penjualanList])
 
   useEffect(() => {
     // Habis mutasi (prop window berubah), halaman-ekstra yang sudah dimuat
     // di-refetch supaya baris terhapus/teredit tidak basi.
-    setExtraRows((prev) => {
-      if (prev.length > 0) {
-        getPenjualanList({ offset: LIST_PAGE_SIZE, limit: prev.length })
-          .then((rows) => setExtraRows(rows))
-          .catch(() => {})
-      }
-      return prev
-    })
+    const count = getExtraRowsCount()
+    if (count === 0) return
+    let cancelled = false
+    getPenjualanList({ offset: LIST_PAGE_SIZE, limit: count })
+      .then((rows) => { if (!cancelled) setExtraRows(rows) })
+      .catch((error) => { if (!cancelled) toast.error(error instanceof Error ? error.message : 'Gagal menyegarkan daftar penjualan') })
+    return () => { cancelled = true }
   }, [penjualanList])
+
+  function handleDateFilter(d: string, s: string) {
+    setRangeRows(null)
+    setDari(d)
+    setSampai(s)
+  }
 
   function loadMore() {
     startTransition(async () => {
@@ -108,11 +118,11 @@ export function PenjualanTable({ penjualanList, stats, isOwner, estimasiLaba }: 
   }
 
   const baseRows = useMemo(() => {
-    if (rangeRows) return rangeRows
+    if (isFiltered && rangeRows) return rangeRows
     if (extraRows.length === 0) return penjualanList
     const seen = new Set(penjualanList.map((p) => p.id))
     return [...penjualanList, ...extraRows.filter((p) => !seen.has(p.id))]
-  }, [rangeRows, penjualanList, extraRows])
+  }, [isFiltered, rangeRows, penjualanList, extraRows])
 
   const filtered = useMemo(() => {
     let list = [...baseRows]
@@ -212,7 +222,7 @@ export function PenjualanTable({ penjualanList, stats, isOwner, estimasiLaba }: 
       </div>
 
       {/* Filter tanggal/bulan */}
-      <DateRangeFilter dari={dari} sampai={sampai} onChange={(d, s) => { setDari(d); setSampai(s) }} />
+      <DateRangeFilter dari={dari} sampai={sampai} onChange={handleDateFilter} />
       {/* Desktop */}
       <div className="hidden md:block surface overflow-x-auto">
         <table className="w-full text-sm">

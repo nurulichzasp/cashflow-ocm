@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect, useTransition } from 'react'
+import { useState, useMemo, useEffect, useEffectEvent, useTransition } from 'react'
 import { toast } from 'sonner'
 import { ArahIndicator } from '@/components/ui/status-pill'
 import { EmptyState } from '@/components/empty-state'
@@ -193,34 +193,44 @@ export function KasTable({ transaksiList, stats, isOwner }: Props) {
   // tetap persis benar). Prop transaksiList berubah setelah revalidate (tambah/
   // edit/hapus) → efek di bawah menyegarkan data klien agar tak basi.
   const [extraRows, setExtraRows] = useState<TransaksiRow[]>([])
+  const getExtraRowsCount = useEffectEvent(() => extraRows.length)
   const [rangeRows, setRangeRows] = useState<TransaksiRow[] | null>(null)
   const [isPending, startTransition] = useTransition()
   const isFiltered = !!dari || !!sampai
 
   useEffect(() => {
-    if (dari || sampai) {
-      startTransition(async () => {
-        setRangeRows(await getKasTransactions({ dari: dari || undefined, sampai: sampai || undefined }) as TransaksiRow[])
-      })
-    } else {
-      setRangeRows(null)
-    }
+    if (!dari && !sampai) return
+    let cancelled = false
+    startTransition(async () => {
+      try {
+        const rows = await getKasTransactions({ dari: dari || undefined, sampai: sampai || undefined }) as TransaksiRow[]
+        if (!cancelled) setRangeRows(rows)
+      } catch (error) {
+        if (!cancelled) toast.error(error instanceof Error ? error.message : 'Gagal memuat filter kas')
+      }
+    })
     // transaksiList sengaja jadi dependency: revalidate server (habis mutasi)
     // memicu refetch rentang/halaman-ekstra supaya data klien ikut segar.
+    return () => { cancelled = true }
   }, [dari, sampai, transaksiList])
 
   useEffect(() => {
     // Habis mutasi (prop window berubah), halaman-ekstra yang sudah dimuat
     // di-refetch supaya baris terhapus/teredit tidak basi.
-    setExtraRows((prev) => {
-      if (prev.length > 0) {
-        getKasTransactions({ offset: LIST_PAGE_SIZE, limit: prev.length })
-          .then((rows) => setExtraRows(rows as TransaksiRow[]))
-          .catch(() => {})
-      }
-      return prev
-    })
+    const count = getExtraRowsCount()
+    if (count === 0) return
+    let cancelled = false
+    getKasTransactions({ offset: LIST_PAGE_SIZE, limit: count })
+      .then((rows) => { if (!cancelled) setExtraRows(rows as TransaksiRow[]) })
+      .catch((error) => { if (!cancelled) toast.error(error instanceof Error ? error.message : 'Gagal menyegarkan daftar kas') })
+    return () => { cancelled = true }
   }, [transaksiList])
+
+  function handleDateFilter(d: string, s: string) {
+    setRangeRows(null)
+    setDari(d)
+    setSampai(s)
+  }
 
   function loadMore() {
     startTransition(async () => {
@@ -235,11 +245,11 @@ export function KasTable({ transaksiList, stats, isOwner }: Props) {
   }
 
   const baseRows = useMemo(() => {
-    if (rangeRows) return rangeRows
+    if (isFiltered && rangeRows) return rangeRows
     if (extraRows.length === 0) return transaksiList
     const seen = new Set(transaksiList.map((t) => t.id))
     return [...transaksiList, ...extraRows.filter((t) => !seen.has(t.id))]
-  }, [rangeRows, transaksiList, extraRows])
+  }, [isFiltered, rangeRows, transaksiList, extraRows])
 
   // Opsi akun diturunkan dari baris yang ada (untuk dialog edit) — dedup by id.
   const akunOptions = useMemo(() => {
@@ -314,7 +324,7 @@ export function KasTable({ transaksiList, stats, isOwner }: Props) {
       )}
 
       {/* Filter tanggal/bulan */}
-      <DateRangeFilter dari={dari} sampai={sampai} onChange={(d, s) => { setDari(d); setSampai(s) }} />
+      <DateRangeFilter dari={dari} sampai={sampai} onChange={handleDateFilter} />
 
       {/* Desktop */}
       <div className="hidden md:block surface overflow-x-auto">

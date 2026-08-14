@@ -21,6 +21,10 @@ import { Plus, Trash2, CalendarDays, AlertTriangle } from 'lucide-react'
 type PeronOption = { id: string; nama: string; keuntunganPerKg: number }
 type AkunOption = { id: string; nama: string; tipe: string }
 type AcuanRow = { tanggalBerlaku: string; hargaLapangan: number; selisihJualBga: number }
+type ProdukAcuan = 'TBS' | 'BRDL KTWM' | 'BRDL TRYM'
+type AcuanState =
+  | { produk: ProdukAcuan; status: 'success'; rows: AcuanRow[] }
+  | { produk: ProdukAcuan; status: 'error'; rows: [] }
 
 interface DetailRow {
   noTid: string
@@ -53,61 +57,47 @@ interface Props {
 }
 
 const EMPTY_DETAIL: DetailRow = { noTid: '', jumlahReplas: '', tonase: '', hargaLapangan: '', tanggalReplas: '', tanggalReplasSampai: '', manualPrice: false }
+const EMPTY_ACUAN_LIST: AcuanRow[] = []
+
+function initialDetailRows(initialData: Props['initialData']): DetailRow[] {
+  if (!initialData || initialData.details.length === 0) return [{ ...EMPTY_DETAIL }]
+  return initialData.details.map((d) => ({
+    noTid: d.noTid ?? '',
+    jumlahReplas: d.jumlahReplas != null ? String(d.jumlahReplas) : '',
+    tonase: String(d.tonase),
+    hargaLapangan: String(d.hargaLapangan),
+    tanggalReplas: d.tanggalReplas ?? '',
+    tanggalReplasSampai: d.tanggalReplasSampai ?? '',
+    // Harga tersimpan dipertahankan saat edit (jangan ditimpa auto bila acuan berubah).
+    manualPrice: true,
+  }))
+}
+
+function initialManualKeterangan(initialData: Props['initialData']): string | null {
+  const stored = initialData?.keterangan ?? ''
+  return stored && !isAutoKeteranganReplas(stored) ? stored : null
+}
 
 export function PembelianFormDialog({ children, peronOptions, akunOptions, open: openProp, initialData, onOpenChange }: Props) {
   const [openInternal, setOpenInternal] = useState(false)
   const open = openProp ?? openInternal
-  const setOpen = (v: boolean) => { onOpenChange ? onOpenChange(v) : setOpenInternal(v) }
+  const setOpen = (v: boolean) => { if (onOpenChange) onOpenChange(v); else setOpenInternal(v) }
   const [loading, setLoading] = useState(false)
   // Idempotency key per pembukaan form — kunci anti-dobel race-proof di server.
   const [idemKey, setIdemKey] = useState(() => crypto.randomUUID())
 
-  const [tanggal, setTanggal] = useState(todayString())
-  const [kategori, setKategori] = useState<KategoriPembelian>('OCM R2')
-  const [peronId, setPeronId] = useState(peronOptions?.[0]?.id ?? '')
-  const [statusBayar, setStatusBayar] = useState<'belum' | 'lunas'>('belum')
-  const [sumberBayarId, setSumberBayarId] = useState('')
-  const [catatan, setCatatan] = useState('')
-  const [keterangan, setKeterangan] = useState('')
-  const [keteranganManual, setKeteranganManual] = useState(false)
-  const [fotos, setFotos] = useState<string[]>([])
-  const [details, setDetails] = useState<DetailRow[]>([{ ...EMPTY_DETAIL }])
+  const [tanggal, setTanggal] = useState(initialData?.tanggal ?? todayString())
+  const [kategori, setKategori] = useState<KategoriPembelian>(initialData?.kategori ?? 'OCM R2')
+  const [peronId, setPeronId] = useState(initialData?.peronId ?? peronOptions?.[0]?.id ?? '')
+  const [statusBayar, setStatusBayar] = useState<'belum' | 'lunas'>(initialData?.statusBayarPeron ?? 'belum')
+  const [sumberBayarId, setSumberBayarId] = useState(initialData?.sumberBayarId ?? '')
+  const [catatan, setCatatan] = useState(initialData?.catatan ?? '')
+  const [keteranganManual, setKeteranganManual] = useState<string | null>(() => initialManualKeterangan(initialData))
+  const [fotos, setFotos] = useState<string[]>(initialData?.fotoUrls ?? [])
+  const [details, setDetails] = useState<DetailRow[]>(() => initialDetailRows(initialData))
   const [rowErrors, setRowErrors] = useState<Record<number, { tonase?: boolean; harga?: boolean }>>({})
   // Baris mana yang editor tanggalnya sedang terbuka (chip diketuk). null = semua tertutup.
   const [editingDateIdx, setEditingDateIdx] = useState<number | null>(null)
-
-  useEffect(() => {
-    if (initialData && open) {
-      setTanggal(initialData.tanggal)
-      setKategori(initialData.kategori)
-      setPeronId(initialData.peronId)
-      setStatusBayar(initialData.statusBayarPeron)
-      setSumberBayarId(initialData.sumberBayarId ?? '')
-      setCatatan(initialData.catatan ?? '')
-      // Keterangan auto "Total N Replas" di-derive ULANG dari detail (jangan dianggap
-      // manual / jangan tampilkan nilai basi spt "Total 0 Replas"). Hanya teks manual
-      // sejati yang dipertahankan & ditandai manual.
-      const storedKet = initialData.keterangan ?? ''
-      const manualKet = !!storedKet && !isAutoKeteranganReplas(storedKet)
-      setKeterangan(manualKet ? storedKet : '')
-      setKeteranganManual(manualKet)
-      setFotos(initialData.fotoUrls ?? [])
-      setDetails(
-        initialData.details.length > 0
-          ? initialData.details.map((d) => ({
-              noTid: d.noTid ?? '',
-              jumlahReplas: d.jumlahReplas != null ? String(d.jumlahReplas) : '',
-              tonase: String(d.tonase),
-              hargaLapangan: String(d.hargaLapangan),
-              tanggalReplas: d.tanggalReplas ?? '',
-              tanggalReplasSampai: d.tanggalReplasSampai ?? '',
-              // Harga tersimpan dipertahankan saat edit (jangan ditimpa auto bila acuan berubah).
-              manualPrice: true,
-            }))
-          : [{ ...EMPTY_DETAIL }]
-      )
-    }
-  }, [initialData, open])
 
   const selectedPeron = peronOptions.find((p) => p.id === peronId)
   const keuntunganPerKg = keuntunganPerKgBerlaku(
@@ -116,17 +106,27 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
     selectedPeron?.keuntunganPerKg ?? 0,
   )
 
-  const [acuanList, setAcuanList] = useState<AcuanRow[]>([])
-  const [hargaLoading, setHargaLoading] = useState(false)
+  const [acuanState, setAcuanState] = useState<AcuanState | null>(null)
 
   // Kategori BRDL merujuk ke Harga Acuan produknya. LMDM mengikuti harga TRYM.
-  const derivedProduk: 'TBS' | 'BRDL KTWM' | 'BRDL TRYM' =
+  const derivedProduk: ProdukAcuan =
     kategori === 'OCM BRDL KTWM' || kategori === 'OCM BRDL'
       ? 'BRDL KTWM'
       : kategori === 'OCM BRDL TRYM' || kategori === 'OCM BRDL LMDM'
         ? 'BRDL TRYM'
         : 'TBS'
   const isTBS = derivedProduk === 'TBS'
+  const activeAcuanState = acuanState?.produk === derivedProduk ? acuanState : null
+  const acuanList = activeAcuanState?.status === 'success' ? activeAcuanState.rows : EMPTY_ACUAN_LIST
+  const hargaLoading = open && activeAcuanState === null
+
+  function handleOpenChange(nextOpen: boolean) {
+    // Form baru selalu mengambil acuan segar setiap kali dibuka. Selama request
+    // baru berjalan, submit dikunci agar acuan lama dari pembukaan sebelumnya
+    // tidak sempat tersimpan.
+    if (nextOpen && !initialData) setAcuanState(null)
+    setOpen(nextOpen)
+  }
 
   // Step-function harga acuan: baris paling baru dengan tanggalBerlaku <= tanggal.
   function lookupAcuan(date: string): AcuanRow | null {
@@ -160,26 +160,26 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
   useEffect(() => {
     if (!open) return
     let cancelled = false
-    setHargaLoading(true)
-    getHargaAcuanListForProduk(derivedProduk).then((rows) => {
-      if (cancelled) return
-      setAcuanList(rows)
-      setHargaLoading(false)
-    })
+    getHargaAcuanListForProduk(derivedProduk)
+      .then((rows) => {
+        if (!cancelled) setAcuanState({ produk: derivedProduk, status: 'success', rows })
+      })
+      .catch((error) => {
+        if (cancelled) return
+        console.error('Gagal memuat harga acuan:', error)
+        setAcuanState({ produk: derivedProduk, status: 'error', rows: [] })
+        toast.error('Harga acuan gagal dimuat. Isi harga manual atau coba buka ulang form.')
+      })
     return () => { cancelled = true }
   }, [open, derivedProduk])
 
-  // Recompute harga semua baris NON-manual saat acuan/untung/tanggal header berubah.
-  // (Tanggal "dari" baris kosong → fallback tanggal header.)
-  useEffect(() => {
-    if (!open || acuanList.length === 0) return
-    setDetails((prev) => prev.map((d) => {
-      if (d.manualPrice) return d
-      const auto = autoHargaForDate(d.tanggalReplas || tanggal)
-      return auto !== null ? { ...d, hargaLapangan: String(auto) } : d
-    }))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [acuanList, keuntunganPerKg, tanggal, open])
+  // Harga non-manual adalah nilai turunan dari acuan aktif. Tidak disalin ke state,
+  // sehingga pergantian produk/tanggal/peron tidak dapat menyisakan harga lama.
+  const effectiveDetails = details.map((d) => {
+    if (d.manualPrice) return d
+    const auto = autoHargaForDate(d.tanggalReplas || tanggal)
+    return auto !== null ? { ...d, hargaLapangan: String(auto) } : d
+  })
 
   function updateDetail(idx: number, field: keyof DetailRow, value: string) {
     setDetails((prev) => prev.map((d, i) => {
@@ -194,19 +194,12 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
   function setRowRange(idx: number, from: string, sampai: string) {
     setDetails((prev) => prev.map((d, i) => {
       if (i !== idx) return d
-      const nd = { ...d, tanggalReplas: from, tanggalReplasSampai: sampai }
-      if (!nd.manualPrice) {
-        const auto = autoHargaForDate(from || tanggal)
-        if (auto !== null) nd.hargaLapangan = String(auto)
-      }
-      return nd
+      return { ...d, tanggalReplas: from, tanggalReplasSampai: sampai }
     }))
   }
 
   function addDetail() {
-    // Baris baru langsung dapat harga auto tanggal header (akan ter-recompute saat tanggalnya diisi).
-    const auto = autoHargaForDate(tanggal)
-    setDetails((prev) => [...prev, { ...EMPTY_DETAIL, hargaLapangan: auto !== null ? String(auto) : '' }])
+    setDetails((prev) => [...prev, { ...EMPTY_DETAIL }])
   }
 
   function removeDetail(idx: number) {
@@ -217,13 +210,17 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
 
   // Keterangan otomatis: "Total {N} Replas ({rentang})" — SATU SUMBER (helper bersama
   // dipakai juga di nota cetak), supaya format selalu identik.
-  const autoKeterangan = buildKeteranganReplas(details, tanggal)
+  const autoKeterangan = buildKeteranganReplas(effectiveDetails, tanggal)
+  const keterangan = keteranganManual ?? autoKeterangan
 
-  useEffect(() => {
-    if (!keteranganManual) setKeterangan(autoKeterangan)
-  }, [autoKeterangan, keteranganManual])
+  function handleKategoriChange(value: string) {
+    setKategori(value as KategoriPembelian)
+    // Jangan biarkan harga otomatis produk sebelumnya ikut tersimpan. Baris yang
+    // memang diubah manual tetap dipertahankan sesuai kebijakan manual override.
+    setDetails((prev) => prev.map((d) => d.manualPrice ? d : { ...d, hargaLapangan: '' }))
+  }
 
-  const parsedDetails = details.map((d) => ({
+  const parsedDetails = effectiveDetails.map((d) => ({
     tonase: parseFloat(d.tonase) || 0,
     hargaLapangan: parseFloat(d.hargaLapangan) || 0,
   }))
@@ -240,8 +237,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
     setStatusBayar('belum')
     setSumberBayarId('')
     setCatatan('')
-    setKeterangan('')
-    setKeteranganManual(false)
+    setKeteranganManual(null)
     setFotos([])
     setDetails([{ ...EMPTY_DETAIL }])
     setEditingDateIdx(null)
@@ -253,7 +249,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
     // Validasi per-baris: baris yang sudah "dimulai" (ada isian apa pun) WAJIB punya
     // tonase > 0 DAN harga > 0. Baris bertanda merah TIDAK di-drop diam-diam.
     const errs: Record<number, { tonase?: boolean; harga?: boolean }> = {}
-    details.forEach((d, i) => {
+    effectiveDetails.forEach((d, i) => {
       const started =
         d.tonase.trim() !== '' || d.hargaLapangan.trim() !== '' ||
         d.noTid.trim() !== '' || d.jumlahReplas.trim() !== ''
@@ -262,7 +258,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
       const hOk = parseFloat(d.hargaLapangan) > 0
       if (!tOk || !hOk) errs[i] = { tonase: !tOk, harga: !hOk }
     })
-    const validDetails = details.filter((d) => parseFloat(d.tonase) > 0 && parseFloat(d.hargaLapangan) > 0)
+    const validDetails = effectiveDetails.filter((d) => parseFloat(d.tonase) > 0 && parseFloat(d.hargaLapangan) > 0)
     if (validDetails.length === 0 && Object.keys(errs).length === 0) {
       errs[0] = { tonase: true, harga: true } // semua baris kosong → tandai baris pertama
     }
@@ -319,7 +315,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
   }
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { setOpen(v); onOpenChange?.(v) }}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
@@ -335,7 +331,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
             </div>
             <div className="col-span-2 sm:col-span-1 space-y-1.5">
               <Label htmlFor="pb-kategori">Kategori *</Label>
-              <Select value={kategori} onValueChange={(v) => setKategori(v as KategoriPembelian)}>
+              <Select value={kategori} onValueChange={handleKategoriChange}>
                 <SelectTrigger id="pb-kategori"><SelectValue placeholder="Pilih kategori" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="OCM R2">OCM R2</SelectItem>
@@ -393,7 +389,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
               </div>
 
               {/* Rows — satu baris per item; tanggal = 1 chip ringkas (ketuk untuk pilih). */}
-              {details.map((d, idx) => {
+              {effectiveDetails.map((d, idx) => {
                 const hasDate = !!d.tanggalReplas
                 const isEditing = editingDateIdx === idx
                 return (
@@ -513,10 +509,10 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <Label htmlFor="pb-keterangan">Keterangan</Label>
-              {keteranganManual && autoKeterangan && (
+              {keteranganManual !== null && autoKeterangan && (
                 <button
                   type="button"
-                  onClick={() => { setKeteranganManual(false); setKeterangan(autoKeterangan) }}
+                  onClick={() => setKeteranganManual(null)}
                   className="text-[11px] font-medium text-stone-400 hover:text-[var(--ok-fg)]"
                 >
                   Set ulang otomatis
@@ -526,7 +522,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
             <Input
               id="pb-keterangan"
               value={keterangan}
-              onChange={(e) => { setKeterangan(e.target.value); setKeteranganManual(true) }}
+              onChange={(e) => setKeteranganManual(e.target.value)}
               placeholder="Total — Replas"
             />
           </div>
@@ -577,7 +573,7 @@ export function PembelianFormDialog({ children, peronOptions, akunOptions, open:
 
           <div className="flex justify-end gap-2 pt-4 -mx-6 px-6 -mb-6 pb-6 border-t border-border bg-muted/30 rounded-b-3xl">
             <Button variant="outline" type="button" onClick={() => setOpen(false)}>Batal</Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || (!initialData && hargaLoading)}>
               {loading ? 'Menyimpan...' : initialData ? 'Simpan Perubahan' : 'Tambah Tiket'}
             </Button>
           </div>

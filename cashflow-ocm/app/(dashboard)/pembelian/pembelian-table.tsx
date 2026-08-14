@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo, useCallback, useEffect, useTransition } from 'react'
+import React, { useState, useMemo, useCallback, useEffect, useEffectEvent, useTransition } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { PaymentStatusDot } from '@/components/ui/status-pill'
@@ -146,37 +146,53 @@ export function PembelianTable({ pembelianList, stats, canEdit, canDelete, peron
   // & PrintRekap atas hasil filter tetap persis benar). Prop pembelianList
   // berubah setelah revalidate (tambah/edit/hapus) → efek menyegarkan data klien.
   const [extraRows, setExtraRows] = useState<PembelianRow[]>([])
+  const getExtraRowsCount = useEffectEvent(() => extraRows.length)
   const [rangeRows, setRangeRows] = useState<PembelianRow[] | null>(null)
   const [isPending, startTransition] = useTransition()
+  const isFiltered = !!filterDari || !!filterSampai || filterPeronId !== 'all'
 
   useEffect(() => {
-    if (filterDari || filterSampai || filterPeronId !== 'all') {
-      startTransition(async () => {
-        setRangeRows(await getPembelianList({
+    if (!isFiltered) return
+    let cancelled = false
+    startTransition(async () => {
+      try {
+        const rows = await getPembelianList({
           dari: filterDari || undefined,
           sampai: filterSampai || undefined,
           peronId: filterPeronId !== 'all' ? filterPeronId : undefined,
-        }) as PembelianRow[])
-      })
-    } else {
-      setRangeRows(null)
-    }
+        }) as PembelianRow[]
+        if (!cancelled) setRangeRows(rows)
+      } catch (error) {
+        if (!cancelled) toast.error(error instanceof Error ? error.message : 'Gagal memuat filter pembelian')
+      }
+    })
     // pembelianList sengaja jadi dependency: revalidate server (habis mutasi)
     // memicu refetch hasil filter supaya data klien ikut segar.
-  }, [filterDari, filterSampai, filterPeronId, pembelianList])
+    return () => { cancelled = true }
+  }, [filterDari, filterSampai, filterPeronId, pembelianList, isFiltered])
 
   useEffect(() => {
     // Habis mutasi (prop window berubah), halaman-ekstra yang sudah dimuat
     // di-refetch supaya baris terhapus/teredit tidak basi.
-    setExtraRows((prev) => {
-      if (prev.length > 0) {
-        getPembelianList({ offset: LIST_PAGE_SIZE, limit: prev.length })
-          .then((rows) => setExtraRows(rows as PembelianRow[]))
-          .catch(() => {})
-      }
-      return prev
-    })
+    const count = getExtraRowsCount()
+    if (count === 0) return
+    let cancelled = false
+    getPembelianList({ offset: LIST_PAGE_SIZE, limit: count })
+      .then((rows) => { if (!cancelled) setExtraRows(rows as PembelianRow[]) })
+      .catch((error) => { if (!cancelled) toast.error(error instanceof Error ? error.message : 'Gagal menyegarkan daftar pembelian') })
+    return () => { cancelled = true }
   }, [pembelianList])
+
+  function handleDateFilter(d: string, s: string) {
+    setRangeRows(null)
+    setFilterDari(d)
+    setFilterSampai(s)
+  }
+
+  function handlePeronFilter(value: string) {
+    setRangeRows(null)
+    setFilterPeronId(value)
+  }
 
   function loadMore() {
     startTransition(async () => {
@@ -205,11 +221,11 @@ export function PembelianTable({ pembelianList, stats, canEdit, canDelete, peron
   // baseRows: hasil filter server (rangeRows) bila filter aktif; selain itu
   // window awal + halaman ekstra (dedup by id — revalidate bisa menggeser offset).
   const baseRows = useMemo(() => {
-    if (rangeRows) return rangeRows
+    if (isFiltered && rangeRows) return rangeRows
     if (extraRows.length === 0) return pembelianList
     const seen = new Set(pembelianList.map((p) => p.id))
     return [...pembelianList, ...extraRows.filter((p) => !seen.has(p.id))]
-  }, [rangeRows, pembelianList, extraRows])
+  }, [isFiltered, rangeRows, pembelianList, extraRows])
 
   const filtered = useMemo(() => {
     const list = baseRows.filter((p) => {
@@ -249,7 +265,6 @@ export function PembelianTable({ pembelianList, stats, canEdit, canDelete, peron
     return map
   }, [baseRows])
 
-  const isFiltered = !!filterDari || !!filterSampai || filterPeronId !== 'all'
   // Tanpa filter = agregat SQL all-time (benar walau list terpaginasi);
   // dengan filter = jumlah atas SEMUA baris hasil filter (rangeRows dari server).
   const totalTonase = isFiltered ? filtered.reduce((s, p) => s + p.tonase, 0) : stats.totalTonase
@@ -275,6 +290,7 @@ export function PembelianTable({ pembelianList, stats, canEdit, canDelete, peron
     <div className="space-y-3">
       {/* Edit dialog (tersembunyi, dipicu dari row) */}
       <PembelianFormDialog
+        key={editTarget?.id ?? 'new'}
         peronOptions={peronOptions}
         akunOptions={akunOptions}
         open={!!editTarget}
@@ -336,11 +352,11 @@ export function PembelianTable({ pembelianList, stats, canEdit, canDelete, peron
           <DateRangeFilter
             dari={filterDari}
             sampai={filterSampai}
-            onChange={(d, s) => { setFilterDari(d); setFilterSampai(s) }}
+            onChange={handleDateFilter}
           />
         </div>
         <div className="basis-[calc(50%-0.25rem)] grow sm:grow-0 sm:basis-auto min-w-0">
-          <Select value={filterPeronId} onValueChange={(v) => { if (v) setFilterPeronId(v) }}>
+          <Select value={filterPeronId} onValueChange={(v) => { if (v) handlePeronFilter(v) }}>
             <SelectTrigger className="w-full sm:w-[160px] h-9 text-xs"><SelectValue placeholder="Semua Peron" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Semua Peron</SelectItem>

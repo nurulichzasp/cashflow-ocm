@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useTransition } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef, useTransition } from 'react'
 import { getLaporanData, getPembelianBulanan, getPajakData, getLabaRugiTahunan, getNeracaData } from './actions'
 import { formatRupiah, formatNumber, formatTanggal, todayString } from '@/lib/format'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -16,6 +16,39 @@ import type { TransaksiKas, AkunKas } from '@/lib/db/schema'
 type LaporanData = Awaited<ReturnType<typeof getLaporanData>>
 type TabKey = 'laba-rugi' | 'per-peron' | 'pembelian-bulanan' | 'buku-kas' | 'mutasi-bank' | 'pajak' | 'tahunan' | 'neraca'
 type KasRow = TransaksiKas & { akun: AkunKas | null }
+
+function useAsyncReportData<T>(key: string, fetchData: (key: string) => Promise<T>) {
+  const [data, setData] = useState<T | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(false)
+  const requestId = useRef(0)
+
+  const retry = useCallback(async () => {
+    const currentRequest = ++requestId.current
+    setLoading(true)
+    setError(false)
+    try {
+      const next = await fetchData(key)
+      if (currentRequest === requestId.current) setData(next)
+    } catch {
+      if (currentRequest === requestId.current) setError(true)
+    } finally {
+      if (currentRequest === requestId.current) setLoading(false)
+    }
+  }, [fetchData, key])
+
+  useEffect(() => {
+    // Jalankan setelah commit agar effect tidak membuat render berantai. Nomor
+    // request memastikan respons periode lama tidak dapat menimpa periode baru.
+    const frame = requestAnimationFrame(() => { void retry() })
+    return () => {
+      cancelAnimationFrame(frame)
+      requestId.current += 1
+    }
+  }, [retry])
+
+  return { data, loading, error, retry }
+}
 
 const kategoriLabels: Record<TransaksiKas['kategori'], string> = {
   penerimaan_bga: 'Penerimaan BGA',
@@ -353,23 +386,7 @@ type PembelianBulananData = Awaited<ReturnType<typeof getPembelianBulanan>>
  * (pola sama seperti PajakTab). Pemilih bulan pakai <input type="month"> native.
  */
 function PembelianBulananTab({ bulan, onBulanChange }: { bulan: string; onBulanChange: (b: string) => void }) {
-  const [data, setData] = useState<PembelianBulananData | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(false)
-
-  function load() {
-    setLoading(true)
-    setError(false)
-    getPembelianBulanan(bulan)
-      .then(setData)
-      .catch(() => setError(true))
-      .finally(() => setLoading(false))
-  }
-
-  useEffect(() => {
-    load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bulan])
+  const { data, loading, error, retry } = useAsyncReportData<PembelianBulananData>(bulan, getPembelianBulanan)
 
   const [th, tm] = bulan.split('-')
   const labelBulan = `${MONTHS_SHORT[parseInt(tm, 10) - 1] ?? tm} ${th}`
@@ -389,7 +406,7 @@ function PembelianBulananTab({ bulan, onBulanChange }: { bulan: string; onBulanC
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-3">{bulanPicker}</div>
-        <RetryState onRetry={load} />
+        <RetryState onRetry={() => { void retry() }} />
       </div>
     )
   }
@@ -532,25 +549,9 @@ function PembelianBulananTab({ bulan, onBulanChange }: { bulan: string; onBulanC
 }
 
 function PajakTab({ tahun, onTahunChange }: { tahun: string; onTahunChange: (t: string) => void }) {
-  const [data, setData] = useState<PajakData | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(false)
+  const { data, loading, error, retry } = useAsyncReportData<PajakData>(tahun, getPajakData)
 
-  function load() {
-    setLoading(true)
-    setError(false)
-    getPajakData(tahun)
-      .then(setData)
-      .catch(() => setError(true))
-      .finally(() => setLoading(false))
-  }
-
-  useEffect(() => {
-    load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tahun])
-
-  if (error) return <RetryState onRetry={load} />
+  if (error) return <RetryState onRetry={() => { void retry() }} />
   if (loading || !data) return <TableSkeleton rows={6} />
 
   return (
@@ -594,8 +595,7 @@ function PajakTab({ tahun, onTahunChange }: { tahun: string; onTahunChange: (t: 
                         const next = d.status === 'sudah' ? 'belum' : 'sudah'
                         const tgl = next === 'sudah' ? todayString() : undefined
                         await updatePpnStatus(bulan, next, tgl)
-                        const fresh = await getPajakData(tahun)
-                        setData(fresh)
+                        await retry()
                       }}
                     >
                       <StatusDotLabel tone={d.status === 'sudah' ? 'ok' : 'warn'} label={d.status === 'sudah' ? 'Sudah Disetor' : 'Belum'} />
@@ -633,8 +633,7 @@ function PajakTab({ tahun, onTahunChange }: { tahun: string; onTahunChange: (t: 
                         const next = d.status === 'sudah' ? 'belum' : 'sudah'
                         const tgl = next === 'sudah' ? todayString() : undefined
                         await updatePphStatus(bulan, next, tgl)
-                        const fresh = await getPajakData(tahun)
-                        setData(fresh)
+                        await retry()
                       }}
                     >
                       <StatusDotLabel tone={d.status === 'sudah' ? 'ok' : 'warn'} label={d.status === 'sudah' ? 'Sudah Dibayar' : 'Belum'} />
@@ -651,25 +650,9 @@ function PajakTab({ tahun, onTahunChange }: { tahun: string; onTahunChange: (t: 
 }
 
 function LabaRugiTahunanTab({ tahun, onTahunChange }: { tahun: string; onTahunChange: (t: string) => void }) {
-  const [data, setData] = useState<LabaRugiTahunanData | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(false)
+  const { data, loading, error, retry } = useAsyncReportData<LabaRugiTahunanData>(tahun, getLabaRugiTahunan)
 
-  function load() {
-    setLoading(true)
-    setError(false)
-    getLabaRugiTahunan(tahun)
-      .then(setData)
-      .catch(() => setError(true))
-      .finally(() => setLoading(false))
-  }
-
-  useEffect(() => {
-    load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tahun])
-
-  if (error) return <RetryState onRetry={load} />
+  if (error) return <RetryState onRetry={() => { void retry() }} />
   if (loading || !data) return <TableSkeleton rows={8} />
 
   const rows = [
@@ -716,25 +699,9 @@ function LabaRugiTahunanTab({ tahun, onTahunChange }: { tahun: string; onTahunCh
 }
 
 function NeracaTab() {
-  const [data, setData] = useState<NeracaDataType | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(false)
+  const { data, loading, error, retry } = useAsyncReportData<NeracaDataType>('neraca', getNeracaData)
 
-  function load() {
-    setLoading(true)
-    setError(false)
-    getNeracaData()
-      .then(setData)
-      .catch(() => setError(true))
-      .finally(() => setLoading(false))
-  }
-
-  useEffect(() => {
-    load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  if (error) return <RetryState onRetry={load} />
+  if (error) return <RetryState onRetry={() => { void retry() }} />
   if (loading || !data) return <TableSkeleton rows={7} />
 
   const modalAwal = data.modalAwal

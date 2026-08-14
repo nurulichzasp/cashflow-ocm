@@ -35,7 +35,6 @@ export function HargaFormDialog({ children }: Props) {
   useEffect(() => {
     if (!open) return
     let cancelled = false
-    setPrefilling(true)
     getHargaAktifSemua(tanggalBerlaku)
       .then((h) => {
         if (cancelled) return
@@ -43,12 +42,27 @@ export function HargaFormDialog({ children }: Props) {
         setBrdlKtwm(h.brdlKtwm ?? 0)
         setBrdlTrym(h.brdlTrym ?? 0)
       })
+      .catch((error) => {
+        if (cancelled) return
+        console.error('Gagal memuat harga aktif:', error)
+        toast.error('Harga terakhir gagal dimuat. Coba tutup dan buka kembali.')
+      })
       .finally(() => { if (!cancelled) setPrefilling(false) })
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
   const valid = tbs > 0 && brdlKtwm > 0 && brdlTrym > 0 && tanggalBerlaku !== ''
+
+  function handleOpenChange(nextOpen: boolean) {
+    if (nextOpen) {
+      setTbs(0)
+      setBrdlKtwm(0)
+      setBrdlTrym(0)
+      setPrefilling(true)
+    }
+    setOpen(nextOpen)
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -69,7 +83,7 @@ export function HargaFormDialog({ children }: Props) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
@@ -124,7 +138,7 @@ export function HargaFormDialog({ children }: Props) {
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Batal
             </Button>
-            <Button type="submit" disabled={loading || !valid}>
+            <Button type="submit" disabled={loading || prefilling || !valid}>
               {loading ? 'Menyimpan...' : 'Simpan Semua'}
             </Button>
           </div>
