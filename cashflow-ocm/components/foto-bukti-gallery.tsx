@@ -26,11 +26,6 @@ function FotoImg({ src, alt, className }: { src: string; alt: string; className?
 export function FotoBuktiGallery({ urls, maxThumbnails = 4 }: Props) {
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null)
 
-  if (urls.length === 0) return null
-
-  const visible = urls.slice(0, maxThumbnails)
-  const rest = urls.length - maxThumbnails
-
   function openLightbox(idx: number) { setLightboxIdx(idx) }
   function closeLightbox() { setLightboxIdx(null) }
   function prev() { setLightboxIdx((i) => (i !== null ? (i - 1 + urls.length) % urls.length : 0)) }
@@ -46,6 +41,13 @@ export function FotoBuktiGallery({ urls, maxThumbnails = 4 }: Props) {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [lightboxIdx, urls.length])
+
+  // Semua Hook wajib dipanggil sebelum early return agar urutannya stabil ketika
+  // daftar foto berubah dari kosong menjadi berisi (atau sebaliknya).
+  if (urls.length === 0) return null
+
+  const visible = urls.slice(0, maxThumbnails)
+  const rest = urls.length - maxThumbnails
 
   return (
     <>

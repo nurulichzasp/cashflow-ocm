@@ -16,6 +16,8 @@ const publicPaths = [
   '/api/parse-bast',    // Parser BAST (auth: cek session di dalam route handler)
   '/api/client-error',  // Sink error boundary klien — WAJIB publik (dipanggil justru
                         // saat app/sesi mungkin rusak); hanya mencatat, payload dibatasi.
+  '/api/health',        // Liveness publik hanya mengembalikan status generik;
+                        // detail diagnostik tetap owner-only di route handler.
   '/manifest.webmanifest', // PWA manifest — browser baca tanpa login (install)
   '/sw.js',             // Service worker — wajib publik biar bisa di-register
   '/offline',           // Fallback offline (di-precache SW) — tak boleh redirect
