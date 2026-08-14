@@ -54,7 +54,7 @@ async function getAkunUtama() {
 
 export async function createPenjualan(formData: FormData) {
   const session = await requireSession()
-  requirePermission(session.user.role as any, 'canCreate')
+  requirePermission(session.user.role, 'canCreate')
 
   const data = penjualanSchema.parse({
     tanggal: formData.get('tanggal'),
@@ -149,7 +149,7 @@ export async function createPenjualan(formData: FormData) {
 
 export async function updatePenjualanStatus(id: string, statusBayar: 'belum' | 'lunas', tanggalBayarBga?: string) {
   const session = await requireSession()
-  requirePermission(session.user.role as any, 'canEdit')
+  requirePermission(session.user.role, 'canEdit')
 
   // Baca data penjualan untuk tahu totalNilai
   const existing = await db.query.penjualan.findFirst({ where: (t, { eq }) => eq(t.id, id) })
@@ -204,7 +204,7 @@ export async function updatePenjualanStatus(id: string, statusBayar: 'belum' | '
 
 export async function updatePenjualan(id: string, formData: FormData) {
   const session = await requireSession()
-  requirePermission(session.user.role as any, 'canEdit')
+  requirePermission(session.user.role, 'canEdit')
 
   const data = penjualanSchema.parse({
     tanggal: formData.get('tanggal'),

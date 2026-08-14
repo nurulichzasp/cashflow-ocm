@@ -66,11 +66,17 @@ interface Props {
 }
 
 type SortCol = 'nama' | 'keuntungan' | 'dp'
+type SortDir = 'asc' | 'desc'
+
+function SortIcon({ col, sortBy, sortDir }: { col: SortCol; sortBy: SortCol; sortDir: SortDir }) {
+  if (sortBy !== col) return <ArrowUpDown className="h-3 w-3" />
+  return sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+}
 
 export function PeronTable({ peronList, isOwner, akunOptions = [] }: Props) {
   const [deleting, setDeleting] = useState<string | null>(null)
   const [sortBy, setSortBy] = useState<SortCol>('nama')
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+  const [sortDir, setSortDir] = useState<SortDir>('asc')
 
   function handleSort(col: SortCol) {
     if (sortBy === col) setSortDir((d) => d === 'asc' ? 'desc' : 'asc')
@@ -84,11 +90,6 @@ export function PeronTable({ peronList, isOwner, akunOptions = [] }: Props) {
     else if (sortBy === 'dp') cmp = a.dpAktif - b.dpAktif
     return sortDir === 'asc' ? cmp : -cmp
   }), [peronList, sortBy, sortDir])
-
-  function SortIcon({ col }: { col: SortCol }) {
-    if (sortBy !== col) return <ArrowUpDown className="h-3 w-3" />
-    return sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
-  }
 
   async function handleDelete(id: string) {
     setDeleting(id)
@@ -122,18 +123,18 @@ export function PeronTable({ peronList, isOwner, akunOptions = [] }: Props) {
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Kode</th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">
                 <button onClick={() => handleSort('nama')} className={`inline-flex items-center gap-1 hover:text-stone-900 dark:hover:text-zinc-200 transition-colors ${sortBy === 'nama' ? 'text-stone-900 dark:text-zinc-100' : ''}`}>
-                  Nama <SortIcon col="nama" />
+                  Nama <SortIcon col="nama" sortBy={sortBy} sortDir={sortDir} />
                 </button>
               </th>
               <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Kontak</th>
               <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">
                 <button onClick={() => handleSort('keuntungan')} className={`inline-flex items-center gap-1 hover:text-stone-900 dark:hover:text-zinc-200 transition-colors ${sortBy === 'keuntungan' ? 'text-stone-900 dark:text-zinc-100' : ''}`}>
-                  Untung/kg <SortIcon col="keuntungan" />
+                  Untung/kg <SortIcon col="keuntungan" sortBy={sortBy} sortDir={sortDir} />
                 </button>
               </th>
               <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">
                 <button onClick={() => handleSort('dp')} className={`inline-flex items-center gap-1 hover:text-stone-900 dark:hover:text-zinc-200 transition-colors ${sortBy === 'dp' ? 'text-stone-900 dark:text-zinc-100' : ''}`}>
-                  DP Aktif <SortIcon col="dp" />
+                  DP Aktif <SortIcon col="dp" sortBy={sortBy} sortDir={sortDir} />
                 </button>
               </th>
               <th className="text-center px-4 py-3 text-xs font-semibold uppercase tracking-wider text-stone-500">Status</th>

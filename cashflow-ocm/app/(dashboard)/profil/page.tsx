@@ -10,5 +10,5 @@ export default async function ProfilPage() {
   if (!session) redirect('/login')
   const isOwner = (session.user as { role?: string }).role === 'owner'
 
-  return <ProfilClient user={session.user as any} isOwner={isOwner} />
+  return <ProfilClient user={{ ...session.user, role: session.user.role ?? 'viewer' }} isOwner={isOwner} />
 }

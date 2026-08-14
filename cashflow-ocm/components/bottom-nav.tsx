@@ -18,6 +18,7 @@ import { CommandPalette } from '@/components/command-palette'
 import { isFullscreenRoute } from '@/components/mobile-header'
 import { parsePerms, isRouteActive } from '@/lib/nav-routes'
 import { useNavCompact } from '@/lib/nav-visibility-store'
+import type { AuthUser } from '@/lib/auth'
 
 const primaryNav = [
   // Ikon di-REVERT (iterasi 3): Beranda = grid, Penjualan = trending. Gaya bar tetap.
@@ -67,7 +68,7 @@ function NavTab({
   )
 }
 
-export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: any }) {
+export function BottomNav({ isOwner, user }: { isOwner?: boolean; user?: AuthUser }) {
   const pathname = usePathname()
   const [drawerOpen, setDrawerOpen] = useState(false)
 

@@ -2,7 +2,7 @@
 
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
-import { eq, desc, sum, count } from 'drizzle-orm'
+import { eq, sum, count } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { transaksiKas, akunKas } from '@/lib/db/schema'
@@ -62,7 +62,7 @@ const kasCreateSchema = kasSchema.extend({
 
 export async function createTransaksiKas(formData: FormData) {
   const session = await requireSession()
-  requirePermission(session.user.role as any, 'canCreate')
+  requirePermission(session.user.role, 'canCreate')
 
   const data = kasCreateSchema.parse({
     tanggal: formData.get('tanggal'),
@@ -110,7 +110,7 @@ export async function createTransaksiKas(formData: FormData) {
 
 export async function updateTransaksiKas(id: string, formData: FormData) {
   const session = await requireSession()
-  requirePermission(session.user.role as any, 'canEdit')
+  requirePermission(session.user.role, 'canEdit')
 
   const existing = await db.query.transaksiKas.findFirst({ where: (t, { eq }) => eq(t.id, id) })
   if (!existing) throw new Error('Transaksi tidak ditemukan')

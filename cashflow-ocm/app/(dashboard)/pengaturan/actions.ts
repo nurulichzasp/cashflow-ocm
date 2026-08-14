@@ -26,7 +26,7 @@ export async function updateProfile(data: {
     throw new Error('Tidak terautentikasi')
   }
 
-  const updateData: Record<string, any> = {
+  const updateData: Partial<typeof user.$inferInsert> = {
     updatedAt: new Date(),
   }
   if (data.name) updateData.name = data.name

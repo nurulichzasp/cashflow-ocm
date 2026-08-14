@@ -23,23 +23,23 @@ export interface BackupData {
   timestamp: string
   version: string
   tables: {
-    akun_kas: any[]
-    peron: any[]
-    pembelian: any[]
-    penjualan: any[]
-    biaya_operasional: any[]
-    transaksi_kas: any[]
-    modal_peron: any[]
-    activity_log: any[]
+    akun_kas: (typeof akunKas.$inferSelect)[]
+    peron: (typeof peron.$inferSelect)[]
+    pembelian: (typeof pembelian.$inferSelect)[]
+    penjualan: (typeof penjualan.$inferSelect)[]
+    biaya_operasional: (typeof biayaOperasional.$inferSelect)[]
+    transaksi_kas: (typeof transaksiKas.$inferSelect)[]
+    modal_peron: (typeof modalPeron.$inferSelect)[]
+    activity_log: (typeof activityLog.$inferSelect)[]
     // v2.0 — ditambah agar backup bisa direstore UTUH (bukan header saja):
-    pembelian_detail: any[]
-    penjualan_detail: any[]
-    pembelian_foto: any[]
-    biaya_foto: any[]
-    harga_acuan: any[]
-    ppn_bulanan: any[]
-    pph_bulanan: any[]
-    app_settings: any[]
+    pembelian_detail: (typeof pembelianDetail.$inferSelect)[]
+    penjualan_detail: (typeof penjualanDetail.$inferSelect)[]
+    pembelian_foto: (typeof pembelianFoto.$inferSelect)[]
+    biaya_foto: (typeof biayaFoto.$inferSelect)[]
+    harga_acuan: (typeof hargaAcuan.$inferSelect)[]
+    ppn_bulanan: (typeof ppnBulanan.$inferSelect)[]
+    pph_bulanan: (typeof pphBulanan.$inferSelect)[]
+    app_settings: (typeof appSettings.$inferSelect)[]
   }
   summary: {
     totalPembelian: number

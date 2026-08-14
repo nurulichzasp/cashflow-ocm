@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { eq, and, sum, count } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { auth } from '@/lib/auth'
-import { pembelian, pembelianDetail, transaksiKas, akunKas, peron, hargaAcuan, pembelianFoto } from '@/lib/db/schema'
+import { pembelian, pembelianDetail, transaksiKas, akunKas, pembelianFoto } from '@/lib/db/schema'
 import { z } from 'zod'
 import { notifyNewPembelian } from '@/lib/notification'
 import { requirePermission } from '@/lib/permissions'
@@ -97,7 +97,7 @@ export async function createPembelian(data: {
   idempotencyKey?: string
 }) {
   const session = await requireSession()
-  requirePermission(session.user.role as any, 'canCreate')
+  requirePermission(session.user.role, 'canCreate')
   const parsed = pembelianSchema.parse(data)
 
   // W1: 'lunas' tanpa sumber bayar = kas keluar tak tercatat → kas overstated. Tolak
@@ -254,7 +254,7 @@ export async function updatePembelian(id: string, data: {
   fotoUrls?: string[]
 }) {
   const session = await requireSession()
-  requirePermission(session.user.role as any, 'canEdit')
+  requirePermission(session.user.role, 'canEdit')
   const parsed = pembelianSchema.parse(data)
 
   // W1: 'lunas' tanpa sumber bayar = kas keluar tak tercatat → kas overstated. Tolak.

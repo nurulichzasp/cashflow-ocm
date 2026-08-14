@@ -10,6 +10,7 @@ import { LogOut, Menu, X, PanelLeftClose } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
 import { fotoUrl } from '@/lib/foto-url'
+import type { AuthUser } from '@/lib/auth'
 
 // Nav sidebar KONSUMSI APP_ROUTES (lib/nav-routes.ts = satu sumber label/ikon/
 // permission — dulu array hardcode duplikat, risiko desync dgn command palette).
@@ -68,7 +69,7 @@ function getInitials(name?: string): string {
   return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
 }
 
-export function Sidebar({ user, isOwner, onToggle }: { user?: any; isOwner?: boolean; onToggle?: () => void }) {
+export function Sidebar({ user, isOwner, onToggle }: { user?: AuthUser; isOwner?: boolean; onToggle?: () => void }) {
   const pathname = usePathname()
   const router = useRouter()
 
@@ -154,7 +155,7 @@ export function Sidebar({ user, isOwner, onToggle }: { user?: any; isOwner?: boo
   )
 }
 
-export function MobileSidebar({ user, isOwner }: { user?: any; isOwner?: boolean }) {
+export function MobileSidebar({ user, isOwner }: { user?: AuthUser; isOwner?: boolean }) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
   const router = useRouter()

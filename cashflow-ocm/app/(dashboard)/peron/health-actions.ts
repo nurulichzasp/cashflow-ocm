@@ -73,7 +73,7 @@ export async function getPeronHealthDetail(peronId: string) {
 /** Trigger manual rebuild dari tombol "Perbarui". */
 export async function refreshPeronHealth() {
   const session = await requireSession()
-  requirePermission(session.user.role as any, 'canEdit')
+  requirePermission(session.user.role, 'canEdit')
   const res = await rebuildPeronHealth()
   revalidatePath('/peron')
   return res
@@ -93,7 +93,7 @@ export async function createFollowup(input: z.infer<typeof followupSchema>) {
   // Tindak lanjut = catatan operasional (mirip log telepon) → kasir/admin/owner
   // boleh; viewer/akuntan tidak (R2). Lebih longgar dari archive (canEdit) yang
   // bersifat kurasi/manajemen.
-  requirePermission(session.user.role as any, 'canCreate')
+  requirePermission(session.user.role, 'canCreate')
   const data = followupSchema.parse(input)
   await db.insert(peronFollowup).values({
     peronId: data.peronId,
@@ -121,7 +121,7 @@ export async function createFollowup(input: z.infer<typeof followupSchema>) {
 
 export async function archivePeron(peronId: string) {
   const session = await requireSession()
-  requirePermission(session.user.role as any, 'canEdit')
+  requirePermission(session.user.role, 'canEdit')
   await db.update(peronHealth).set({ isArchived: true }).where(eq(peronHealth.peronId, peronId))
   await logActivity({
     userId: session.user.id,

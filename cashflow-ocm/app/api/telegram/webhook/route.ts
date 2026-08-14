@@ -87,6 +87,13 @@ async function handleCommand(cmd: string): Promise<string> {
   }
 }
 
+type TelegramUpdate = {
+  message?: {
+    chat?: { id?: string | number }
+    text?: string
+  }
+}
+
 export async function POST(req: Request) {
   // 1. Verifikasi secret: terima header resmi Telegram
   //    (X-Telegram-Bot-Api-Secret-Token) ATAU ?secret= (legacy), timing-safe.
@@ -99,9 +106,9 @@ export async function POST(req: Request) {
     return new Response('Unauthorized', { status: 401 })
   }
 
-  let update: any
+  let update: TelegramUpdate
   try {
-    update = await req.json()
+    update = await req.json() as TelegramUpdate
   } catch {
     return NextResponse.json({ ok: false, error: 'invalid json' }, { status: 400 })
   }

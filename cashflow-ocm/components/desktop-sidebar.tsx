@@ -3,14 +3,18 @@
 import { useState, useEffect } from 'react'
 import { Sidebar } from '@/components/sidebar'
 import { PanelLeft } from 'lucide-react'
+import type { AuthUser } from '@/lib/auth'
 
-export function DesktopSidebar({ user, isOwner }: { user?: any; isOwner?: boolean }) {
+export function DesktopSidebar({ user, isOwner }: { user?: AuthUser; isOwner?: boolean }) {
   const [collapsed, setCollapsed] = useState(false)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    setMounted(true)
-    if (localStorage.getItem('sidebar-collapsed') === '1') setCollapsed(true)
+    const frame = requestAnimationFrame(() => {
+      setMounted(true)
+      if (localStorage.getItem('sidebar-collapsed') === '1') setCollapsed(true)
+    })
+    return () => cancelAnimationFrame(frame)
   }, [])
 
   function toggle() {
