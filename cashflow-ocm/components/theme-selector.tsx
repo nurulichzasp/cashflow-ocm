@@ -3,7 +3,7 @@
 import { useTheme } from 'next-themes'
 import { Sun, Moon, Monitor } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useEffect, useState } from 'react'
+import { useHydrated } from '@/hooks/use-hydrated'
 
 const options = [
   { value: 'light',  label: 'Terang',    icon: Sun,     desc: 'Selalu terang' },
@@ -13,9 +13,8 @@ const options = [
 
 export function ThemeSelector() {
   const { theme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
-  if (!mounted) return null
+  const hydrated = useHydrated()
+  if (!hydrated) return null
 
   return (
     <div className="flex gap-3" role="radiogroup" aria-label="Pilih tema tampilan">
@@ -53,9 +52,8 @@ export function ThemeSelector() {
 /* Compact 3-icon toggle — for sidebar & bottom nav */
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
-  if (!mounted) return null
+  const hydrated = useHydrated()
+  if (!hydrated) return null
 
   return (
     <div className="flex items-center gap-0.5 p-1 rounded-lg bg-white/[0.05]" role="radiogroup" aria-label="Tema tampilan">

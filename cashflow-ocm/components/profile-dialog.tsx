@@ -94,9 +94,8 @@ export function ProfileDialog({ user, children }: ProfileDialogProps) {
     return () => document.removeEventListener('keydown', onKey)
   }, [showPhotoOptions])
 
-  // Reset local state when dialog is opened/closed to sync with user changes
-  React.useEffect(() => {
-    if (open) {
+  function handleOpenChange(nextOpen: boolean) {
+    if (nextOpen) {
       setNickname(user.nickname || '')
       setFullName(user.fullName || user.name || '')
       setPersonalEmail(user.personalEmail || '')
@@ -106,7 +105,8 @@ export function ProfileDialog({ user, children }: ProfileDialogProps) {
       setShowPhotoOptions(false)
       setErrors({})
     }
-  }, [user, open])
+    setOpen(nextOpen)
+  }
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -183,7 +183,7 @@ export function ProfileDialog({ user, children }: ProfileDialogProps) {
 
   return (
     <>
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogTrigger asChild>{children}</DialogTrigger>
         <DialogContent showCloseButton={false} className="sm:max-w-[500px] dark:bg-card p-0 gap-0 max-h-[90dvh] flex flex-col overflow-hidden">
           {/* Header lengket — judul + tombol Tutup selalu terlihat & mudah ditekan */}

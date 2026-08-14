@@ -1,40 +1,41 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
+
+function subscribeToConnection(callback: () => void) {
+  const handleOnline = () => {
+    callback()
+    // Trigger sync when coming back online (Background Sync API — belum ada
+    // di lib DOM bawaan, jadi akses lewat cast aman)
+    if ('serviceWorker' in navigator && 'SyncManager' in window) {
+      navigator.serviceWorker.ready.then((registration) => {
+        return (registration as unknown as { sync: { register(tag: string): Promise<void> } })
+          .sync.register('sync-offline-queue')
+      }).catch((error) => {
+        console.error('[App] Background sync registration failed:', error)
+      })
+    }
+  }
+  const handleOffline = () => callback()
+
+  window.addEventListener('online', handleOnline)
+  window.addEventListener('offline', handleOffline)
+  return () => {
+    window.removeEventListener('online', handleOnline)
+    window.removeEventListener('offline', handleOffline)
+  }
+}
+
+const getOnlineSnapshot = () => navigator.onLine
+const getServerOnlineSnapshot = () => true
 
 export function useOffline() {
-  const [isOnline, setIsOnline] = useState(true)
+  const isOnline = useSyncExternalStore(
+    subscribeToConnection,
+    getOnlineSnapshot,
+    getServerOnlineSnapshot,
+  )
   const [swRegistered, setSwRegistered] = useState(false)
-
-  useEffect(() => {
-    // Set initial state
-    setIsOnline(navigator.onLine)
-
-    // Listen for online/offline events
-    const handleOnline = () => {
-      setIsOnline(true)
-      // Trigger sync when coming back online (Background Sync API — belum ada
-      // di lib DOM bawaan, jadi akses lewat cast aman)
-      if ('serviceWorker' in navigator && 'SyncManager' in window) {
-        navigator.serviceWorker.ready.then((registration) => {
-          ;(registration as unknown as { sync: { register(tag: string): Promise<void> } })
-            .sync.register('sync-offline-queue')
-        })
-      }
-    }
-
-    const handleOffline = () => {
-      setIsOnline(false)
-    }
-
-    window.addEventListener('online', handleOnline)
-    window.addEventListener('offline', handleOffline)
-
-    return () => {
-      window.removeEventListener('online', handleOnline)
-      window.removeEventListener('offline', handleOffline)
-    }
-  }, [])
 
   // Register service worker
   useEffect(() => {
