@@ -25,7 +25,7 @@ interface Props {
   stats: { totalCount: number; totalTonase: number; totalBeli: number; totalJual: number; totalUntung: number; jumlahBelum: number }
   canEdit: boolean
   canDelete: boolean
-  peronOptions: Array<{ id: string; nama: string; keuntunganPerKg: number }>
+  peronOptions: Array<{ id: string; nama: string; keuntunganPerKg: number; tarif?: import('@/lib/harga').TarifPeronRingkas[] }>
   akunOptions: Array<{ id: string; nama: string; tipe: string }>
 }
 

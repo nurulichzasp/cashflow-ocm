@@ -1,32 +1,19 @@
 'use server'
 
-import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { eq, sum, count } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { auth } from '@/lib/auth'
-import { biayaOperasional, transaksiKas, biayaFoto } from '@/lib/db/schema'
+import { biayaOperasional, transaksiKas, biayaFoto, akunKas } from '@/lib/db/schema'
 import { and } from 'drizzle-orm'
 import { LIST_PAGE_SIZE } from '@/lib/pagination'
 import { z } from 'zod'
 import { notifyNewBiaya } from '@/lib/notification'
-import { requirePermission } from '@/lib/permissions'
+import { requireModuleAction, requireModuleSession, requireOwner } from '@/lib/server-auth'
 import { logActivity, describeActivity } from '@/lib/audit'
-
-async function requireSession() {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session) throw new Error('Tidak terautentikasi')
-  return session
-}
-
-async function requireOwner() {
-  const session = await requireSession()
-  if (session.user.role !== 'owner') throw new Error('Hanya owner yang dapat melakukan aksi ini')
-  return session
-}
+import { isoDateSchema } from '@/lib/validation'
 
 const biayaSchema = z.object({
-  tanggal: z.string().min(1, 'Tanggal wajib diisi'),
+  tanggal: isoDateSchema,
   kategori: z.enum(['gaji', 'solar', 'transport', 'lainnya']),
   kategoriLain: z.string().optional(),
   jumlah: z.coerce.number().int().positive('Jumlah harus positif'),
@@ -48,8 +35,7 @@ function labelKategori(kategori: string, kategoriLain?: string | null): string {
 }
 
 export async function createBiayaOperasional(formData: FormData) {
-  const session = await requireSession()
-  requirePermission(session.user.role, 'canCreate')
+  const session = await requireModuleAction('biaya', 'canCreate')
 
   const data = biayaSchema.parse({
     tanggal: formData.get('tanggal'),
@@ -60,6 +46,8 @@ export async function createBiayaOperasional(formData: FormData) {
     catatan: formData.get('catatan') || undefined,
   })
   const kategoriLain = resolveKategoriLain(data.kategori, data.kategoriLain)
+  const akun = await db.select({ id: akunKas.id }).from(akunKas).where(eq(akunKas.id, data.akunSumberId)).limit(1)
+  if (!akun[0]) throw new Error('Akun sumber biaya tidak ditemukan')
 
   // Foto nota dikirim sebagai JSON array string lewat FormData
   const fotoUrls: string[] = (() => {
@@ -150,8 +138,7 @@ export async function createBiayaOperasional(formData: FormData) {
 }
 
 export async function updateBiayaOperasional(id: string, formData: FormData) {
-  const session = await requireSession()
-  requirePermission(session.user.role, 'canEdit')
+  const session = await requireModuleAction('biaya', 'canEdit')
 
   const data = biayaSchema.parse({
     tanggal: formData.get('tanggal'),
@@ -266,7 +253,7 @@ export async function getBiayaList(opts?: {
   offset?: number
   limit?: number
 }) {
-  await requireSession()
+  await requireModuleSession('biaya')
   const { dari, sampai, offset, limit } = opts ?? {}
   const ranged = Boolean(dari || sampai)
   return db.query.biayaOperasional.findMany({
@@ -287,7 +274,7 @@ export async function getBiayaList(opts?: {
 // Agregat all-time via SQL (bukan dari baris yang dimuat klien) — total entri &
 // total pengeluaran, dipakai hero + empty-state + LoadMoreBar saat tanpa filter.
 export async function getBiayaStats() {
-  await requireSession()
+  await requireModuleSession('biaya')
   const [row] = await db
     .select({ totalCount: count(), total: sum(biayaOperasional.jumlah) })
     .from(biayaOperasional)

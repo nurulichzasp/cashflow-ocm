@@ -1,17 +1,21 @@
 import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
-import { getHargaList } from './actions'
+import { getHargaList, getTarifPeronList } from './actions'
+import { getPeronList } from '../peron/actions'
 import { HargaTable } from './harga-table'
 import { HargaFormDialog } from './harga-form-dialog'
 import { FloatingFab } from '@/components/fab'
 import { formatRupiah, formatTanggal } from '@/lib/format'
+import { TarifPeronManager } from './tarif-peron-manager'
 
 export const dynamic = 'force-dynamic'
 
 export default async function HargaPage() {
-  const [session, hargaList] = await Promise.all([
+  const [session, hargaList, tarifList, peronList] = await Promise.all([
     auth.api.getSession({ headers: await headers() }),
     getHargaList(),
+    getTarifPeronList(),
+    getPeronList(),
   ])
 
   const isOwner = session?.user.role === 'owner'
@@ -47,6 +51,20 @@ export default async function HargaPage() {
       )}
 
       <HargaTable hargaList={hargaList} isOwner={isOwner} />
+
+      <TarifPeronManager
+        isOwner={isOwner}
+        perons={peronList.filter((p) => p.status === 'aktif').map((p) => ({ id: p.id, nama: p.nama }))}
+        rows={tarifList.map((t) => ({
+          id: t.id,
+          peronId: t.peronId,
+          peronNama: t.peron.nama,
+          tanggalBerlaku: t.tanggalBerlaku,
+          kelebihanPerKg: t.kelebihanPerKg,
+          brdlSamaTbs: t.brdlSamaTbs,
+          catatan: t.catatan,
+        }))}
+      />
     </div>
   )
 }

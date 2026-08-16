@@ -4,13 +4,14 @@ import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { eq, lte, desc, and } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { hargaAcuan } from '@/lib/db/schema'
+import { hargaAcuan, tarifPeron } from '@/lib/db/schema'
 import { auth } from '@/lib/auth'
 import { z } from 'zod'
 import { requirePermission } from '@/lib/permissions'
 import { logActivity, describeActivity } from '@/lib/audit'
 import { SELISIH_JUAL_BGA } from '@/lib/harga'
 import { todayString } from '@/lib/format'
+import { isoDateSchema } from '@/lib/validation'
 
 async function requireSession() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -25,12 +26,75 @@ async function requireOwner() {
 }
 
 const hargaSchema = z.object({
-  tanggalBerlaku: z.string().min(1, 'Tanggal wajib diisi'),
+  tanggalBerlaku: isoDateSchema,
   produk: z.enum(['TBS', 'BRDL KTWM', 'BRDL TRYM', 'BRDL LMDM']),
   hargaLapangan: z.coerce.number().int().positive('Harga lapangan harus positif'),
   selisihJualBga: z.coerce.number().int().min(0).default(SELISIH_JUAL_BGA),
   catatan: z.string().optional(),
 })
+
+const tarifPeronSchema = z.object({
+  peronId: z.string().min(1, 'Peron wajib dipilih'),
+  tanggalBerlaku: isoDateSchema,
+  kelebihanPerKg: z.coerce.number().int().min(0).max(SELISIH_JUAL_BGA),
+  brdlSamaTbs: z.boolean(),
+  catatan: z.string().trim().max(200).optional(),
+})
+
+export async function upsertTarifPeron(input: z.infer<typeof tarifPeronSchema>) {
+  const session = await requireOwner()
+  const data = tarifPeronSchema.parse(input)
+  await db
+    .insert(tarifPeron)
+    .values({ ...data, catatan: data.catatan || null, createdBy: session.user.id })
+    .onConflictDoUpdate({
+      target: [tarifPeron.peronId, tarifPeron.tanggalBerlaku],
+      set: {
+        kelebihanPerKg: data.kelebihanPerKg,
+        brdlSamaTbs: data.brdlSamaTbs,
+        catatan: data.catatan || null,
+        createdBy: session.user.id,
+        createdAt: new Date(),
+      },
+    })
+  await logActivity({
+    userId: session.user.id,
+    action: 'update',
+    entityType: 'tarif_peron',
+    entityId: `${data.peronId}:${data.tanggalBerlaku}`,
+    description: `Atur kelebihan peron Rp${data.kelebihanPerKg}/kg mulai ${data.tanggalBerlaku}`,
+    newValues: data,
+  })
+  revalidatePath('/harga')
+  revalidatePath('/pembelian')
+  return { success: true }
+}
+
+export async function deleteTarifPeron(id: string) {
+  const session = await requireOwner()
+  const [existing] = await db.select().from(tarifPeron).where(eq(tarifPeron.id, id)).limit(1)
+  if (!existing) throw new Error('Tarif peron tidak ditemukan')
+  await db.delete(tarifPeron).where(eq(tarifPeron.id, id))
+  await logActivity({
+    userId: session.user.id,
+    action: 'delete',
+    entityType: 'tarif_peron',
+    entityId: id,
+    description: `Hapus jadwal kelebihan peron ${existing.tanggalBerlaku}`,
+    oldValues: existing,
+  })
+  revalidatePath('/harga')
+  revalidatePath('/pembelian')
+  return { success: true }
+}
+
+export async function getTarifPeronList() {
+  await requireSession()
+  return db.query.tarifPeron.findMany({
+    orderBy: (t, { desc }) => [desc(t.tanggalBerlaku), desc(t.createdAt)],
+    with: { peron: true },
+  })
+}
 
 export async function createHargaAcuan(formData: FormData) {
   const session = await requireSession()
@@ -61,7 +125,7 @@ export async function createHargaAcuan(formData: FormData) {
 }
 
 const hargaBatchSchema = z.object({
-  tanggalBerlaku: z.string().min(1, 'Tanggal wajib diisi'),
+  tanggalBerlaku: isoDateSchema,
   tbs: z.coerce.number().int().positive('Harga TBS harus > 0'),
   brdlKtwm: z.coerce.number().int().positive('Harga BRDL KTWM harus > 0'),
   brdlTrym: z.coerce.number().int().positive('Harga BRDL TRYM harus > 0'),

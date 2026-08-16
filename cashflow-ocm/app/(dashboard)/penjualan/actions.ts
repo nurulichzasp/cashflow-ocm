@@ -1,36 +1,23 @@
 'use server'
 
-import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { eq, desc, gte, lte, sum, count, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { auth } from '@/lib/auth'
-import { penjualan, transaksiKas, akunKas } from '@/lib/db/schema'
+import { penjualan, penjualanDetail, transaksiKas, akunKas } from '@/lib/db/schema'
 import { and } from 'drizzle-orm'
 import { LIST_PAGE_SIZE } from '@/lib/pagination'
 import { z } from 'zod'
 import { notifyNewPenjualan } from '@/lib/notification'
-import { requirePermission } from '@/lib/permissions'
+import { requireModuleAction, requireModuleSession, requireOwner } from '@/lib/server-auth'
 import { logActivity, describeActivity } from '@/lib/audit'
-
-async function requireSession() {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session) throw new Error('Tidak terautentikasi')
-  return session
-}
-
-async function requireOwner() {
-  const session = await requireSession()
-  if (session.user.role !== 'owner') throw new Error('Hanya owner yang dapat melakukan aksi ini')
-  return session
-}
+import { isoDateSchema, optionalIsoDateSchema } from '@/lib/validation'
 
 const penjualanSchema = z.object({
-  tanggal: z.string().min(1, 'Tanggal wajib diisi'),
+  tanggal: isoDateSchema,
   noBast: z.string().optional(),
   noInvoice: z.string().optional(),
   statusBayar: z.enum(['belum', 'lunas']).default('belum'),
-  tanggalBayarBga: z.string().optional(),
+  tanggalBayarBga: optionalIsoDateSchema,
   // .int(): rupiah = bilangan bulat — jalur form sudah Math.round (parseRpInput),
   // ini menutup jalur programatik yang mengirim pecahan langsung.
   totalBersih: z.coerce.number().int('Rupiah harus bilangan bulat').positive('Total bersih harus positif').optional(),
@@ -53,8 +40,7 @@ async function getAkunUtama() {
 }
 
 export async function createPenjualan(formData: FormData) {
-  const session = await requireSession()
-  requirePermission(session.user.role, 'canCreate')
+  const session = await requireModuleAction('penjualan', 'canCreate')
 
   const data = penjualanSchema.parse({
     tanggal: formData.get('tanggal'),
@@ -67,6 +53,9 @@ export async function createPenjualan(formData: FormData) {
     catatan: formData.get('catatan') || undefined,
   })
   const idempotencyKey = formData.get('idempotencyKey')?.toString() || undefined
+  const akunUtama = data.statusBayar === 'lunas' ? await getAkunUtama() : undefined
+  if (data.statusBayar === 'lunas' && !data.totalNilai) throw new Error('Penjualan lunas wajib memiliki total nilai')
+  if (data.statusBayar === 'lunas' && !akunUtama) throw new Error('Akun penerimaan utama belum tersedia. Buat akun kas terlebih dahulu.')
 
   // Anti-dobel: tolak penjualan identik (jumlah & status sama) dari user yang sama
   // dalam ~60 detik terakhir (double-submit / retry sinyal jelek).
@@ -96,7 +85,6 @@ export async function createPenjualan(formData: FormData) {
     // Jika langsung lunas → catat uang masuk ke Rek BRI CV OCM
     // Jumlah = totalNilai (total yang dibayar BGA, termasuk PPN−PPH)
     if (data.statusBayar === 'lunas' && data.totalNilai) {
-      const akunUtama = await getAkunUtama()
       if (akunUtama) {
         await tx.insert(transaksiKas).values({
           tanggal: data.tanggalBayarBga || data.tanggal,
@@ -148,16 +136,19 @@ export async function createPenjualan(formData: FormData) {
 }
 
 export async function updatePenjualanStatus(id: string, statusBayar: 'belum' | 'lunas', tanggalBayarBga?: string) {
-  const session = await requireSession()
-  requirePermission(session.user.role, 'canEdit')
+  const session = await requireModuleAction('penjualan', 'canEdit')
 
   // Baca data penjualan untuk tahu totalNilai
   const existing = await db.query.penjualan.findFirst({ where: (t, { eq }) => eq(t.id, id) })
   if (!existing) throw new Error('Penjualan tidak ditemukan')
+  const tanggalBayar = tanggalBayarBga ? isoDateSchema.parse(tanggalBayarBga) : undefined
+  const akunUtama = statusBayar === 'lunas' ? await getAkunUtama() : undefined
+  if (statusBayar === 'lunas' && !existing.totalNilai) throw new Error('Penjualan lunas wajib memiliki total nilai')
+  if (statusBayar === 'lunas' && !akunUtama) throw new Error('Akun penerimaan utama belum tersedia. Buat akun kas terlebih dahulu.')
 
   await db.transaction(async (tx) => {
     await tx.update(penjualan)
-      .set({ statusBayar, tanggalBayarBga: tanggalBayarBga ?? null })
+      .set({ statusBayar, tanggalBayarBga: tanggalBayar ?? null })
       .where(eq(penjualan.id, id))
 
     // Hapus transaksi kas lama terkait penjualan ini (jika ada)
@@ -167,10 +158,9 @@ export async function updatePenjualanStatus(id: string, statusBayar: 'belum' | '
 
     // Jika statusBayar = lunas → buat transaksi kas masuk
     if (statusBayar === 'lunas' && existing.totalNilai) {
-      const akunUtama = await getAkunUtama()
       if (akunUtama) {
         await tx.insert(transaksiKas).values({
-          tanggal: tanggalBayarBga || existing.tanggal,
+          tanggal: tanggalBayar || existing.tanggal,
           akunId: akunUtama.id,
           arah: 'masuk',
           jumlah: existing.totalNilai,
@@ -193,7 +183,7 @@ export async function updatePenjualanStatus(id: string, statusBayar: 'belum' | '
     entityId: id,
     description: describeActivity('update', 'penjualan', `status → ${statusBayar}${existing.noInvoice ? ` (inv ${existing.noInvoice})` : ''}`),
     oldValues: { statusBayar: existing.statusBayar, tanggalBayarBga: existing.tanggalBayarBga },
-    newValues: { statusBayar, tanggalBayarBga: tanggalBayarBga ?? null },
+    newValues: { statusBayar, tanggalBayarBga: tanggalBayar ?? null },
   })
 
   revalidatePath('/penjualan')
@@ -203,8 +193,7 @@ export async function updatePenjualanStatus(id: string, statusBayar: 'belum' | '
 }
 
 export async function updatePenjualan(id: string, formData: FormData) {
-  const session = await requireSession()
-  requirePermission(session.user.role, 'canEdit')
+  const session = await requireModuleAction('penjualan', 'canEdit')
 
   const data = penjualanSchema.parse({
     tanggal: formData.get('tanggal'),
@@ -219,6 +208,9 @@ export async function updatePenjualan(id: string, formData: FormData) {
 
   const existing = await db.query.penjualan.findFirst({ where: (t, { eq }) => eq(t.id, id) })
   if (!existing) throw new Error('Penjualan tidak ditemukan')
+  const akunUtama = data.statusBayar === 'lunas' ? await getAkunUtama() : undefined
+  if (data.statusBayar === 'lunas' && !data.totalNilai) throw new Error('Penjualan lunas wajib memiliki total nilai')
+  if (data.statusBayar === 'lunas' && !akunUtama) throw new Error('Akun penerimaan utama belum tersedia. Buat akun kas terlebih dahulu.')
 
   await db.transaction(async (tx) => {
     await tx.update(penjualan).set({
@@ -235,7 +227,6 @@ export async function updatePenjualan(id: string, formData: FormData) {
     // Sinkronkan kas: hapus mutasi lama, buat ulang jika lunas
     await tx.delete(transaksiKas).where(and(eq(transaksiKas.refTabel, 'penjualan'), eq(transaksiKas.refId, id)))
     if (data.statusBayar === 'lunas' && data.totalNilai) {
-      const akunUtama = await getAkunUtama()
       if (akunUtama) {
         await tx.insert(transaksiKas).values({
           tanggal: data.tanggalBayarBga || data.tanggal,
@@ -276,6 +267,7 @@ export async function deletePenjualan(id: string) {
 
   await db.transaction(async (tx) => {
     await tx.delete(transaksiKas).where(and(eq(transaksiKas.refTabel, 'penjualan'), eq(transaksiKas.refId, id)))
+    await tx.delete(penjualanDetail).where(eq(penjualanDetail.penjualanId, id))
     await tx.delete(penjualan).where(eq(penjualan.id, id))
   })
 
@@ -305,7 +297,7 @@ export async function getPenjualanList(opts?: {
   offset?: number
   limit?: number
 }) {
-  await requireSession()
+  await requireModuleSession('penjualan')
   const { dari, sampai, offset, limit } = opts ?? {}
   const ranged = Boolean(dari || sampai)
   const conds = [
@@ -325,7 +317,7 @@ export async function getPenjualanList(opts?: {
 // totalPpn mereplikasi persis logika hero tabel: per baris, selisih
 // (totalNilai − totalBersih) HANYA bila nilai > bersih (null dianggap 0).
 export async function getPenjualanStats() {
-  await requireSession()
+  await requireModuleSession('penjualan')
   const [row] = await db
     .select({
       totalCount: count(),

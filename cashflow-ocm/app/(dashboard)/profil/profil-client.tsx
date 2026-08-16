@@ -1,8 +1,10 @@
 'use client'
+/* eslint-disable @next/next/no-img-element -- avatar memakai proxy foto privat terautentikasi */
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { signOut } from '@/lib/auth-client'
+import { clearPrivateBrowserCache } from '@/lib/clear-private-cache'
 import { ProfileDialog } from '@/components/profile-dialog'
 import { getSettingsGroups } from '@/lib/settings-groups'
 import { fotoUrl } from '@/lib/foto-url'
@@ -40,6 +42,7 @@ export function ProfilClient({ user, isOwner }: { user: ProfilUser; isOwner: boo
 
   async function handleLogout() {
     await signOut()
+    await clearPrivateBrowserCache()
     router.push('/')
     router.refresh()
   }

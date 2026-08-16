@@ -5,7 +5,7 @@ import { or, eq, desc, sql, type SQL } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { peron, pembelian, penjualan } from '@/lib/db/schema'
-import { hasPermission } from '@/lib/permissions'
+import { hasUserPermission } from '@/lib/permissions'
 
 export type PeronHit = { id: string; nama: string; kode: number | null; kontak: string | null }
 export type PembelianHit = { id: string; tanggal: string; kategori: string; totalBeli: number; peronNama: string | null }
@@ -36,7 +36,9 @@ export async function searchAll(rawQuery: string): Promise<SearchResults> {
 
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session) return EMPTY
-  const canFinance = hasPermission(session.user.role, 'canViewFinance')
+  const canPembelian = hasUserPermission(session.user, 'canViewFinance', 'pembelian')
+  const canPenjualan = hasUserPermission(session.user, 'canViewFinance', 'penjualan')
+  const canFinance = canPembelian || canPenjualan
 
   const pat = `%${cleaned}%`
   const lk = (col: unknown): SQL => sql`lower(${col}) like ${pat}`
@@ -51,7 +53,7 @@ export async function searchAll(rawQuery: string): Promise<SearchResults> {
   let pembelianRows: PembelianHit[] = []
   let penjualanRows: PenjualanHit[] = []
 
-  if (canFinance) {
+  if (canPembelian) {
     pembelianRows = await db
       .select({
         id: pembelian.id,
@@ -76,7 +78,9 @@ export async function searchAll(rawQuery: string): Promise<SearchResults> {
       )
       .orderBy(desc(pembelian.tanggal))
       .limit(LIMIT)
+  }
 
+  if (canPenjualan) {
     const penjualanRaw = await db
       .select({
         id: penjualan.id,

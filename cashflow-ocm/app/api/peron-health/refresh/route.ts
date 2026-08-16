@@ -16,16 +16,13 @@ function safeEqual(a: string | null | undefined, b: string | null | undefined): 
 /**
  * Rebuild kesehatan peron. Target Vercel Cron (harian) + trigger manual.
  *   Cron: header `Authorization: Bearer <CRON_SECRET>`
- *   Manual: GET /api/peron-health/refresh?secret=<CRON_SECRET>
+ *   Manual: header `Authorization: Bearer <CRON_SECRET>`
  * Wajib secret di SEMUA environment (endpoint menyentuh data keuangan).
  */
 export async function GET(request: Request) {
   const authHeader = request.headers.get('authorization')
-  const secretParam = new URL(request.url).searchParams.get('secret')
   const cronSecret = process.env.CRON_SECRET
-  const ok =
-    !!cronSecret &&
-    (safeEqual(authHeader, `Bearer ${cronSecret}`) || safeEqual(secretParam, cronSecret))
+  const ok = !!cronSecret && safeEqual(authHeader, `Bearer ${cronSecret}`)
   if (!ok) return new Response('Unauthorized', { status: 401 })
 
   try {

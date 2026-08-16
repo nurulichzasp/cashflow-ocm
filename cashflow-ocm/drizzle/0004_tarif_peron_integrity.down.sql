@@ -1,0 +1,16 @@
+DROP INDEX IF EXISTS `activity_created_idx`;
+DROP INDEX IF EXISTS `harga_produk_tanggal_idx`;
+DROP INDEX IF EXISTS `modal_peron_tanggal_idx`;
+DROP INDEX IF EXISTS `kas_ref_unique_idx`;
+DROP INDEX IF EXISTS `kas_akun_arah_idx`;
+DROP INDEX IF EXISTS `kas_tanggal_created_idx`;
+DROP INDEX IF EXISTS `biaya_foto_parent_idx`;
+DROP INDEX IF EXISTS `biaya_akun_idx`;
+DROP INDEX IF EXISTS `biaya_tanggal_created_idx`;
+DROP INDEX IF EXISTS `penjualan_tanggal_created_idx`;
+DROP INDEX IF EXISTS `pembelian_foto_parent_idx`;
+DROP INDEX IF EXISTS `pembelian_detail_parent_order_idx`;
+DROP INDEX IF EXISTS `pembelian_status_idx`;
+DROP INDEX IF EXISTS `pembelian_peron_idx`;
+DROP INDEX IF EXISTS `pembelian_tanggal_created_idx`;
+DROP TABLE IF EXISTS `tarif_peron`;

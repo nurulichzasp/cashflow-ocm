@@ -4,8 +4,7 @@ import Link from 'next/link'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
-import { hasPermission } from '@/lib/permissions'
-import { parsePerms } from '@/lib/nav-routes'
+import { hasUserPermission } from '@/lib/permissions'
 import { db } from '@/lib/db'
 import { akunKas, transaksiKas, pembelian } from '@/lib/db/schema'
 import { sum, gte } from 'drizzle-orm'
@@ -120,21 +119,28 @@ export default async function DashboardPage() {
   // SEBELUM query agar datanya tak ikut dihitung untuk yang tak berhak.
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session) redirect('/login')
-  if (!hasPermission(session.user.role, 'canViewFinance')) redirect('/pembelian')
+  const canViewFinance = ['kas', 'pembelian', 'penjualan', 'biaya'].every((module) =>
+    hasUserPermission(session.user, 'canViewFinance', module as import('@/lib/permissions').ModulePermission),
+  )
+  if (!canViewFinance) redirect('/pembelian')
 
-  const role = session.user.role
-  const isOwner = role === 'owner'
-  const canCreate = hasPermission(role, 'canCreate')
-  const perms = parsePerms((session.user as { permissions?: string | null }).permissions)
+  const canCreate = ['pembelian', 'penjualan', 'biaya'].some((module) =>
+    hasUserPermission(session.user, 'canCreate', module as import('@/lib/permissions').ModulePermission),
+  )
 
   const data = await getDashboardData()
 
   // Opsi form untuk aksi cepat (hanya difetch bila role boleh create).
-  let peronOptions: { id: string; nama: string; keuntunganPerKg: number }[] = []
+  let peronOptions: { id: string; nama: string; keuntunganPerKg: number; tarif: import('@/lib/harga').TarifPeronRingkas[] }[] = []
   const akunOptions = data.akunSaldo.map((a) => ({ id: a.id, nama: a.nama, tipe: a.tipe }))
   if (canCreate) {
     const peronList = await getPeronList()
-    peronOptions = peronList.map((p) => ({ id: p.id, nama: p.nama, keuntunganPerKg: p.keuntunganPerKg }))
+    peronOptions = peronList.map((p) => ({
+      id: p.id,
+      nama: p.nama,
+      keuntunganPerKg: p.keuntunganPerKg,
+      tarif: p.tarif.map((t) => ({ tanggalBerlaku: t.tanggalBerlaku, kelebihanPerKg: t.kelebihanPerKg, brdlSamaTbs: t.brdlSamaTbs })),
+    }))
   }
 
   // Akun utama (CV OCM) ditandai — selaras hierarki halaman /kas.
@@ -170,10 +176,10 @@ export default async function DashboardPage() {
         <QuickActions
           peronOptions={peronOptions}
           akunOptions={akunOptions}
-          showPembelian={isOwner || perms.pembelian !== false}
-          showPenjualan={isOwner || perms.penjualan !== false}
-          showHarga
-          showBiaya={isOwner || perms.biaya !== false}
+          showPembelian={hasUserPermission(session.user, 'canCreate', 'pembelian')}
+          showPenjualan={hasUserPermission(session.user, 'canCreate', 'penjualan')}
+          showHarga={hasUserPermission(session.user, 'canCreate')}
+          showBiaya={hasUserPermission(session.user, 'canCreate', 'biaya')}
         />
       )}
 

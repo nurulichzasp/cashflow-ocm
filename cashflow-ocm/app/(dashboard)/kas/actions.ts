@@ -1,27 +1,14 @@
 'use server'
 
-import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { eq, sum, count } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { auth } from '@/lib/auth'
 import { transaksiKas, akunKas } from '@/lib/db/schema'
 import { LIST_PAGE_SIZE } from '@/lib/pagination'
 import { z } from 'zod'
-import { requirePermission } from '@/lib/permissions'
+import { requireModuleAction, requireModuleSession, requireOwner } from '@/lib/server-auth'
 import { logActivity, describeActivity } from '@/lib/audit'
-
-async function requireSession() {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session) throw new Error('Tidak terautentikasi')
-  return session
-}
-
-async function requireOwner() {
-  const session = await requireSession()
-  if (session.user.role !== 'owner') throw new Error('Hanya owner yang dapat melakukan aksi ini')
-  return session
-}
+import { isoDateSchema } from '@/lib/validation'
 
 // Kategori yang WAJAR untuk entri kas MANUAL. Kategori lain — penerimaan_bga,
 // bayar_peron, modal_peron, kembali_modal, biaya_operasional — HANYA dibuat
@@ -33,7 +20,7 @@ async function requireOwner() {
 const KATEGORI_KAS_MANUAL = ['tarik_bri', 'penyesuaian', 'lainnya'] as const
 
 const kasSchema = z.object({
-  tanggal: z.string().min(1, 'Tanggal wajib diisi'),
+  tanggal: isoDateSchema,
   akunId: z.string().min(1, 'Akun wajib dipilih'),
   arah: z.enum(['masuk', 'keluar']),
   jumlah: z.coerce.number().int().positive('Jumlah harus positif'),
@@ -61,8 +48,7 @@ const kasCreateSchema = kasSchema.extend({
 })
 
 export async function createTransaksiKas(formData: FormData) {
-  const session = await requireSession()
-  requirePermission(session.user.role, 'canCreate')
+  const session = await requireModuleAction('kas', 'canCreate')
 
   const data = kasCreateSchema.parse({
     tanggal: formData.get('tanggal'),
@@ -72,6 +58,8 @@ export async function createTransaksiKas(formData: FormData) {
     kategori: formData.get('kategori'),
     catatan: formData.get('catatan') || undefined,
   })
+  const akun = await db.select({ id: akunKas.id }).from(akunKas).where(eq(akunKas.id, data.akunId)).limit(1)
+  if (!akun[0]) throw new Error('Akun kas tidak ditemukan')
 
   // Anti-dobel: tolak transaksi kas manual identik dari user yang sama dalam ~60 detik.
   const recentCutoff = new Date(Date.now() - 60_000)
@@ -109,8 +97,7 @@ export async function createTransaksiKas(formData: FormData) {
 }
 
 export async function updateTransaksiKas(id: string, formData: FormData) {
-  const session = await requireSession()
-  requirePermission(session.user.role, 'canEdit')
+  const session = await requireModuleAction('kas', 'canEdit')
 
   const existing = await db.query.transaksiKas.findFirst({ where: (t, { eq }) => eq(t.id, id) })
   if (!existing) throw new Error('Transaksi tidak ditemukan')
@@ -128,6 +115,8 @@ export async function updateTransaksiKas(id: string, formData: FormData) {
     kategori: formData.get('kategori'),
     catatan: formData.get('catatan') || undefined,
   })
+  const akun = await db.select({ id: akunKas.id }).from(akunKas).where(eq(akunKas.id, data.akunId)).limit(1)
+  if (!akun[0]) throw new Error('Akun kas tidak ditemukan')
 
   // Boleh mempertahankan kategori LAMA (entri lawas mungkin sudah berlabel apa
   // pun), tapi TIDAK boleh MENGUBAH ke kategori otomatis — itu ranah sistem.
@@ -188,7 +177,7 @@ export async function deleteTransaksiKas(id: string) {
 }
 
 export async function getAkunKasList() {
-  await requireSession()
+  await requireModuleSession('kas')
   return db.select().from(akunKas).orderBy(akunKas.urutan)
 }
 
@@ -201,7 +190,7 @@ export async function getKasTransactions(opts?: {
   offset?: number
   limit?: number
 }) {
-  await requireSession()
+  await requireModuleSession('kas')
   const { dari, sampai, offset, limit } = opts ?? {}
   const ranged = Boolean(dari || sampai)
   const rows = await db.query.transaksiKas.findMany({
@@ -224,7 +213,7 @@ export async function getKasTransactions(opts?: {
 // GROUP BY (akunId, arah) sekaligus memberi total masuk/keluar, jumlah baris,
 // dan net mutasi per akun untuk kartu Saldo Rekening.
 export async function getKasStats() {
-  await requireSession()
+  await requireModuleSession('kas')
   const grouped = await db
     .select({
       akunId: transaksiKas.akunId,

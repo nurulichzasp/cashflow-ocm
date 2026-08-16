@@ -33,7 +33,7 @@ interface Props {
 export function ModalFormDialog({ peronId, peronNama, akunOptions = [], children, open: openProp, onOpenChange }: Props) {
   const [openInternal, setOpenInternal] = useState(false)
   const open = openProp ?? openInternal
-  const setOpen = (v: boolean) => { onOpenChange ? onOpenChange(v) : setOpenInternal(v) }
+  const setOpen = (v: boolean) => { if (onOpenChange) onOpenChange(v); else setOpenInternal(v) }
   const [loading, setLoading] = useState(false)
   const [idemKey, setIdemKey] = useState(() => crypto.randomUUID())
   const [jenis, setJenis] = useState<'tambah' | 'kurang' | 'kembali'>('tambah')

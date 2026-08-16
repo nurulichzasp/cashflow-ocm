@@ -3,19 +3,7 @@
 import { useEffect, useState, useSyncExternalStore } from 'react'
 
 function subscribeToConnection(callback: () => void) {
-  const handleOnline = () => {
-    callback()
-    // Trigger sync when coming back online (Background Sync API — belum ada
-    // di lib DOM bawaan, jadi akses lewat cast aman)
-    if ('serviceWorker' in navigator && 'SyncManager' in window) {
-      navigator.serviceWorker.ready.then((registration) => {
-        return (registration as unknown as { sync: { register(tag: string): Promise<void> } })
-          .sync.register('sync-offline-queue')
-      }).catch((error) => {
-        console.error('[App] Background sync registration failed:', error)
-      })
-    }
-  }
+  const handleOnline = () => callback()
   const handleOffline = () => callback()
 
   window.addEventListener('online', handleOnline)
@@ -45,7 +33,7 @@ export function useOffline() {
 
     navigator.serviceWorker
       .register('/sw.js')
-      .then((registration) => {
+      .then(() => {
         console.log('[App] Service Worker registered')
         setSwRegistered(true)
       })

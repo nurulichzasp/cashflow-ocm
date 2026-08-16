@@ -6,6 +6,7 @@ import { BiayaFormDialog } from './biaya-form-dialog'
 import { FloatingFab } from '@/components/fab'
 import { db } from '@/lib/db'
 import { akunKas } from '@/lib/db/schema'
+import { hasUserPermission } from '@/lib/permissions'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,12 +19,13 @@ export default async function BiayaPage() {
   ])
 
   const isOwner = session?.user.role === 'owner'
+  const canCreate = session ? hasUserPermission(session.user, 'canCreate', 'biaya') : false
   const akunOptions = akunList.map((a) => ({ id: a.id, nama: a.nama, tipe: a.tipe }))
 
   // Hero "Total Pengeluaran" + rincian per kategori kini IKUT filter → ada di BiayaTable.
   return (
     <div className="space-y-5">
-      <BiayaFormDialog akunOptions={akunOptions}><FloatingFab /></BiayaFormDialog>
+      {canCreate && <BiayaFormDialog akunOptions={akunOptions}><FloatingFab /></BiayaFormDialog>}
       <BiayaTable biayaList={biayaList} stats={stats} isOwner={isOwner} akunOptions={akunOptions} />
     </div>
   )

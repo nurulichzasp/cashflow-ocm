@@ -1,10 +1,12 @@
 'use client'
+/* eslint-disable @next/next/no-img-element -- avatar memakai proxy foto privat terautentikasi */
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { APP_ROUTES, isRouteActive, visibleRoutes, parsePerms } from '@/lib/nav-routes'
 import { signOut } from '@/lib/auth-client'
+import { clearPrivateBrowserCache } from '@/lib/clear-private-cache'
 import { useRouter } from 'next/navigation'
 import { LogOut, Menu, X, PanelLeftClose } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -75,6 +77,7 @@ export function Sidebar({ user, isOwner, onToggle }: { user?: AuthUser; isOwner?
 
   async function handleLogout() {
     await signOut()
+    await clearPrivateBrowserCache()
     router.push('/')
     router.refresh()
   }
@@ -162,6 +165,7 @@ export function MobileSidebar({ user, isOwner }: { user?: AuthUser; isOwner?: bo
 
   async function handleLogout() {
     await signOut()
+    await clearPrivateBrowserCache()
     router.push('/')
     router.refresh()
   }

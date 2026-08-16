@@ -37,7 +37,7 @@ async function seed() {
     // Set role menjadi owner
     await db.update(schema.user).set({ role: 'owner' }).where(eq(schema.user.email, 'admin@ocm.com'))
     console.log('  → User owner: admin@ocm.com / password123')
-  } catch (err) {
+  } catch {
     console.log('  → User mungkin sudah ada, lanjut...')
   }
 

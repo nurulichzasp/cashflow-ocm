@@ -1,8 +1,8 @@
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { headers } from 'next/headers'
-import { eq, sum, and, gte } from 'drizzle-orm'
-import { hasPermission } from '@/lib/permissions'
+import { eq, sum, and } from 'drizzle-orm'
+import { hasUserPermission, moduleKeys } from '@/lib/permissions'
 import { todayString } from '@/lib/format'
 import {
   transaksiKas,
@@ -11,6 +11,7 @@ import {
   modalPeron,
   peron,
   akunKas,
+  biayaOperasional,
 } from '@/lib/db/schema'
 
 export const dynamic = 'force-dynamic'
@@ -24,7 +25,7 @@ export async function GET() {
     // Metrik ini berisi seluruh angka keuangan (saldo, piutang, laba). Batasi
     // ke peran yang memang boleh melihat data keuangan — role tanpa hak
     // (mis. kasir / peran tak dikenal) tidak boleh menariknya.
-    if (!hasPermission(session.user.role, 'canViewFinance')) {
+    if (!moduleKeys.every((module) => hasUserPermission(session.user, 'canViewFinance', module))) {
       return Response.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -96,9 +97,9 @@ export async function GET() {
       db.select({ total: sum(penjualan.totalBersih) })
         .from(penjualan)
         .where(eq(penjualan.tanggal, today)),
-      db.select({ total: sum(pembelian.keuntungan) })
-        .from(pembelian)
-        .where(eq(pembelian.tanggal, today)),
+      db.select({ total: sum(biayaOperasional.jumlah) })
+        .from(biayaOperasional)
+        .where(eq(biayaOperasional.tanggal, today)),
     ])
 
     return Response.json({

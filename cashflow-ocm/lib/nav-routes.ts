@@ -111,12 +111,4 @@ export function visibleRoutes(isOwner?: boolean, perms?: Perms): AppRoute[] {
   })
 }
 
-export function parsePerms(permissions?: string | null): Perms {
-  const fallback: Perms = { pembelian: true, penjualan: true, kas: true, biaya: true }
-  if (!permissions) return fallback
-  try {
-    return { ...fallback, ...JSON.parse(permissions) }
-  } catch {
-    return fallback
-  }
-}
+export { parseModulePermissions as parsePerms } from '@/lib/permissions'

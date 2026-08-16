@@ -25,24 +25,21 @@ function safeEqual(a: string | null | undefined, b: string | null | undefined): 
  *   - Sore (18:00 WIB / 11:00 UTC) → mode=evening (rekap hari ini)
  *   - Pagi (07:00 WIB / 00:00 UTC) → mode=morning (harga + piutang briefing)
  *
- * Manual trigger:
- *   GET /api/cron/daily-summary?secret=<CRON_SECRET>&mode=evening
+ * Manual trigger memakai header Authorization yang sama dengan Vercel Cron.
  *
  * Header `Authorization: Bearer <CRON_SECRET>` digunakan Vercel Cron.
  */
 export async function GET(request: Request) {
   const authHeader = request.headers.get('authorization')
   const { searchParams } = new URL(request.url)
-  const secretParam = searchParams.get('secret')
   const mode = (searchParams.get('mode') ?? 'evening') as 'morning' | 'evening'
 
   const cronSecret = process.env.CRON_SECRET
   const isCronSecretValid = !!cronSecret && safeEqual(authHeader, `Bearer ${cronSecret}`)
-  const isManualSecretValid = !!cronSecret && safeEqual(secretParam, cronSecret)
 
   // Selalu wajib secret (bukan hanya di production) — cegah endpoint ringkasan
   // keuangan terbuka di environment non-production / lokal.
-  if (!isCronSecretValid && !isManualSecretValid) {
+  if (!isCronSecretValid) {
     return new Response('Unauthorized', { status: 401 })
   }
 

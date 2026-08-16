@@ -10,6 +10,7 @@ import { auth } from '@/lib/auth'
 import { z } from 'zod'
 import { requirePermission } from '@/lib/permissions'
 import { logActivity, describeActivity } from '@/lib/audit'
+import { isoDateSchema } from '@/lib/validation'
 
 async function requireSession() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -36,7 +37,7 @@ const peronSchema = z.object({
 
 const modalSchema = z.object({
   peronId: z.string().min(1),
-  tanggal: z.string().min(1, 'Tanggal wajib diisi'),
+  tanggal: isoDateSchema,
   jenis: z.enum(['tambah', 'kurang', 'kembali']),
   jumlah: z.coerce.number().int().positive('Jumlah harus positif'),
   akunSumberId: z.string().optional(),
@@ -280,6 +281,7 @@ export async function getPeronList() {
   const [peronList, dpRows] = await Promise.all([
     db.query.peron.findMany({
       orderBy: (p, { asc }) => [asc(p.nama)],
+      with: { tarif: { orderBy: (t, { asc }) => [asc(t.tanggalBerlaku)] } },
     }),
     db
       .select({ peronId: modalPeron.peronId, jenis: modalPeron.jenis, total: sum(modalPeron.jumlah) })

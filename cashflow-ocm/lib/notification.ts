@@ -3,6 +3,13 @@ import { peron } from './db/schema'
 import { eq } from 'drizzle-orm'
 import { getTelegramChatIds } from './telegram-recipients'
 
+export function escapeTelegramHtml(value: unknown): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+}
+
 /** Kirim satu pesan ke SATU chat. Lempar error bila gagal (ditangkap broadcast). */
 async function sendToChat(token: string, chatId: string, text: string): Promise<void> {
   const url = `https://api.telegram.org/bot${token}/sendMessage`
@@ -10,6 +17,7 @@ async function sendToChat(token: string, chatId: string, text: string): Promise<
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML' }),
+    signal: AbortSignal.timeout(10_000),
   })
   if (!response.ok) {
     const errText = await response.text()
@@ -70,20 +78,20 @@ export async function notifyNewPembelian(data: {
     const peronNama = peronData[0]?.nama || 'Peron Tidak Dikenal'
 
     const userInfo = data.createdByName
-      ? `👤 <b>Dibuat oleh:</b> ${data.createdByName}${data.createdByRole ? ` (${data.createdByRole})` : ''}`
+      ? `👤 <b>Dibuat oleh:</b> ${escapeTelegramHtml(data.createdByName)}${data.createdByRole ? ` (${escapeTelegramHtml(data.createdByRole)})` : ''}`
       : null
 
     const message = [
       `<b>📥 TRANSAKSI PEMBELIAN BARU</b>`,
       userInfo,
-      `📅 <b>Tanggal:</b> ${data.tanggal}`,
-      `🏭 <b>Peron:</b> ${peronNama}`,
-      `🏷️ <b>Kategori:</b> ${data.kategori}`,
+      `📅 <b>Tanggal:</b> ${escapeTelegramHtml(data.tanggal)}`,
+      `🏭 <b>Peron:</b> ${escapeTelegramHtml(peronNama)}`,
+      `🏷️ <b>Kategori:</b> ${escapeTelegramHtml(data.kategori)}`,
       `⚖️ <b>Tonase:</b> ${data.tonase.toLocaleString('id-ID')} kg`,
       `💰 <b>Total Beli:</b> Rp ${data.totalBeli.toLocaleString('id-ID')}`,
       `📈 <b>Estimasi Untung:</b> Rp ${data.keuntungan.toLocaleString('id-ID')}`,
       `💳 <b>Status:</b> ${data.statusBayarPeron === 'lunas' ? '✅ Lunas' : '⏳ Belum Lunas'}`,
-      `📝 <b>Catatan:</b> ${data.catatan || '-'}`,
+      `📝 <b>Catatan:</b> ${escapeTelegramHtml(data.catatan || '-')}`,
     ].filter(Boolean).join('\n')
 
     await sendTelegramMessage(message)
@@ -108,19 +116,19 @@ export async function notifyNewPenjualan(data: {
 }) {
   try {
     const userInfo = data.createdByName
-      ? `👤 <b>Dibuat oleh:</b> ${data.createdByName}${data.createdByRole ? ` (${data.createdByRole})` : ''}`
+      ? `👤 <b>Dibuat oleh:</b> ${escapeTelegramHtml(data.createdByName)}${data.createdByRole ? ` (${escapeTelegramHtml(data.createdByRole)})` : ''}`
       : null
 
     const message = [
       `<b>📤 TRANSAKSI PENJUALAN BARU</b>`,
       userInfo,
-      `📅 <b>Tanggal:</b> ${data.tanggal}`,
-      `📄 <b>No. Invoice:</b> ${data.noInvoice || '-'}`,
-      `📄 <b>No. BAST:</b> ${data.noBast || '-'}`,
+      `📅 <b>Tanggal:</b> ${escapeTelegramHtml(data.tanggal)}`,
+      `📄 <b>No. Invoice:</b> ${escapeTelegramHtml(data.noInvoice || '-')}`,
+      `📄 <b>No. BAST:</b> ${escapeTelegramHtml(data.noBast || '-')}`,
       `⚖️ <b>Total Bersih:</b> ${data.totalBersih ? `Rp ${data.totalBersih.toLocaleString('id-ID')}` : '-'}`,
       `💰 <b>Total Nilai:</b> ${data.totalNilai ? `Rp ${data.totalNilai.toLocaleString('id-ID')}` : '-'}`,
       `💳 <b>Status Bayar:</b> ${data.statusBayar === 'lunas' ? '✅ Lunas' : '⏳ Belum Lunas'}`,
-      `📝 <b>Catatan:</b> ${data.catatan || '-'}`,
+      `📝 <b>Catatan:</b> ${escapeTelegramHtml(data.catatan || '-')}`,
     ].filter(Boolean).join('\n')
 
     await sendTelegramMessage(message)
@@ -142,16 +150,16 @@ export async function notifyNewBiaya(data: {
 }) {
   try {
     const userInfo = data.createdByName
-      ? `👤 <b>Dibuat oleh:</b> ${data.createdByName}${data.createdByRole ? ` (${data.createdByRole})` : ''}`
+      ? `👤 <b>Dibuat oleh:</b> ${escapeTelegramHtml(data.createdByName)}${data.createdByRole ? ` (${escapeTelegramHtml(data.createdByRole)})` : ''}`
       : null
 
     const message = [
       `<b>💸 BIAYA OPERASIONAL BARU</b>`,
       userInfo,
-      `📅 <b>Tanggal:</b> ${data.tanggal}`,
-      `🏷️ <b>Kategori:</b> ${data.kategori}`,
+      `📅 <b>Tanggal:</b> ${escapeTelegramHtml(data.tanggal)}`,
+      `🏷️ <b>Kategori:</b> ${escapeTelegramHtml(data.kategori)}`,
       `💰 <b>Jumlah:</b> Rp ${data.jumlah.toLocaleString('id-ID')}`,
-      `📝 <b>Catatan:</b> ${data.catatan || '-'}`,
+      `📝 <b>Catatan:</b> ${escapeTelegramHtml(data.catatan || '-')}`,
     ].filter(Boolean).join('\n')
 
     await sendTelegramMessage(message)

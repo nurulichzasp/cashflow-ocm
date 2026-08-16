@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+defaults:
+  run:
+    working-directory: cashflow-ocm
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: cashflow-ocm/package-lock.json
+      - run: npm ci
+      - run: npm run lint -- --max-warnings=0
+      - run: npm test
+      - run: npx tsc --noEmit
+      - run: npm run build
+        env:
+          TURSO_CONNECTION_URL: file:ci.db
+          BETTER_AUTH_SECRET: ci-only-secret-ci-only-secret-ci-only
+          BETTER_AUTH_URL: http://localhost:3000

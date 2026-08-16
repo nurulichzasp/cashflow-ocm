@@ -223,24 +223,6 @@ function buildThermalHTML(p: PembelianRow, paperWidthMm: number, nomorUrut: numb
   const sumberLabel = sumberBayarLabel(p.sumberBayar)
   const noInvoice = generateNoPembelian(p.tanggal, p.peron?.kode, nomorUrut)
   const keteranganReplas = notaKeteranganReplas(p.keterangan, details, p.tanggal)
-  const charWidth = paperWidthMm === 80 ? 42 : 32
-  const divider = '-'.repeat(charWidth)
-  const doubleDivider = '='.repeat(charWidth)
-
-  function padLine(left: string, right: string, width: number): string {
-    const spaces = width - left.length - right.length
-    return left + ' '.repeat(Math.max(1, spaces)) + right
-  }
-
-  const itemRows = details.map((d) => {
-    const tonase = `${d.tonase.toLocaleString('id-ID')}kg`
-    const harga = `${d.hargaLapangan.toLocaleString('id-ID')}`
-    const sub = formatRupiah(d.subtotalBeli)
-    const line1 = `${tonase} x ${harga}`
-    const nopolSupir = [d.nopol, d.supir].filter(Boolean).map(esc).join(' / ')
-    return `<div>${line1}</div><div style="text-align:right">${sub}</div>${nopolSupir ? `<div style="color:#666;font-size:8pt">${nopolSupir}</div>` : ''}`
-  }).join('<div style="border-top:1px dashed #ccc;margin:2px 0"></div>')
-
   return `<!DOCTYPE html>
 <html lang="id">
 <head>
