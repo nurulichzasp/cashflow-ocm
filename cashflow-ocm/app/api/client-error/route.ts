@@ -8,6 +8,8 @@ export const dynamic = 'force-dynamic'
 // rusak (sesi pun bisa gagal). Payload dibatasi panjangnya & hanya dicatat —
 // tak menyentuh DB, tak pernah melempar.
 export async function POST(request: Request) {
+  const contentLength = Number(request.headers.get('content-length') ?? 0)
+  if (contentLength > 16 * 1024) return new Response(null, { status: 413 })
   try {
     const body = await request.json().catch(() => ({} as Record<string, unknown>))
     const s = (v: unknown, max: number) => (v == null ? undefined : String(v).slice(0, max))

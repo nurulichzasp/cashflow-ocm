@@ -1,6 +1,6 @@
 import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
-import { getPermissions } from '@/lib/permissions'
+import { hasUserPermission } from '@/lib/permissions'
 import { getPembelianList, getPembelianStats, getAkunKasList } from './actions'
 import { getPeronList } from '../peron/actions'
 import { PembelianTable } from './pembelian-table'
@@ -20,8 +20,8 @@ export default async function PembelianPage() {
 
   // Edit = canEdit (owner+admin). Hapus = owner-only (deletePembelian pakai
   // requireOwner) → gate UI ke owner agar tak "tampil lalu error".
-  const perms = getPermissions(session?.user.role)
-  const canEdit = perms.canEdit
+  const canEdit = session ? hasUserPermission(session.user, 'canEdit', 'pembelian') : false
+  const canCreate = session ? hasUserPermission(session.user, 'canCreate', 'pembelian') : false
   const canDelete = session?.user.role === 'owner'
 
   // Peron nonaktif tetap ada di riwayat dan halaman Peron, tetapi tidak boleh
@@ -32,6 +32,11 @@ export default async function PembelianPage() {
       id: p.id,
       nama: p.nama,
       keuntunganPerKg: p.keuntunganPerKg,
+      tarif: p.tarif.map((t) => ({
+        tanggalBerlaku: t.tanggalBerlaku,
+        kelebihanPerKg: t.kelebihanPerKg,
+        brdlSamaTbs: t.brdlSamaTbs,
+      })),
     }))
 
   const akunOptions = akunList.map((a) => ({
@@ -42,7 +47,7 @@ export default async function PembelianPage() {
 
   return (
     <div className="space-y-5">
-      <PembelianFormDialog peronOptions={peronOptions} akunOptions={akunOptions}><FloatingFab /></PembelianFormDialog>
+      {canCreate && <PembelianFormDialog peronOptions={peronOptions} akunOptions={akunOptions}><FloatingFab /></PembelianFormDialog>}
 
       <PembelianTable
         pembelianList={pembelianList}

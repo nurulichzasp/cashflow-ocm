@@ -9,7 +9,7 @@ import {
   ppnBulanan, pphBulanan, appSettings,
 } from '@/lib/db/schema'
 import { eq, sum, and, gte, lte, lt, asc, like } from 'drizzle-orm'
-import { requirePermission } from '@/lib/permissions'
+import { hasModulePermission, moduleKeys, requireUserPermission } from '@/lib/permissions'
 import { hitungPpn, hitungPphBadan, DEFAULT_PPH25_NOMINAL, TARIF_PPN, TARIF_PPH_BADAN, parseTarifPersen } from '@/lib/pajak'
 
 async function requireSession() {
@@ -23,7 +23,10 @@ async function requireSession() {
 // neraca, pajak, dan buku kas.
 async function requireFinanceAccess() {
   const session = await requireSession()
-  requirePermission(session.user.role, 'canViewFinance')
+  requireUserPermission(session.user, 'canViewFinance')
+  if (!moduleKeys.every((module) => hasModulePermission(session.user, module))) {
+    throw new Error('Laporan lengkap memerlukan akses ke seluruh modul keuangan')
+  }
   return session
 }
 

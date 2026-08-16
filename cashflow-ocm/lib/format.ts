@@ -188,6 +188,7 @@ type ReplasDetail = {
  *   - total replas < 1 (tak ada jumlah replas terisi) — jangan sampai "Total 0 Replas".
  */
 export function buildKeteranganReplas(details: ReplasDetail[], _fallbackTanggal?: string): string {
+  void _fallbackTanggal
   const num = (v: number | string | null | undefined) => (typeof v === 'number' ? v : parseFloat(String(v ?? '')) || 0)
   const int = (v: number | string | null | undefined) => (typeof v === 'number' ? Math.trunc(v) : parseInt(String(v ?? ''), 10) || 0)
   const rows = details.filter((d) => num(d.tonase) > 0)

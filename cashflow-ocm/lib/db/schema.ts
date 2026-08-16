@@ -1,5 +1,5 @@
 import { relations, sql } from 'drizzle-orm'
-import { integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
+import { index, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
 // ─── Better Auth Tables ──────────────────────────────────────────────────────
 
@@ -79,12 +79,29 @@ export const peron = sqliteTable('peron', {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
 })
 
+// Jadwal kelebihan peron per tanggal efektif. Nilai transaksi tetap dibekukan
+// pada pembelian.keuntunganPerKg agar perubahan jadwal tidak mengubah histori.
+export const tarifPeron = sqliteTable('tarif_peron', {
+  id: text('id').primaryKey().default(sql`(lower(hex(randomblob(8))))`),
+  peronId: text('peron_id').notNull().references(() => peron.id, { onDelete: 'cascade' }),
+  tanggalBerlaku: text('tanggal_berlaku').notNull(),
+  kelebihanPerKg: integer('kelebihan_per_kg').notNull(),
+  brdlSamaTbs: integer('brdl_sama_tbs', { mode: 'boolean' }).notNull().default(true),
+  catatan: text('catatan'),
+  createdBy: text('created_by').notNull().references(() => user.id),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+}, (t) => ({
+  peronTanggalIdx: uniqueIndex('tarif_peron_peron_tanggal_idx').on(t.peronId, t.tanggalBerlaku),
+  tanggalIdx: index('tarif_peron_tanggal_idx').on(t.tanggalBerlaku),
+}))
+
 export const modalPeron = sqliteTable('modal_peron', {
   id: text('id').primaryKey().default(sql`(lower(hex(randomblob(8))))`),
   peronId: text('peron_id').notNull().references(() => peron.id, { onDelete: 'cascade' }),
   tanggal: text('tanggal').notNull(),
   jenis: text('jenis', { enum: ['tambah', 'kurang', 'kembali'] }).notNull(),
   jumlah: integer('jumlah').notNull(),
+  isSaldoAwal: integer('is_saldo_awal', { mode: 'boolean' }).notNull().default(false),
   catatan: text('catatan'),
   createdBy: text('created_by').notNull().references(() => user.id),
   idempotencyKey: text('idempotency_key'),
@@ -123,6 +140,7 @@ export const pembelian = sqliteTable('pembelian', {
   // Snapshot tarif untung/kg peron SAAT transaksi → freeze histori untung tiket.
   // null = baris lama (fallback ke peron.keuntunganPerKg live saat edit).
   keuntunganPerKg: integer('keuntungan_per_kg'),
+  brdlSamaTbs: integer('brdl_sama_tbs', { mode: 'boolean' }),
   statusBayarPeron: text('status_bayar_peron', { enum: ['belum', 'lunas'] }).notNull().default('belum'),
   tanggalBayar: text('tanggal_bayar'),
   sumberBayarId: text('sumber_bayar_id').references(() => akunKas.id),
@@ -386,6 +404,12 @@ export const peronRelations = relations(peron, ({ many, one }) => ({
   health: one(peronHealth, { fields: [peron.id], references: [peronHealth.peronId] }),
   followups: many(peronFollowup),
   ancaman: many(peronAncaman),
+  tarif: many(tarifPeron),
+}))
+
+export const tarifPeronRelations = relations(tarifPeron, ({ one }) => ({
+  peron: one(peron, { fields: [tarifPeron.peronId], references: [peron.id] }),
+  createdByUser: one(user, { fields: [tarifPeron.createdBy], references: [user.id] }),
 }))
 
 export const peronAncamanRelations = relations(peronAncaman, ({ one }) => ({
@@ -461,6 +485,7 @@ export type User = typeof user.$inferSelect
 export type Session = typeof session.$inferSelect
 export type AkunKas = typeof akunKas.$inferSelect
 export type Peron = typeof peron.$inferSelect
+export type TarifPeron = typeof tarifPeron.$inferSelect
 export type ModalPeron = typeof modalPeron.$inferSelect
 export type HargaAcuan = typeof hargaAcuan.$inferSelect
 export type Pembelian = typeof pembelian.$inferSelect

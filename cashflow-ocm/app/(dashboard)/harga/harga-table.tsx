@@ -36,13 +36,8 @@ export function HargaTable({ hargaList, isOwner }: Props) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [dari, setDari] = useState('')
   const [sampai, setSampai] = useState('')
-  const [sortBy, setSortBy] = useState<SortCol>('tanggal')
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
-
-  function handleSort(col: SortCol) {
-    if (sortBy === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
-    else { setSortBy(col); setSortDir('desc') }
-  }
+  const [sortBy] = useState<SortCol>('tanggal')
+  const [sortDir] = useState<'asc' | 'desc'>('desc')
 
   const filtered = useMemo(() => {
     let list = [...hargaList]

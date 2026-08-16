@@ -12,7 +12,7 @@ import {
   transaksiKas, pembelian, penjualan, biayaOperasional,
   akunKas, peron, hargaAcuan, modalPeron,
 } from './db/schema'
-import { eq, sum, and, gte, lte, desc } from 'drizzle-orm'
+import { eq, sum, desc } from 'drizzle-orm'
 import { formatRupiah } from './format'
 
 /** Hari ini dalam Asia/Jakarta (YYYY-MM-DD) */

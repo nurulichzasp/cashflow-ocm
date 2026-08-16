@@ -9,6 +9,20 @@ import { revalidatePath } from 'next/cache'
 import { hashPassword } from '@better-auth/utils/password'
 import { requirePermission } from '@/lib/permissions'
 import { logActivity } from '@/lib/audit'
+import { z } from 'zod'
+
+const permissionsSchema = z.object({
+  pembelian: z.boolean(),
+  penjualan: z.boolean(),
+  kas: z.boolean(),
+  biaya: z.boolean(),
+  delete: z.boolean().default(false),
+}).strict()
+
+async function ownerCount() {
+  const owners = await db.select({ id: user.id }).from(user).where(eq(user.role, 'owner'))
+  return owners.length
+}
 
 // 1. Update profil user yang sedang login
 export async function updateProfile(data: {
@@ -65,6 +79,9 @@ export async function addUser(data: { name: string; email: string; password: str
   if (!data.password || data.password.length < 8) {
     throw new Error('Kata sandi minimal 8 karakter')
   }
+  const role = data.role.trim().toLowerCase()
+  if (!/^[a-z0-9_-]{2,32}$/.test(role)) throw new Error('Peran sistem tidak valid')
+  const parsedPermissions = permissionsSchema.parse(JSON.parse(data.permissions || '{}'))
 
   // Cek apakah email sudah ada
   const existing = await db.query.user.findFirst({ where: eq(user.email, email) })
@@ -83,8 +100,8 @@ export async function addUser(data: { name: string; email: string; password: str
       name: data.name,
       email,
       emailVerified: true,
-      role: data.role,
-      permissions: data.permissions || null,
+      role,
+      permissions: JSON.stringify(parsedPermissions),
       createdAt: now,
       updatedAt: now,
     })
@@ -98,6 +115,15 @@ export async function addUser(data: { name: string; email: string; password: str
       createdAt: now,
       updatedAt: now,
     })
+  })
+
+  await logActivity({
+    userId: session.user.id,
+    action: 'create',
+    entityType: 'user',
+    entityId: newUserId,
+    description: `Tambah pengguna ${data.name} (${email}) • role ${role}`,
+    newValues: { name: data.name, email, role, permissions: parsedPermissions },
   })
 
   revalidatePath('/')
@@ -118,6 +144,10 @@ export async function deleteUser(targetUserId: string) {
   // Ambil data target dulu untuk jejak audit — hapus user = aksi admin sensitif
   // (cascade ke account + session), wajib tercatat siapa & kapan.
   const target = await db.query.user.findFirst({ where: eq(user.id, targetUserId) })
+  if (!target) throw new Error('Pengguna tidak ditemukan')
+  if (target.role === 'owner' && await ownerCount() <= 1) {
+    throw new Error('Owner terakhir tidak dapat dihapus')
+  }
 
   // Hapus dari tabel user (cascade akan menghapus data di account dan session)
   await db.delete(user).where(eq(user.id, targetUserId))
@@ -142,6 +172,12 @@ export async function updateUserRole(targetUserId: string, role: 'owner' | 'admi
     throw new Error('Hanya Owner yang dapat mengubah peran pengguna')
   }
 
+  const target = await db.query.user.findFirst({ where: eq(user.id, targetUserId) })
+  if (!target) throw new Error('Pengguna tidak ditemukan')
+  if (target.role === 'owner' && role !== 'owner' && await ownerCount() <= 1) {
+    throw new Error('Owner terakhir tidak dapat diturunkan perannya')
+  }
+
   await db
     .update(user)
     .set({
@@ -149,6 +185,16 @@ export async function updateUserRole(targetUserId: string, role: 'owner' | 'admi
       updatedAt: new Date(),
     })
     .where(eq(user.id, targetUserId))
+
+  await logActivity({
+    userId: session.user.id,
+    action: 'update',
+    entityType: 'user',
+    entityId: targetUserId,
+    description: `Ubah role ${target.name}: ${target.role} → ${role}`,
+    oldValues: { role: target.role },
+    newValues: { role },
+  })
 
   revalidatePath('/')
   return { success: true }
@@ -208,6 +254,9 @@ export async function resetUserPassword(targetUserId: string, newPassword: strin
     throw new Error('Hanya Owner yang dapat mereset sandi pengguna')
   }
 
+  if (newPassword.length < 8) throw new Error('Kata sandi minimal 8 karakter')
+  const target = await db.query.user.findFirst({ where: eq(user.id, targetUserId) })
+  if (!target) throw new Error('Pengguna tidak ditemukan')
   const hashedPassword = await hashPassword(newPassword)
 
   // Cek apakah akun credential sudah ada
@@ -238,6 +287,14 @@ export async function resetUserPassword(targetUserId: string, newPassword: strin
     })
   }
 
+  await logActivity({
+    userId: session.user.id,
+    action: 'update',
+    entityType: 'user',
+    entityId: targetUserId,
+    description: `Reset kata sandi pengguna ${target.name} (${target.email})`,
+  })
+
   revalidatePath('/')
   return { success: true }
 }
@@ -249,17 +306,30 @@ export async function updateUserPermissions(targetUserId: string, permissions: s
     throw new Error('Hanya Owner yang dapat mengubah hak akses pengguna')
   }
 
-  // Validasi: pastikan payload JSON yang valid sebelum disimpan.
+  let parsedPermissions: z.infer<typeof permissionsSchema>
   try {
-    JSON.parse(permissions)
+    parsedPermissions = permissionsSchema.parse(JSON.parse(permissions))
   } catch {
     throw new Error('Format hak akses tidak valid')
   }
+  const target = await db.query.user.findFirst({ where: eq(user.id, targetUserId) })
+  if (!target) throw new Error('Pengguna tidak ditemukan')
+  const normalized = JSON.stringify(parsedPermissions)
 
   await db
     .update(user)
-    .set({ permissions, updatedAt: new Date() })
+    .set({ permissions: normalized, updatedAt: new Date() })
     .where(eq(user.id, targetUserId))
+
+  await logActivity({
+    userId: session.user.id,
+    action: 'update',
+    entityType: 'user',
+    entityId: targetUserId,
+    description: `Ubah hak akses pengguna ${target.name}`,
+    oldValues: { permissions: target.permissions },
+    newValues: { permissions: parsedPermissions },
+  })
 
   revalidatePath('/')
   return { success: true }

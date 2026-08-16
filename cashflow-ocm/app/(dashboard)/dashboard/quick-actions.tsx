@@ -5,8 +5,9 @@ import { PembelianFormDialog } from '../pembelian/pembelian-form-dialog'
 import { PenjualanFormDialog } from '../penjualan/penjualan-form-dialog'
 import { HargaFormDialog } from '../harga/harga-form-dialog'
 import { BiayaFormDialog } from '../biaya/biaya-form-dialog'
+import type { TarifPeronRingkas } from '@/lib/harga'
 
-type PeronOption = { id: string; nama: string; keuntunganPerKg: number }
+type PeronOption = { id: string; nama: string; keuntunganPerKg: number; tarif?: TarifPeronRingkas[] }
 type AkunOption = { id: string; nama: string; tipe: string }
 
 const tile = 'tactile flex flex-col items-center gap-1.5 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background'

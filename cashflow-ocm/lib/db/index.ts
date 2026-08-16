@@ -21,7 +21,6 @@ export function getDb(): DrizzleDB {
 }
 
 // Proxy agar sintaks `db.select(...)` tetap bisa dipakai langsung tanpa memanggil getDb()
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const db: DrizzleDB = new Proxy({} as DrizzleDB, {
   get(_, prop) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

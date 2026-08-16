@@ -1,12 +1,13 @@
 /* Service Worker — "tahan sinyal jelek" untuk CV OCM Cashflow (Level 2).
- * Cache app-shell + fallback offline. TIDAK menyimpan/queue tulisan offline:
+ * Cache aset publik + fallback offline. Halaman terautentikasi TIDAK pernah
+ * disimpan agar data pengguna lama tidak tampil setelah logout/ganti akun.
  * mutasi (POST/server action) & /api SELALU ke jaringan — kalau offline ia
  * GAGAL JUJUR (app tampilkan error), bukan pura-pura sukses. Aset berhash =
  * cache-first; navigasi = network-first (data segar saat online) → cache →
  * halaman /offline. No-op di localhost agar dev (HMR) tak terganggu.
  * Bump VERSION untuk paksa cache baru di rilis berikutnya.
  */
-const VERSION = 'v6'
+const VERSION = 'v7'
 const CACHE = `ocm-${VERSION}`
 const PRECACHE = ['/offline', '/icon-192.png', '/icon-512.png', '/icon.svg']
 
@@ -65,18 +66,13 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // Navigasi & RSC → network-first, fallback cache, lalu /offline
+  // Navigasi & RSC selalu jaringan. Jangan simpan atau membaca HTML/RSC dari
+  // cache karena seluruh halaman aplikasi memuat data keuangan terautentikasi.
   event.respondWith(
     (async () => {
       try {
-        const res = await fetch(request)
-        if (res.ok && request.mode === 'navigate') {
-          ;(await caches.open(CACHE)).put(request, res.clone())
-        }
-        return res
+        return await fetch(request)
       } catch {
-        const cached = await caches.match(request)
-        if (cached) return cached
         if (request.mode === 'navigate') {
           const offline = await caches.match('/offline')
           if (offline) return offline

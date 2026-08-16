@@ -1,4 +1,5 @@
 'use client'
+/* eslint-disable @next/next/no-img-element -- bukti privat memakai URL proxy terautentikasi */
 
 import { useEffect, useState } from 'react'
 import { X, ChevronLeft, ChevronRight, Image as ImageIcon, ImageOff } from 'lucide-react'

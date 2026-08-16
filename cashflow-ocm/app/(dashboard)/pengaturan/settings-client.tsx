@@ -1005,11 +1005,12 @@ export function SettingsClient({ currentUser, initialUsers, section, initialComp
                       <div className="flex items-center justify-between gap-3 rounded-xl border danger-zone px-3.5 py-2.5">
                         <div className="min-w-0">
                           <p className="text-sm font-medium text-crit">Hapus Transaksi</p>
-                          <p className="text-[11px] text-crit opacity-75">Izin menghapus data permanen</p>
+                          <p className="text-[11px] text-crit opacity-75">Tetap khusus Owner untuk melindungi data keuangan</p>
                         </div>
                         <Switch
                           checked={editPerms.delete}
                           onCheckedChange={(v) => setEditPerms((p) => ({ ...p, delete: v }))}
+                          disabled={editAccessTarget?.role !== 'owner'}
                           aria-label="Akses Hapus Transaksi"
                         />
                       </div>

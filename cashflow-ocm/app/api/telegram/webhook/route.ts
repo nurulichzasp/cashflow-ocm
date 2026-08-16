@@ -23,6 +23,8 @@ import {
 } from '@/lib/telegram-snapshots'
 import { getTelegramChatIds } from '@/lib/telegram-recipients'
 import { timingSafeEqual } from 'node:crypto'
+import { headers } from 'next/headers'
+import { auth } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -49,6 +51,7 @@ async function reply(chatId: number | string, text: string) {
       parse_mode: 'HTML',
       disable_web_page_preview: true,
     }),
+    signal: AbortSignal.timeout(10_000),
   })
 }
 
@@ -80,7 +83,7 @@ async function handleCommand(cmd: string): Promise<string> {
       return await snapshotDailyRecap()
     default:
       return [
-        `❓ Perintah tidak dikenal: <code>${cmd}</code>`,
+        `❓ Perintah tidak dikenal.`,
         ``,
         snapshotHelp(),
       ].join('\n')
@@ -95,14 +98,11 @@ type TelegramUpdate = {
 }
 
 export async function POST(req: Request) {
-  // 1. Verifikasi secret: terima header resmi Telegram
-  //    (X-Telegram-Bot-Api-Secret-Token) ATAU ?secret= (legacy), timing-safe.
-  const url = new URL(req.url)
-  const secret = url.searchParams.get('secret')
+  // 1. Verifikasi hanya header resmi Telegram; secret tidak pernah masuk URL/log.
   const headerSecret = req.headers.get('x-telegram-bot-api-secret-token')
   const expected = process.env.TELEGRAM_WEBHOOK_SECRET
 
-  if (!expected || (!safeEqual(headerSecret, expected) && !safeEqual(secret, expected))) {
+  if (!expected || !safeEqual(headerSecret, expected)) {
     return new Response('Unauthorized', { status: 401 })
   }
 
@@ -152,19 +152,21 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   const url = new URL(req.url)
   const action = url.searchParams.get('action')
-  const secret = url.searchParams.get('secret')
-
-  if (!safeEqual(secret, process.env.TELEGRAM_WEBHOOK_SECRET)) {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session || session.user.role !== 'owner') {
     return new Response('Unauthorized', { status: 401 })
   }
 
   // ?action=setup — auto-register webhook ke Telegram
   if (action === 'setup') {
     const token = process.env.TELEGRAM_BOT_TOKEN
-    const webhookUrl = `${url.origin}/api/telegram/webhook?secret=${encodeURIComponent(secret!)}`
-    const res = await fetch(
-      `https://api.telegram.org/bot${token}/setWebhook?url=${encodeURIComponent(webhookUrl)}`
-    )
+    const webhookUrl = `${url.origin}/api/telegram/webhook`
+    const res = await fetch(`https://api.telegram.org/bot${token}/setWebhook`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: webhookUrl, secret_token: process.env.TELEGRAM_WEBHOOK_SECRET }),
+      signal: AbortSignal.timeout(10_000),
+    })
     const data = await res.json()
     return NextResponse.json({ webhookUrl, telegram: data })
   }
@@ -188,6 +190,7 @@ export async function GET(req: Request) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ commands }),
+        signal: AbortSignal.timeout(10_000),
       }
     )
     return NextResponse.json(await res.json())

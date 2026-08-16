@@ -1,4 +1,5 @@
 'use client'
+/* eslint-disable @next/next/no-img-element -- preview lokal/blob tidak cocok untuk optimizer Next Image */
 
 import { useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'

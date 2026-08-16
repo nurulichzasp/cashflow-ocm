@@ -5,6 +5,7 @@ import { KasTable } from './kas-table'
 import { KasFormDialog } from './kas-form-dialog'
 import { FloatingFab } from '@/components/fab'
 import { formatRupiah, formatCompact } from '@/lib/format'
+import { hasUserPermission } from '@/lib/permissions'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,6 +18,7 @@ export default async function KasPage() {
   ])
 
   const isOwner = session?.user.role === 'owner'
+  const canCreate = session ? hasUserPermission(session.user, 'canCreate', 'kas') : false
 
   // Saldo per akun = saldoAwal + net mutasi (rumus lib/saldo.ts) — net kini dari
   // agregat SQL all-time (getKasStats), BUKAN dari window baris yang dimuat.
@@ -35,7 +37,7 @@ export default async function KasPage() {
 
   return (
     <div className="space-y-5">
-      <KasFormDialog akunOptions={akunOptions}><FloatingFab /></KasFormDialog>
+      {canCreate && <KasFormDialog akunOptions={akunOptions}><FloatingFab /></KasFormDialog>}
 
       {/* Saldo per akun — hierarki: akun utama dominan, sisanya list sekunder ringkas */}
       <div className="surface overflow-hidden">

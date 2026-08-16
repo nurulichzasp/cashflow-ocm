@@ -22,6 +22,50 @@ export const SELISIH_JUAL_BGA = 120
 /** Batas maksimal "kelebihan peron" (bonus di atas acuan) untuk produk NON-TBS. */
 export const CAP_KEUNTUNGAN_PERON = 50
 
+export type TarifPeronRingkas = {
+  tanggalBerlaku: string
+  kelebihanPerKg: number
+  brdlSamaTbs: boolean
+}
+
+export function resolveTarifPeron(
+  rows: TarifPeronRingkas[],
+  tanggal: string,
+  keuntunganDefault: number,
+  selisihJualBga: number = SELISIH_JUAL_BGA,
+) {
+  const active = rows
+    .filter((row) => row.tanggalBerlaku <= tanggal)
+    .sort((a, b) => b.tanggalBerlaku.localeCompare(a.tanggalBerlaku))[0]
+  return active
+    ? { keuntunganPerKg: selisihJualBga - active.kelebihanPerKg, brdlSamaTbs: active.brdlSamaTbs }
+    : { keuntunganPerKg: keuntunganDefault, brdlSamaTbs: false }
+}
+
+export function effectiveKelebihanPeronDenganAturan(
+  keuntunganPerKg: number,
+  isTBS: boolean,
+  brdlSamaTbs: boolean,
+  selisihJualBga: number = SELISIH_JUAL_BGA,
+): number {
+  const raw = selisihJualBga - keuntunganPerKg
+  return isTBS || brdlSamaTbs ? raw : Math.min(raw, CAP_KEUNTUNGAN_PERON)
+}
+
+export function effectiveKeuntunganPerKgDenganAturan(
+  keuntunganPerKg: number,
+  isTBS: boolean,
+  brdlSamaTbs: boolean,
+  selisihJualBga: number = SELISIH_JUAL_BGA,
+): number {
+  return selisihJualBga - effectiveKelebihanPeronDenganAturan(
+    keuntunganPerKg,
+    isTBS,
+    brdlSamaTbs,
+    selisihJualBga,
+  )
+}
+
 /** Rombakan tarif peron mulai 15 Agustus 2026 (berdasarkan tanggal transaksi). */
 export const TANGGAL_TARIF_PERON_BARU = '2026-08-15'
 

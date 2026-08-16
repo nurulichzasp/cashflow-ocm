@@ -9,6 +9,8 @@ import {
   keuntunganPerKgBerlaku,
   isKategoriTBS,
   isProdukTBS,
+  resolveTarifPeron,
+  effectiveKelebihanPeronDenganAturan,
 } from '../harga'
 
 // untungCV → kelebihan = 120 − untungCV
@@ -68,6 +70,27 @@ describe('rombak tarif peron mulai 15 Agustus 2026', () => {
     expect(effectiveKeuntunganPerKgBerlaku(30, false, '2026-08-15')).toBe(30)
     expect(effectiveKelebihanPeronBerlaku(30, true, '2026-08-15')).toBe(90)
     expect(effectiveKeuntunganPerKgBerlaku(30, true, '2026-08-15')).toBe(30)
+  })
+})
+
+describe('jadwal tarif fleksibel dari database', () => {
+  const rows = [
+    { tanggalBerlaku: '2026-08-15', kelebihanPerKg: 90, brdlSamaTbs: true },
+    { tanggalBerlaku: '2026-09-01', kelebihanPerKg: 75, brdlSamaTbs: false },
+  ]
+
+  it('memilih jadwal terakhir pada atau sebelum tanggal transaksi', () => {
+    expect(resolveTarifPeron(rows, '2026-08-31', 80)).toEqual({ keuntunganPerKg: 30, brdlSamaTbs: true })
+    expect(resolveTarifPeron(rows, '2026-09-01', 80)).toEqual({ keuntunganPerKg: 45, brdlSamaTbs: false })
+  })
+
+  it('Ibnu/tanpa jadwal tetap memakai tarif dasar dan aturan BRDL lama', () => {
+    expect(resolveTarifPeron([], '2026-08-15', 80)).toEqual({ keuntunganPerKg: 80, brdlSamaTbs: false })
+  })
+
+  it('flag BRDL benar-benar mengendalikan cap', () => {
+    expect(effectiveKelebihanPeronDenganAturan(30, false, true)).toBe(90)
+    expect(effectiveKelebihanPeronDenganAturan(30, false, false)).toBe(50)
   })
 })
 

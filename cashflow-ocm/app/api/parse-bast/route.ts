@@ -3,7 +3,10 @@ export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
+import { hasModulePermission } from '@/lib/permissions'
 import * as XLSX from 'xlsx'
+
+const MAX_UPLOAD_SIZE = 10 * 1024 * 1024
 
 type BgaMoneyValues = {
   total: number
@@ -22,11 +25,22 @@ type BgaPreviewRow = BgaMoneyValues & {
 export async function POST(req: NextRequest) {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!hasModulePermission(session.user, 'penjualan')) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const contentLength = Number(req.headers.get('content-length') ?? 0)
+  if (contentLength > MAX_UPLOAD_SIZE + 1_000_000) {
+    return NextResponse.json({ error: 'Ukuran file melebihi 10 MB' }, { status: 413 })
+  }
 
   try {
     const formData = await req.formData()
     const file = formData.get('file') as File | null
     if (!file) return NextResponse.json({ error: 'File tidak ditemukan' }, { status: 400 })
+    if (file.size > MAX_UPLOAD_SIZE) {
+      return NextResponse.json({ error: 'Ukuran file melebihi 10 MB' }, { status: 413 })
+    }
 
     const name = file.name.toLowerCase()
     const isPdf = file.type === 'application/pdf' || name.endsWith('.pdf')
@@ -41,7 +55,7 @@ export async function POST(req: NextRequest) {
 
     if (isExcel) {
       try {
-        const wb = XLSX.read(buffer, { type: 'buffer' })
+        const wb = XLSX.read(buffer, { type: 'buffer', sheetRows: 10_000 })
 
         // BGA: baca KEDUA rekap (REKAP = 1 harga, REKAP 2 HARGA = 2 harga) lalu
         // bandingkan per kategori. Wiring BGA tidak konsisten antar periode &

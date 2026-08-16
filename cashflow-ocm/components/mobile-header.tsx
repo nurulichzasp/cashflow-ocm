@@ -1,4 +1,5 @@
 'use client'
+/* eslint-disable @next/next/no-img-element -- avatar memakai proxy foto privat terautentikasi */
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'

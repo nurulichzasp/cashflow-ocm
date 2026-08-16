@@ -27,7 +27,7 @@ interface Props {
 export function PeronFormDialog({ mode, peron, children, open: openProp, onOpenChange, isOwner = false }: Props) {
   const [openInternal, setOpenInternal] = useState(false)
   const open = openProp ?? openInternal
-  const setOpen = (v: boolean) => { onOpenChange ? onOpenChange(v) : setOpenInternal(v) }
+  const setOpen = (v: boolean) => { if (onOpenChange) onOpenChange(v); else setOpenInternal(v) }
   const [loading, setLoading] = useState(false)
   const [status, setStatus] = useState<'aktif' | 'nonaktif'>(peron?.status ?? 'aktif')
   const [keuntunganPerKg, setKeuntunganPerKg] = useState(peron?.keuntunganPerKg ?? 50)

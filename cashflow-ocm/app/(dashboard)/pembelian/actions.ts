@@ -1,30 +1,18 @@
 'use server'
 
-import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { eq, and, sum, count } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { auth } from '@/lib/auth'
 import { pembelian, pembelianDetail, transaksiKas, akunKas, pembelianFoto } from '@/lib/db/schema'
 import { z } from 'zod'
 import { notifyNewPembelian } from '@/lib/notification'
-import { requirePermission } from '@/lib/permissions'
+import { requireModuleAction, requireModuleSession, requireOwner } from '@/lib/server-auth'
 import { logActivity, describeActivity } from '@/lib/audit'
-import { effectiveKeuntunganPerKgBerlaku, isKategoriTBS, keuntunganPerKgBerlaku } from '@/lib/harga'
+import { brdlMengikutiKelebihanTbs, effectiveKeuntunganPerKgDenganAturan, isKategoriTBS } from '@/lib/harga'
+import { getTarifPeronBerlaku } from '@/lib/tarif-peron'
 import { todayString } from '@/lib/format'
 import { LIST_PAGE_SIZE } from '@/lib/pagination'
-
-async function requireSession() {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session) throw new Error('Tidak terautentikasi')
-  return session
-}
-
-async function requireOwner() {
-  const session = await requireSession()
-  if (session.user.role !== 'owner') throw new Error('Hanya owner yang dapat melakukan aksi ini')
-  return session
-}
+import { isoDateSchema, optionalIsoDateSchema } from '@/lib/validation'
 
 export type KategoriPembelian = 'OCM R1' | 'OCM R2' | 'OCMP SAGU' | 'OCM BRDL' | 'OCM BRDL KTWM' | 'OCM BRDL TRYM' | 'OCM BRDL LMDM'
 
@@ -38,7 +26,7 @@ export interface DetailInput {
 }
 
 const pembelianSchema = z.object({
-  tanggal: z.string().min(1),
+  tanggal: isoDateSchema,
   kategori: z.enum(['OCM R1', 'OCM R2', 'OCMP SAGU', 'OCM BRDL', 'OCM BRDL KTWM', 'OCM BRDL TRYM', 'OCM BRDL LMDM']),
   peronId: z.string().min(1),
   statusBayarPeron: z.enum(['belum', 'lunas']).default('belum'),
@@ -49,18 +37,16 @@ const pembelianSchema = z.object({
     noTid: z.string().optional(),
     tonase: z.number().positive(),
     hargaLapangan: z.number().positive(),
-    tanggalReplas: z.string().optional(),
-    tanggalReplasSampai: z.string().optional(),
+    tanggalReplas: optionalIsoDateSchema,
+    tanggalReplasSampai: optionalIsoDateSchema,
     jumlahReplas: z.number().int().nonnegative().optional(),
   })).min(1, 'Minimal 1 baris detail'),
   fotoUrls: z.array(z.string()).optional(),
   idempotencyKey: z.string().optional(),
 })
 
-function computeTotals(details: DetailInput[], keuntunganPerKg: number, isTBS: boolean, tanggal: string) {
-  // Sebelum 15 Agustus 2026, BRDL masih memakai cap lama. Mulai tanggal tersebut,
-  // kelebihan BRDL sama dengan TBS dan tarif ditentukan oleh kelompok peron.
-  const untungEfektif = effectiveKeuntunganPerKgBerlaku(keuntunganPerKg, isTBS, tanggal)
+function computeTotals(details: DetailInput[], keuntunganPerKg: number, isTBS: boolean, brdlSamaTbs: boolean) {
+  const untungEfektif = effectiveKeuntunganPerKgDenganAturan(keuntunganPerKg, isTBS, brdlSamaTbs)
   let totalTonase = 0, totalBeli = 0, totalJual = 0, totalKeuntungan = 0
   const computed = details.map((d, i) => {
     const hargaJual = d.hargaLapangan + untungEfektif
@@ -96,8 +82,7 @@ export async function createPembelian(data: {
   fotoUrls?: string[]
   idempotencyKey?: string
 }) {
-  const session = await requireSession()
-  requirePermission(session.user.role, 'canCreate')
+  const session = await requireModuleAction('pembelian', 'canCreate')
   const parsed = pembelianSchema.parse(data)
 
   // W1: 'lunas' tanpa sumber bayar = kas keluar tak tercatat → kas overstated. Tolak
@@ -105,16 +90,21 @@ export async function createPembelian(data: {
   if (parsed.statusBayarPeron === 'lunas' && !parsed.sumberBayarId) {
     throw new Error('Pembelian berstatus LUNAS wajib punya sumber bayar (akun kas) agar saldo kas ikut tercatat.')
   }
+  if (parsed.sumberBayarId) {
+    const akun = await db.query.akunKas.findFirst({ where: (t, { eq }) => eq(t.id, parsed.sumberBayarId!) })
+    if (!akun) throw new Error('Akun sumber bayar tidak ditemukan')
+  }
 
   const peronData = await db.query.peron.findFirst({ where: (t, { eq }) => eq(t.id, parsed.peronId) })
   if (!peronData) throw new Error('Peron tidak ditemukan')
 
-  const keuntunganTransaksi = keuntunganPerKgBerlaku(
-    peronData.nama,
+  const tarifTransaksi = await getTarifPeronBerlaku(
+    peronData.id,
     parsed.tanggal,
     peronData.keuntunganPerKg,
   )
-  const { computed, totalTonase, totalBeli, totalJual, totalKeuntungan, hargaBeliRata, hargaJualRata } = computeTotals(parsed.details, keuntunganTransaksi, isKategoriTBS(parsed.kategori), parsed.tanggal)
+  const keuntunganTransaksi = tarifTransaksi.keuntunganPerKg
+  const { computed, totalTonase, totalBeli, totalJual, totalKeuntungan, hargaBeliRata, hargaJualRata } = computeTotals(parsed.details, keuntunganTransaksi, isKategoriTBS(parsed.kategori), tarifTransaksi.brdlSamaTbs)
 
   // Anti-dobel: tolak pembelian identik dari user yang sama dalam ~60 detik terakhir
   // (retry saat sinyal lapangan jelek / double-submit). Match sangat spesifik
@@ -146,6 +136,7 @@ export async function createPembelian(data: {
       totalJual,
       keuntungan: totalKeuntungan,
       keuntunganPerKg: keuntunganTransaksi, // W2: snapshot tarif yang berlaku saat transaksi
+      brdlSamaTbs: tarifTransaksi.brdlSamaTbs,
       statusBayarPeron: parsed.statusBayarPeron,
       sumberBayarId: parsed.sumberBayarId,
       catatan: parsed.catatan,
@@ -253,13 +244,16 @@ export async function updatePembelian(id: string, data: {
   details: DetailInput[]
   fotoUrls?: string[]
 }) {
-  const session = await requireSession()
-  requirePermission(session.user.role, 'canEdit')
+  const session = await requireModuleAction('pembelian', 'canEdit')
   const parsed = pembelianSchema.parse(data)
 
   // W1: 'lunas' tanpa sumber bayar = kas keluar tak tercatat → kas overstated. Tolak.
   if (parsed.statusBayarPeron === 'lunas' && !parsed.sumberBayarId) {
     throw new Error('Pembelian berstatus LUNAS wajib punya sumber bayar (akun kas) agar saldo kas ikut tercatat.')
+  }
+  if (parsed.sumberBayarId) {
+    const akun = await db.query.akunKas.findFirst({ where: (t, { eq }) => eq(t.id, parsed.sumberBayarId!) })
+    if (!akun) throw new Error('Akun sumber bayar tidak ditemukan')
   }
 
   const peronData = await db.query.peron.findFirst({ where: (t, { eq }) => eq(t.id, parsed.peronId) })
@@ -270,11 +264,15 @@ export async function updatePembelian(id: string, data: {
   const existingPembelian = await db.query.pembelian.findFirst({ where: (t, { eq }) => eq(t.id, id) })
   const peronBerubah = !existingPembelian || existingPembelian.peronId !== parsed.peronId
   const tanggalBerubah = !existingPembelian || existingPembelian.tanggal !== parsed.tanggal
+  const tarifTransaksi = await getTarifPeronBerlaku(peronData.id, parsed.tanggal, peronData.keuntunganPerKg)
   const keuntunganSnapshot = (!peronBerubah && !tanggalBerubah && existingPembelian?.keuntunganPerKg != null)
     ? existingPembelian.keuntunganPerKg
-    : keuntunganPerKgBerlaku(peronData.nama, parsed.tanggal, peronData.keuntunganPerKg)
+    : tarifTransaksi.keuntunganPerKg
+  const brdlSamaTbsSnapshot = (!peronBerubah && !tanggalBerubah)
+    ? (existingPembelian?.brdlSamaTbs ?? brdlMengikutiKelebihanTbs(existingPembelian?.tanggal ?? parsed.tanggal))
+    : tarifTransaksi.brdlSamaTbs
 
-  const { computed, totalTonase, totalBeli, totalJual, totalKeuntungan, hargaBeliRata, hargaJualRata } = computeTotals(parsed.details, keuntunganSnapshot, isKategoriTBS(parsed.kategori), parsed.tanggal)
+  const { computed, totalTonase, totalBeli, totalJual, totalKeuntungan, hargaBeliRata, hargaJualRata } = computeTotals(parsed.details, keuntunganSnapshot, isKategoriTBS(parsed.kategori), brdlSamaTbsSnapshot)
 
   // Update + ganti detail + sinkron mutasi kas, atomic dalam satu transaksi.
   await db.transaction(async (tx) => {
@@ -289,6 +287,7 @@ export async function updatePembelian(id: string, data: {
       totalJual,
       keuntungan: totalKeuntungan,
       keuntunganPerKg: keuntunganSnapshot, // W2: freeze tarif untung historis
+      brdlSamaTbs: brdlSamaTbsSnapshot,
       statusBayarPeron: parsed.statusBayarPeron,
       sumberBayarId: parsed.sumberBayarId,
       catatan: parsed.catatan,
@@ -416,7 +415,7 @@ export async function getPembelianList(opts?: {
   offset?: number
   limit?: number
 }) {
-  await requireSession()
+  await requireModuleSession('pembelian')
   const { dari, sampai, peronId, offset, limit } = opts ?? {}
   const adaFilter = Boolean(dari || sampai || peronId)
   return db.query.pembelian.findMany({
@@ -439,7 +438,7 @@ export async function getPembelianList(opts?: {
 // query GROUP BY statusBayarPeron sekaligus memberi total + jumlah tiket belum
 // dibayar untuk kartu ringkasan saat tanpa filter.
 export async function getPembelianStats() {
-  await requireSession()
+  await requireModuleSession('pembelian')
   const grouped = await db
     .select({
       status: pembelian.statusBayarPeron,
@@ -470,26 +469,27 @@ export async function getPembelianStats() {
 }
 
 export async function getAkunKasList() {
-  await requireSession()
+  await requireModuleSession('pembelian')
   return db.select().from(akunKas).orderBy(akunKas.urutan)
 }
 
 // Ringan: jumlah keuntungan saja (untuk kartu "Estimasi Laba" di halaman Penjualan)
 // — tanpa menarik seluruh baris pembelian + relasi foto/detail.
 export async function getEstimasiLaba(): Promise<number> {
-  await requireSession()
+  await requireModuleSession('pembelian')
   const row = await db.select({ total: sum(pembelian.keuntungan) }).from(pembelian)
   return Number(row[0]?.total ?? 0)
 }
 
-export async function getKeuntunganPerKg(peronId: string): Promise<number> {
-  await requireSession()
+export async function getKeuntunganPerKg(peronId: string, tanggal = todayString()): Promise<number> {
+  await requireModuleSession('pembelian')
   const p = await db.query.peron.findFirst({ where: (t, { eq }) => eq(t.id, peronId) })
-  return p?.keuntunganPerKg ?? 0
+  if (!p) return 0
+  return (await getTarifPeronBerlaku(p.id, tanggal, p.keuntunganPerKg)).keuntunganPerKg
 }
 
 export async function getLatestHargaAcuan(produk: 'TBS' | 'BRDL KTWM' | 'BRDL TRYM' | 'BRDL LMDM', tanggal?: string) {
-  await requireSession()
+  await requireModuleSession('pembelian')
   const targetDate = tanggal || todayString()
   // LMDM selalu mirror TRYM — lookup LMDM dialihkan ke TRYM agar tak pernah blank.
   const lookupProduk = produk === 'BRDL LMDM' ? 'BRDL TRYM' : produk
@@ -510,7 +510,7 @@ export async function getLatestHargaAcuan(produk: 'TBS' | 'BRDL KTWM' | 'BRDL TR
 export async function getHargaAcuanListForProduk(
   produk: 'TBS' | 'BRDL KTWM' | 'BRDL TRYM' | 'BRDL LMDM',
 ) {
-  await requireSession()
+  await requireModuleSession('pembelian')
   const rows = await db.query.hargaAcuan.findMany({
     where: (t, { eq }) => eq(t.produk, produk),
     orderBy: (t, { asc }) => [asc(t.tanggalBerlaku), asc(t.createdAt)],

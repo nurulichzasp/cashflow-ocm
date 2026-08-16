@@ -36,7 +36,7 @@ export type PeronAccessInfo = {
 
 /** Ambil status link portal peron (untuk panel admin). */
 export async function getPeronAccess(peronId: string): Promise<PeronAccessInfo> {
-  await requireSession()
+  await requireOwner()
   const row = await db.select().from(peronAccess).where(eq(peronAccess.peronId, peronId)).limit(1)
   if (!row[0]) return null
   return {

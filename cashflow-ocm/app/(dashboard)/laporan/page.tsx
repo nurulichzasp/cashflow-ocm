@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
-import { hasPermission } from '@/lib/permissions'
+import { hasModulePermission, hasUserPermission, moduleKeys } from '@/lib/permissions'
 import { getLaporanData } from './actions'
 import { LaporanClient } from './laporan-client'
 
@@ -23,7 +23,7 @@ export default async function LaporanPage() {
   if (!session) redirect('/login')
   // Laporan keuangan hanya untuk peran berhak finance. getLaporanData juga sudah
   // memblokir; redirect ini hanya agar UX bersih (bukan halaman error).
-  if (!hasPermission(session.user.role, 'canViewFinance')) redirect('/pembelian')
+  if (!hasUserPermission(session.user, 'canViewFinance') || !moduleKeys.every((module) => hasModulePermission(session.user, module))) redirect('/pembelian')
 
   const { dari, sampai } = getDefaultRange()
   const initialData = await getLaporanData(dari, sampai)

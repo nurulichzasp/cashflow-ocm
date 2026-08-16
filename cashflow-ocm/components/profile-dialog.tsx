@@ -1,4 +1,5 @@
 'use client'
+/* eslint-disable @next/next/no-img-element -- avatar/preview privat memakai proxy terautentikasi */
 
 import React, { useRef, useState } from 'react'
 import {
