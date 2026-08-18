@@ -13,6 +13,8 @@ import { createPenjualan, updatePenjualan } from './actions'
 import { todayString } from '@/lib/format'
 import { FileText, Loader2, Sparkles, ChevronDown, ChevronUp, Table2 } from 'lucide-react'
 import type { Penjualan } from '@/lib/db/schema'
+import type { PrahBastRow } from '@/lib/bast-prah'
+import { PrahBastRowsEditor } from '@/components/prah-bast-rows-editor'
 
 type SideVal = { total: number; dpp: number; ppn: number; pph: number; dibayar: number }
 type MergedRow = { noInv: string; ket: string; area: string; rekap: SideVal | null; rekap2: SideVal | null; conflict: boolean }
@@ -56,9 +58,9 @@ function calculatePreviewValues(preview: PreviewData, picks: Record<number, 'rek
   }
 }
 
-type Props = { children?: React.ReactNode; editItem?: Penjualan; open?: boolean; onOpenChange?: (open: boolean) => void }
+type Props = { children?: React.ReactNode; editItem?: Penjualan; open?: boolean; onOpenChange?: (open: boolean) => void; canManagePrah?: boolean }
 
-export function PenjualanFormDialog({ children, editItem, open: openProp, onOpenChange }: Props) {
+export function PenjualanFormDialog({ children, editItem, open: openProp, onOpenChange, canManagePrah = false }: Props) {
   const isEdit = !!editItem
   const [openInternal, setOpenInternal] = useState(false)
   const open = openProp ?? openInternal
@@ -68,6 +70,7 @@ export function PenjualanFormDialog({ children, editItem, open: openProp, onOpen
   const [parsing, setParsing] = useState(false)
   const [statusBayar, setStatusBayar] = useState<'belum' | 'lunas'>(editItem?.statusBayar ?? 'belum')
   const [tanggal, setTanggal] = useState(editItem?.tanggal ?? todayString())
+  const [noBast, setNoBast] = useState(editItem?.noBast ?? '')
   const [noInvoice, setNoInvoice] = useState(editItem?.noInvoice ?? '')
   const [totalBersih, setTotalBersih] = useState(editItem?.totalBersih ? String(editItem.totalBersih) : '')
   const [totalNilai, setTotalNilai] = useState(editItem?.totalNilai ? String(editItem.totalNilai) : '')
@@ -76,6 +79,9 @@ export function PenjualanFormDialog({ children, editItem, open: openProp, onOpen
   const [picks, setPicks] = useState<Record<number, 'rekap' | 'rekap2'>>({})
   const [previewOpen, setPreviewOpen] = useState(true)
   const [errTanggal, setErrTanggal] = useState('')
+  const [prahRows, setPrahRows] = useState<PrahBastRow[]>([])
+  const [prahProof, setPrahProof] = useState('')
+  const [syncPrahBast, setSyncPrahBast] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const unresolved = preview ? preview.rows.filter((r, i) => r.conflict && !picks[i]).length : 0
@@ -94,16 +100,50 @@ export function PenjualanFormDialog({ children, editItem, open: openProp, onOpen
     applyPreviewValues(preview, nextPicks)
   }
 
+  function clearPreviousImport() {
+    // File baru adalah sumber baru: jangan pernah mencampur field hasil dokumen
+    // sebelumnya. Pada edit, tanggal transaksi lama dipertahankan sebagai baseline
+    // yang aman; field dokumen lain sengaja dikosongkan sampai parser selesai.
+    setTanggal(editItem?.tanggal ?? todayString())
+    setNoBast('')
+    setNoInvoice('')
+    setTotalBersih('')
+    setTotalNilai('')
+    setCatatan('')
+    setPreview(null)
+    setPicks({})
+    setPreviewOpen(true)
+    setPrahRows([])
+    setPrahProof('')
+    setSyncPrahBast(true)
+  }
+
   async function handlePdfUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
     setParsing(true)
+    clearPreviousImport()
     try {
       const fd = new FormData()
       fd.append('file', file)
       const res = await fetch('/api/parse-bast', { method: 'POST', body: fd })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Gagal membaca file')
+
+      setNoBast(typeof data.noBast === 'string' ? data.noBast : '')
+      if (Array.isArray(data.prahRows)) {
+        setPrahRows(data.prahRows as PrahBastRow[])
+        setPrahProof(typeof data.prahProof === 'string' ? data.prahProof : '')
+        setSyncPrahBast(true)
+        if (data.prahRows.length > 0) {
+          toast.success(`${data.prahRows.length} perjalanan Doni/Katimin terbaca untuk Prah Trek`)
+        } else if (data.noBast || /bast/i.test(file.name)) {
+          toast.warning('Baris Doni/Katimin belum terbaca. Tambahkan manual sebelum menyimpan bila BAST ini memuat Prah.')
+        }
+      } else {
+        setPrahRows([])
+        setPrahProof('')
+      }
 
       if (data.info === 'excel-bga-rekap' && Array.isArray(data.mergedRows)) {
         if (data.tanggal) setTanggal(data.tanggal)
@@ -143,7 +183,8 @@ export function PenjualanFormDialog({ children, editItem, open: openProp, onOpen
         toast.info('File terbaca tapi tidak ada field yang cocok — isi manual ya')
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Gagal membaca file')
+      const message = err instanceof Error ? err.message : 'Gagal membaca file'
+      toast.error(`Upload gagal: ${message}. Data hasil impor sebelumnya sudah dikosongkan.`)
     } finally {
       setParsing(false)
       if (fileRef.current) fileRef.current.value = ''
@@ -160,23 +201,42 @@ export function PenjualanFormDialog({ children, editItem, open: openProp, onOpen
       setErrTanggal('Tanggal wajib diisi')
       return
     }
+    if (prahRows.length > 0 && !noBast.trim()) {
+      toast.error('Isi No. BAST agar perjalanan Doni/Katimin dapat masuk ke Prah Trek')
+      return
+    }
+    const invalidPrah = prahRows.find((row) => !row.tanggal || row.tonaseKotor <= 0 || row.tonaseNetto1 <= 0 || row.tonaseNetto1 > row.tonaseKotor)
+    if (invalidPrah) {
+      toast.error('Periksa tanggal, tonase kotor, dan Netto 1 pada baris Prah Trek')
+      return
+    }
     setErrTanggal('')
     setLoading(true)
     try {
       const formData = new FormData(e.currentTarget)
       formData.set('statusBayar', statusBayar)
       formData.set('tanggal', tanggal)
+      formData.set('noBast', noBast)
       formData.set('noInvoice', noInvoice)
       formData.set('totalBersih', totalBersih)
       formData.set('totalNilai', totalNilai)
       formData.set('catatan', catatan)
+      formData.set('prahBastRows', JSON.stringify(prahRows))
+      formData.set('prahProof', prahProof)
+      formData.set('syncPrahBast', syncPrahBast ? '1' : '0')
       if (isEdit) {
-        await updatePenjualan(editItem!.id, formData)
-        toast.success('Penjualan berhasil diperbarui')
+        const result = await updatePenjualan(editItem!.id, formData)
+        toast.success(result.prahInserted > 0
+          ? `Penjualan diperbarui · ${result.prahInserted} perjalanan baru masuk ke Prah Trek`
+          : result.prahSkipped > 0
+            ? 'Penjualan diperbarui · perjalanan Prah yang sama sudah tercatat'
+            : 'Penjualan berhasil diperbarui')
       } else {
         formData.set('idempotencyKey', idemKey)
-        await createPenjualan(formData)
-        toast.success('Penjualan berhasil ditambahkan')
+        const result = await createPenjualan(formData)
+        toast.success(result.prahCount > 0
+          ? `Penjualan disimpan · ${result.prahCount} perjalanan masuk ke Prah Trek`
+          : 'Penjualan berhasil ditambahkan')
         setIdemKey(crypto.randomUUID())
       }
       setOpen(false)
@@ -190,6 +250,7 @@ export function PenjualanFormDialog({ children, editItem, open: openProp, onOpen
 
   function resetForm() {
     setTanggal(editItem?.tanggal ?? todayString())
+    setNoBast(editItem?.noBast ?? '')
     setNoInvoice(editItem?.noInvoice ?? '')
     setTotalBersih(editItem?.totalBersih ? String(editItem.totalBersih) : '')
     setTotalNilai(editItem?.totalNilai ? String(editItem.totalNilai) : '')
@@ -197,12 +258,15 @@ export function PenjualanFormDialog({ children, editItem, open: openProp, onOpen
     setPreview(null)
     setPicks({})
     setStatusBayar(editItem?.statusBayar ?? 'belum')
+    setPrahRows([])
+    setPrahProof('')
+    setSyncPrahBast(false)
   }
 
   return (
     <Dialog open={open} onOpenChange={(v) => { setOpen(v); resetForm() }}>
       {children && <DialogTrigger asChild>{children}</DialogTrigger>}
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{isEdit ? 'Edit Penjualan' : 'Tambah Penjualan'}</DialogTitle>
         </DialogHeader>
@@ -343,6 +407,32 @@ export function PenjualanFormDialog({ children, editItem, open: openProp, onOpen
               aria-describedby={errTanggal ? 'pj-tanggal-error' : undefined}
             />
             <FieldError id="pj-tanggal-error">{errTanggal}</FieldError>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="pj-nobast">No. BAST</Label>
+            <Input
+              id="pj-nobast"
+              value={noBast}
+              onChange={(event) => setNoBast(event.target.value)}
+              placeholder="Diisi otomatis saat terbaca, atau isi manual"
+              disabled={!canManagePrah && (isEdit || !!prahProof)}
+            />
+          </div>
+
+          <div className="rounded-xl border border-border bg-muted/25 p-3 space-y-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Prah Trek dari BAST</p>
+              <p className="mt-1 text-xs text-muted-foreground">Hanya Doni/Katimin. Pendapatan selalu memakai <strong>tonase kotor</strong>, bukan Netto 1.</p>
+              {isEdit && <p className="mt-1 text-xs text-muted-foreground">Saat edit, baris ini hanya menambahkan perjalanan baru. Koreksi/hapus histori dilakukan dari Prah Trek.</p>}
+            </div>
+            <PrahBastRowsEditor
+              rows={prahRows}
+              defaultDate={tanggal}
+              onChange={(rows) => { setPrahRows(rows); setSyncPrahBast(true) }}
+              readOnly={!canManagePrah}
+            />
+            {!canManagePrah && <p className="text-xs text-muted-foreground">BAST wajib diunggah. Nomor dan hasil otomatis dikunci untuk staf; koreksi manual dilakukan owner dari Prah Trek.</p>}
           </div>
 
           <div className="space-y-1.5">

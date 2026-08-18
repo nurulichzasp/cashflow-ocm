@@ -1,0 +1,93 @@
+{
+  "queries": [
+    {
+      "id": "prah_recent",
+      "type": "SELECT",
+      "table": "prah_angkutan",
+      "description": "Daftar perjalanan terbaru",
+      "where_conditions": [],
+      "join_conditions": [],
+      "order_by": [
+        { "column": "tanggal", "direction": "DESC" },
+        { "column": "created_at", "direction": "DESC" }
+      ],
+      "group_by": [],
+      "frequency": 200,
+      "avg_execution_time_ms": 5
+    },
+    {
+      "id": "prah_summary_by_truck_and_period",
+      "type": "SELECT",
+      "table": "prah_angkutan",
+      "description": "Ringkasan keuntungan per truk dalam rentang tanggal",
+      "where_conditions": [
+        { "column": "truk", "operator": "=", "selectivity": 0.5 },
+        { "column": "tanggal", "operator": "BETWEEN", "selectivity": 0.2 }
+      ],
+      "join_conditions": [],
+      "order_by": [],
+      "group_by": ["truk"],
+      "frequency": 300,
+      "avg_execution_time_ms": 8
+    },
+    {
+      "id": "bbm_recent",
+      "type": "SELECT",
+      "table": "prah_bbm",
+      "description": "Daftar pengisian BBM terbaru",
+      "where_conditions": [],
+      "join_conditions": [],
+      "order_by": [
+        { "column": "tanggal", "direction": "DESC" },
+        { "column": "created_at", "direction": "DESC" }
+      ],
+      "group_by": [],
+      "frequency": 200,
+      "avg_execution_time_ms": 5
+    },
+    {
+      "id": "bbm_summary_by_truck_and_period",
+      "type": "SELECT",
+      "table": "prah_bbm",
+      "description": "Ringkasan biaya BBM per truk dalam rentang tanggal",
+      "where_conditions": [
+        { "column": "truk", "operator": "=", "selectivity": 0.5 },
+        { "column": "tanggal", "operator": "BETWEEN", "selectivity": 0.2 }
+      ],
+      "join_conditions": [],
+      "order_by": [],
+      "group_by": ["truk"],
+      "frequency": 300,
+      "avg_execution_time_ms": 8
+    },
+    {
+      "id": "prah_sync_from_penjualan",
+      "type": "SELECT",
+      "table": "prah_angkutan",
+      "description": "Cari perjalanan otomatis untuk penambahan saat edit atau pelepasan tautan saat Penjualan dihapus",
+      "where_conditions": [
+        { "column": "penjualan_id", "operator": "=", "selectivity": 0.99 }
+      ],
+      "join_conditions": [],
+      "order_by": [],
+      "group_by": [],
+      "frequency": 30,
+      "avg_execution_time_ms": 3
+    },
+    {
+      "id": "prah_bast_deduplication",
+      "type": "SELECT",
+      "table": "prah_angkutan",
+      "description": "Cegah BAST/TID yang sama masuk dari Penjualan dan input cadangan",
+      "where_conditions": [
+        { "column": "no_bast", "operator": "=", "selectivity": 0.98 },
+        { "column": "source_key", "operator": "=", "selectivity": 0.99 }
+      ],
+      "join_conditions": [],
+      "order_by": [],
+      "group_by": [],
+      "frequency": 100,
+      "avg_execution_time_ms": 3
+    }
+  ]
+}

@@ -8,6 +8,7 @@ import {
   DollarSign,
   BarChart3,
   Settings,
+  Truck,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -43,6 +44,7 @@ export const APP_ROUTES: AppRoute[] = [
   { label: 'Harga Acuan', path: '/harga', group: 'Master Data', icon: DollarSign },
 
   // — Lainnya —
+  { label: 'Prah Trek', path: '/prah-trek', group: 'Aset Pribadi', icon: Truck, ownerOnly: true },
   { label: 'Pengaturan', path: '/pengaturan', group: 'Lainnya', icon: Settings, ownerOnly: true },
 ]
 

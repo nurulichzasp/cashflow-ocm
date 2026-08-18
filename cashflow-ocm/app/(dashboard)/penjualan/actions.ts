@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { eq, desc, gte, lte, sum, count, sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { penjualan, penjualanDetail, transaksiKas, akunKas } from '@/lib/db/schema'
+import { penjualan, penjualanDetail, transaksiKas, akunKas, prahAngkutan } from '@/lib/db/schema'
 import { and } from 'drizzle-orm'
 import { LIST_PAGE_SIZE } from '@/lib/pagination'
 import { z } from 'zod'
@@ -11,10 +11,13 @@ import { notifyNewPenjualan } from '@/lib/notification'
 import { requireModuleAction, requireModuleSession, requireOwner } from '@/lib/server-auth'
 import { logActivity, describeActivity } from '@/lib/audit'
 import { isoDateSchema, optionalIsoDateSchema } from '@/lib/validation'
+import { buildPrahBastInserts, parsePrahBastRowsJson } from '@/lib/prah-bast-server'
+import { normalizeBastNumber } from '@/lib/bast-prah'
+import { verifyPrahBastImport } from '@/lib/prah-bast-proof'
 
 const penjualanSchema = z.object({
   tanggal: isoDateSchema,
-  noBast: z.string().optional(),
+  noBast: z.string().trim().max(150, 'No. BAST maksimal 150 karakter').optional(),
   noInvoice: z.string().optional(),
   statusBayar: z.enum(['belum', 'lunas']).default('belum'),
   tanggalBayarBga: optionalIsoDateSchema,
@@ -53,6 +56,14 @@ export async function createPenjualan(formData: FormData) {
     catatan: formData.get('catatan') || undefined,
   })
   const idempotencyKey = formData.get('idempotencyKey')?.toString() || undefined
+  const prahRows = parsePrahBastRowsJson(formData.get('prahBastRows'))
+  if (prahRows.length > 0 && !data.noBast?.trim()) {
+    throw new Error('No. BAST wajib diisi agar Doni/Katimin dapat masuk otomatis ke Prah Trek')
+  }
+  if (data.noBast?.trim() && (session.user.role ?? '').trim().toLowerCase() !== 'owner'
+    && !verifyPrahBastImport(data.noBast ?? '', prahRows, formData.get('prahProof')?.toString() ?? '')) {
+    throw new Error('BAST wajib diunggah agar Doni/Katimin diperiksa otomatis. Minta owner melakukan koreksi manual bila dokumen tidak terbaca.')
+  }
   const akunUtama = data.statusBayar === 'lunas' ? await getAkunUtama() : undefined
   if (data.statusBayar === 'lunas' && !data.totalNilai) throw new Error('Penjualan lunas wajib memiliki total nilai')
   if (data.statusBayar === 'lunas' && !akunUtama) throw new Error('Akun penerimaan utama belum tersedia. Buat akun kas terlebih dahulu.')
@@ -73,7 +84,7 @@ export async function createPenjualan(formData: FormData) {
   if (isDup) throw new Error('Penjualan identik baru saja tercatat (~1 menit lalu). Bila berbeda, ubah sedikit lalu simpan lagi.')
 
   // Atomic: catat penjualan + mutasi kas (jika lunas) dalam satu transaksi
-  const newId = await db.transaction(async (tx) => {
+  const created = await db.transaction(async (tx) => {
     const inserted = await tx.insert(penjualan).values({
       ...data,
       createdBy: session.user.id,
@@ -81,6 +92,19 @@ export async function createPenjualan(formData: FormData) {
     }).onConflictDoNothing({ target: penjualan.idempotencyKey }).returning()
     if (inserted.length === 0) throw new Error('Penjualan ini sudah tercatat (pengiriman ganda terdeteksi). Cek daftar, jangan input ulang.')
     const penjualanId = inserted[0].id
+    let prahCount = 0
+
+    if (prahRows.length > 0 && data.noBast) {
+      const prahValues = buildPrahBastInserts({
+        rows: prahRows,
+        noBast: data.noBast,
+        sumber: 'penjualan_bast',
+        createdBy: session.user.id,
+        penjualanId,
+      })
+      const insertedPrah = await tx.insert(prahAngkutan).values(prahValues).onConflictDoNothing().returning({ id: prahAngkutan.id })
+      prahCount = insertedPrah.length
+    }
 
     // Jika langsung lunas → catat uang masuk ke Rek BRI CV OCM
     // Jumlah = totalNilai (total yang dibayar BGA, termasuk PPN−PPH)
@@ -100,16 +124,16 @@ export async function createPenjualan(formData: FormData) {
         })
       }
     }
-    return penjualanId
+    return { penjualanId, prahCount }
   })
 
   await logActivity({
     userId: session.user.id,
     action: 'create',
     entityType: 'penjualan',
-    entityId: newId,
+    entityId: created.penjualanId,
     description: describeActivity('create', 'penjualan', `${data.noInvoice ?? data.noBast ?? '-'} • Rp${data.totalBersih ?? 0}`),
-    newValues: { tanggal: data.tanggal, noInvoice: data.noInvoice, totalBersih: data.totalBersih, totalNilai: data.totalNilai, statusBayar: data.statusBayar },
+    newValues: { tanggal: data.tanggal, noBast: data.noBast, noInvoice: data.noInvoice, totalBersih: data.totalBersih, totalNilai: data.totalNilai, statusBayar: data.statusBayar, prahOtomatis: created.prahCount },
   })
 
   // Trigger Telegram Notification
@@ -132,7 +156,8 @@ export async function createPenjualan(formData: FormData) {
   revalidatePath('/penjualan')
   revalidatePath('/kas')
   revalidatePath('/dashboard')
-  return { success: true }
+  revalidatePath('/prah-trek')
+  return { success: true, prahCount: created.prahCount }
 }
 
 export async function updatePenjualanStatus(id: string, statusBayar: 'belum' | 'lunas', tanggalBayarBga?: string) {
@@ -208,10 +233,25 @@ export async function updatePenjualan(id: string, formData: FormData) {
 
   const existing = await db.query.penjualan.findFirst({ where: (t, { eq }) => eq(t.id, id) })
   if (!existing) throw new Error('Penjualan tidak ditemukan')
+  const syncPrahBast = formData.get('syncPrahBast') === '1'
+  const prahRows = parsePrahBastRowsJson(formData.get('prahBastRows'))
+  const noBastChanged = normalizeBastNumber(data.noBast ?? '') !== normalizeBastNumber(existing.noBast ?? '')
+  if (syncPrahBast && prahRows.length > 0 && !data.noBast?.trim()) {
+    throw new Error('No. BAST wajib diisi agar Doni/Katimin dapat masuk otomatis ke Prah Trek')
+  }
+  if (noBastChanged && !data.noBast?.trim() && (session.user.role ?? '').trim().toLowerCase() !== 'owner') {
+    throw new Error('Penghapusan No. BAST hanya dapat dilakukan owner')
+  }
+  if ((syncPrahBast || noBastChanged) && data.noBast?.trim() && (session.user.role ?? '').trim().toLowerCase() !== 'owner'
+    && !verifyPrahBastImport(data.noBast ?? '', prahRows, formData.get('prahProof')?.toString() ?? '')) {
+    throw new Error('BAST wajib diunggah agar Doni/Katimin diperiksa otomatis. Minta owner melakukan koreksi manual bila dokumen tidak terbaca.')
+  }
   const akunUtama = data.statusBayar === 'lunas' ? await getAkunUtama() : undefined
   if (data.statusBayar === 'lunas' && !data.totalNilai) throw new Error('Penjualan lunas wajib memiliki total nilai')
   if (data.statusBayar === 'lunas' && !akunUtama) throw new Error('Akun penerimaan utama belum tersedia. Buat akun kas terlebih dahulu.')
 
+  let prahInserted = 0
+  let prahSkipped = 0
   await db.transaction(async (tx) => {
     await tx.update(penjualan).set({
       tanggal: data.tanggal,
@@ -223,6 +263,21 @@ export async function updatePenjualan(id: string, formData: FormData) {
       totalNilai: data.totalNilai ?? null,
       catatan: data.catatan ?? null,
     }).where(eq(penjualan.id, id))
+
+    if (syncPrahBast) {
+      if (prahRows.length > 0 && data.noBast) {
+        const prahValues = buildPrahBastInserts({
+          rows: prahRows,
+          noBast: data.noBast,
+          sumber: 'penjualan_bast',
+          createdBy: session.user.id,
+          penjualanId: id,
+        })
+        const inserted = await tx.insert(prahAngkutan).values(prahValues).onConflictDoNothing().returning({ id: prahAngkutan.id })
+        prahInserted = inserted.length
+        prahSkipped = prahRows.length - inserted.length
+      }
+    }
 
     // Sinkronkan kas: hapus mutasi lama, buat ulang jika lunas
     await tx.delete(transaksiKas).where(and(eq(transaksiKas.refTabel, 'penjualan'), eq(transaksiKas.refId, id)))
@@ -257,7 +312,8 @@ export async function updatePenjualan(id: string, formData: FormData) {
   revalidatePath('/penjualan')
   revalidatePath('/kas')
   revalidatePath('/dashboard')
-  return { success: true }
+  revalidatePath('/prah-trek')
+  return { success: true, prahInserted, prahSkipped }
 }
 
 export async function deletePenjualan(id: string) {
@@ -267,6 +323,9 @@ export async function deletePenjualan(id: string) {
 
   await db.transaction(async (tx) => {
     await tx.delete(transaksiKas).where(and(eq(transaksiKas.refTabel, 'penjualan'), eq(transaksiKas.refId, id)))
+    // Prah adalah histori aset pribadi. Hapus Penjualan hanya melepas tautannya;
+    // catatan tonase dan keuntungan pribadi harus tetap ada.
+    await tx.update(prahAngkutan).set({ penjualanId: null }).where(eq(prahAngkutan.penjualanId, id))
     await tx.delete(penjualanDetail).where(eq(penjualanDetail.penjualanId, id))
     await tx.delete(penjualan).where(eq(penjualan.id, id))
   })
@@ -285,6 +344,7 @@ export async function deletePenjualan(id: string) {
   revalidatePath('/penjualan')
   revalidatePath('/kas')
   revalidatePath('/dashboard')
+  revalidatePath('/prah-trek')
   return { success: true }
 }
 

@@ -3,7 +3,7 @@ import { activityLog } from './db/schema'
 import { headers } from 'next/headers'
 
 export type ActivityAction = 'create' | 'update' | 'delete' | 'view' | 'export' | 'approve'
-export type EntityType = 'pembelian' | 'penjualan' | 'biaya_operasional' | 'transaksi_kas' | 'peron' | 'modal_peron' | 'user' | 'harga_acuan' | 'tarif_peron'
+export type EntityType = 'pembelian' | 'penjualan' | 'biaya_operasional' | 'transaksi_kas' | 'peron' | 'modal_peron' | 'user' | 'harga_acuan' | 'tarif_peron' | 'prah_angkutan' | 'prah_bbm'
 
 export interface AuditLogData {
   userId: string

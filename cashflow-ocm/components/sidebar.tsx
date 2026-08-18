@@ -17,7 +17,7 @@ import type { AuthUser } from '@/lib/auth'
 // Nav sidebar KONSUMSI APP_ROUTES (lib/nav-routes.ts = satu sumber label/ikon/
 // permission — dulu array hardcode duplikat, risiko desync dgn command palette).
 // SIDEBAR_ORDER hanya urusan presentasi: urutan visual lama dipertahankan.
-const SIDEBAR_ORDER = ['/dashboard', '/pembelian', '/penjualan', '/peron', '/kas', '/biaya', '/harga', '/laporan', '/pengaturan']
+const SIDEBAR_ORDER = ['/dashboard', '/pembelian', '/penjualan', '/peron', '/kas', '/biaya', '/harga', '/laporan', '/prah-trek', '/pengaturan']
 const navItems = SIDEBAR_ORDER
   .map((p) => APP_ROUTES.find((r) => r.path === p))
   .filter((r): r is NonNullable<typeof r> => r != null)

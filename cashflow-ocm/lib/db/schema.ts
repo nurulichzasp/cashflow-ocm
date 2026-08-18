@@ -1,5 +1,5 @@
 import { relations, sql } from 'drizzle-orm'
-import { index, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
+import { check, index, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
 // ─── Better Auth Tables ──────────────────────────────────────────────────────
 
@@ -212,6 +212,70 @@ export const biayaOperasional = sqliteTable('biaya_operasional', {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
 }, (t) => ({
   idempotencyIdx: uniqueIndex('biaya_operasional_idempotency_key_idx').on(t.idempotencyKey),
+}))
+
+// ─── Prah Trek — aset pribadi, sengaja TERPISAH dari kas/biaya/laba OCM ───────
+
+export const prahAngkutan = sqliteTable('prah_angkutan', {
+  id: text('id').primaryKey().default(sql`(lower(hex(randomblob(8))))`),
+  tanggal: text('tanggal').notNull(),
+  // Dua unit saat ini dinamai berdasarkan sopir tetapnya.
+  truk: text('truk', { enum: ['katimin', 'doni'] }).notNull(),
+  // Snapshot teks, bukan FK ke peron OCM, agar domain aset pribadi tetap terpisah.
+  peronMuat: text('peron_muat').notNull().default('Nolin'),
+  noBast: text('no_bast'),
+  noTid: text('no_tid'),
+  sumber: text('sumber', { enum: ['manual', 'penjualan_bast', 'prah_bast'] }).notNull().default('manual'),
+  penjualanId: text('penjualan_id').references(() => penjualan.id, { onDelete: 'set null' }),
+  sourceKey: text('source_key'),
+  tonaseKotor: real('tonase_kotor').notNull(),
+  tonaseNetto1: real('tonase_netto_1').notNull(),
+  // Snapshot aturan saat transaksi agar histori tidak berubah jika tarif berubah.
+  tarifPerKg: integer('tarif_per_kg').notNull().default(140),
+  pendapatan: integer('pendapatan').notNull(),
+  biayaSopir: integer('biaya_sopir').notNull().default(200000),
+  catatan: text('catatan'),
+  createdBy: text('created_by').notNull().references(() => user.id),
+  idempotencyKey: text('idempotency_key'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+}, (t) => ({
+  idempotencyIdx: uniqueIndex('prah_angkutan_idempotency_idx').on(t.idempotencyKey),
+  tanggalCreatedIdx: index('prah_angkutan_tanggal_created_idx').on(t.tanggal, t.createdAt),
+  trukTanggalIdx: index('prah_angkutan_truk_tanggal_idx').on(t.truk, t.tanggal),
+  createdByIdx: index('prah_angkutan_created_by_idx').on(t.createdBy),
+  penjualanIdx: index('prah_angkutan_penjualan_idx').on(t.penjualanId),
+  bastSourceIdx: uniqueIndex('prah_angkutan_bast_source_idx').on(t.noBast, t.sourceKey),
+  trukCheck: check('prah_angkutan_truk_check', sql`${t.truk} IN ('katimin', 'doni')`),
+  sumberCheck: check('prah_angkutan_sumber_check', sql`${t.sumber} IN ('manual', 'penjualan_bast', 'prah_bast')`),
+  tonaseKotorCheck: check('prah_angkutan_tonase_kotor_check', sql`${t.tonaseKotor} > 0 AND ${t.tonaseKotor} <= 100000`),
+  tonaseNettoCheck: check('prah_angkutan_tonase_netto_check', sql`${t.tonaseNetto1} > 0 AND ${t.tonaseNetto1} <= ${t.tonaseKotor}`),
+  tarifCheck: check('prah_angkutan_tarif_check', sql`${t.tarifPerKg} >= 0`),
+  pendapatanCheck: check('prah_angkutan_pendapatan_check', sql`${t.pendapatan} >= 0`),
+  biayaSopirCheck: check('prah_angkutan_biaya_sopir_check', sql`${t.biayaSopir} >= 0`),
+  pendapatanFormulaCheck: check(
+    'prah_angkutan_pendapatan_formula_check',
+    sql`${t.pendapatan} = CAST(ROUND(${t.tonaseKotor} * ${t.tarifPerKg}) AS INTEGER)`,
+  ),
+}))
+
+export const prahBbm = sqliteTable('prah_bbm', {
+  id: text('id').primaryKey().default(sql`(lower(hex(randomblob(8))))`),
+  tanggal: text('tanggal').notNull(),
+  truk: text('truk', { enum: ['katimin', 'doni'] }).notNull(),
+  jumlahKen: integer('jumlah_ken').notNull(),
+  biayaTotal: integer('biaya_total').notNull(),
+  catatan: text('catatan'),
+  createdBy: text('created_by').notNull().references(() => user.id),
+  idempotencyKey: text('idempotency_key'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+}, (t) => ({
+  idempotencyIdx: uniqueIndex('prah_bbm_idempotency_idx').on(t.idempotencyKey),
+  tanggalCreatedIdx: index('prah_bbm_tanggal_created_idx').on(t.tanggal, t.createdAt),
+  trukTanggalIdx: index('prah_bbm_truk_tanggal_idx').on(t.truk, t.tanggal),
+  createdByIdx: index('prah_bbm_created_by_idx').on(t.createdBy),
+  trukCheck: check('prah_bbm_truk_check', sql`${t.truk} IN ('katimin', 'doni')`),
+  jumlahKenCheck: check('prah_bbm_jumlah_ken_check', sql`${t.jumlahKen} > 0 AND ${t.jumlahKen} <= 20`),
+  biayaTotalCheck: check('prah_bbm_biaya_total_check', sql`${t.biayaTotal} > 0`),
 }))
 
 export const pembelianFoto = sqliteTable('pembelian_foto', {
@@ -453,6 +517,7 @@ export const pembelianFotoRelations = relations(pembelianFoto, ({ one }) => ({
 
 export const penjualanRelations = relations(penjualan, ({ one, many }) => ({
   detail: many(penjualanDetail),
+  prahAngkutan: many(prahAngkutan),
   createdByUser: one(user, { fields: [penjualan.createdBy], references: [user.id] }),
 }))
 
@@ -464,6 +529,15 @@ export const biayaOperasionalRelations = relations(biayaOperasional, ({ one, man
   akunSumber: one(akunKas, { fields: [biayaOperasional.akunSumberId], references: [akunKas.id] }),
   createdByUser: one(user, { fields: [biayaOperasional.createdBy], references: [user.id] }),
   fotos: many(biayaFoto),
+}))
+
+export const prahAngkutanRelations = relations(prahAngkutan, ({ one }) => ({
+  createdByUser: one(user, { fields: [prahAngkutan.createdBy], references: [user.id] }),
+  penjualan: one(penjualan, { fields: [prahAngkutan.penjualanId], references: [penjualan.id] }),
+}))
+
+export const prahBbmRelations = relations(prahBbm, ({ one }) => ({
+  createdByUser: one(user, { fields: [prahBbm.createdBy], references: [user.id] }),
 }))
 
 export const biayaFotoRelations = relations(biayaFoto, ({ one }) => ({
@@ -493,6 +567,8 @@ export type PembelianDetail = typeof pembelianDetail.$inferSelect
 export type Penjualan = typeof penjualan.$inferSelect
 export type PenjualanDetail = typeof penjualanDetail.$inferSelect
 export type BiayaOperasional = typeof biayaOperasional.$inferSelect
+export type PrahAngkutan = typeof prahAngkutan.$inferSelect
+export type PrahBbm = typeof prahBbm.$inferSelect
 export type TransaksiKas = typeof transaksiKas.$inferSelect
 export type ActivityLog = typeof activityLog.$inferSelect
 export type AppSetting = typeof appSettings.$inferSelect

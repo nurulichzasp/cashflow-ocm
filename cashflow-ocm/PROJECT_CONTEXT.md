@@ -29,6 +29,8 @@ produksi. Alur yang dianjurkan: sinkronkan Git → tes/build → preview → ver
 - `app/(dashboard)/kas`: mutasi akun kas.
 - `app/(dashboard)/biaya`: biaya operasional.
 - `app/(dashboard)/laporan`: laporan transaksi dan laba rugi.
+- `app/(dashboard)/prah-trek`: pembukuan dua truk aset pribadi (Katimin/Doni),
+  owner-only dan tidak masuk kas, biaya, dashboard, atau laba rugi OCM.
 - `lib/harga.ts`: sumber tunggal aturan harga, selisih, kelebihan, dan margin.
 - `lib/db/schema.ts`: skema database.
 
@@ -43,6 +45,20 @@ produksi. Alur yang dianjurkan: sinkronkan Git → tes/build → preview → ver
   ketika tarif peron berubah.
 - Transaksi berstatus lunas wajib memiliki sumber kas.
 - Operasi keuangan majemuk harus tetap berada dalam transaksi database.
+- Prah Trek adalah domain aset pribadi. Pendapatan prah, BBM, dan biaya sopirnya
+  tidak boleh ditulis ke `transaksi_kas`, `biaya_operasional`, atau laporan OCM.
+- Pendapatan Prah Trek = tarif snapshot (saat ini Rp140/kg) × tonase kotor.
+  Keuntungan = pendapatan − BBM − biaya sopir snapshot (saat ini Rp200.000/prah).
+- BAST pada form Penjualan dapat menghasilkan baris Doni/Katimin otomatis ke
+  Prah Trek. Pengguna wajib memverifikasi `tonase_kotor` dan `tonase_netto_1`;
+  pendapatan selalu memakai `tonase_kotor`. No. BAST + TID/fingerprint menjadi
+  kunci deduplikasi lintas input Penjualan dan input BAST cadangan di Prah Trek.
+- Parser mengikat satu perjalanan pada satu blok TID; judul/total dan metadata
+  perjalanan berikutnya tidak boleh dipakai sebagai baris Prah. Workbook rekap
+  hanya membaca sheet detail yang namanya menunjukkan BAST/timbangan/angkutan.
+- Sinkronisasi saat edit Penjualan bersifat add-only. Menghapus Penjualan hanya
+  melepas `penjualan_id`, tidak menghapus histori Prah pribadi. Staf hanya dapat
+  mengirim hasil parser bertanda tangan server; koreksi manual tetap owner-only.
 
 ## Keputusan tarif 15 Agustus 2026
 
@@ -79,8 +95,10 @@ tanggal agar transaksi historis tidak ikut berubah.
 3. Jalankan `npx tsc --noEmit`.
 4. Jalankan `npm run build`.
 5. Buat preview deployment dan periksa halaman login serta `/api/health`.
-6. Baru promosikan/deploy ke production dan periksa `omandacerli.com`.
+6. Buat backup produksi terbaru, lalu jalankan migrasi Prah Trek satu kali secara
+   manual. Preview dan production memakai database Turso yang sama, jadi migrasi
+   tidak boleh dijalankan otomatis dari proses build.
+7. Baru promosikan/deploy ke production dan periksa `omandacerli.com`.
 
-Saat dokumen ini dibuat, build produksi dan 105 tes lulus. Lint seluruh proyek
-masih memiliki utang teknis lama; kegagalan lint harus dibedakan antara masalah
-lama dan regresi dari perubahan baru.
+Saat dokumen ini diperbarui, build produksi, lint, type-check, audit dependency,
+dan 136 tes lulus.

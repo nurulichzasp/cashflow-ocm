@@ -3,10 +3,16 @@ export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
-import { hasModulePermission } from '@/lib/permissions'
+import { hasUserPermission } from '@/lib/permissions'
 import * as XLSX from 'xlsx'
+import { extractPrahBastRows } from '@/lib/bast-prah'
+import { signPrahBastImport } from '@/lib/prah-bast-proof'
+import { bastNumberFromFilename, selectActivePrahSheetNames } from '@/lib/bga-prah-workbook'
 
 const MAX_UPLOAD_SIZE = 10 * 1024 * 1024
+const MAX_PDF_PAGES = 100
+const MAX_EXCEL_SHEETS = 100
+const PRAH_DETAIL_SHEET_PATTERN = /(bast|timbang|tiket|detail|angkut|transport|data)/i
 
 type BgaMoneyValues = {
   total: number
@@ -25,7 +31,9 @@ type BgaPreviewRow = BgaMoneyValues & {
 export async function POST(req: NextRequest) {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  if (!hasModulePermission(session.user, 'penjualan')) {
+  const canImport = hasUserPermission(session.user, 'canCreate', 'penjualan')
+    || hasUserPermission(session.user, 'canEdit', 'penjualan')
+  if (!canImport) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
@@ -48,7 +56,8 @@ export async function POST(req: NextRequest) {
     const isImage = file.type.startsWith('image/')
 
     if (isImage) {
-      return NextResponse.json({ success: true, tanggal: '', noBast: '', noInvoice: '', totalTonase: '', totalNilai: '', info: 'foto — tidak bisa di-parse otomatis, isi manual ya' })
+      const noBast = /\bBAST\b/i.test(file.name) ? bastNumberFromFilename(file.name) : ''
+      return NextResponse.json({ success: true, tanggal: '', noBast, noInvoice: '', totalTonase: '', totalNilai: '', ...withPrahProof(noBast, []), info: 'foto — tidak bisa di-parse otomatis, isi manual ya' })
     }
 
     const buffer = Buffer.from(await file.arrayBuffer())
@@ -56,6 +65,9 @@ export async function POST(req: NextRequest) {
     if (isExcel) {
       try {
         const wb = XLSX.read(buffer, { type: 'buffer', sheetRows: 10_000 })
+        if (wb.SheetNames.length > MAX_EXCEL_SHEETS) {
+          throw new Error(`Workbook melebihi batas ${MAX_EXCEL_SHEETS} sheet`)
+        }
 
         // BGA: baca KEDUA rekap (REKAP = 1 harga, REKAP 2 HARGA = 2 harga) lalu
         // bandingkan per kategori. Wiring BGA tidak konsisten antar periode &
@@ -70,8 +82,25 @@ export async function POST(req: NextRequest) {
         const rkB = parseRekapSheet('REKAP 2 HARGA')   // dua harga
         const primary = rkB ?? rkA
         if (primary) {
+          // Jangan membaca semua sheet: workbook BGA sering menyimpan rekap lama.
+          // Hanya sheet yang namanya jelas menunjukkan data angkutan/timbangan yang
+          // boleh menjadi sumber Prah, dan tanggal perjalanannya wajib eksplisit.
+          const candidatePrahSheetNames = (wb.SheetNames as string[]).filter((sheetName) =>
+            PRAH_DETAIL_SHEET_PATTERN.test(sheetName) && !/^REKAP(?:\s+2\s+HARGA)?$/i.test(sheetName.trim()),
+          )
           const aRows = rkA?.previewRows ?? []
           const bRows = rkB?.previewRows ?? []
+          const prahSheetNames = selectActivePrahSheetNames({
+            sheetNames: candidatePrahSheetNames,
+            rekapRows: aRows,
+            rekap2Rows: bRows,
+          })
+          const prahRows = dedupePrahRows(prahSheetNames.flatMap((sheetName) =>
+            extractPrahBastRows(XLSX.utils.sheet_to_csv(wb.Sheets[sheetName]) as string)
+              .map((row) => ({ ...row, tanggal: row.tanggal || primary.tanggal }))
+              .filter((row) => row.tanggal && isDateNear(row.tanggal, primary.tanggal)),
+          ))
+          const noBast = primary.noBast || (prahSheetNames.length > 0 ? bastNumberFromFilename(file.name) : '')
           const pick = (x: BgaPreviewRow | null) => x
             ? { total: x.total, dpp: x.dpp, ppn: x.ppn, pph: x.pph, dibayar: x.dibayar }
             : null
@@ -99,11 +128,14 @@ export async function POST(req: NextRequest) {
             info: 'excel-bga-rekap',
             sheetNames: wb.SheetNames as string[],
             tanggal: primary.tanggal,
+            noBast,
             noInvoice: primary.noInvoice,
             periode: primary.periode ?? '',
             mergedRows,
             hasRekap: !!rkA,
             hasRekap2: !!rkB,
+            ...withPrahProof(noBast, prahRows),
+            prahSheetNames,
           })
         }
 
@@ -111,17 +143,21 @@ export async function POST(req: NextRequest) {
         const ws = wb.Sheets[wb.SheetNames[0]]
         const text = (XLSX.utils.sheet_to_csv(ws) as string)
         const result = extractBastFields(text)
-        return NextResponse.json({ success: true, ...result, info: 'excel' })
+        const prahRows = extractPrahBastRows(text).map((row) => ({ ...row, tanggal: row.tanggal || result.tanggal }))
+        const noBast = result.noBast || (/\bBAST\b|BERITA ACARA SERAH TERIMA/i.test(text) ? bastNumberFromFilename(file.name) : '')
+        return NextResponse.json({ success: true, ...result, noBast, ...withPrahProof(noBast, prahRows), info: 'excel' })
       } catch (e) {
         console.error('[parse-bast:excel]', e)
-        return NextResponse.json({ success: true, tanggal: '', noBast: '', noInvoice: '', totalTonase: '', totalNilai: '', info: 'excel-parse-gagal' })
+        return NextResponse.json({ error: e instanceof Error ? `Excel tidak dapat dibaca: ${e.message}` : 'Excel tidak dapat dibaca' }, { status: 422 })
       }
     }
 
     if (isPdf) {
-      const text = extractRawPdfText(buffer)
+      const text = await extractPdfText(buffer)
       const result = extractBastFields(text)
-      return NextResponse.json({ success: true, ...result, info: 'pdf' })
+      const prahRows = extractPrahBastRows(text).map((row) => ({ ...row, tanggal: row.tanggal || result.tanggal }))
+      const noBast = result.noBast || (/\bBAST\b|BERITA ACARA SERAH TERIMA/i.test(text) ? bastNumberFromFilename(file.name) : '')
+      return NextResponse.json({ success: true, ...result, noBast, ...withPrahProof(noBast, prahRows), info: 'pdf' })
     }
 
     return NextResponse.json({ error: 'Format tidak didukung. Gunakan PDF, Excel (.xlsx), atau foto.' }, { status: 400 })
@@ -129,6 +165,28 @@ export async function POST(req: NextRequest) {
     console.error('[parse-bast]', err)
     return NextResponse.json({ error: 'Gagal membaca file: ' + (err instanceof Error ? err.message : String(err)) }, { status: 500 })
   }
+}
+
+function withPrahProof(noBast: string, prahRows: ReturnType<typeof extractPrahBastRows>) {
+  return { prahRows, prahProof: signPrahBastImport(noBast, prahRows) }
+}
+
+function dedupePrahRows(rows: ReturnType<typeof extractPrahBastRows>) {
+  const seen = new Set<string>()
+  return rows.filter((row) => {
+    const key = `${row.truk}:${row.noTid || '-'}:${row.tanggal}:${row.tonaseKotor}:${row.tonaseNetto1}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
+function isDateNear(value: string, reference: string): boolean {
+  if (!reference) return false
+  const valueMs = Date.parse(`${value}T00:00:00Z`)
+  const referenceMs = Date.parse(`${reference}T00:00:00Z`)
+  if (!Number.isFinite(valueMs) || !Number.isFinite(referenceMs)) return false
+  return Math.abs(valueMs - referenceMs) <= 45 * 24 * 60 * 60 * 1000
 }
 
 // ── BGA REKAP sheet parser ────────────────────────────────────────────────────
@@ -300,7 +358,62 @@ function extractRawPdfText(buffer: Buffer): string {
     }
   }
 
-  return texts.join(' ')
+  return texts.join('\n')
+}
+
+function pdfItemsToLines(items: unknown[]): string[] {
+  const positioned: Array<{ text: string; x: number; y: number }> = []
+  const sequential: string[] = []
+  for (const item of items) {
+    if (!item || typeof item !== 'object' || !('str' in item) || typeof item.str !== 'string') continue
+    const text = item.str.trim()
+    if (!text) continue
+    if ('transform' in item && Array.isArray(item.transform) && item.transform.length >= 6) {
+      positioned.push({ text, x: Number(item.transform[4]) || 0, y: Number(item.transform[5]) || 0 })
+    } else {
+      sequential.push(text)
+    }
+  }
+
+  const rows: Array<{ y: number; items: Array<{ text: string; x: number }> }> = []
+  for (const item of positioned.sort((a, b) => b.y - a.y || a.x - b.x)) {
+    let row = rows.find((candidate) => Math.abs(candidate.y - item.y) <= 2)
+    if (!row) {
+      row = { y: item.y, items: [] }
+      rows.push(row)
+    }
+    row.items.push({ text: item.text, x: item.x })
+  }
+  const spatialLines = rows
+    .sort((a, b) => b.y - a.y)
+    .map((row) => row.items.sort((a, b) => a.x - b.x).map((item) => item.text).join(' '))
+  return [...spatialLines, ...sequential]
+}
+
+async function extractPdfText(buffer: Buffer): Promise<string> {
+  try {
+    const { getDocument } = await import('pdfjs-dist/legacy/build/pdf.mjs')
+    const loadingTask = getDocument({ data: new Uint8Array(buffer), useSystemFonts: true })
+    const document = await loadingTask.promise
+    if (document.numPages > MAX_PDF_PAGES) {
+      await document.destroy()
+      throw new Error(`PDF melebihi batas ${MAX_PDF_PAGES} halaman`)
+    }
+
+    const pages: string[] = []
+    for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber++) {
+      const page = await document.getPage(pageNumber)
+      const content = await page.getTextContent()
+      pages.push(pdfItemsToLines(content.items as unknown[]).join('\n'))
+      page.cleanup()
+    }
+    await document.destroy()
+    const text = pages.join('\n').trim()
+    if (text) return text
+  } catch (error) {
+    console.warn('[parse-bast:pdfjs] memakai parser cadangan:', error instanceof Error ? error.message : String(error))
+  }
+  return extractRawPdfText(buffer)
 }
 
 // ── Field extractor (PDF / Excel non-REKAP) ───────────────────────────────────

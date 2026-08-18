@@ -19,6 +19,7 @@ interface Props {
   penjualanList: Penjualan[]
   stats: { totalCount: number; totalPenjualan: number; totalPpn: number }
   isOwner: boolean
+  canEdit: boolean
   /** Margin (estimasi laba) = Σ markup peron all-time (lintas modul, bukan per-rentang). */
   estimasiLaba: number
 }
@@ -52,7 +53,7 @@ function SortIcon({ active, dir }: { active: boolean; dir: 'asc' | 'desc' }) {
   return dir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
 }
 
-export function PenjualanTable({ penjualanList, stats, isOwner, estimasiLaba }: Props) {
+export function PenjualanTable({ penjualanList, stats, isOwner, canEdit, estimasiLaba }: Props) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [dari, setDari] = useState('')
@@ -246,6 +247,7 @@ export function PenjualanTable({ penjualanList, stats, isOwner, estimasiLaba }: 
                 key={item.id}
                 item={item}
                 isOwner={isOwner}
+                canEdit={canEdit}
                 updatingId={updatingId}
                 deletingId={deletingId}
                 onToggleLunas={handleToggleLunas}
@@ -263,6 +265,7 @@ export function PenjualanTable({ penjualanList, stats, isOwner, estimasiLaba }: 
             key={item.id}
             item={item}
             isOwner={isOwner}
+            canEdit={canEdit}
             updatingId={updatingId}
             deletingId={deletingId}
             onToggleLunas={handleToggleLunas}
@@ -286,6 +289,7 @@ export function PenjualanTable({ penjualanList, stats, isOwner, estimasiLaba }: 
 interface RowProps {
   item: Penjualan
   isOwner: boolean
+  canEdit: boolean
   updatingId: string | null
   deletingId: string | null
   onToggleLunas: (id: string) => void
@@ -309,7 +313,7 @@ async function sharePenjualanNota(item: Penjualan) {
 }
 
 /* ─── Desktop row — invoice diciutkan; aksi (Bagikan/Edit/Hapus) di kebab ⋯ ─── */
-function PenjualanRow({ item, isOwner, updatingId, deletingId, onToggleLunas, onDelete }: RowProps) {
+function PenjualanRow({ item, isOwner, canEdit, updatingId, deletingId, onToggleLunas, onDelete }: RowProps) {
   const [expanded, setExpanded] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const invoices = (item.noInvoice ?? '').split('\n').filter(Boolean)
@@ -317,7 +321,9 @@ function PenjualanRow({ item, isOwner, updatingId, deletingId, onToggleLunas, on
 
   const actions: RowAction[] = [
     { key: 'share', label: 'Bagikan nota', icon: Share2, onSelect: () => sharePenjualanNota(item) },
-    { key: 'edit', label: 'Edit', icon: Pencil, separated: true, onSelect: () => setEditOpen(true) },
+    ...(canEdit
+      ? [{ key: 'edit', label: 'Edit', icon: Pencil, separated: true, onSelect: () => setEditOpen(true) } as RowAction]
+      : []),
     ...(isOwner
       ? [{
           key: 'delete',
@@ -380,15 +386,15 @@ function PenjualanRow({ item, isOwner, updatingId, deletingId, onToggleLunas, on
       <td className="px-4 py-3">
         <StatusBadge
           status={item.statusBayar}
-          onToggle={item.statusBayar === 'belum' ? () => onToggleLunas(item.id) : undefined}
+          onToggle={canEdit && item.statusBayar === 'belum' ? () => onToggleLunas(item.id) : undefined}
           loading={updatingId === item.id}
         />
       </td>
       <td className="px-4 py-3 text-stone-600 whitespace-nowrap">{item.tanggalBayarBga ? formatTanggal(item.tanggalBayarBga) : <span className="text-stone-400">—</span>}</td>
       <td className="px-4 py-3 text-right whitespace-nowrap">
         <RowActionMenu variant="menu" actions={actions} triggerLabel="Aksi penjualan" />
-        {editOpen && (
-          <PenjualanFormDialog editItem={item} open={editOpen} onOpenChange={setEditOpen} />
+        {canEdit && editOpen && (
+          <PenjualanFormDialog editItem={item} open={editOpen} onOpenChange={setEditOpen} canManagePrah={isOwner} />
         )}
       </td>
     </tr>
@@ -399,7 +405,7 @@ function PenjualanRow({ item, isOwner, updatingId, deletingId, onToggleLunas, on
    Premium mobile card — collapsible invoice list, catatan clamped
    ───────────────────────────────────────────────────────────────── */
 
-function PenjualanCard({ item, isOwner, updatingId, deletingId, onToggleLunas, onDelete }: RowProps) {
+function PenjualanCard({ item, isOwner, canEdit, updatingId, deletingId, onToggleLunas, onDelete }: RowProps) {
   const [expanded, setExpanded] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const invoices = (item.noInvoice ?? '').split('\n').filter(Boolean)
@@ -410,7 +416,9 @@ function PenjualanCard({ item, isOwner, updatingId, deletingId, onToggleLunas, o
 
   const actions: RowAction[] = [
     { key: 'share', label: 'Bagikan nota', icon: Share2, onSelect: () => sharePenjualanNota(item) },
-    { key: 'edit', label: 'Edit', icon: Pencil, separated: true, onSelect: () => setEditOpen(true) },
+    ...(canEdit
+      ? [{ key: 'edit', label: 'Edit', icon: Pencil, separated: true, onSelect: () => setEditOpen(true) } as RowAction]
+      : []),
     ...(isOwner
       ? [{
           key: 'delete',
@@ -454,7 +462,7 @@ function PenjualanCard({ item, isOwner, updatingId, deletingId, onToggleLunas, o
         <div className="flex shrink-0 items-center gap-1">
           <StatusDot
             status={item.statusBayar}
-            onToggle={item.statusBayar === 'belum' ? () => onToggleLunas(item.id) : undefined}
+            onToggle={canEdit && item.statusBayar === 'belum' ? () => onToggleLunas(item.id) : undefined}
             loading={updatingId === item.id}
           />
           <RowActionMenu
@@ -524,8 +532,8 @@ function PenjualanCard({ item, isOwner, updatingId, deletingId, onToggleLunas, o
         </div>
       )}
 
-      {editOpen && (
-        <PenjualanFormDialog editItem={item} open={editOpen} onOpenChange={setEditOpen} />
+      {canEdit && editOpen && (
+        <PenjualanFormDialog editItem={item} open={editOpen} onOpenChange={setEditOpen} canManagePrah={isOwner} />
       )}
     </div>
   )

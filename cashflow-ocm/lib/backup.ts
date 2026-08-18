@@ -17,6 +17,8 @@ import {
   ppnBulanan,
   pphBulanan,
   appSettings,
+  prahAngkutan,
+  prahBbm,
 } from './db/schema'
 
 export interface BackupData {
@@ -40,6 +42,8 @@ export interface BackupData {
     ppn_bulanan: (typeof ppnBulanan.$inferSelect)[]
     pph_bulanan: (typeof pphBulanan.$inferSelect)[]
     app_settings: (typeof appSettings.$inferSelect)[]
+    prah_angkutan: (typeof prahAngkutan.$inferSelect)[]
+    prah_bbm: (typeof prahBbm.$inferSelect)[]
   }
   summary: {
     totalPembelian: number
@@ -48,6 +52,8 @@ export interface BackupData {
     totalTransaksi: number
     totalAkun: number
     totalPeron: number
+    totalPrah: number
+    totalIsiBbmPrah: number
   }
 }
 
@@ -73,6 +79,8 @@ export async function createBackup(): Promise<BackupData> {
       ppnList,
       pphList,
       appSettingsList,
+      prahAngkutanList,
+      prahBbmList,
     ] = await Promise.all([
       db.select().from(akunKas),
       db.select().from(peron),
@@ -90,13 +98,15 @@ export async function createBackup(): Promise<BackupData> {
       db.select().from(ppnBulanan),
       db.select().from(pphBulanan),
       db.select().from(appSettings),
+      db.select().from(prahAngkutan),
+      db.select().from(prahBbm),
     ])
 
     const backup: BackupData = {
       timestamp: new Date().toISOString(),
-      // v2.0: backup LENGKAP (termasuk detail/foto/harga/pajak/app_settings) agar
+      // v2.1: backup LENGKAP (termasuk detail/foto/harga/pajak/Prah Trek) agar
       // bisa direstore utuh. Backup v1.0 lama (header-saja) tetap bisa dibaca restore.
-      version: '2.0',
+      version: '2.1',
       tables: {
         akun_kas: akunList,
         peron: peronList,
@@ -114,6 +124,8 @@ export async function createBackup(): Promise<BackupData> {
         ppn_bulanan: ppnList,
         pph_bulanan: pphList,
         app_settings: appSettingsList,
+        prah_angkutan: prahAngkutanList,
+        prah_bbm: prahBbmList,
       },
       summary: {
         totalPembelian: pembelianList.length,
@@ -122,6 +134,8 @@ export async function createBackup(): Promise<BackupData> {
         totalTransaksi: transaksiList.length,
         totalAkun: akunList.length,
         totalPeron: peronList.length,
+        totalPrah: prahAngkutanList.length,
+        totalIsiBbmPrah: prahBbmList.length,
       },
     }
 
@@ -149,6 +163,8 @@ export function exportBackupToExcel(backup: BackupData): Blob {
     { Keterangan: 'Total Transaksi', Nilai: backup.summary.totalTransaksi },
     { Keterangan: 'Total Akun', Nilai: backup.summary.totalAkun },
     { Keterangan: 'Total Peron', Nilai: backup.summary.totalPeron },
+    { Keterangan: 'Total Prah Trek', Nilai: backup.summary.totalPrah },
+    { Keterangan: 'Total Pengisian BBM Prah', Nilai: backup.summary.totalIsiBbmPrah },
   ]
 
   const summarySheet = XLSX.utils.json_to_sheet(summaryData)

@@ -69,7 +69,7 @@ Wajib (lihat `.env.example` untuk daftar lengkap):
 app/
   (auth)/login           Halaman login
   (dashboard)/           Modul: dashboard, peron, harga, pembelian, penjualan,
-                         kas, biaya, laporan, pengaturan
+                         kas, biaya, laporan, Prah Trek (aset pribadi), pengaturan
   api/                   Auth, foto, metrics, cron, telegram, backup, health
 components/              UI bersama (shadcn + komponen app)
 lib/                     db, auth, format, permissions, audit, utils
